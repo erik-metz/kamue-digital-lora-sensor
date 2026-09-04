@@ -101,8 +101,10 @@ String getRadioLibErrorStr(int err) {
     case RADIOLIB_ERR_INVALID_BANDWIDTH:        return "INVALID_BW (-8)";
     case RADIOLIB_ERR_INVALID_SPREADING_FACTOR: return "INVALID_SF (-9)";
     case RADIOLIB_ERR_INVALID_CODING_RATE:      return "INVALID_CR (-10)";
-    case RADIOLIB_ERR_JOIN_NONCE_FULL:          return "JOIN_NONCE_FULL (-1107: DevNonce limit reached)";
-    case RADIOLIB_ERR_NO_JOIN_ACCEPT:           return "NO_JOIN_ACCEPT (-1108: No Join Accept frame received from gateway)";
+    case RADIOLIB_LORAWAN_NEW_SESSION:          return "NEW_SESSION (1: Joined TTN successfully)";
+    case -1101:                                 return "NETWORK_NOT_JOINED (-1101: activateOTAA not called or session lost)";
+    case RADIOLIB_ERR_JOIN_NONCE_INVALID:       return "JOIN_NONCE_INVALID (-1111: JoinNonce not higher than saved value)";
+    case RADIOLIB_ERR_NO_JOIN_ACCEPT:           return "NO_JOIN_ACCEPT (-1116: No Join Accept frame received from gateway)";
     default:                                    return "ERR_CODE (" + String(err) + ")";
   }
 }
@@ -241,11 +243,11 @@ void printSerialDiagnostics() {
 }
 
 void checkSystemWarnings() {
-  // 1. Check if GNSS serial line receives 0 bytes after 10 seconds of runtime
-  if (millis() > 10000 && rawGpsBytes == 0 && !gnssWarningTriggered) {
+  // 1. Check if GNSS serial line receives 0 bytes or 0 parsed sentences after 10 seconds of runtime
+  if (millis() > 10000 && (rawGpsBytes <= 1 || sentencesParsed == 0) && !gnssWarningTriggered) {
     gnssWarningTriggered = true;
-    Serial.println(F("[GNSS][WARN] 0 bytes received from UC6580 GNSS module on RX:33!"));
-    Serial.println(F("[GNSS][WARN] Diagnostic check: Verify GPIO 3 (GNSS_PWR) is HIGH, GPIO 5 (GNSS_RST) is HIGH, and TX/RX lines are connected."));
+    Serial.println(F("[GNSS][WARN] 0 NMEA sentences parsed from UC6580 GNSS module on RX:33!"));
+    Serial.println(F("[GNSS][WARN] Diagnostic check: Verify GPIO 3 (GNSS_PWR) is HIGH, GPIO 5 (GNSS_RST) is HIGH, and antenna has open sky view."));
   }
   
   // 2. Warn on high NMEA checksum errors
@@ -346,11 +348,12 @@ void initGNSSHardware() {
   digitalWrite(GNSS_RST_PIN, LOW);   // Active reset state
   delay(100);
   digitalWrite(GNSS_RST_PIN, HIGH);  // Release reset line
-  delay(500);
+  delay(1000);
 
-  // Hardware Serial 1 for UC6580 GNSS
+  // Hardware Serial 1 for UC6580 GNSS with enlarged 2048B RX buffer
+  gpsSerial.setRxBufferSize(2048);
   gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
-  Serial.println(F("[GNSS][INIT] Hardware Serial 1 initialized at 115200 baud on RX:33, TX:34."));
+  Serial.println(F("[GNSS][INIT] Hardware Serial 1 initialized at 115200 baud on RX:33, TX:34 (Buffer: 2048B)."));
 }
 
 void initRadioHardware() {
@@ -466,13 +469,15 @@ void loop() {
     radio.setTCXO(1.6);
     radio.setDio2AsRfSwitch(true);
 
-    int joinState = node.beginOTAA(joinEUI, devEUI, nwkKey, appKey);
+    node.beginOTAA(joinEUI, devEUI, nwkKey, appKey);
+    int joinState = node.activateOTAA();
     lastRadioErr = joinState;
-    if (joinState == RADIOLIB_ERR_NONE) {
+    if (joinState == RADIOLIB_LORAWAN_NEW_SESSION || joinState == RADIOLIB_ERR_NONE || joinState > 0) {
       isLoRaJoined = true;
       Serial.println(F("[EVENT][LORA] OTAA Join SUCCESS! Network joined on TTN."));
       updateDisplay("TTN JOINED!", false);
     } else {
+      isLoRaJoined = false;
       Serial.print(F("[EVENT][LORA] OTAA Join FAILED. Error: "));
       Serial.println(getRadioLibErrorStr(joinState));
       updateDisplay("JOIN ERR: " + String(joinState), false);
@@ -542,6 +547,9 @@ void loop() {
       updateDisplay("TX SUCCESS", false);
     } else {
       packetsFailed++;
+      if (state == -1101 || state == RADIOLIB_ERR_NETWORK_NOT_JOINED) {
+        isLoRaJoined = false; // Force re-join on next iteration
+      }
       Serial.print(F("[EVENT][LORA] TX Uplink FAILED! Error: "));
       Serial.println(getRadioLibErrorStr(state));
       updateDisplay("TX ERR: " + String(state), false);
