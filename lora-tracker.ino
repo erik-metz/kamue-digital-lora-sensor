@@ -3,13 +3,12 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "secrets.h"
 
 // ============================================================================
 // HELTEC WIRELESS TRACKER V1.1 PINOUT & HARDWARE DEFINITIONS
 // ============================================================================
 #define VEXT_PIN        36   // Active LOW: Powers OLED Display & Peripherals
-#define GNSS_PWR_PIN    3    // Active HIGH: Core Power Rail for UC6580 GNSS
+#define GNSS_PWR_PIN    3    // Active HIGH: Core Power Rail for UC6580 GNSS (V1.1)
 #define GNSS_RST_PIN    5    // Active LOW: Hardware Reset for UC6580 GNSS
 #define OLED_RST        21   // OLED Reset Pin
 #define I2C_SDA         17   
@@ -22,7 +21,10 @@
 #define SCREEN_WIDTH    128
 #define SCREEN_HEIGHT   64
 
-// SX1262 LoRa Radio Pins
+// SX1262 LoRa Radio Pins & SPI Mapping for Heltec V1.1
+#define SPI_SCK         9
+#define SPI_MISO        11
+#define SPI_MOSI        10
 #define LORA_CS         8
 #define LORA_DIO1       14
 #define LORA_RST        12
@@ -34,7 +36,7 @@
 #define GPS_BAUD        115200
 
 #define DEVICE_NAME     "TRACKER-V1.1"
-#define TX_INTERVAL_MS  15000 
+#define TX_INTERVAL_MS  30000 
 
 // ============================================================================
 // GLOBAL OBJECTS & STATE
@@ -43,6 +45,12 @@ SX1262 radio = new Module(LORA_CS, LORA_DIO1, LORA_RST, LORA_BUSY);
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
 HardwareSerial gpsSerial(1);
 TinyGPSPlus gps;
+
+// --- TTN LORAWAN KEYS (Update with your keys from TTN Console) ---
+uint64_t joinEUI = 0x0000000000000000;
+uint64_t devEUI  = 0x70B3D57ED0078F16; 
+uint8_t appKey[] = { 0x44, 0x40, 0x22, 0xF6, 0xC8, 0x33, 0x55, 0x76, 0xEA, 0x9E, 0x56, 0x2A, 0xF8, 0xA8, 0x49, 0xAD };
+uint8_t nwkKey[] = { 0x44, 0x40, 0x22, 0xF6, 0xC8, 0x33, 0x55, 0x76, 0xEA, 0x9E, 0x56, 0x2A, 0xF8, 0xA8, 0x49, 0xAD };
 
 LoRaWANNode node(&radio, &EU868);
 
@@ -114,6 +122,8 @@ void printSerialDiagnostics() {
   
   Serial.print(" || [LoRaWAN] Joined: ");
   Serial.print(isLoRaJoined ? "YES" : "NO");
+  Serial.print(" | RadioReady: ");
+  Serial.print(radioReady ? "YES" : "NO");
   Serial.print(" | TX OK: ");
   Serial.print(packetsSent);
   Serial.print(" | TX Fail: ");
@@ -167,7 +177,7 @@ void updateDisplay(String statusMsg, bool isLoading = false) {
   // --- LORAWAN TELEMETRY ---
   display.setCursor(0, 34);
   display.print("TTN: ");
-  display.print(isLoRaJoined ? "JOINED" : "JOINING...");
+  display.print(isLoRaJoined ? "JOINED" : (radioReady ? "JOINING..." : "RADIO ERR"));
 
   display.setCursor(0, 44);
   display.print("TX:"); display.print(packetsSent);
@@ -190,12 +200,12 @@ void updateDisplay(String statusMsg, bool isLoading = false) {
 void initGNSSHardware() {
   Serial.println("[GNSS] Powering rail & resetting UC6580...");
 
-  // Power GNSS VCC Rail (GPIO 3)
+  // Power GNSS VCC Rail (GPIO 3 Active HIGH on Heltec V1.1)
   pinMode(GNSS_PWR_PIN, OUTPUT);
   digitalWrite(GNSS_PWR_PIN, HIGH);
   delay(100);
 
-  // Proper Active-LOW Reset Pulse for UC6580 Pin 5
+  // Active-LOW Reset Pulse for UC6580 Pin 5
   pinMode(GNSS_RST_PIN, OUTPUT);
   digitalWrite(GNSS_RST_PIN, HIGH);
   delay(10);
@@ -206,22 +216,27 @@ void initGNSSHardware() {
 
   // Hardware Serial 1 for UC6580 GNSS
   gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+  Serial.println("[GNSS] Serial 1 initialized at 115200 baud on RX:33, TX:34.");
 }
 
 void initRadioHardware() {
-  Serial.println("[Radio] Initializing SX1262 for Heltec V1.1...");
+  Serial.println("[Radio] Initializing SPI bus (SCK:9, MISO:11, MOSI:10, CS:8)...");
   
+  // Explicitly initialize SPI with Heltec Wireless Tracker pin mapping
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI, LORA_CS);
+
+  Serial.println("[Radio] Initializing SX1262 for Heltec V1.1...");
   int state = radio.begin();
   if (state == RADIOLIB_ERR_NONE) {
-    // Heltec V1.1 TCXO on DIO3 and RF Switch mapping on DIO2
-    radio.setTCXO(1.8);
+    // Heltec V1.1 TCXO on DIO3 (1.6V / 1.8V) and RF Switch mapping on DIO2
+    radio.setTCXO(1.6);
     radio.setDio2AsRfSwitch(true);
     
     radioReady = true;
-    Serial.println("[Radio] SX1262 Transceiver Ready.");
+    Serial.println("[Radio] SX1262 Transceiver Initialized Successfully!");
   } else {
     lastRadioErr = state;
-    Serial.print("[Radio] SX1262 Init Failed, code: ");
+    Serial.print("[Radio] SX1262 Init Failed, error code: ");
     Serial.println(state);
   }
 }
@@ -232,11 +247,12 @@ void initRadioHardware() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
+  Serial.println("\n--- HELTEC WIRELESS TRACKER V1.1 STARTUP ---");
 
   pinMode(BOARD_LED, OUTPUT);
   digitalWrite(BOARD_LED, LOW);
 
-  // Enable VEXT Power Rail
+  // Enable VEXT Power Rail (Active LOW)
   pinMode(VEXT_PIN, OUTPUT);
   digitalWrite(VEXT_PIN, LOW); 
 
@@ -281,7 +297,7 @@ void loop() {
     lastJoinAttempt = millis();
     updateDisplay("JOINING TTN...", true);
 
-    radio.setTCXO(1.8);
+    radio.setTCXO(1.6);
     radio.setDio2AsRfSwitch(true);
 
     int joinState = node.beginOTAA(joinEUI, devEUI, nwkKey, appKey);
@@ -300,7 +316,7 @@ void loop() {
 
   if (millis() - lastUI > uiRefreshInterval) {
     lastUI = millis();
-    String st = isLoRaJoined ? (isSearchingGPS ? "SEARCHING GPS" : "LOCK OK") : "WAITING JOIN";
+    String st = isLoRaJoined ? (isSearchingGPS ? "SEARCHING GPS" : "LOCK OK") : (radioReady ? "WAITING JOIN" : "RADIO ERR");
     updateDisplay(st, isSearchingGPS || !isLoRaJoined);
   }
 
@@ -317,7 +333,6 @@ void loop() {
     lastTX = millis();
     updateDisplay("TX SENDING...", true);
 
-    // Re-assert RF Switch configuration to eliminate -1101 timeouts
     radio.setDio2AsRfSwitch(true);
 
     uint8_t payload[8];
@@ -336,7 +351,6 @@ void loop() {
       memset(payload, 0x00, sizeof(payload));
     }
 
-    // Explicitly send on FPort 1
     int state = node.sendReceive(payload, sizeof(payload), 1);
     lastRadioErr = state;
 
