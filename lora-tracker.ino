@@ -74,29 +74,45 @@ uint8_t spinnerIdx = 0;
 // ============================================================================
 float readBatteryVoltage() {
   pinMode(BAT_CTRL_PIN, OUTPUT);
-  digitalWrite(BAT_CTRL_PIN, LOW); // Enable measurement divider
-  delay(5);
+  digitalWrite(BAT_CTRL_PIN, HIGH); // Active HIGH: Enable measurement divider circuit on Heltec V1.1
+  delay(10); // Stabilization delay
   
-  uint32_t rawADC = 0;
-  for (int i = 0; i < 10; i++) {
-    rawADC += analogRead(BAT_ADC_PIN);
+  uint32_t totalMv = 0;
+  const int samples = 10;
+  for (int i = 0; i < samples; i++) {
+    totalMv += analogReadMilliVolts(BAT_ADC_PIN);
     delay(2);
   }
-  rawADC /= 10;
+  float avgMv = (float)totalMv / samples;
   
-  digitalWrite(BAT_CTRL_PIN, HIGH); // Disable divider to conserve power
-  return (rawADC / 4095.0) * 3.3 * 4.9;
+  digitalWrite(BAT_CTRL_PIN, LOW); // Disable divider circuit to conserve battery
+  
+  // Heltec Wireless Tracker voltage divider scaling factor (4.9x)
+  return (avgMv * 4.9f) / 1000.0f;
 }
 
 int getBatteryPercentage(float v) {
-  if (v >= 4.15) return 100;
-  if (v >= 4.00) return 90;
-  if (v >= 3.90) return 75;
-  if (v >= 3.80) return 55;
-  if (v >= 3.70) return 35;
-  if (v >= 3.50) return 15;
-  if (v >= 3.30) return 5;
-  return 0;
+  if (v >= 4.18f) return 100;
+  if (v <= 3.30f) return 0;
+  
+  int pct = 0;
+  if (v >= 4.00f) {
+    pct = 90 + (int)((v - 4.00f) / 0.18f * 10.0f);
+  } else if (v >= 3.90f) {
+    pct = 75 + (int)((v - 3.90f) / 0.10f * 15.0f);
+  } else if (v >= 3.80f) {
+    pct = 55 + (int)((v - 3.80f) / 0.10f * 20.0f);
+  } else if (v >= 3.70f) {
+    pct = 35 + (int)((v - 3.70f) / 0.10f * 20.0f);
+  } else if (v >= 3.50f) {
+    pct = 15 + (int)((v - 3.50f) / 0.20f * 20.0f);
+  } else {
+    pct = (int)((v - 3.30f) / 0.20f * 15.0f);
+  }
+  
+  if (pct > 100) return 100;
+  if (pct < 0) return 0;
+  return pct;
 }
 
 // ============================================================================
@@ -145,18 +161,25 @@ void updateDisplay(String statusMsg, bool isLoading = false) {
   float batVolts = readBatteryVoltage();
   int batPct = getBatteryPercentage(batVolts);
 
-  // --- HEADER ROW (Includes Compact 1-Char Spinner) ---
+  // --- HEADER ROW (Includes Compact 1-Char Spinner & Battery Status) ---
   display.setCursor(0, 0);
-  display.print(DEVICE_NAME);
+  display.print("TRACKER");
   
-  display.setCursor(62, 0);
+  String batStr = String(batVolts, 1) + "V " + String(batPct) + "%";
+  if (batVolts >= 4.18f) {
+    batStr += " CHG";
+  }
+  
+  int totalHeaderRightLen = batStr.length() + (isLoading ? 1 : 0);
+  int startX = 128 - (totalHeaderRightLen * 6);
+  if (startX < 46) startX = 46;
+  
+  display.setCursor(startX, 0);
   if (isLoading) {
     display.print(spinnerChars[spinnerIdx]);
     spinnerIdx = (spinnerIdx + 1) % 4;
-  } else {
-    display.print(" ");
   }
-  display.print(String(batVolts, 1) + "V " + String(batPct) + "%");
+  display.print(batStr);
   
   display.drawLine(0, 9, 128, 9, SSD1306_WHITE);
 
