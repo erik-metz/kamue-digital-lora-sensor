@@ -1,0 +1,19 @@
+board:
+  fqbn: esp32:esp32:esp32
+  core_version: 3.3.11
+
+options:
+  upload_speed: 921600
+  cpu_frequency: 240
+  flash_frequency: 80
+  flash_mode: qio
+  flash_size: 4M
+  partition_scheme: default
+  debug_level: none
+  psram: disabled
+  loop_core: 1
+  events_core: 1
+  erase_flash: none
+  jtag_adapter: default
+
+programmer: esptool
