@@ -53,9 +53,10 @@ This project captures high-accuracy satellite coordinates using the UC6580 GNSS 
 
 1. **Non-blocking GNSS Streaming**: Continuously reads raw NMEA sentences from UC6580 via HardwareSerial 1 at 115200 baud using `TinyGPS++`.
 2. **LoRaWAN OTAA Stack**: Powered by `RadioLib`, implementing proper 1.8V TCXO setup and DIO2 RF switch control required by the Heltec V1.1 hardware layout.
-3. **Compact 8-Byte Binary Payload**:
+3. **Compact 9-Byte Binary Payload**:
    - Bytes 0-3: Latitude ($int32\_t = latitude \times 1,000,000$)
    - Bytes 4-7: Longitude ($int32\_t = longitude \times 1,000,000$)
+   - Byte 8: Battery Percentage ($uint8\_t = 0-100\%$)
 4. **Rich Onboard OLED UI**:
    - Header bar with dynamic spinner icon, battery voltage (V), and battery percentage (%).
    - Satellite count, Fix status (`SEARCHING`, `2D FIX`, `3D FIX`), HDOP precision index, and RX byte counter.
@@ -70,14 +71,7 @@ This project captures high-accuracy satellite coordinates using the UC6580 GNSS 
 1. Log into your **The Things Network Console** (e.g., EU1 / US1).
 2. Create an Application and register an End Device using **OTAA (Over-The-Air Activation)**.
 3. Set the LoRaWAN version to `MAC V1.0.3` or `MAC V1.0.4` with Regional Parameters `PHY V1.0.3 REV A`.
-4. Copy your **DevEUI**, **JoinEUI** (AppEUI), and **AppKey** into [`lora-tracker.ino`](file:///Users/alpha/Github/lora/lora-gps-tracker-v1/lora-tracker.ino):
-
-```cpp
-uint64_t joinEUI = 0x0000000000000000;
-uint64_t devEUI  = 0x70B3D57ED0078F16; 
-uint8_t appKey[] = { 0x44, 0x40, ..., 0xAD };
-uint8_t nwkKey[] = { 0x44, 0x40, ..., 0xAD };
-```
+4. Copy your **DevEUI**, **JoinEUI** (AppEUI), and **AppKey** into [`secrets.h`](file:///Users/alpha/Documents/Arduino/kamue-digital-lora/secrets.h).
 
 ---
 
@@ -89,7 +83,7 @@ Paste this JavaScript payload formatter into **TTN Console -> Application -> Pay
 function decodeUplink(input) {
   var bytes = input.bytes;
   
-  // Verify expected payload length (8 bytes)
+  // Verify expected payload length (at least 8 bytes)
   if (bytes.length < 8) {
     return {
       errors: ["Invalid payload length"]
@@ -102,12 +96,15 @@ function decodeUplink(input) {
 
   var latitude = rawLat / 1000000.0;
   var longitude = rawLng / 1000000.0;
+  var batPct = (bytes.length >= 9) ? bytes[8] : null;
 
   return {
     data: {
       latitude: latitude,
       longitude: longitude,
-      valid_fix: (rawLat !== 0 || rawLng !== 0)
+      valid_fix: (rawLat !== 0 || rawLng !== 0),
+      battery_pct: batPct,
+      low_battery: (batPct !== null && batPct <= 20)
     }
   };
 }

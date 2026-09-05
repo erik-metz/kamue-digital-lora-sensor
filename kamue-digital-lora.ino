@@ -71,6 +71,8 @@ float lastBatAdcMv = 0.0;
 bool radioReady = false;
 bool isLoRaJoined = false;
 bool gnssWarningTriggered = false;
+bool lowBatteryAlertTriggered = false;
+bool forceImmediateTx = false;
 
 // 1-Character UX Spinner
 const char spinnerChars[] = {'|', '/', '-', '\\'};
@@ -265,12 +267,18 @@ void checkSystemWarnings() {
     Serial.println(F(". Check baud rate (115200) or serial wiring noise."));
   }
 
-  // 3. Warn on low battery
+  // 3. Warn on low battery & trigger immediate priority LoRa telemetry uplink
   float batV = readBatteryVoltage();
   if (batV < 3.30f && batV > 1.0f) { // Ignore near 0V when running purely on USB without battery connected
-    Serial.print(F("[BAT][WARN] Low battery voltage detected: "));
-    Serial.print(batV, 2);
-    Serial.println(F("V (<3.30V threshold)! Charge battery to avoid brownout reset."));
+    if (!lowBatteryAlertTriggered) {
+      lowBatteryAlertTriggered = true;
+      forceImmediateTx = true;
+      Serial.print(F("[BAT][WARN] Low battery voltage detected: "));
+      Serial.print(batV, 2);
+      Serial.println(F("V (<3.30V threshold)! Triggering immediate low-battery LoRa telemetry uplink."));
+    }
+  } else if (batV >= 3.50f) {
+    lowBatteryAlertTriggered = false; // Reset trigger once recharged above 3.50V
   }
 }
 
@@ -282,24 +290,21 @@ void updateDisplay(String statusMsg, bool isLoading = false) {
   float batVolts = readBatteryVoltage();
   int batPct = getBatteryPercentage(batVolts);
 
-  // --- HEADER ROW (Includes Compact 1-Char Spinner & Battery Status) ---
+  // --- HEADER ROW (Battery Status & Charging Indicator) ---
   display.setCursor(0, 0);
   display.print("TRACKER");
   
-  String batStr = String(batVolts, 1) + "V " + String(batPct) + "%";
-  if (batVolts >= 4.18f) {
-    batStr += " CHG";
+  bool isCharging = (batVolts >= 4.15f);
+  String batStr = "";
+  if (isCharging) {
+    batStr += "CHG ";
   }
+  batStr += String(batVolts, 1) + "V " + String(batPct) + "%";
   
-  int totalHeaderRightLen = batStr.length() + (isLoading ? 1 : 0);
-  int startX = 128 - (totalHeaderRightLen * 6);
+  int startX = 128 - (batStr.length() * 6);
   if (startX < 46) startX = 46;
   
   display.setCursor(startX, 0);
-  if (isLoading) {
-    display.print(spinnerChars[spinnerIdx]);
-    spinnerIdx = (spinnerIdx + 1) % 4;
-  }
   display.print(batStr);
   
   display.drawLine(0, 9, 128, 9, SSD1306_WHITE);
@@ -339,7 +344,12 @@ void updateDisplay(String statusMsg, bool isLoading = false) {
   display.print(" F:"); display.print(packetsFailed);
 
   display.setCursor(0, 57);
-  display.print("ST:"); display.print(statusMsg);
+  display.print("ST:");
+  if (isLoading) {
+    display.print(spinnerChars[spinnerIdx]);
+    spinnerIdx = (spinnerIdx + 1) % 4;
+  }
+  display.print(statusMsg);
 
   display.display();
 }
@@ -641,14 +651,22 @@ void loop() {
   // 5. Transmit Telemetry over TTN (if enabled & joined)
   if (enableLoRaWAN && isLoRaJoined) {
     static unsigned long lastTX = 0;
-    if (millis() - lastTX > TX_INTERVAL_MS) {
+    if (millis() - lastTX > TX_INTERVAL_MS || forceImmediateTx) {
       lastTX = millis();
-      updateDisplay("TX SENDING...", true);
+      bool isLowBatTx = forceImmediateTx;
+      forceImmediateTx = false;
 
-      Serial.println(F("[EVENT][LORA] Constructing 8-byte telemetry payload & initiating TX..."));
+      updateDisplay(isLowBatTx ? "LOW BAT TX..." : "TX SENDING...", true);
+
+      Serial.println(F("[EVENT][LORA] Constructing 9-byte telemetry payload & initiating TX..."));
       radio.setDio2AsRfSwitch(true);
 
-      uint8_t payload[8];
+      uint8_t payload[9];
+      float batV = readBatteryVoltage();
+      int batPct = getBatteryPercentage(batV);
+      if (batPct > 100) batPct = 100;
+      if (batPct < 0) batPct = 0;
+
       if (gps.location.isValid()) {
         int32_t lat_int = gps.location.lat() * 1000000;
         int32_t lng_int = gps.location.lng() * 1000000;
@@ -660,13 +678,20 @@ void loop() {
         payload[5] = lng_int >> 16;
         payload[6] = lng_int >> 8;  
         payload[7] = lng_int;
-        Serial.print(F("[EVENT][LORA] Payload coordinates: Lat="));
+        payload[8] = (uint8_t)batPct;
+        Serial.print(F("[EVENT][LORA] Payload: Lat="));
         Serial.print(gps.location.lat(), 6);
         Serial.print(F(" Lng="));
-        Serial.println(gps.location.lng(), 6);
+        Serial.print(gps.location.lng(), 6);
+        Serial.print(F(" Bat="));
+        Serial.print(batPct);
+        Serial.println(F("%"));
       } else {
-        memset(payload, 0x00, sizeof(payload));
-        Serial.println(F("[EVENT][LORA] Payload coordinates: [0,0] (No GPS fix)"));
+        memset(payload, 0x00, 8);
+        payload[8] = (uint8_t)batPct;
+        Serial.print(F("[EVENT][LORA] Payload: [0,0] (No GPS fix) Bat="));
+        Serial.print(batPct);
+        Serial.println(F("%"));
       }
 
       int state = node.sendReceive(payload, sizeof(payload), 1);
@@ -681,7 +706,7 @@ void loop() {
         Serial.print(F(" dBm | SNR: "));
         Serial.print(lastSNR, 1);
         Serial.println(F(" dB"));
-        updateDisplay("TX SUCCESS", false);
+        updateDisplay(isLowBatTx ? "LOW BAT SENT" : "TX SUCCESS", false);
       } else {
         packetsFailed++;
         if (state == -1101 || state == RADIOLIB_ERR_NETWORK_NOT_JOINED) {
