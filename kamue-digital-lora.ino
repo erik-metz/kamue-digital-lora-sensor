@@ -306,40 +306,40 @@ void updateDisplay(String statusMsg, bool isLoading = false) {
 
   // --- GNSS TELEMETRY ---
   display.setCursor(0, 11);
-  display.print("FIX: "); display.print(getGpsFixType());
+  display.print("FIX:"); display.print(getGpsFixType());
   display.setCursor(80, 11);
-  display.print("SAT: "); display.print(gps.satellites.value());
+  display.print("SAT:"); display.print(gps.satellites.value());
 
   if (gps.location.isValid()) {
     display.setCursor(0, 20);
-    display.print("LAT: "); display.print(gps.location.lat(), 5);
+    display.print("LAT:"); display.print(gps.location.lat(), 5);
     display.setCursor(0, 29);
-    display.print("LNG: "); display.print(gps.location.lng(), 5);
+    display.print("LNG:"); display.print(gps.location.lng(), 5);
     display.setCursor(0, 38);
-    display.print("ALT: "); display.print(gps.altitude.isValid() ? String(gps.altitude.meters(), 1) + "m" : "---");
+    display.print("ALT:"); display.print(gps.altitude.isValid() ? String(gps.altitude.meters(), 1) + "m" :"---");
     display.setCursor(68, 38);
-    display.print("SPD: "); display.print(gps.speed.isValid() ? String(gps.speed.kmph(), 1) + "k/h" : "0k/h");
+    display.print("SPD:"); display.print(gps.speed.isValid() ? String(gps.speed.kmph(), 1) + "k/h" :"0k/h");
   } else {
     display.setCursor(0, 23);
     display.print("SEARCHING SATELLITES...");
     display.setCursor(0, 33);
-    display.print("HDOP: "); display.print(gps.hdop.isValid() ? String(gps.hdop.hdop(), 1) : "---");
+    display.print("HDOP:"); display.print(gps.hdop.isValid() ? String(gps.hdop.hdop(), 1) :"---");
     display.setCursor(68, 33);
-    display.print("RX: "); display.print(rawGpsBytes);
+    display.print("RX:"); display.print(rawGpsBytes);
   }
 
   display.drawLine(0, 47, 128, 47, SSD1306_WHITE);
 
   // --- LORAWAN & FOOTER STATUS ---
   display.setCursor(0, 49);
-  display.print("TTN: ");
-  display.print(isLoRaJoined ? "JOINED" : (radioReady ? "JOINING" : "OFF"));
+  display.print("TTN:");
+  display.print(isLoRaJoined ? "JOINED" : (radioReady ? "JOINING" :"OFF"));
   display.setCursor(72, 49);
   display.print("TX:"); display.print(packetsSent);
   display.print(" F:"); display.print(packetsFailed);
 
   display.setCursor(0, 57);
-  display.print("ST: "); display.print(statusMsg);
+  display.print("ST:"); display.print(statusMsg);
 
   display.display();
 }
