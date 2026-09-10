@@ -191,7 +191,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-[11px] text-slate-400 hidden sm:block">
-                Initiative von KAMÜ Kulturzentrum & Bürgerinnen/Bürgern
+                Initiative von <a href="https://kamue.me" target="_blank" rel="noreferrer" className="text-emerald-400 font-medium hover:underline">KAMÜ Kulturzentrum</a> & Bürgerinnen/Bürgern
               </p>
             </div>
           </div>
@@ -241,7 +241,7 @@ export default function Home() {
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
               <strong>Open Ried Sens</strong> ist ein privates Mitmach-Projekt zur Digitalisierung der Städte 
-              <strong> Bürstadt</strong> und <strong>Lampertheim</strong> in Kooperation mit dem Kulturzentrum <strong>KAMÜ</strong> in Bürstadt. 
+              <strong> Bürstadt</strong> und <strong>Lampertheim</strong> in Kooperation mit dem Kulturzentrum <a href="https://kamue.me" target="_blank" rel="noreferrer" className="text-emerald-400 underline font-medium hover:text-emerald-300 transition-colors">KAMÜ</a> in Bürstadt. 
               Wir bauen ein kontinuierliches, historisches Multisensor-Netzwerk auf, um eine verlässliche Datenbasis für künftige regionale Hackathons zu schaffen.
             </p>
 
@@ -449,8 +449,8 @@ export default function Home() {
 
             <p className="text-xs text-slate-300 leading-relaxed">
               Da in Bürstadt und Lampertheim bisher keine flächendeckenden LoRaWAN-Gateways existieren,
-              installieren wir im Rahmen dieser Initiative eigene LoRaWAN-Gateways mit Anbindung an
-              <strong> The Things Network (TTN)</strong>.
+              installieren wir im Rahmen dieser Initiative eigene LoRaWAN-Gateways mit Anbindung an{" "}
+              <a href="https://www.thethingsindustries.com" target="_blank" rel="noreferrer" className="text-emerald-400 underline font-medium hover:text-emerald-300 transition-colors">The Things Network (TTN)</a>.
             </p>
 
             <div className="space-y-2 text-xs text-slate-300">
@@ -503,12 +503,12 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-emerald-400" />
             <span>
-              <strong>Open Ried Sens</strong> – Eine private Bürgerinitiative mit dem <strong>Kulturzentrum KAMÜ</strong> in Bürstadt.
+              <strong>Open Ried Sens</strong> – Eine private Bürgerinitiative mit dem Kulturzentrum <a href="https://kamue.me" target="_blank" rel="noreferrer" className="text-emerald-400 underline font-medium hover:text-emerald-300">KAMÜ</a> in Bürstadt.
             </span>
           </div>
 
           <div className="flex items-center gap-4">
-            <a href="https://thethingsnetwork.org" target="_blank" rel="noreferrer" className="hover:text-emerald-400 transition-colors">
+            <a href="https://www.thethingsindustries.com" target="_blank" rel="noreferrer" className="hover:text-emerald-400 transition-colors">
               The Things Network
             </a>
             <span>•</span>

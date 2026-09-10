@@ -1,6 +1,6 @@
 # Open Ried Sens – Digitales Umweltsensornetzwerk Bürstadt & Lampertheim
 
-**Open Ried Sens** ist eine private Initiative zur Digitalisierung der Städte **Bürstadt** und **Lampertheim** sowie der umliegenden Region des Hessischen Rieds. Das Projekt wird von engagierten Bürgerinnen und Bürgern in Kooperation mit dem **Kulturzentrum KAMÜ** in Bürstadt getragen.
+**Open Ried Sens** ist eine private Initiative zur Digitalisierung der Städte **Bürstadt** und **Lampertheim** sowie der umliegenden Region des Hessischen Rieds. Das Projekt wird von engagierten Bürgerinnen und Bürgern in Kooperation mit dem [Kulturzentrum KAMÜ](https://kamue.me) in Bürstadt getragen.
 
 ---
 
@@ -23,7 +23,7 @@ In der ersten Phase werden **5 moderne Multisensor-Messstationen** auf privaten 
 - 🎙️ **Akustische Lärmklassifizierung** (Einsatz eines Mikrofons zur Klassifikation von Fahrzeuglärm, Passanten/Sprache, Wind- und Umweltgeräuschen)
 
 ### Phase 2: Aufbau der regionalen LoRaWAN-Infrastruktur
-Da in der Region bislang keine flächendeckende LoRaWAN-Abdeckung existiert, umfasst das Projekt auch den schrittweisen **Aufbau von LoRaWAN-Gateways**, die an **The Things Network (TTN)** angebunden sind. Dadurch wird erstmals eine freie, energiesparsame IoT-Funkinfrastruktur für Bürger, Landwirtschaft und Umweltprojekte in Bürstadt und Lampertheim geschaffen.
+Da in der Region bislang keine flächendeckende LoRaWAN-Abdeckung existiert, umfasst das Projekt auch den schrittweisen **Aufbau von LoRaWAN-Gateways**, die an [The Things Network (TTN)](https://www.thethingsindustries.com) angebunden sind. Dadurch wird erstmals eine freie, energiesparsame IoT-Funkinfrastruktur für Bürger, Landwirtschaft und Umweltprojekte in Bürstadt und Lampertheim geschaffen.
 
 ### Phase 3: Mini-Hackathon mit Schulen (50–100 Sensorstationen)
 Die gewonnenen Erfahrungen aus den ersten 5 Stationen dienen als Katalysator für einen **Mini-Hackathon in Zusammenarbeit mit lokalen Schulen** (z. B. der *Erich Kästner Schule* in Bürstadt). Schülerinnen und Schüler lernen dabei den Zusammenbau, die Programmierung und den Betrieb eigener LoRaWAN-Sensoren. Ziel ist die Ausweitung des Sensornetzes auf **50 bis 100 Messpunkte** in der gesamten Region.
@@ -41,7 +41,7 @@ Die Web-Anwendung dient als zentrales Dashboard und Dokumentationsportal für da
 - **Styling**: Tailwind CSS v4
 - **Icons**: Lucide React
 - **Kartendarstellung**: Leaflet & OpenStreetMap (Bürstadt / Lampertheim / Ried Region)
-- **Funkstandard**: LoRaWAN OTAA über The Things Network (TTN)
+- **Funkstandard**: LoRaWAN OTAA über [The Things Network (TTN)](https://www.thethingsindustries.com)
 
 ---
 

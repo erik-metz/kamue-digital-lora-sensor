@@ -47,10 +47,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: Ma
         zoomControl: true,
       });
 
-      // Dark tiles for modern dashboard aesthetic
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-        subdomains: "abcd",
+      // Standard free OpenStreetMap tile server (no API key required)
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
 
@@ -121,29 +120,29 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: Ma
       }).addTo(map);
 
       const popupContent = `
-        <div style="font-family: system-ui, sans-serif; color: #0f172a; min-width: 200px; padding: 4px;">
-          <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px; color: #0284c7;">
-            ${node.name}
-          </div>
-          <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">
-            📍 ${node.locationName}
-          </div>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; margin-bottom: 8px; background: #f8fafc; padding: 6px; border-radius: 6px;">
-            <div>🌡️ Temp: <b>${node.temp.toFixed(1)} °C</b></div>
-            <div>💧 Feuchte: <b>${node.humidity}%</b></div>
-            <div>🔊 Lärm: <b>${node.noiseDb} dB</b></div>
-            <div>🏷️ Typ: <b>${node.noiseLabel}</b></div>
-            <div>🌫️ PM2.5: <b>${node.pm25} µg</b></div>
-            <div>🔋 Akku: <b>${node.batteryPct}%</b></div>
-          </div>
+          <div style="font-family: system-ui, sans-serif; color: #e2e8f0; min-width: 200px; padding: 4px;">
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px; color: #0284c7;">
+              ${node.name}
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
+              📍 ${node.locationName}
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; margin-bottom: 8px; background: #2d3748; padding: 6px; border-radius: 6px;">
+              <div>🌡️ Temp: <b>${node.temp.toFixed(1)} °C</b></div>
+              <div>💧 Feuchte: <b>${node.humidity}%</b></div>
+              <div>🔊 Lärm: <b>${node.noiseDb} dB</b></div>
+              <div>🏷️ Typ: <b>${node.noiseLabel}</b></div>
+              <div>🌫️ PM2.5: <b>${node.pm25} µg</b></div>
+              <div>🔋 Akku: <b>${node.batteryPct}%</b></div>
+            </div>
 
-          <div style="font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between;">
-            <span>LoRa RSSI: ${node.rssi} dBm</span>
-            <span>Letztes Signal: ${node.lastSeen}</span>
+            <div style="font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between;">
+              <span>LoRa RSSI: ${node.rssi} dBm</span>
+              <span>Letztes Signal: ${node.lastSeen}</span>
+            </div>
           </div>
-        </div>
-      `;
+        `;
 
       marker.bindPopup(popupContent);
 
@@ -178,13 +177,29 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: Ma
           50% { transform: scale(1.25); opacity: 0.3; }
           100% { transform: scale(0.95); opacity: 0.8; }
         }
+        .leaflet-tile-pane {
+          filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3);
+        }
         .leaflet-popup-content-wrapper {
-          background: #ffffff;
-          border-radius: 12px;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+          background: #1e293b !important;
+          color: #e2e8f0 !important;
+          border-radius: 12px !important;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
+          border: 1px solid #334155 !important;
+        }
+        .leaflet-popup-content {
+          color: #e2e8f0 !important;
+          margin: 12px !important;
         }
         .leaflet-popup-tip {
-          background: #ffffff;
+          background: #1e293b !important;
+        }
+        .leaflet-popup-close-button {
+          color: #94a3b8 !important;
+        }
+        .leaflet-popup-close-button:hover {
+          color: #e2e8f0 !important;
+          background: transparent !important;
         }
       `}</style>
     </div>
