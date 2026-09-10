@@ -216,11 +216,11 @@ export default function Home() {
                 <span className="font-bold text-lg text-slate-100 tracking-tight">
                   Open Ried Sens
                 </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                   Bürstadt & Lampertheim
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400 hidden sm:block">
+              <p className="text-sm text-slate-400 hidden sm:block">
                 Initiative von{" "}
                 <a
                   href="https://kamue.me"
@@ -270,7 +270,7 @@ export default function Home() {
           </nav>
 
           {/* Network Status Badge */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full text-xs text-slate-300">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full text-sm text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="font-medium text-emerald-400">
               5/5 Stationen Aktiv
@@ -290,7 +290,7 @@ export default function Home() {
           <div className="absolute bottom-0 left-0 translate-y-12 -translate-x-12 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div className="relative z-10 max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
               <HeartHandshake className="w-3.5 h-3.5" /> Bürgerinitiative für
               ein digitales Ried
             </div>
@@ -325,10 +325,10 @@ export default function Home() {
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
                 <Building2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-200">
+                  <h4 className="text-sm font-bold text-slate-200">
                     5 Privatsensoren
                   </h4>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-sm text-slate-400">
                     Montiert auf privaten Grundstücken für reale Langzeitdaten.
                   </p>
                 </div>
@@ -337,10 +337,10 @@ export default function Home() {
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
                 <Wifi className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-200">
+                  <h4 className="text-sm font-bold text-slate-200">
                     LoRaWAN & TTN
                   </h4>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-sm text-slate-400">
                     Eigene Gateways für freie IoT-Funkabdeckung in der Region.
                   </p>
                 </div>
@@ -349,10 +349,10 @@ export default function Home() {
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
                 <Database className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-xs font-bold text-slate-200">
+                  <h4 className="text-sm font-bold text-slate-200">
                     Open-Data Basis
                   </h4>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-sm text-slate-400">
                     Offene Umweltdaten für Ideen, Analysen & Smart City Apps.
                   </p>
                 </div>
@@ -367,7 +367,7 @@ export default function Home() {
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
               Umfassende Multisensor-Stationen
             </h2>
-            <p className="text-sm text-slate-400">
+            <p className="text-base text-slate-400">
               Jede Messstation ist mit moderner Sensorik für hochpräzise Umwelt-
               und Umfelddaten ausgestattet.
             </p>
@@ -382,7 +382,7 @@ export default function Home() {
               <h3 className="text-base font-bold text-slate-100">
                 Klima & Wetter
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 Präzise Erfassung von Temperatur, relativer Luftfeuchtigkeit,
                 Niederschlagsmenge (Regen) und UV-Index.
               </p>
@@ -396,7 +396,7 @@ export default function Home() {
               <h3 className="text-base font-bold text-slate-100">
                 Gase & Luftqualität
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 Messung von VOC-Index (flüchtige organische Verbindungen) und
                 NOx (Stickoxide) für gesunde Außenluft.
               </p>
@@ -410,7 +410,7 @@ export default function Home() {
               <h3 className="text-base font-bold text-slate-100">
                 Feinstaub (PM2.5 & PM10)
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 Optische Feinstaubmessung zur Analyse von Partikelbelastungen in
                 Wohngebieten und Verkehrsknoten.
               </p>
@@ -424,7 +424,7 @@ export default function Home() {
               <h3 className="text-base font-bold text-slate-100">
                 Akustische Lärmanalyse
               </h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
+              <p className="text-sm text-slate-400 leading-relaxed">
                 Mikrofon mit intelligenter Klassifikation zur Unterscheidung von
                 Fahrzeugen, Passanten/Sprache und Wind.
               </p>
@@ -436,7 +436,7 @@ export default function Home() {
         <section id="dashboard" className="space-y-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-4">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+              <div className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-1">
                 <Zap className="w-3.5 h-3.5" /> Sensor-Dashboard
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
@@ -454,7 +454,7 @@ export default function Home() {
                   <MapPin className="w-4 h-4 text-emerald-400" /> Standorte im
                   Hessischen Ried
                 </h3>
-                <span className="text-xs text-slate-400">
+                <span className="text-sm text-slate-400">
                   Klick auf Marker für Details
                 </span>
               </div>
@@ -470,7 +470,7 @@ export default function Home() {
               <div>
                 <div className="flex items-start justify-between border-b border-slate-800 pb-4 gap-3">
                   <div className="flex-1 min-w-0">
-                    <span className="text-[10px] uppercase font-bold text-emerald-400 tracking-wider">
+                    <span className="text-xs uppercase font-bold text-emerald-400 tracking-wider">
                       Ausgewählte Station
                     </span>
 
@@ -521,7 +521,7 @@ export default function Home() {
                                 setLocationSearch(e.target.value)
                               }
                               onClick={(e) => e.stopPropagation()}
-                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 outline-none focus:border-emerald-500/60"
+                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-emerald-500/60"
                             />
                           </div>
                           {/* Filtered options */}
@@ -547,7 +547,7 @@ export default function Home() {
                                     setDropdownOpen(false);
                                     setLocationSearch("");
                                   }}
-                                  className={`flex flex-col px-3 py-2.5 cursor-pointer transition-colors text-xs border-b border-slate-800/60 last:border-0 ${
+                                  className={`flex flex-col px-3 py-2.5 cursor-pointer transition-colors text-sm border-b border-slate-800/60 last:border-0 ${
                                     n.id === selectedNodeId
                                       ? "bg-emerald-500/10 text-emerald-400"
                                       : "text-slate-300 hover:bg-slate-800/60"
@@ -556,7 +556,7 @@ export default function Home() {
                                   <span className="font-semibold leading-tight">
                                     {n.locationName}
                                   </span>
-                                  <span className="text-[10px] text-slate-500 mt-0.5">
+                                  <span className="text-xs text-slate-500 mt-0.5">
                                     {n.name} · {n.address}
                                   </span>
                                 </li>
@@ -583,18 +583,18 @@ export default function Home() {
                     </div>
 
                     {/* Address line */}
-                    <p className="text-[11px] text-slate-500 mt-1.5 flex items-center gap-1">
+                    <p className="text-sm text-slate-500 mt-1.5 flex items-center gap-1">
                       🏠 {selectedNode.address}
                     </p>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 mt-5">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 mt-5">
                     Aktiv
                   </span>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-[11px]">
+                    <span className="text-slate-400 block text-xs">
                       Temperatur
                     </span>
                     <span className="text-lg font-bold text-slate-100">
@@ -602,7 +602,7 @@ export default function Home() {
                     </span>
                   </div>
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-[11px]">
+                    <span className="text-slate-400 block text-xs">
                       Luftfeuchtigkeit
                     </span>
                     <span className="text-lg font-bold text-slate-100">
@@ -610,24 +610,24 @@ export default function Home() {
                     </span>
                   </div>
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-[11px]">
+                    <span className="text-slate-400 block text-xs">
                       Lärmanalyse
                     </span>
                     <span className="text-lg font-bold text-slate-100">
                       {selectedNode.noiseDb} dB
                     </span>
-                    <span className="text-[10px] text-emerald-400 block">
+                    <span className="text-xs text-emerald-400 block">
                       {selectedNode.noiseLabel}
                     </span>
                   </div>
                   <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-[11px]">
+                    <span className="text-slate-400 block text-xs">
                       Akkustand
                     </span>
                     <span className="text-lg font-bold text-slate-100">
                       {selectedNode.batteryPct}%
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-xs text-slate-500 block">
                       Solar-Ladekreis
                     </span>
                   </div>
@@ -635,7 +635,7 @@ export default function Home() {
               </div>
 
               {/* Signal & Gateway Status Footer */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-sm text-slate-400">
                 <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   Automatische TTN-Übertragung
@@ -664,13 +664,13 @@ export default function Home() {
                 <h3 className="text-base font-bold text-slate-100">
                   LoRaWAN & TTN Aufbau
                 </h3>
-                <p className="text-xs text-slate-400">
+                <p className="text-sm text-slate-400">
                   Regionale Funkabdeckung
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-300 leading-relaxed">
               Da in Bürstadt und Lampertheim bisher keine flächendeckenden
               LoRaWAN-Gateways existieren, installieren wir im Rahmen dieser
               Initiative eigene LoRaWAN-Gateways mit Anbindung an{" "}
@@ -685,7 +685,7 @@ export default function Home() {
               .
             </p>
 
-            <div className="space-y-2 text-xs text-slate-300">
+            <div className="space-y-2 text-sm text-slate-300">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>
@@ -716,13 +716,13 @@ export default function Home() {
                   Live-Uplink Datenstream (TTN Feed)
                 </h3>
               </div>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-sm font-mono text-slate-500">
                 FPort: 1 | Payload Format: Binary
               </span>
             </div>
 
             {/* Log Output Box */}
-            <div className="bg-slate-950 font-mono text-xs p-4 rounded-xl border border-slate-800/80 space-y-2.5 max-h-56 overflow-y-auto">
+            <div className="bg-slate-950 font-mono text-sm p-4 rounded-xl border border-slate-800/80 space-y-2.5 max-h-56 overflow-y-auto">
               {liveLogs.map((log) => (
                 <div
                   key={log.id}
@@ -733,14 +733,12 @@ export default function Home() {
                     <span className="text-emerald-400 font-bold">
                       {log.node}
                     </span>
-                    <span className="text-slate-400 text-[11px]">
-                      → Payload:
-                    </span>
+                    <span className="text-slate-400 text-xs">→ Payload:</span>
                     <span className="text-amber-300 font-bold tracking-wider">
                       {log.payload}
                     </span>
                   </div>
-                  <span className="text-slate-500 text-[11px]">
+                  <span className="text-slate-500 text-xs">
                     RSSI: {log.rssi} dBm
                   </span>
                 </div>
@@ -752,7 +750,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-slate-950 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-400">
           <div className="flex items-center gap-2">
             <Radio className="w-4 h-4 text-emerald-400" />
             <span>
@@ -781,7 +779,7 @@ export default function Home() {
             </a>
             <span>•</span>
             <a
-              href="https://github.com"
+              href="https://github.com/erik-metz/kamue-digital-lora-sensor"
               target="_blank"
               rel="noreferrer"
               className="hover:text-emerald-400 transition-colors"

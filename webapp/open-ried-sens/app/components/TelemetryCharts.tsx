@@ -40,13 +40,13 @@ export default function TelemetryCharts({ node }: TelemetryChartsProps) {
               Echtzeit-Analyse & Zeitverlauf
             </h3>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Station: <span className="text-emerald-400 font-semibold">{node.name}</span> ({node.locationName})
-          </p>
-        </div>
+          <p className="text-sm text-slate-400 mt-1">
+          Station: <span className="text-emerald-400 font-semibold">{node.name}</span> ({node.locationName})
+        </p>
+      </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-sm">
           <button
             onClick={() => setActiveTab("klima")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
@@ -93,45 +93,45 @@ export default function TelemetryCharts({ node }: TelemetryChartsProps) {
       {/* Grid of Key Sensor Values */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-xs text-slate-400 flex items-center gap-1.5">
+          <span className="text-sm text-slate-400 flex items-center gap-1.5">
             <Thermometer className="w-4 h-4 text-amber-400" /> Temperatur
           </span>
           <span className="text-2xl font-bold text-slate-100 mt-2">
             {node.temp.toFixed(1)} <span className="text-sm font-normal text-slate-400">°C</span>
           </span>
-          <span className="text-[11px] text-slate-500 mt-1">24h Max: {(node.temp + 3.2).toFixed(1)} °C</span>
+          <span className="text-xs text-slate-500 mt-1">24h Max: {(node.temp + 3.2).toFixed(1)} °C</span>
         </div>
 
         <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-xs text-slate-400 flex items-center gap-1.5">
+          <span className="text-sm text-slate-400 flex items-center gap-1.5">
             <Droplets className="w-4 h-4 text-blue-400" /> Luftfeuchtigkeit
           </span>
           <span className="text-2xl font-bold text-slate-100 mt-2">
             {node.humidity} <span className="text-sm font-normal text-slate-400">%</span>
           </span>
-          <span className="text-[11px] text-slate-500 mt-1">Taupunkt: ~{(node.temp - (100 - node.humidity) / 5).toFixed(1)} °C</span>
+          <span className="text-xs text-slate-500 mt-1">Taupunkt: ~{(node.temp - (100 - node.humidity) / 5).toFixed(1)} °C</span>
         </div>
 
         <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-xs text-slate-400 flex items-center gap-1.5">
+          <span className="text-sm text-slate-400 flex items-center gap-1.5">
             <Volume2 className="w-4 h-4 text-purple-400" /> Akustik & Lärm
           </span>
           <span className="text-2xl font-bold text-slate-100 mt-2">
             {node.noiseDb} <span className="text-sm font-normal text-slate-400">dB(A)</span>
           </span>
-          <span className="text-[11px] text-emerald-400 mt-1 font-medium">
+          <span className="text-xs text-emerald-400 mt-1 font-medium">
             Klassifikation: {node.noiseLabel}
           </span>
         </div>
 
         <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-xs text-slate-400 flex items-center gap-1.5">
+          <span className="text-sm text-slate-400 flex items-center gap-1.5">
             <CloudFog className="w-4 h-4 text-cyan-400" /> Feinstaub PM2.5
           </span>
           <span className="text-2xl font-bold text-slate-100 mt-2">
             {node.pm25} <span className="text-sm font-normal text-slate-400">µg/m³</span>
           </span>
-          <span className="text-[11px] text-emerald-400 mt-1 font-medium">
+          <span className="text-xs text-emerald-400 mt-1 font-medium">
             Status: Sehr gut
           </span>
         </div>
@@ -140,13 +140,13 @@ export default function TelemetryCharts({ node }: TelemetryChartsProps) {
       {/* SVG Time-Series Chart */}
       <div className="bg-slate-950/80 border border-slate-800 p-5 rounded-xl">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
             {activeTab === "klima" && "24h-Temperaturverlauf (°C)"}
             {activeTab === "laerm" && "24h-Lärmpegelmessung (dB SPL)"}
             {activeTab === "luft" && "24h-Feinstaubbelastung PM2.5 (µg/m³)"}
             {activeTab === "lora" && "24h-LoRaWAN RSSI Signalstärke (dBm)"}
           </h4>
-          <span className="text-[11px] text-slate-500 font-mono">Sensortakt: 10 Min.</span>
+          <span className="text-sm text-slate-500 font-mono">Sensortakt: 10 Min.</span>
         </div>
 
         {/* Responsive Custom SVG Line Chart */}
@@ -217,7 +217,7 @@ export default function TelemetryCharts({ node }: TelemetryChartsProps) {
         </div>
 
         {/* X-Axis Timestamps */}
-        <div className="flex justify-between items-center text-[10px] text-slate-500 font-mono mt-3 px-1">
+        <div className="flex justify-between items-center text-xs text-slate-500 font-mono mt-3 px-1">
           {history.map((h, i) => (
             <span key={i}>{h.time}</span>
           ))}
@@ -225,7 +225,7 @@ export default function TelemetryCharts({ node }: TelemetryChartsProps) {
       </div>
 
       {/* Additional Sensor Specs Footer */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-400 bg-slate-950/40 p-4 rounded-xl border border-slate-800/60">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-400 bg-slate-950/40 p-4 rounded-xl border border-slate-800/60">
         <div className="flex items-center gap-2">
           <Sun className="w-4 h-4 text-amber-400 shrink-0" />
           <span>UV-Index: <strong className="text-slate-200">{node.uvIndex} (Mäßig)</strong></span>
