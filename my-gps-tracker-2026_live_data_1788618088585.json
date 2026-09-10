@@ -1,0 +1,820 @@
+[
+  {
+    "time": "2026-09-05T14:11:50.689Z",
+    "name": "synthetic.status.reconnected",
+    "isError": false,
+    "isSynthetic": true,
+    "unique_id": "synthetic.1788617510690"
+  },
+  {
+    "time": "2026-09-05T14:11:44.291Z",
+    "name": "synthetic.status.closed",
+    "isError": false,
+    "isSynthetic": true,
+    "unique_id": "synthetic.1788617504292"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:09:33.492886670Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "95bcbecad6e64e159eb32f4d12e168a9",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RYEDSFM7EQXYZN4925ASF2"
+    ],
+    "origin": "ip-10-100-12-132.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RYEDSMZ7RVY3BC7MKSGWY9"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:09:23.459479217Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "3d34dbde9630447fa24669aaac6b92d6",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RYE3ZYSC9WTHJ9C0EQPP47"
+    ],
+    "origin": "ip-10-100-12-132.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RYE403ZA61N23KG72S3ZXY"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:08:42.142142668Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "9f8918f9730b4f7cb30948404a69a8d6",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RYCVMSHQF7DPV6GS3W5A2Z"
+    ],
+    "origin": "ip-10-100-5-12.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RYCVMY649QBW97RSY0THRC"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:08:12.091953331Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "542dde9de6f8424c8a4ee1bd38d695ed",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RYBY9P6GQ9C8Q524W8N8F8"
+    ],
+    "origin": "ip-10-100-12-132.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RYBY9VC6P8E3P9CZH6576Y"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:08:02.071783177Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "b179d35df09544daadaae87f5d383008",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RYBMGFWV98EVA9ZANQG0P7"
+    ],
+    "origin": "ip-10-100-12-132.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RYBMGQ3ZFR9E73GEM6337G"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:07:45.608009406Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "b077d23627a4436ca82a3b2374cebae6",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RYB4DZ5CDH1S9YFC7PD6EZ"
+    ],
+    "origin": "ip-10-100-5-12.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RYB4E8RY1M7CBYNKPSAWYF"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:07:35.623459204Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "90194e4960234064ab305c530bd53c28",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RYATNYDEN0BGRGZJD0JQX1"
+    ],
+    "origin": "ip-10-100-12-132.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RYATP7VT76KXQK2Z8R69XJ"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T14:04:22.739937906Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "9a801f8215694392bb7a481b078effc2",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RY4YAG2ZXED92TS17YB5HD"
+    ],
+    "origin": "ip-10-100-5-12.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RY4YAK5AJNAVTA5N86E78R"
+  },
+  {
+    "time": "2026-09-05T14:02:11.824Z",
+    "name": "synthetic.status.reconnected",
+    "isError": false,
+    "isSynthetic": true,
+    "unique_id": "synthetic.1788616931825"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T13:59:22.697304918Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "4c971cfb8de04c8e8b2b4a0dc5af95fa",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RXVSA017H6EM1YGB7673GM"
+    ],
+    "origin": "ip-10-100-12-132.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RXVSA9MGJAFGMSS3895ARG"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T13:54:22.683775452Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          },
+          "dev_eui": "70B3D57ED0078F16",
+          "join_eui": "0000000000000000"
+        }
+      }
+    ],
+    "data": {
+      "@type": "type.googleapis.com/ttn.lorawan.v3.ErrorDetails",
+      "namespace": "pkg/joinserver",
+      "name": "reuse_dev_nonce",
+      "message_format": "DevNonce has already been used",
+      "correlation_id": "6e0f55d3f6f5467680fb7c28faa4294e",
+      "code": 3
+    },
+    "correlation_ids": [
+      "gs:uplink:01M1RXJMAJ03M40KY221ZK6188"
+    ],
+    "origin": "ip-10-100-12-132.eu-west-1.compute.internal",
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1RXJMAV356RVAFT1RQ2KMNB"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T05:02:33.222648920Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1QZ4TR66JZ7KW7FYZD3HBNM"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T04:59:53.213313406Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1QYZYFXBDFXTDXCF6A7CKFB"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T04:56:33.206953863Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1QYSV5PVAF83A58Y1PCBWN5"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-05T04:56:13.195976850Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1QYS7MB1K4C5MW8WQY6DSZ6"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T20:01:51.692929042Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q06SJCN34JRSGB2HVNNASD"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T20:01:31.689973789Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q066191FZR39ZGXXBPS7HM"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T20:01:11.705746960Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q05JGSZT6A41E14G2C9NE4"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T20:00:51.687415219Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q04YZ7PVFZKXGAZQJEDA18"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T20:00:11.681846754Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q03QX1F2G72Z2DB75BPNR3"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:59:31.675807409Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q02GTV6XRR97QNFXY9JTXQ"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:59:11.684934663Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q01XA4WDP9T8JRV7SS201Z"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:58:51.678398284Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q019RYP0S9QMW82QE5ZJC4"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:58:31.677889555Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q00P7XWZ9YQV2FV8Y3VM45"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:58:11.673244205Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1Q002PSCMC2C62SPPFVMQA4"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:57:31.677807597Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1PZYVMXYHS8DMGH0YGDZ1RE"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:57:11.678006686Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1PZY83Y6NZ4WHTRKKSAPV3T"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:56:31.666549448Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1PZX11JE2DBSATTVFZTM2ZN"
+  },
+  {
+    "name": "ns.up.join.cluster.fail",
+    "time": "2026-09-04T19:56:11.670727908Z",
+    "identifiers": [
+      {
+        "device_ids": {
+          "device_id": "heltec-tracker-01",
+          "application_ids": {
+            "application_id": "my-gps-tracker-2026"
+          }
+        }
+      }
+    ],
+    "context": {
+      "tenant-id": "CgN0dG4="
+    },
+    "visibility": {
+      "rights": [
+        "RIGHT_APPLICATION_TRAFFIC_READ"
+      ]
+    },
+    "unique_id": "01M1PZWDGP1VPKRKCP2B4SK9GR"
+  },
+  {
+    "time": "2026-09-04T09:30:28.069Z",
+    "name": "synthetic.error.network_error",
+    "isError": true,
+    "isSynthetic": true,
+    "unique_id": "synthetic.1788514228069",
+    "data": {
+      "error": {
+        "name": "ConnectionTimeoutError",
+        "message": "Timed out"
+      }
+    }
+  }
+]

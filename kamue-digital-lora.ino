@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Preferences.h>
 #include "secrets.h"
 
 // ============================================================================
@@ -407,6 +408,22 @@ void initRadioHardware() {
     radio.setTCXO(1.6);
     radio.setDio2AsRfSwitch(true);
     
+    // Initialize OTAA credentials ONCE during hardware setup
+    node.beginOTAA(joinEUI, devEUI, nwkKey, appKey);
+
+    // Restore previous LoRaWAN session & DevNonce state from ESP32 Flash NVS
+    Preferences prefs;
+    prefs.begin("lorawan", false);
+    uint8_t lwBuffer[RADIOLIB_LORAWAN_SESSION_BUF_SIZE];
+    size_t len = prefs.getBytes("lwSession", lwBuffer, sizeof(lwBuffer));
+    if (len == sizeof(lwBuffer)) {
+      node.setBufferSession(lwBuffer);
+      Serial.println(F("[LORA][INIT] Restored previous LoRaWAN session & DevNonce from NVS Flash."));
+    } else {
+      Serial.println(F("[LORA][INIT] Fresh LoRaWAN session initialized (DevNonce = 0)."));
+    }
+    prefs.end();
+
     radioReady = true;
     Serial.println(F("[LORA][INIT] SX1262 Transceiver Initialized Successfully (TCXO 1.6V & DIO2 RF Switch Enabled)."));
   } else {
@@ -609,9 +626,18 @@ void loop() {
       radio.setTCXO(1.6);
       radio.setDio2AsRfSwitch(true);
 
-      node.beginOTAA(joinEUI, devEUI, nwkKey, appKey);
       int joinState = node.activateOTAA();
       lastRadioErr = joinState;
+
+      // Persist updated session buffer (with incremented DevNonce) to ESP32 Flash NVS
+      Preferences prefs;
+      prefs.begin("lorawan", false);
+      uint8_t* lwBuf = node.getBufferSession();
+      if (lwBuf) {
+        prefs.putBytes("lwSession", lwBuf, RADIOLIB_LORAWAN_SESSION_BUF_SIZE);
+      }
+      prefs.end();
+
       if (joinState == RADIOLIB_LORAWAN_NEW_SESSION || joinState == RADIOLIB_ERR_NONE || joinState > 0) {
         isLoRaJoined = true;
         Serial.println(F("[EVENT][LORA] OTAA Join SUCCESS! Network joined on TTN."));
