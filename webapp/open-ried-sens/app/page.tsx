@@ -141,9 +141,9 @@ const INITIAL_NODES: SensorNode[] = [
 ];
 
 export default function Home() {
-  const [nodes, setNodes] = useState<SensorNode[]>(INITIAL_NODES);
+  const [nodes] = useState<SensorNode[]>(INITIAL_NODES);
   const [selectedNodeId, setSelectedNodeId] = useState<string>("ried-01");
-  const [liveLogs, setLiveLogs] = useState<
+  const [liveLogs] = useState<
     Array<{ id: string; timestamp: string; node: string; payload: string; rssi: number }>
   >([
     {
@@ -171,50 +171,7 @@ export default function Home() {
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0];
 
-  // Function to simulate dynamic uplink ping
-  const handleSimulateUplink = () => {
-    const updatedNodes = nodes.map((node) => {
-      if (node.id === selectedNodeId) {
-        const tempDiff = (Math.random() * 0.8 - 0.4);
-        const humDiff = Math.round(Math.random() * 4 - 2);
-        const newTemp = Math.round((node.temp + tempDiff) * 10) / 10;
-        const newHum = Math.min(100, Math.max(30, node.humidity + humDiff));
-        const newNoise = Math.min(95, Math.max(35, Math.round(node.noiseDb + (Math.random() * 6 - 3))));
-        
-        return {
-          ...node,
-          temp: newTemp,
-          humidity: newHum,
-          noiseDb: newNoise,
-          batteryPct: Math.max(10, Math.min(100, node.batteryPct)),
-          lastSeen: "Gerade eben",
-        };
-      }
-      return node;
-    });
 
-    setNodes(updatedNodes);
-
-    const now = new Date();
-    const timeStr = now.toTimeString().split(" ")[0];
-    const hexBytes = Array.from({ length: 9 }, () =>
-      Math.floor(Math.random() * 255)
-        .toString(16)
-        .padStart(2, "0")
-        .toUpperCase()
-    ).join(" ");
-
-    setLiveLogs((prev) => [
-      {
-        id: `log-${Date.now()}`,
-        timestamp: timeStr,
-        node: selectedNode.id,
-        payload: hexBytes,
-        rssi: selectedNode.rssi + Math.floor(Math.random() * 4 - 2),
-      },
-      ...prev.slice(0, 5),
-    ]);
-  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -461,17 +418,13 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Action Button: Simulate Telemetry Uplink */}
-              <div className="pt-4 border-t border-slate-800 space-y-2">
-                <button
-                  onClick={handleSimulateUplink}
-                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all active:scale-[0.98]"
-                >
-                  <RefreshCw className="w-4 h-4" /> Paket-Uplink simulieren
-                </button>
-                <p className="text-[10px] text-slate-500 text-center">
-                  Generiert ein neues TTN-LoRaWAN Datenpaket für die ausgewählte Station.
-                </p>
+              {/* Signal & Gateway Status Footer */}
+              <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+                <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Automatische TTN-Übertragung
+                </span>
+                <span className="text-slate-500 font-mono">LoRaWAN OTAA</span>
               </div>
             </div>
           </div>
