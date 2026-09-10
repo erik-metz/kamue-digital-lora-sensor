@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Open Ried Sens – Digitales Umweltsensornetzwerk Bürstadt & Lampertheim
 
-## Getting Started
+**Open Ried Sens** ist eine private Initiative zur Digitalisierung der Städte **Bürstadt** und **Lampertheim** sowie der umliegenden Region des Hessischen Rieds. Das Projekt wird von engagierten Bürgerinnen und Bürgern in Kooperation mit dem **Kulturzentrum KAMÜ** in Bürstadt getragen.
 
-First, run the development server:
+---
+
+## 📌 Projektkontext & Vision
+
+Ziel der Initiative ist die Ausrichtung eines großen regionalen **Hackathons**. Um den Teilnehmerinnen und Teilnehmern des Hackathons eine fundierte Datenbasis zu bieten, benötigt die Region kontinuierliche, verlässliche und historische Umwelt- und Echtzeitdaten. Da solche digitalen Datensätze in den Städten Bürstadt und Lampertheim bislang nicht in ausreichendem Maße öffentlich zur Verfügung stehen, wurde dieses Multisensor-Projekt ins Leben gerufen.
+
+---
+
+## 🛰️ Phasengliederung
+
+### Phase 1: Aufbau der ersten 5 Multisensor-Stationen (Aktuell)
+In der ersten Phase werden **5 moderne Multisensor-Messstationen** auf privaten Grundstücken in Bürstadt, Lampertheim und Umgebung installiert. Diese Stationen erfassen rund um die Uhr relevante Umwelt- und Umfelddaten:
+
+- 🌡️ **Temperatur & Luftfeuchtigkeit**
+- 🌧️ **Niederschlag / Regenmenge**
+- ☀️ **UV-Index & Sonneneinstrahlung**
+- 💨 **Luftqualität (VOC & NOx Gase)**
+- 🌫️ **Feinstaub (PM2.5 & PM10)**
+- 🎙️ **Akustische Lärmklassifizierung** (Einsatz eines Mikrofons zur Klassifikation von Fahrzeuglärm, Passanten/Sprache, Wind- und Umweltgeräuschen)
+
+### Phase 2: Aufbau der regionalen LoRaWAN-Infrastruktur
+Da in der Region bislang keine flächendeckende LoRaWAN-Abdeckung existiert, umfasst das Projekt auch den schrittweisen **Aufbau von LoRaWAN-Gateways**, die an **The Things Network (TTN)** angebunden sind. Dadurch wird erstmals eine freie, energiesparsame IoT-Funkinfrastruktur für Bürger, Landwirtschaft und Umweltprojekte in Bürstadt und Lampertheim geschaffen.
+
+### Phase 3: Mini-Hackathon mit Schulen (50–100 Sensorstationen)
+Die gewonnenen Erfahrungen aus den ersten 5 Stationen dienen als Katalysator für einen **Mini-Hackathon in Zusammenarbeit mit lokalen Schulen** (z. B. der *Erich Kästner Schule* in Bürstadt). Schülerinnen und Schüler lernen dabei den Zusammenbau, die Programmierung und den Betrieb eigener LoRaWAN-Sensoren. Ziel ist die Ausweitung des Sensornetzes auf **50 bis 100 Messpunkte** in der gesamten Region.
+
+### Phase 4: Der regionale Hackathon & Kommunale Einbindung
+Nach einer mehrmonatigen Datenerfassungsphase steht der Haupt-Hackathon an. Mit den gesammelten historischen Daten können innovativste Anwendungen für Smart City, Umweltschutz, Lärmschutz und Bürgerdienste entwickelt werden. Parallel wird das Projekt in den politischen Gremien beider Städte vorgestellt, um öffentliche Förderungen und kommunale Mittel zur langfristigen Sicherung des Netzwerks einzuwerben.
+
+---
+
+## 🛠️ Technischer Stack der Web-Applikation
+
+Die Web-Anwendung dient als zentrales Dashboard und Dokumentationsportal für das Netzwerk:
+
+- **Framework**: Next.js 16 (App Router, React 19)
+- **Styling**: Tailwind CSS v4
+- **Icons**: Lucide React
+- **Kartendarstellung**: Leaflet & OpenStreetMap (Bürstadt / Lampertheim / Ried Region)
+- **Funkstandard**: LoRaWAN OTAA über The Things Network (TTN)
+
+---
+
+## 🚀 Entwicklung & Start
 
 ```bash
+# Abhängigkeiten installieren
+npm install
+
+# Entwicklungs-Server starten
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Production Build erstellen
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Öffne [http://localhost:3000](http://localhost:3000) im Browser.
