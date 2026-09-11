@@ -174,6 +174,7 @@ Optimize the binary payload format (e.g., using Cayenne LPP or a custom bitmask)
 - **Database Storage**:
   - **PostgreSQL + PostGIS**: Store telemetry with geospatial extensions for spatial queries (geofencing, total distance calculations, speed alerts).
   - **InfluxDB / TimescaleDB**: Optimized for high-throughput time-series analytics.
+- **Production Implementation**: See the [VPS Telemetry Backend & AWS EC2 Infrastructure Guide](webapp/vps/README.md) for full details on the FastAPI, TimescaleDB, Docker Compose, and Watchtower deployment running on AWS EC2.
 
 ### 5. Interactive Web Application Dashboard
 - **Frontend Stack**: Built with Next.js / Vite, React, and TailwindCSS.

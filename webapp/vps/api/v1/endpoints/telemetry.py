@@ -25,6 +25,15 @@ async def push_sensor_data(
         VALUES (%s, %s, %s, %s);
     """
     async with pool.connection() as conn:
+        # Automatically register sensor if it does not already exist
+        await conn.execute(
+            """
+            INSERT INTO sensor_metadata (sensor_id, friendly_name)
+            VALUES (%s, %s)
+            ON CONFLICT (sensor_id) DO NOTHING;
+            """,
+            (reading.sensor_id, reading.sensor_id),
+        )
         await conn.execute(query, (ts, reading.sensor_id, reading.value, reading.unit))
     return {"status": "inserted", "timestamp": ts}
 
@@ -44,12 +53,23 @@ async def push_batch_sensor_data(
         for item in payload.readings
     ]
 
+    unique_sensors = [(s_id, s_id) for s_id in {item.sensor_id for item in payload.readings}]
+
     query = """
         INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
         VALUES (%s, %s, %s, %s);
     """
     async with pool.connection() as conn, conn.transaction():
         async with conn.cursor() as cur:
+            # Auto-register distinct sensors in the batch
+            await cur.executemany(
+                """
+                INSERT INTO sensor_metadata (sensor_id, friendly_name)
+                VALUES (%s, %s)
+                ON CONFLICT (sensor_id) DO NOTHING;
+                """,
+                unique_sensors,
+            )
             await cur.executemany(query, records)
 
     return {"status": "success", "inserted_count": len(records)}

@@ -1,3 +1,6 @@
+-- 0. Ensure TimescaleDB Extension is enabled
+CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
+
 -- 1. Metadata Table (Standard Postgres Table)
 CREATE TABLE IF NOT EXISTS sensor_metadata (
     sensor_id VARCHAR(64) PRIMARY KEY,

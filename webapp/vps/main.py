@@ -7,6 +7,25 @@ from psycopg.rows import dict_row
 from api.v1.router import api_router as v1_router
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+async def init_db(pool: psycopg_pool.AsyncConnectionPool):
+    """Initializes the database schema if schema.sql exists."""
+    schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
+    if os.path.exists(schema_path):
+        try:
+            with open(schema_path, "r", encoding="utf-8") as f:
+                schema_sql = f.read()
+            async with pool.connection() as conn:
+                await conn.execute(schema_sql)
+            logger.info("Database schema initialized successfully.")
+        except Exception as e:
+            logger.error("Failed to initialize database schema: %s", e)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     user = os.getenv("DB_USER", "")
@@ -23,6 +42,8 @@ async def lifespan(app: FastAPI):
         kwargs={"row_factory": dict_row},
     )
     await app.state.pool.open()
+
+    await init_db(app.state.pool)
 
     yield
 
