@@ -1,2 +1,4 @@
 secrets.h
 webapp/vps/.env
+__pycache__/
+*.py[cod]

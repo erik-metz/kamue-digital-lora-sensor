@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException, Security, status
+import psycopg_pool
 from api.dependencies import get_db_pool, verify_api_key
 from api.v1.schemas import (
     SensorReading, 
@@ -13,12 +14,15 @@ router = APIRouter()
 # --- INGESTION ENDPOINTS ---
 
 @router.post("/telemetry", status_code=status.HTTP_201_CREATED, dependencies=[Security(verify_api_key)])
-async def push_sensor_data(reading: SensorReading, pool = Depends(get_db_pool)):
+async def push_sensor_data(
+    reading: SensorReading, 
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
+):
     """Inserts a single sensor reading."""
     ts = reading.timestamp or datetime.now(timezone.utc)
     query = """
         INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
-        VALUES ($1, $2, $3, $4);
+        VALUES (%s, %s, %s, %s);
     """
     async with pool.connection() as conn:
         await conn.execute(query, (ts, reading.sensor_id, reading.value, reading.unit))
@@ -26,7 +30,10 @@ async def push_sensor_data(reading: SensorReading, pool = Depends(get_db_pool)):
 
 
 @router.post("/telemetry/batch", status_code=status.HTTP_201_CREATED, dependencies=[Security(verify_api_key)])
-async def push_batch_sensor_data(payload: BatchSensorReadings, pool = Depends(get_db_pool)):
+async def push_batch_sensor_data(
+    payload: BatchSensorReadings, 
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
+):
     """Bulk inserts multiple sensor readings in a single transaction."""
     if not payload.readings:
         raise HTTPException(status_code=400, detail="Readings array cannot be empty.")
@@ -37,12 +44,13 @@ async def push_batch_sensor_data(payload: BatchSensorReadings, pool = Depends(ge
         for item in payload.readings
     ]
 
-    # Fixed SIM117: Combined nested context managers into a single line
+    query = """
+        INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
+        VALUES (%s, %s, %s, %s);
+    """
     async with pool.connection() as conn, conn.transaction():
-        await conn.executemany(
-            "INSERT INTO sensor_data (timestamp, sensor_id, value, unit) VALUES ($1, $2, $3, $4);",
-            records
-        )
+        async with conn.cursor() as cur:
+            await cur.executemany(query, records)
 
     return {"status": "success", "inserted_count": len(records)}
 
@@ -55,7 +63,7 @@ async def get_raw_telemetry(
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
     end_time: Optional[datetime] = Query(None, description="End timestamp"),
     limit: int = Query(default=100, le=5000, description="Max points to return"),
-    pool = Depends(get_db_pool)
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
 ):
     """Retrieves raw historical data points for a specific sensor over a time range."""
     end = end_time or datetime.now(timezone.utc)
@@ -63,12 +71,13 @@ async def get_raw_telemetry(
     query = """
         SELECT timestamp, sensor_id, value, unit
         FROM sensor_data
-        WHERE sensor_id = $1 AND timestamp >= $2 AND timestamp <= $3
+        WHERE sensor_id = %s AND timestamp >= %s AND timestamp <= %s
         ORDER BY timestamp DESC
-        LIMIT $4;
+        LIMIT %s;
     """
     async with pool.connection() as conn:
-        rows = await conn.fetch(query, sensor_id, start_time, end, limit)
+        cur = await conn.execute(query, (sensor_id, start_time, end, limit))
+        rows = await cur.fetchall()
 
     return [
         {
@@ -87,7 +96,7 @@ async def get_telemetry_aggregates(
     interval: str = Query(default="1 hour", description="Timescale time bucket interval"),
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
     end_time: Optional[datetime] = Query(None, description="End timestamp"),
-    pool = Depends(get_db_pool)
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
 ):
     """
     Leverages TimescaleDB's native `time_bucket` to calculate min, max, average values 
@@ -97,19 +106,20 @@ async def get_telemetry_aggregates(
 
     query = """
         SELECT 
-            time_bucket($1::interval, timestamp) AS bucket,
+            time_bucket(%s::interval, timestamp) AS bucket,
             AVG(value) AS avg_value,
             MIN(value) AS min_value,
             MAX(value) AS max_value,
             COUNT(*) AS sample_count,
             unit
         FROM sensor_data
-        WHERE sensor_id = $2 AND timestamp >= $3 AND timestamp <= $4
+        WHERE sensor_id = %s AND timestamp >= %s AND timestamp <= %s
         GROUP BY bucket, unit
         ORDER BY bucket ASC;
     """
     async with pool.connection() as conn:
-        rows = await conn.fetch(query, interval, sensor_id, start_time, end)
+        cur = await conn.execute(query, (interval, sensor_id, start_time, end))
+        rows = await cur.fetchall()
 
     return [
         {
@@ -124,21 +134,22 @@ async def get_telemetry_aggregates(
     ]
 
 
-@router.get("/telemetry/latest")
+@router.get("/telemetry/latest", response_model=SensorReading)
 async def get_latest_sensor_reading(
     sensor_id: str = Query(..., description="The ID of the sensor"),
-    pool = Depends(get_db_pool)
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
 ):
     """Retrieves the single most recent data point for a given sensor."""
     query = """
         SELECT timestamp, sensor_id, value, unit
         FROM sensor_data
-        WHERE sensor_id = $1
+        WHERE sensor_id = %s
         ORDER BY timestamp DESC
         LIMIT 1;
     """
     async with pool.connection() as conn:
-        row = await conn.fetchrow(query, sensor_id)
+        cur = await conn.execute(query, (sensor_id,))
+        row = await cur.fetchone()
 
     if not row:
         raise HTTPException(status_code=404, detail=f"No telemetry found for sensor '{sensor_id}'.")

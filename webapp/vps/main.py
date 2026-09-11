@@ -1,22 +1,26 @@
 import os
 from contextlib import asynccontextmanager
+from urllib.parse import quote_plus
 from fastapi import FastAPI
 import psycopg_pool
+from psycopg.rows import dict_row
 from api.v1.router import api_router as v1_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    user = os.getenv("DB_USER")
+    user = os.getenv("DB_USER", "")
     password = os.getenv("DB_PASSWORD", "")
     host = os.getenv("DB_HOST", "timescaledb")
     port = os.getenv("DB_PORT", "5432")
-    db = os.getenv("DB_NAME")
+    db = os.getenv("DB_NAME", "")
 
-    conninfo = f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    conninfo = f"postgresql://{quote_plus(user)}:{quote_plus(password)}@{host}:{port}/{db}"
 
     app.state.pool = psycopg_pool.AsyncConnectionPool(
-        conninfo=conninfo, open=False
+        conninfo=conninfo,
+        open=False,
+        kwargs={"row_factory": dict_row},
     )
     await app.state.pool.open()
 

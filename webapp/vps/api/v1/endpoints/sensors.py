@@ -1,6 +1,7 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, Depends, Security, status
+import psycopg_pool
 
 from api.dependencies import get_db_pool, verify_api_key
 from api.v1.schemas import SensorMetadataCreate, SensorMetadataResponse
@@ -8,7 +9,7 @@ from api.v1.schemas import SensorMetadataCreate, SensorMetadataResponse
 router = APIRouter()
 
 # Type alias for database connection dependency
-DbPool = Annotated[object, Depends(get_db_pool)]
+DbPool = Annotated[psycopg_pool.AsyncConnectionPool, Depends(get_db_pool)]
 
 @router.post(
     "/sensors/register",
@@ -21,13 +22,13 @@ async def register_sensor(
 ):
     query = """
         INSERT INTO sensor_metadata (sensor_id, friendly_name, latitude, longitude)
-        VALUES ($1, $2, $3, $4)
+        VALUES (%s, %s, %s, %s)
         ON CONFLICT (sensor_id) 
         DO UPDATE SET friendly_name = EXCLUDED.friendly_name,
                       latitude = EXCLUDED.latitude,
                       longitude = EXCLUDED.longitude;
     """
-    async with pool.connection() as conn: # type: ignore
+    async with pool.connection() as conn:
         await conn.execute(
             query, 
             (sensor.sensor_id, 
@@ -45,7 +46,8 @@ async def list_sensors(pool: DbPool):
         FROM sensor_metadata
         ORDER BY created_at DESC;
     """
-    async with pool.connection() as conn: # type: ignore
-        rows = await conn.fetch(query)
+    async with pool.connection() as conn:
+        cur = await conn.execute(query)
+        rows = await cur.fetchall()
     
     return [dict(row) for row in rows]
