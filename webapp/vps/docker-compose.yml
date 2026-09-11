@@ -34,7 +34,11 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --interval 300 --cleanup
+    environment:
+      - DOCKER_API_VERSION=1.44
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_HTTP_API_PERIODIC_POLLS=false
 
 volumes:
   timescale_data:

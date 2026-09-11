@@ -1,10 +1,28 @@
 from fastapi import FastAPI
 from api.v1.router import api_router as v1_router
+from contextlib import asynccontextmanager
+import psycopg_pool
+from core.config import settings
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize connection pool on startup
+    app.state.pool = psycopg_pool.AsyncConnectionPool(
+        conninfo=settings.DATABASE_URL,
+        open=False
+    )
+    await app.state.pool.open()
+    
+    yield
+    
+    # Close connection pool on shutdown
+    await app.state.pool.close()
 
 app = FastAPI(
     title="Open-Ried-Sens Telemetry API",
     openapi_url="/api/v1/openapi.json", # Clean Swagger docs location
     docs_url="/docs"
+    lifespan=lifespan
 )
 
 # Mount version 1 endpoints
