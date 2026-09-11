@@ -34,9 +34,7 @@ services:
     restart: always
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      - WATCHTOWER_POLL_INTERVAL=300 # Check for updates every 300 seconds (5 minutes)
-      - WATCHTOWER_CLEANUP=true # Remove old Docker images automatically
+    command: --interval 300 --cleanup
 
 volumes:
   timescale_data:
