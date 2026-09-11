@@ -6,9 +6,15 @@ from core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Build connection string from individual config values
+    conninfo = (
+        f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
+        f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+    )
+    
     # Initialize connection pool on startup
     app.state.pool = psycopg_pool.AsyncConnectionPool(
-        conninfo=settings.DATABASE_URL,
+        conninfo=conninfo,
         open=False
     )
     await app.state.pool.open()
