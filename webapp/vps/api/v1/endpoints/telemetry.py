@@ -21,7 +21,7 @@ async def push_sensor_data(reading: SensorReading, pool = Depends(get_db_pool)):
         VALUES ($1, $2, $3, $4);
     """
     async with pool.connection() as conn:
-        await conn.execute(query, ts, reading.sensor_id, reading.value, reading.unit)
+        await conn.execute(query, (ts, reading.sensor_id, reading.value, reading.unit))
     return {"status": "inserted", "timestamp": ts}
 
 

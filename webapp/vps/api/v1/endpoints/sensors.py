@@ -30,10 +30,10 @@ async def register_sensor(
     async with pool.connection() as conn: # type: ignore
         await conn.execute(
             query, 
-            sensor.sensor_id, 
+            (sensor.sensor_id, 
             sensor.friendly_name, 
             sensor.latitude, 
-            sensor.longitude
+            sensor.longitude)
         )
     return {"status": "success", "sensor_id": sensor.sensor_id}
 
