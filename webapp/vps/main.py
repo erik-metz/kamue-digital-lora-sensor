@@ -26,8 +26,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Open-Ried-Sens Telemetry API",
-    openapi_url="/api/v1/openapi.json", # Clean Swagger docs location
-    docs_url="/docs"
+    openapi_url="/api/v1/openapi.json",
+    docs_url="/docs",
     lifespan=lifespan
 )
 
