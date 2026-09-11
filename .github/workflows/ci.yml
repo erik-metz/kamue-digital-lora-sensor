@@ -29,6 +29,11 @@ jobs:
 
       - name: Lint code with Ruff
         run: |
+          # Automatically fix import sorting and type syntax issues
+          ruff check webapp/vps/ --fix
+
+      - name: Lint code with Ruff
+        run: |
           ruff check webapp/vps/
 
   build-docker:

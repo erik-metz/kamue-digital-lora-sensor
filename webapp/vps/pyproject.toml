@@ -1,0 +1,7 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+# Ignore B008 (Function call in default argument) for FastAPI dependencies
+ignore = ["B008"]
