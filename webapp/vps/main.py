@@ -1,28 +1,29 @@
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from urllib.parse import quote_plus
 from fastapi import FastAPI
+import psycopg
 import psycopg_pool
 from psycopg.rows import dict_row
 from api.v1.router import api_router as v1_router
-
 
 import logging
 
 logger = logging.getLogger(__name__)
 
+SCHEMA_FILE = Path(__file__).parent / "schema.sql"
+SCHEMA_SQL = SCHEMA_FILE.read_text(encoding="utf-8") if SCHEMA_FILE.exists() else ""
 
-async def init_db(pool: psycopg_pool.AsyncConnectionPool):
-    """Initializes the database schema if schema.sql exists."""
-    schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
-    if os.path.exists(schema_path):
+
+async def init_db(pool: psycopg_pool.AsyncConnectionPool) -> None:
+    """Initializes the database schema if schema.sql is available."""
+    if SCHEMA_SQL:
         try:
-            with open(schema_path, "r", encoding="utf-8") as f:
-                schema_sql = f.read()
             async with pool.connection() as conn:
-                await conn.execute(schema_sql)
+                await conn.execute(SCHEMA_SQL)
             logger.info("Database schema initialized successfully.")
-        except Exception as e:
+        except (psycopg.Error, OSError) as e:
             logger.error("Failed to initialize database schema: %s", e)
 
 

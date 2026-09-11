@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException, Security, status
 import psycopg_pool
 from api.dependencies import get_db_pool, verify_api_key
@@ -77,11 +76,11 @@ async def push_batch_sensor_data(
 
 # --- RETRIEVAL ENDPOINTS ---
 
-@router.get("/telemetry/raw", response_model=List[SensorReading])
+@router.get("/telemetry/raw", response_model=list[SensorReading])
 async def get_raw_telemetry(
     sensor_id: str = Query(..., description="The ID of the sensor"),
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
-    end_time: Optional[datetime] = Query(None, description="End timestamp"),
+    end_time: datetime | None = Query(None, description="End timestamp"),
     limit: int = Query(default=100, le=5000, description="Max points to return"),
     pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
 ):
@@ -110,12 +109,12 @@ async def get_raw_telemetry(
     ]
 
 
-@router.get("/telemetry/aggregates", response_model=List[SensorAggregateResponse])
+@router.get("/telemetry/aggregates", response_model=list[SensorAggregateResponse])
 async def get_telemetry_aggregates(
     sensor_id: str = Query(..., description="The ID of the sensor"),
     interval: str = Query(default="1 hour", description="Timescale time bucket interval"),
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
-    end_time: Optional[datetime] = Query(None, description="End timestamp"),
+    end_time: datetime | None = Query(None, description="End timestamp"),
     pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
 ):
     """
