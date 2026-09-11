@@ -34,7 +34,7 @@ jobs:
 
       - name: Lint code with Ruff
         run: |
-          ruff check webapp/vps/
+          ruff check webapp/vps/ --fix
 
   build-and-push-ghcr:
     name: Build & Push Docker Image to GHCR
