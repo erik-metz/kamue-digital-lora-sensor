@@ -1,15 +1,15 @@
+import os
 from fastapi import FastAPI
 from api.v1.router import api_router as v1_router
 from contextlib import asynccontextmanager
 import psycopg_pool
-from core.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Build connection string from individual config values
     conninfo = (
-        f"postgresql://{settings.POSTGRES_USER}:{settings.POSTGRES_PASSWORD}"
-        f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
+        f"postgresql://{os.getenv('POSTGRES_USER',"postgres")}:{os.getenv('POSTGRES_PASSWORD',"")}"
+        f"@{os.getenv('POSTGRES_HOST')}:{os.getenv('POSTGRES_PORT',"5432")}/{os.getenv('POSTGRES_DB')}"
     )
     
     # Initialize connection pool on startup
