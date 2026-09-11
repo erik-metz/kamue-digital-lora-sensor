@@ -7,11 +7,11 @@ from api.v1.router import api_router as v1_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    user = os.getenv("POSTGRES_USER", "postgres")
-    password = os.getenv("POSTGRES_PASSWORD", "")
-    host = os.getenv("POSTGRES_HOST", "timescaledb")
-    port = os.getenv("POSTGRES_PORT", "5432")
-    db = os.getenv("POSTGRES_DB")
+    user = os.getenv("DB_USER")
+    password = os.getenv("DB_PASSWORD", "")
+    host = os.getenv("DB_HOST", "timescaledb")
+    port = os.getenv("DB_PORT", "5432")
+    db = os.getenv("DB_NAME")
 
     conninfo = f"postgresql://{user}:{password}@{host}:{port}/{db}"
 
