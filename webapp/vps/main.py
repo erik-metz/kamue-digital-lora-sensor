@@ -20,6 +20,30 @@ async def startup():
     pool = await asyncpg.create_pool(
         host=DB_HOST, database=DB_NAME, user=DB_USER, password=DB_PASS
     )
+    
+    # Run database initialization automatically
+    async with pool.acquire() as conn:
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS sensor_metadata (
+                sensor_id VARCHAR(64) PRIMARY KEY,
+                friendly_name VARCHAR(255) NOT NULL,
+                latitude DOUBLE PRECISION,
+                longitude DOUBLE PRECISION,
+                created_at TIMESTAMPTZ DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS sensor_data (
+                timestamp TIMESTAMPTZ NOT NULL,
+                sensor_id VARCHAR(64) NOT NULL REFERENCES sensor_metadata(sensor_id),
+                value DOUBLE PRECISION NOT NULL,
+                unit VARCHAR(32) NOT NULL
+            );
+
+            SELECT create_hypertable('sensor_data', 'timestamp', if_not_exists => TRUE);
+
+            CREATE INDEX IF NOT EXISTS idx_sensor_data_composite 
+            ON sensor_data (sensor_id, timestamp DESC);
+        """)
 
 @app.on_event("shutdown")
 async def shutdown():
