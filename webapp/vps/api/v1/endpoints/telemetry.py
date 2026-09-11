@@ -20,7 +20,7 @@ async def push_sensor_data(reading: SensorReading, pool = Depends(get_db_pool)):
         INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
         VALUES ($1, $2, $3, $4);
     """
-    async with pool.acquire() as conn:
+    async with pool.connection() as conn:
         await conn.execute(query, ts, reading.sensor_id, reading.value, reading.unit)
     return {"status": "inserted", "timestamp": ts}
 
@@ -38,7 +38,7 @@ async def push_batch_sensor_data(payload: BatchSensorReadings, pool = Depends(ge
     ]
 
     # Fixed SIM117: Combined nested context managers into a single line
-    async with pool.acquire() as conn, conn.transaction():
+    async with pool.connection() as conn, conn.transaction():
         await conn.executemany(
             "INSERT INTO sensor_data (timestamp, sensor_id, value, unit) VALUES ($1, $2, $3, $4);",
             records
@@ -67,7 +67,7 @@ async def get_raw_telemetry(
         ORDER BY timestamp DESC
         LIMIT $4;
     """
-    async with pool.acquire() as conn:
+    async with pool.connection() as conn:
         rows = await conn.fetch(query, sensor_id, start_time, end, limit)
 
     return [
@@ -108,7 +108,7 @@ async def get_telemetry_aggregates(
         GROUP BY bucket, unit
         ORDER BY bucket ASC;
     """
-    async with pool.acquire() as conn:
+    async with pool.connection() as conn:
         rows = await conn.fetch(query, interval, sensor_id, start_time, end)
 
     return [
@@ -137,7 +137,7 @@ async def get_latest_sensor_reading(
         ORDER BY timestamp DESC
         LIMIT 1;
     """
-    async with pool.acquire() as conn:
+    async with pool.connection() as conn:
         row = await conn.fetchrow(query, sensor_id)
 
     if not row:

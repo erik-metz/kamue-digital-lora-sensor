@@ -27,7 +27,7 @@ async def register_sensor(
                       latitude = EXCLUDED.latitude,
                       longitude = EXCLUDED.longitude;
     """
-    async with pool.acquire() as conn: # type: ignore
+    async with pool.connection() as conn: # type: ignore
         await conn.execute(
             query, 
             sensor.sensor_id, 
@@ -45,7 +45,7 @@ async def list_sensors(pool: DbPool):
         FROM sensor_metadata
         ORDER BY created_at DESC;
     """
-    async with pool.acquire() as conn: # type: ignore
+    async with pool.connection() as conn: # type: ignore
         rows = await conn.fetch(query)
     
     return [dict(row) for row in rows]
