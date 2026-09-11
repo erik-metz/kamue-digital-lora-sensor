@@ -17,6 +17,7 @@ import {
   Zap,
 } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { SensorNode } from "./components/MapComponent";
 import TelemetryCharts from "./components/TelemetryCharts";
@@ -267,6 +268,12 @@ export default function Home() {
             >
               LoRaWAN TTN
             </a>
+            <Link
+              href="/daten"
+              className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
+            >
+              Offene Daten & API
+            </Link>
           </nav>
 
           {/* Network Status Badge */}
@@ -768,7 +775,21 @@ export default function Home() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <Link
+              href="/daten"
+              className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
+            >
+              Offene Daten & API
+            </Link>
+            <span>•</span>
+            <Link
+              href="/admin"
+              className="text-slate-400 hover:text-emerald-400 transition-colors"
+            >
+              Admin-Bereich
+            </Link>
+            <span>•</span>
             <a
               href="https://www.thethingsindustries.com"
               target="_blank"

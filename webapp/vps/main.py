@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import quote_plus
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import psycopg
 import psycopg_pool
 from psycopg.rows import dict_row
@@ -56,6 +57,15 @@ app = FastAPI(
     openapi_url="/api/v1/openapi.json",
     docs_url="/docs",
     lifespan=lifespan,
+)
+
+# Enable CORS for Open Data public access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(v1_router, prefix="/api/v1")

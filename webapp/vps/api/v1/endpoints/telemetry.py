@@ -1,23 +1,48 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, Query, HTTPException, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 import psycopg_pool
-from api.dependencies import get_db_pool, verify_api_key
+from api.dependencies import get_db_pool, verify_ingestion_key
 from api.v1.schemas import (
-    SensorReading, 
-    BatchSensorReadings, 
-    SensorAggregateResponse
+    BatchSensorReadings,
+    SensorAggregateResponse,
+    SensorReading,
 )
 
 router = APIRouter()
 
-# --- INGESTION ENDPOINTS ---
+ALLOWED_INTERVALS = {
+    "1 minute",
+    "5 minutes",
+    "10 minutes",
+    "15 minutes",
+    "30 minutes",
+    "1 hour",
+    "2 hours",
+    "3 hours",
+    "6 hours",
+    "12 hours",
+    "1 day",
+    "7 days",
+    "1 week",
+    "30 days",
+    "1 month",
+}
 
-@router.post("/telemetry", status_code=status.HTTP_201_CREATED, dependencies=[Security(verify_api_key)])
+
+# --- INGESTION ENDPOINTS (LoRaWAN / TTN Webhook) ---
+
+@router.post(
+    "/telemetry",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Security(verify_ingestion_key)],
+    summary="Push single sensor telemetry reading (TTN / Ingestion Key required)",
+    tags=["Telemetry Ingestion"],
+)
 async def push_sensor_data(
     reading: SensorReading, 
-    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
-    """Inserts a single sensor reading."""
+    """Inserts a single sensor reading from an authenticated source."""
     ts = reading.timestamp or datetime.now(timezone.utc)
     query = """
         INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
@@ -27,8 +52,8 @@ async def push_sensor_data(
         # Automatically register sensor if it does not already exist
         await conn.execute(
             """
-            INSERT INTO sensor_metadata (sensor_id, friendly_name)
-            VALUES (%s, %s)
+            INSERT INTO sensor_metadata (sensor_id, friendly_name, is_hidden)
+            VALUES (%s, %s, FALSE)
             ON CONFLICT (sensor_id) DO NOTHING;
             """,
             (reading.sensor_id, reading.sensor_id),
@@ -37,14 +62,23 @@ async def push_sensor_data(
     return {"status": "inserted", "timestamp": ts}
 
 
-@router.post("/telemetry/batch", status_code=status.HTTP_201_CREATED, dependencies=[Security(verify_api_key)])
+@router.post(
+    "/telemetry/batch",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Security(verify_ingestion_key)],
+    summary="Push batch telemetry readings (TTN / Ingestion Key required)",
+    tags=["Telemetry Ingestion"],
+)
 async def push_batch_sensor_data(
     payload: BatchSensorReadings, 
-    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
     """Bulk inserts multiple sensor readings in a single transaction."""
     if not payload.readings:
-        raise HTTPException(status_code=400, detail="Readings array cannot be empty.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Readings array cannot be empty.",
+        )
 
     now_utc = datetime.now(timezone.utc)
     records = [
@@ -63,8 +97,8 @@ async def push_batch_sensor_data(
             # Auto-register distinct sensors in the batch
             await cur.executemany(
                 """
-                INSERT INTO sensor_metadata (sensor_id, friendly_name)
-                VALUES (%s, %s)
+                INSERT INTO sensor_metadata (sensor_id, friendly_name, is_hidden)
+                VALUES (%s, %s, FALSE)
                 ON CONFLICT (sensor_id) DO NOTHING;
                 """,
                 unique_sensors,
@@ -74,24 +108,30 @@ async def push_batch_sensor_data(
     return {"status": "success", "inserted_count": len(records)}
 
 
-# --- RETRIEVAL ENDPOINTS ---
+# --- RETRIEVAL ENDPOINTS (Public Open Data) ---
 
-@router.get("/telemetry/raw", response_model=list[SensorReading])
+@router.get(
+    "/telemetry/raw",
+    response_model=list[SensorReading],
+    summary="Get raw historical telemetry readings (Public)",
+    tags=["Telemetry Public"],
+)
 async def get_raw_telemetry(
     sensor_id: str = Query(..., description="The ID of the sensor"),
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
     end_time: datetime | None = Query(None, description="End timestamp"),
-    limit: int = Query(default=100, le=5000, description="Max points to return"),
-    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
+    limit: int = Query(default=100, ge=1, le=5000, description="Max points to return (1-5000)"),
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
-    """Retrieves raw historical data points for a specific sensor over a time range."""
+    """Retrieves raw historical data points for a specific visible sensor over a time range."""
     end = end_time or datetime.now(timezone.utc)
 
     query = """
-        SELECT timestamp, sensor_id, value, unit
-        FROM sensor_data
-        WHERE sensor_id = %s AND timestamp >= %s AND timestamp <= %s
-        ORDER BY timestamp DESC
+        SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit
+        FROM sensor_data sd
+        JOIN sensor_metadata sm ON sd.sensor_id = sm.sensor_id
+        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE AND sd.timestamp >= %s AND sd.timestamp <= %s
+        ORDER BY sd.timestamp DESC
         LIMIT %s;
     """
     async with pool.connection() as conn:
@@ -103,41 +143,60 @@ async def get_raw_telemetry(
             "sensor_id": row["sensor_id"],
             "timestamp": row["timestamp"],
             "value": row["value"],
-            "unit": row["unit"]
+            "unit": row["unit"],
         }
         for row in rows
     ]
 
 
-@router.get("/telemetry/aggregates", response_model=list[SensorAggregateResponse])
+@router.get(
+    "/telemetry/aggregates",
+    response_model=list[SensorAggregateResponse],
+    summary="Get aggregated telemetry time buckets (Public)",
+    tags=["Telemetry Public"],
+)
 async def get_telemetry_aggregates(
     sensor_id: str = Query(..., description="The ID of the sensor"),
-    interval: str = Query(default="1 hour", description="Timescale time bucket interval"),
+    interval: str = Query(
+        default="1 hour",
+        description="Bucket interval (e.g. 15 minutes, 1 hour, 1 day)",
+    ),
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
     end_time: datetime | None = Query(None, description="End timestamp"),
-    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
     """
     Leverages TimescaleDB's native `time_bucket` to calculate min, max, average values 
-    and sample counts grouped into regular time intervals.
+    and sample counts grouped into regular time intervals for visible sensors.
     """
+    cleaned_interval = interval.strip().lower()
+    if cleaned_interval not in ALLOWED_INTERVALS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Invalid interval '{interval}'. Allowed intervals: "
+                f"{', '.join(sorted(ALLOWED_INTERVALS))}"
+            ),
+        )
+
     end = end_time or datetime.now(timezone.utc)
 
     query = """
         SELECT 
-            time_bucket(%s::interval, timestamp) AS bucket,
-            AVG(value) AS avg_value,
-            MIN(value) AS min_value,
-            MAX(value) AS max_value,
+            time_bucket(%s::interval, sd.timestamp) AS bucket,
+            AVG(sd.value) AS avg_value,
+            MIN(sd.value) AS min_value,
+            MAX(sd.value) AS max_value,
             COUNT(*) AS sample_count,
-            unit
-        FROM sensor_data
-        WHERE sensor_id = %s AND timestamp >= %s AND timestamp <= %s
-        GROUP BY bucket, unit
+            sd.unit
+        FROM sensor_data sd
+        JOIN sensor_metadata sm ON sd.sensor_id = sm.sensor_id
+        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE AND sd.timestamp >= %s AND sd.timestamp <= %s
+        GROUP BY bucket, sd.unit
         ORDER BY bucket ASC;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (interval, sensor_id, start_time, end))
+        cur = await conn.execute(query, (cleaned_interval, sensor_id, start_time, end))
         rows = await cur.fetchall()
 
     return [
@@ -147,23 +206,29 @@ async def get_telemetry_aggregates(
             "min_value": row["min_value"],
             "max_value": row["max_value"],
             "sample_count": row["sample_count"],
-            "unit": row["unit"]
+            "unit": row["unit"],
         }
         for row in rows
     ]
 
 
-@router.get("/telemetry/latest", response_model=SensorReading)
+@router.get(
+    "/telemetry/latest",
+    response_model=SensorReading,
+    summary="Get latest reading for sensor (Public)",
+    tags=["Telemetry Public"],
+)
 async def get_latest_sensor_reading(
     sensor_id: str = Query(..., description="The ID of the sensor"),
-    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool)
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
-    """Retrieves the single most recent data point for a given sensor."""
+    """Retrieves the single most recent data point for a given visible sensor."""
     query = """
-        SELECT timestamp, sensor_id, value, unit
-        FROM sensor_data
-        WHERE sensor_id = %s
-        ORDER BY timestamp DESC
+        SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit
+        FROM sensor_data sd
+        JOIN sensor_metadata sm ON sd.sensor_id = sm.sensor_id
+        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE
+        ORDER BY sd.timestamp DESC
         LIMIT 1;
     """
     async with pool.connection() as conn:
@@ -171,6 +236,9 @@ async def get_latest_sensor_reading(
         row = await cur.fetchone()
 
     if not row:
-        raise HTTPException(status_code=404, detail=f"No telemetry found for sensor '{sensor_id}'.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No telemetry found for sensor '{sensor_id}' (or sensor is hidden).",
+        )
 
     return dict(row)

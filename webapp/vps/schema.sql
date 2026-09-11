@@ -7,8 +7,16 @@ CREATE TABLE IF NOT EXISTS sensor_metadata (
     friendly_name VARCHAR(255) NOT NULL,
     latitude DOUBLE PRECISION,
     longitude DOUBLE PRECISION,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Idempotent migrations for existing installations
+ALTER TABLE sensor_metadata ADD COLUMN IF NOT EXISTS is_hidden BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE sensor_metadata ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE sensor_metadata ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- 2. Time-Series Metrics Table
 CREATE TABLE IF NOT EXISTS sensor_data (

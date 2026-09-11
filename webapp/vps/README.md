@@ -84,19 +84,34 @@ The database structure is defined in [`schema.sql`](schema.sql):
 
 ## API Endpoints Reference
 
-All routes are prefixed with `/api/v1` and require `Authorization: Bearer <API_KEY>` for ingestion endpoints.
+All routes are prefixed with `/api/v1`. Open Data GET endpoints are completely public with CORS enabled. Ingestion routes require `Authorization: Bearer <API_KEY>`, while Admin mutation routes require `Authorization: Bearer <ADMIN_API_KEY>`.
 
+### Public Open Data Endpoints
 | Method | Endpoint | Auth Required | Description |
 | :--- | :--- | :---: | :--- |
-| `POST` | `/api/v1/telemetry` | Yes | Ingest a single sensor reading |
-| `POST` | `/api/v1/telemetry/batch` | Yes | Bulk ingest multiple sensor readings in a single transaction |
+| `GET` | `/api/v1/sensors` | No | List all publicly active sensors (`is_hidden = FALSE`) |
+| `GET` | `/api/v1/sensors/{sensor_id}` | No | Get metadata and status for a single public sensor |
+| `GET` | `/api/v1/telemetry/latest` | No | Get the most recent telemetry reading for a given sensor |
 | `GET` | `/api/v1/telemetry/raw` | No | Fetch raw historical points (`sensor_id`, `start_time`, `end_time`, `limit`) |
 | `GET` | `/api/v1/telemetry/aggregates` | No | Fetch aggregated metrics (`avg`, `min`, `max`, `count`) grouped by `time_bucket` |
-| `GET` | `/api/v1/telemetry/latest` | No | Get the most recent telemetry reading for a given sensor |
-| `POST` | `/api/v1/sensors/register` | Yes | Register or update sensor metadata (friendly name, coordinates) |
-| `GET` | `/api/v1/sensors` | No | List all registered sensors |
 | `GET` | `/health` | No | Service health check |
 | `GET` | `/docs` | No | Interactive Swagger UI API documentation |
+
+### Ingestion Endpoints (LoRaWAN / TTN)
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :---: | :--- |
+| `POST` | `/api/v1/telemetry` | Bearer `API_KEY` | Ingest a single sensor reading |
+| `POST` | `/api/v1/telemetry/batch` | Bearer `API_KEY` | Bulk ingest multiple sensor readings in a single transaction |
+
+### Admin Endpoints (Open Ried Sens Next.js Webapp)
+| Method | Endpoint | Auth Required | Description |
+| :--- | :--- | :---: | :--- |
+| `GET` | `/api/v1/admin/sensors` | Bearer `ADMIN_API_KEY` | List all sensors (including hidden stations) |
+| `POST` | `/api/v1/admin/sensors` | Bearer `ADMIN_API_KEY` | Register or create a new sensor station |
+| `PUT` | `/api/v1/admin/sensors/{id}` | Bearer `ADMIN_API_KEY` | Update sensor metadata (name, coordinates, visibility) |
+| `PATCH` | `/api/v1/admin/sensors/{id}/visibility` | Bearer `ADMIN_API_KEY` | Toggle sensor visibility (`is_hidden: true/false`) |
+| `DELETE` | `/api/v1/admin/sensors/{id}` | Bearer `ADMIN_API_KEY` | Archive/hide or purge a sensor |
+| `POST` | `/api/v1/sensors/register` | Bearer `ADMIN_API_KEY` | *Deprecated* legacy registration endpoint |
 
 ---
 
