@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException, Security, status
 from api.dependencies import get_db_pool, verify_api_key
@@ -15,7 +15,7 @@ router = APIRouter()
 @router.post("/telemetry", status_code=status.HTTP_201_CREATED, dependencies=[Security(verify_api_key)])
 async def push_sensor_data(reading: SensorReading, pool = Depends(get_db_pool)):
     """Inserts a single sensor reading."""
-    ts = reading.timestamp or datetime.utcnow()
+    ts = reading.timestamp or datetime.now(timezone.utc)
     query = """
         INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
         VALUES ($1, $2, $3, $4);
@@ -31,17 +31,18 @@ async def push_batch_sensor_data(payload: BatchSensorReadings, pool = Depends(ge
     if not payload.readings:
         raise HTTPException(status_code=400, detail="Readings array cannot be empty.")
 
+    now_utc = datetime.now(timezone.utc)
     records = [
-        (item.timestamp or datetime.utcnow(), item.sensor_id, item.value, item.unit)
+        (item.timestamp or now_utc, item.sensor_id, item.value, item.unit)
         for item in payload.readings
     ]
 
-    async with pool.acquire() as conn:
-        async with conn.transaction():
-            await conn.executemany(
-                "INSERT INTO sensor_data (timestamp, sensor_id, value, unit) VALUES ($1, $2, $3, $4);",
-                records
-            )
+    # Fixed SIM117: Combined nested context managers into a single line
+    async with pool.acquire() as conn, conn.transaction():
+        await conn.executemany(
+            "INSERT INTO sensor_data (timestamp, sensor_id, value, unit) VALUES ($1, $2, $3, $4);",
+            records
+        )
 
     return {"status": "success", "inserted_count": len(records)}
 
@@ -51,13 +52,13 @@ async def push_batch_sensor_data(payload: BatchSensorReadings, pool = Depends(ge
 @router.get("/telemetry/raw", response_model=List[SensorReading])
 async def get_raw_telemetry(
     sensor_id: str = Query(..., description="The ID of the sensor"),
-    start_time: datetime = Query(..., description="Start timestamp (ISO 8601, e.g. 2026-09-01T00:00:00Z)"),
-    end_time: Optional[datetime] = Query(None, description="End timestamp (defaults to current time)"),
-    limit: int = Query(default=100, le=5000, description="Max points to return (max 5000)"),
+    start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
+    end_time: Optional[datetime] = Query(None, description="End timestamp"),
+    limit: int = Query(default=100, le=5000, description="Max points to return"),
     pool = Depends(get_db_pool)
 ):
     """Retrieves raw historical data points for a specific sensor over a time range."""
-    end = end_time or datetime.utcnow()
+    end = end_time or datetime.now(timezone.utc)
 
     query = """
         SELECT timestamp, sensor_id, value, unit
@@ -83,16 +84,16 @@ async def get_raw_telemetry(
 @router.get("/telemetry/aggregates", response_model=List[SensorAggregateResponse])
 async def get_telemetry_aggregates(
     sensor_id: str = Query(..., description="The ID of the sensor"),
-    interval: str = Query(default="1 hour", description="Timescale time bucket interval (e.g., '5 minutes', '1 hour', '1 day')"),
+    interval: str = Query(default="1 hour", description="Timescale time bucket interval"),
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
-    end_time: Optional[datetime] = Query(None, description="End timestamp (defaults to current time)"),
+    end_time: Optional[datetime] = Query(None, description="End timestamp"),
     pool = Depends(get_db_pool)
 ):
     """
     Leverages TimescaleDB's native `time_bucket` to calculate min, max, average values 
     and sample counts grouped into regular time intervals.
     """
-    end = end_time or datetime.utcnow()
+    end = end_time or datetime.now(timezone.utc)
 
     query = """
         SELECT 
