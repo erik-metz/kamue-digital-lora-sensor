@@ -238,7 +238,7 @@ export default function Home() {
 
           {/* Quick Nav Links */}
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
-            <a
+            {/* <a
               href="#projekt"
               className="hover:text-emerald-400 transition-colors"
             >
@@ -267,7 +267,7 @@ export default function Home() {
               className="hover:text-emerald-400 transition-colors"
             >
               LoRaWAN TTN
-            </a>
+            </a> */}
             <Link
               href="/daten"
               className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
