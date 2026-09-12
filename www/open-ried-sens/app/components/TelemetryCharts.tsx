@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SensorNode } from "./MapComponent";
 import { Thermometer, Volume2, CloudFog, Signal, Activity, Wind, Sun, Droplets } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TelemetryChartsProps {
   node: SensorNode;
@@ -45,49 +46,34 @@ export default function TelemetryCharts({ node }: TelemetryChartsProps) {
         </p>
       </div>
 
-        {/* Tab Buttons */}
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-sm">
-          <button
-            onClick={() => setActiveTab("klima")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "klima"
-                ? "bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+          <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1 text-sm">
+            <TabsTrigger
+              value="klima"
+              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
+            >
             <Thermometer className="w-3.5 h-3.5" /> Klima & Wetter
-          </button>
-          <button
-            onClick={() => setActiveTab("laerm")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "laerm"
-                ? "bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
+            </TabsTrigger>
+            <TabsTrigger
+              value="laerm"
+              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
+            >
             <Volume2 className="w-3.5 h-3.5" /> Lärm & Mikrofon
-          </button>
-          <button
-            onClick={() => setActiveTab("luft")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "luft"
-                ? "bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
+            </TabsTrigger>
+            <TabsTrigger
+              value="luft"
+              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
+            >
             <CloudFog className="w-3.5 h-3.5" /> Luft & Feinstaub
-          </button>
-          <button
-            onClick={() => setActiveTab("lora")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-              activeTab === "lora"
-                ? "bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
+            </TabsTrigger>
+            <TabsTrigger
+              value="lora"
+              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
+            >
             <Signal className="w-3.5 h-3.5" /> LoRaWAN Signal
-          </button>
-        </div>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Grid of Key Sensor Values */}

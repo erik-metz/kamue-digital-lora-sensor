@@ -18,10 +18,18 @@ import {
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import HeaderLogo from "./components/HeaderLogo";
 import { SensorNode } from "./components/MapComponent";
 import TelemetryCharts from "./components/TelemetryCharts";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 
 // Client-only dynamic load for Leaflet map
 const MapComponent = dynamic(() => import("./components/MapComponent"), {
@@ -150,8 +158,6 @@ const INITIAL_NODES: SensorNode[] = [
 export default function Home() {
   const [nodes] = useState<SensorNode[]>(INITIAL_NODES);
   const [selectedNodeId, setSelectedNodeId] = useState<string>("ried-01");
-  const [locationSearch, setLocationSearch] = useState<string>("");
-  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [liveLogs] = useState<
     Array<{
       id: string;
@@ -185,23 +191,6 @@ export default function Home() {
   ]);
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0];
-
-  // Close dropdown when clicking outside
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node)
-      ) {
-        setDropdownOpen(false);
-        setLocationSearch("");
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [dropdownOpen]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -456,112 +445,45 @@ export default function Home() {
                       Ausgewählte Station
                     </span>
 
-                    {/* Searchable location dropdown */}
-                    <div className="relative mt-1" ref={dropdownRef}>
-                      <div
-                        className={`flex items-center gap-2 w-full bg-slate-950/80 border rounded-xl px-3 py-2 cursor-pointer transition-all ${
-                          dropdownOpen
-                            ? "border-emerald-500/60 ring-1 ring-emerald-500/30"
-                            : "border-slate-700 hover:border-slate-600"
-                        }`}
-                        onClick={() => {
-                          setDropdownOpen((o) => !o);
-                          setLocationSearch("");
+                    <div className="mt-1 w-full">
+                      <Combobox
+                        items={nodes}
+                        value={selectedNode}
+                        itemToStringValue={(node) =>
+                          `${node.locationName} ${node.name} ${node.address}`
+                        }
+                        onValueChange={(node) => {
+                          if (node) setSelectedNodeId(node.id);
                         }}
+                        autoHighlight
                       >
-                        <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span className="text-sm font-bold text-slate-100 truncate flex-1">
-                          {selectedNode.locationName}
-                        </span>
-                        <svg
-                          className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform ${
-                            dropdownOpen ? "rotate-180" : ""
-                          }`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
-
-                      {dropdownOpen && (
-                        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden">
-                          {/* Search input */}
-                          <div className="p-2 border-b border-slate-800">
-                            <input
-                              autoFocus
-                              type="text"
-                              placeholder="Standort suchen…"
-                              value={locationSearch}
-                              onChange={(e) =>
-                                setLocationSearch(e.target.value)
-                              }
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-100 placeholder-slate-500 outline-none focus:border-emerald-500/60"
-                            />
-                          </div>
-                          {/* Filtered options */}
-                          <ul className="max-h-48 overflow-y-auto">
-                            {nodes
-                              .filter(
-                                (n) =>
-                                  n.locationName
-                                    .toLowerCase()
-                                    .includes(locationSearch.toLowerCase()) ||
-                                  n.name
-                                    .toLowerCase()
-                                    .includes(locationSearch.toLowerCase()) ||
-                                  n.address
-                                    .toLowerCase()
-                                    .includes(locationSearch.toLowerCase())
-                              )
-                              .map((n) => (
-                                <li
-                                  key={n.id}
-                                  onClick={() => {
-                                    setSelectedNodeId(n.id);
-                                    setDropdownOpen(false);
-                                    setLocationSearch("");
-                                  }}
-                                  className={`flex flex-col px-3 py-2.5 cursor-pointer transition-colors text-sm border-b border-slate-800/60 last:border-0 ${
-                                    n.id === selectedNodeId
-                                      ? "bg-emerald-500/10 text-emerald-400"
-                                      : "text-slate-300 hover:bg-slate-800/60"
-                                  }`}
-                                >
-                                  <span className="font-semibold leading-tight">
-                                    {n.locationName}
-                                  </span>
-                                  <span className="text-xs text-slate-500 mt-0.5">
-                                    {n.name} · {n.address}
-                                  </span>
-                                </li>
-                              ))}
-                            {nodes.filter(
-                              (n) =>
-                                n.locationName
-                                  .toLowerCase()
-                                  .includes(locationSearch.toLowerCase()) ||
-                                n.name
-                                  .toLowerCase()
-                                  .includes(locationSearch.toLowerCase()) ||
-                                n.address
-                                  .toLowerCase()
-                                  .includes(locationSearch.toLowerCase())
-                            ).length === 0 && (
-                              <li className="px-3 py-3 text-xs text-slate-500 text-center">
-                                Kein Standort gefunden
-                              </li>
+                        <ComboboxInput
+                          aria-label="Station auswählen"
+                          placeholder="Standort suchen…"
+                          className="w-full rounded-xl border-slate-700 bg-slate-950/80 text-slate-100 shadow-none focus-within:border-emerald-500/60 focus-within:ring-1 focus-within:ring-emerald-500/30"
+                        />
+                        <ComboboxContent className="border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl">
+                          <ComboboxEmpty className="py-3 text-slate-500">
+                            Kein Standort gefunden
+                          </ComboboxEmpty>
+                          <ComboboxList className="max-h-48 p-1">
+                            {(node) => (
+                              <ComboboxItem
+                                key={node.id}
+                                value={node}
+                                className="flex-col items-start gap-0 rounded-lg px-3 py-2.5 text-slate-300 data-highlighted:bg-slate-800/80 data-highlighted:text-slate-100"
+                              >
+                                <span className="font-semibold leading-tight">
+                                  {node.locationName}
+                                </span>
+                                <span className="mt-0.5 text-xs text-slate-500">
+                                  {node.name} · {node.address}
+                                </span>
+                              </ComboboxItem>
                             )}
-                          </ul>
-                        </div>
-                      )}
+                          </ComboboxList>
+                        </ComboboxContent>
+                      </Combobox>
                     </div>
 
                     {/* Address line */}
