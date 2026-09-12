@@ -1,329 +1,416 @@
 /*
- * Heltec WiFi LoRa 32 V4.3 - Single Channel LoRaWAN Gateway (EU868)
- * With OLED status display
+ * Heltec WiFi LoRa 32 V4.3 - single-channel LoRaWAN development gateway.
  *
- * Libraries (Library Manager):
- *   - RadioLib          by Jan Gromes
- *   - ArduinoJson       by Benoit Blanchon
- *   - Heltec ESP32      (provides HT_SSD1306Wire)  OR  U8g2 / Adafruit SSD1306
+ * This is intentionally not a general-purpose TTN gateway: the SX1262 can
+ * receive only one frequency/data-rate at a time. Configure it to match the
+ * development node under test (EU868 defaults: 868.1 MHz, SF7, BW125).
  *
- * Board: Heltec WiFi LoRa 32(V3)  or  ESP32S3 Dev Module
- * USB CDC On Boot: Enabled
+ * Libraries (Arduino Library Manager): RadioLib, ArduinoJson, TinyGPSPlus,
+ * Adafruit GFX, Adafruit SSD1306.
  */
 
- #include <Arduino.h>
- #include <WiFi.h>
- #include <WiFiUdp.h>
- #include <RadioLib.h>
- #include <ArduinoJson.h>
- #include <Wire.h>
- #include "secrets.h"
- 
- // ---------- OLED (Heltec V3/V4) ----------
- #define OLED_SDA   17
- #define OLED_SCL   18
- #define OLED_RST   21
- #define VEXT_PIN   36          // active LOW
- 
- // Prefer Heltec library if installed
- #if __has_include("HT_SSD1306Wire.h")
-   #include "HT_SSD1306Wire.h"
-   SSD1306Wire display(0x3c, 500000, OLED_SDA, OLED_SCL, GEOMETRY_128_64, OLED_RST);
-   #define USE_HELTEC_OLED
- #else
-   // Fallback: simple text-only via Wire (you can replace with Adafruit/U8g2 later)
-   #define USE_SIMPLE_OLED
- #endif
- 
- // ---------- LoRa pins (Heltec V4) ----------
- #define LORA_CS     8
- #define LORA_SCK    9
- #define LORA_MOSI  10
- #define LORA_MISO  11
- #define LORA_RST   12
- #define LORA_BUSY  13
- #define LORA_DIO1  14
- 
- // V4.3 FEM (KCT8103L)
- #define FEM_POWER   7
- #define FEM_CSD     2
- #define FEM_CTX     5          // LOW = LNA enabled
- 
- SX1262 radio = new Module(LORA_CS, LORA_DIO1, LORA_RST, LORA_BUSY);
- WiFiUDP udp;
- 
- uint8_t gatewayEui[8];
- uint32_t token = 0;
- volatile bool packetReceived = false;
- 
- uint32_t rxCount = 0;
- int16_t  lastRssi = 0;
- float    lastSnr  = 0;
- String   statusLine = "Booting...";
- 
- // ===================== Helpers =====================
- void generateGatewayEui() {
-   if (strlen(GATEWAY_EUI) == 16) {
-     for (int i = 0; i < 8; i++) {
-       char buf[3] = {GATEWAY_EUI[i*2], GATEWAY_EUI[i*2+1], 0};
-       gatewayEui[i] = strtol(buf, NULL, 16);
-     }
-   } else {
-     uint8_t mac[6];
-     WiFi.macAddress(mac);
-     gatewayEui[0] = mac[0];
-     gatewayEui[1] = mac[1];
-     gatewayEui[2] = mac[2];
-     gatewayEui[3] = 0xFF;
-     gatewayEui[4] = 0xFF;
-     gatewayEui[5] = mac[3];
-     gatewayEui[6] = mac[4];
-     gatewayEui[7] = mac[5];
-   }
- }
- 
- void initFEM() {
-   pinMode(FEM_POWER, OUTPUT);
-   pinMode(FEM_CSD, OUTPUT);
-   pinMode(FEM_CTX, OUTPUT);
-   digitalWrite(FEM_POWER, HIGH);
-   delay(5);
-   digitalWrite(FEM_CSD, HIGH);
-   digitalWrite(FEM_CTX, LOW);      // LNA on
-   delay(5);
- }
- 
- void setRxMode()  { digitalWrite(FEM_CTX, LOW);  }
- void setTxMode()  { digitalWrite(FEM_CTX, HIGH); }
- 
- void setFlag(void) { packetReceived = true; }
- 
- // ---------- OLED ----------
- void oledInit() {
-   pinMode(VEXT_PIN, OUTPUT);
-   digitalWrite(VEXT_PIN, LOW);     // power on
-   delay(50);
- 
- #ifdef USE_HELTEC_OLED
-   display.init();
-   display.flipScreenVertically();
-   display.setFont(ArialMT_Plain_10);
-   display.clear();
-   display.display();
- #endif
- }
- 
- void oledUpdate() {
- #ifdef USE_HELTEC_OLED
-   display.clear();
-   display.setTextAlignment(TEXT_ALIGN_LEFT);
- 
-   display.drawString(0, 0, "SC-GW EU868 SF" + String(LORA_SF));
-   display.drawString(0, 12, "IP: " + WiFi.localIP().toString());
- 
-   char euiStr[20];
-   sprintf(euiStr, "%02X%02X%02X%02X%02X%02X%02X%02X",
-           gatewayEui[0], gatewayEui[1], gatewayEui[2], gatewayEui[3],
-           gatewayEui[4], gatewayEui[5], gatewayEui[6], gatewayEui[7]);
-   display.drawString(0, 24, euiStr);
- 
-   display.drawString(0, 36, "RX: " + String(rxCount) + "  RSSI:" + String(lastRssi));
-   display.drawString(0, 48, statusLine);
- 
-   display.display();
- #endif
- }
- 
- // ===================== Packet Forwarder =====================
- void sendPushData(uint8_t* payload, size_t len, int16_t rssi, float snr) {
-   uint8_t buf[512];
-   size_t idx = 0;
- 
-   buf[idx++] = 0x02;
-   buf[idx++] = (token >> 8) & 0xFF;
-   buf[idx++] = token & 0xFF;
-   token++;
-   buf[idx++] = 0x00;               // PUSH_DATA
-   memcpy(&buf[idx], gatewayEui, 8);
-   idx += 8;
- 
-   StaticJsonDocument<512> doc;
-   JsonArray rxpk = doc.createNestedArray("rxpk");
-   JsonObject pk = rxpk.createNestedObject();
- 
-   pk["tmst"] = micros();
-   pk["chan"] = 0;
-   pk["rfch"] = 0;
-   pk["freq"] = LORA_FREQUENCY;
-   pk["stat"] = 1;
-   pk["modu"] = "LORA";
-   pk["datr"] = "SF" + String(LORA_SF) + "BW125";
-   pk["codr"] = "4/5";
-   pk["rssi"] = rssi;
-   pk["lsnr"] = snr;
-   pk["size"] = len;
- 
-   // simple base64
-   const char* b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-   String data = "";
-   int i = 0;
-   while (i < (int)len) {
-     uint32_t a = i < len ? payload[i++] : 0;
-     uint32_t b = i < len ? payload[i++] : 0;
-     uint32_t c = i < len ? payload[i++] : 0;
-     uint32_t t = (a << 16) | (b << 8) | c;
-     data += b64[(t >> 18) & 63];
-     data += b64[(t >> 12) & 63];
-     data += (i > len + 1) ? '=' : b64[(t >> 6) & 63];
-     data += (i > len)     ? '=' : b64[t & 63];
-   }
-   pk["data"] = data;
- 
-   String json;
-   serializeJson(doc, json);
-   memcpy(&buf[idx], json.c_str(), json.length());
-   idx += json.length();
- 
-   if (udp.beginPacket(LNS_HOST, LNS_PORT)) {
-     udp.write(buf, idx);
-     udp.endPacket();
-     statusLine = "Pushed " + String(len) + "B";
-   } else {
-     statusLine = "UDP fail";
-   }
- }
- 
- void sendPullData() {
-   uint8_t buf[12];
-   buf[0] = 0x02;
-   buf[1] = (token >> 8) & 0xFF;
-   buf[2] = token & 0xFF;
-   token++;
-   buf[3] = 0x02;                   // PULL_DATA
-   memcpy(&buf[4], gatewayEui, 8);
-   if (udp.beginPacket(LNS_HOST, LNS_PORT)) {
-     udp.write(buf, 12);
-     udp.endPacket();
-   }
- }
- 
- // ===================== Setup =====================
- void setup() {
-   Serial.begin(115200);
-   delay(1000);
-   Serial.println("\n=== Heltec V4.3 SC Gateway EU868 ===");
- 
-   initFEM();
-   oledInit();
-   statusLine = "WiFi...";
-   oledUpdate();
- 
-   WiFi.mode(WIFI_STA);
-   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-   int retries = 0;
-   while (WiFi.status() != WL_CONNECTED && retries++ < 40) {
-     delay(500);
-     Serial.print(".");
-   }
-   Serial.println();
- 
-   if (WiFi.status() != WL_CONNECTED) {
-     statusLine = "WiFi FAIL";
-     oledUpdate();
-     delay(3000);
-     ESP.restart();
-   }
- 
-   generateGatewayEui();
-   udp.begin(1700);
- 
-   Serial.print("IP: "); Serial.println(WiFi.localIP());
-   Serial.print("EUI: ");
-   for (int i = 0; i < 8; i++) {
-     if (gatewayEui[i] < 16) Serial.print("0");
-     Serial.print(gatewayEui[i], HEX);
-   }
-   Serial.println();
- 
-   // Radio
-   SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
- 
-   Serial.print("SX1262 init... ");
-   int state = radio.begin(LORA_FREQUENCY);
-   if (state != RADIOLIB_ERR_NONE) {
-     Serial.printf("fail %d\n", state);
-     statusLine = "Radio FAIL";
-     oledUpdate();
-     while (true) delay(1000);
-   }
-   Serial.println("OK");
- 
-   radio.setSpreadingFactor(LORA_SF);
-   radio.setBandwidth(LORA_BW);
-   radio.setCodingRate(LORA_CR);
-   radio.setPreambleLength(LORA_PREAMBLE);
-   radio.setSyncWord(LORA_SYNC_WORD);
-   radio.setOutputPower(LORA_POWER);
-   radio.setCRC(true);
-   radio.setDio2AsRfSwitch(true);
- 
-   radio.setPacketReceivedAction(setFlag);
- 
-   setRxMode();
-   state = radio.startReceive();
-   if (state != RADIOLIB_ERR_NONE) {
-     statusLine = "RX fail";
-   } else {
-     statusLine = "Listening";
-   }
- 
-   oledUpdate();
- }
- 
- // ===================== Loop =====================
- void loop() {
-   static uint32_t lastPull = 0;
-   static uint32_t lastOled = 0;
- 
-   if (millis() - lastPull > 30000) {
-     sendPullData();
-     lastPull = millis();
-   }
- 
-   if (packetReceived) {
-     packetReceived = false;
- 
-     uint8_t buffer[256];
-     int len = radio.readData(buffer, sizeof(buffer));
- 
-     if (len > 0) {
-       lastRssi = radio.getRSSI();
-       lastSnr  = radio.getSNR();
-       rxCount++;
- 
-       Serial.printf("RX %d B  RSSI=%d  SNR=%.1f\n", len, lastRssi, lastSnr);
-       sendPushData(buffer, len, lastRssi, lastSnr);
-     }
- 
-     setRxMode();
-     radio.startReceive();
-   }
- 
-   // basic downlink check
-   int packetSize = udp.parsePacket();
-   if (packetSize) {
-     uint8_t buf[256];
-     int n = udp.read(buf, sizeof(buf));
-     if (n >= 4 && buf[3] == 0x03) {
-       statusLine = "DL received";
-       // full TX implementation can be added later
-     }
-   }
- 
-   if (millis() - lastOled > 2000) {
-     oledUpdate();
-     lastOled = millis();
-   }
- 
-   delay(5);
- }
+#include <Arduino.h>
+#include <WiFi.h>
+#include <WiFiUdp.h>
+#include <RadioLib.h>
+#include <ArduinoJson.h>
+#include <TinyGPS++.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include "secrets.h"
+
+// ---------- Heltec WiFi LoRa 32 V4.3 ----------
+#define VEXT_PIN       36       // active LOW: OLED/peripheral rail
+#define OLED_SDA       17
+#define OLED_SCL       18
+#define OLED_RST       21
+#define SCREEN_WIDTH   128
+#define SCREEN_HEIGHT  64
+
+// GPS. GPIO 5 must NOT be used here: it controls the RF FEM on this board.
+#define GNSS_PWR_PIN   3
+#define GNSS_EN_PIN    34       // active LOW
+#define GNSS_WAKE_PIN  40
+#define GNSS_RST_PIN   42       // active LOW
+#define GPS_RX         38       // ESP32 RX <- L76K TX
+#define GPS_TX         39       // ESP32 TX -> L76K RX
+#define GPS_BAUD       9600
+
+// SX1262 and KCT8103L FEM
+#define LORA_CS        8
+#define LORA_SCK       9
+#define LORA_MOSI     10
+#define LORA_MISO     11
+#define LORA_RST      12
+#define LORA_BUSY     13
+#define LORA_DIO1     14
+#define FEM_POWER      7
+#define FEM_CSD        2
+#define FEM_CTX        5        // LOW = receive/LNA, HIGH = transmit/PA
+
+// Semtech UDP packet-forwarder message identifiers.
+#define PUSH_DATA 0x00
+#define PUSH_ACK  0x01
+#define PULL_DATA 0x02
+#define PULL_RESP 0x03
+#define PULL_ACK  0x04
+#define TX_ACK    0x05
+
+SX1262 radio = new Module(LORA_CS, LORA_DIO1, LORA_RST, LORA_BUSY);
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RST);
+HardwareSerial gpsSerial(1);
+TinyGPSPlus gps;
+WiFiUDP udp;
+
+uint8_t gatewayEui[8];
+uint16_t token = 0;
+volatile bool packetReceived = false;
+uint32_t rxCount = 0;
+uint32_t gpsBytes = 0;
+int16_t lastRssi = 0;
+float lastSnr = 0;
+String statusLine = "Booting";
+bool displayReady = false;
+
+void setFlag() { packetReceived = true; }
+void setRxMode() { digitalWrite(FEM_CTX, LOW); }
+void setTxMode() { digitalWrite(FEM_CTX, HIGH); }
+
+void generateGatewayEui() {
+  if (strlen(GATEWAY_EUI) == 16) {
+    for (size_t i = 0; i < sizeof(gatewayEui); ++i) {
+      char hex[3] = { GATEWAY_EUI[i * 2], GATEWAY_EUI[i * 2 + 1], 0 };
+      gatewayEui[i] = static_cast<uint8_t>(strtoul(hex, nullptr, 16));
+    }
+    return;
+  }
+  uint8_t mac[6];
+  WiFi.macAddress(mac);
+  gatewayEui[0] = mac[0]; gatewayEui[1] = mac[1]; gatewayEui[2] = mac[2];
+  gatewayEui[3] = 0xFF;   gatewayEui[4] = 0xFF;
+  gatewayEui[5] = mac[3]; gatewayEui[6] = mac[4]; gatewayEui[7] = mac[5];
+}
+
+void initFEM() {
+  pinMode(FEM_POWER, OUTPUT);
+  pinMode(FEM_CSD, OUTPUT);
+  pinMode(FEM_CTX, OUTPUT);
+  digitalWrite(FEM_POWER, HIGH);
+  digitalWrite(FEM_CSD, HIGH);
+  setRxMode();
+  delay(5);
+}
+
+void initDisplay() {
+  pinMode(VEXT_PIN, OUTPUT);
+  digitalWrite(VEXT_PIN, LOW);
+  delay(50);
+  pinMode(OLED_RST, OUTPUT);
+  digitalWrite(OLED_RST, LOW);
+  delay(20);
+  digitalWrite(OLED_RST, HIGH);
+  delay(50);
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("OLED initialization failed"));
+    return;
+  }
+  display.clearDisplay();
+  display.setTextColor(SSD1306_WHITE);
+  display.display();
+  displayReady = true;
+}
+
+void initGNSS() {
+  // From the working sensor node, excluding GPIO 5 because it is FEM_CTX.
+  pinMode(GNSS_PWR_PIN, OUTPUT);
+  digitalWrite(GNSS_PWR_PIN, HIGH);
+  pinMode(GNSS_EN_PIN, OUTPUT);
+  digitalWrite(GNSS_EN_PIN, LOW);
+  pinMode(GNSS_WAKE_PIN, OUTPUT);
+  digitalWrite(GNSS_WAKE_PIN, HIGH);
+  pinMode(GNSS_RST_PIN, OUTPUT);
+  digitalWrite(GNSS_RST_PIN, LOW);
+  delay(150);
+  digitalWrite(GNSS_RST_PIN, HIGH);
+  delay(1000);
+  gpsSerial.setRxBufferSize(2048);
+  gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+}
+
+void updateDisplay() {
+  if (!displayReady) return;
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print(F("SC-GW EU868 SF")); display.print(LORA_SF);
+  display.setCursor(0, 10);
+  display.print(F("IP: ")); display.print(WiFi.localIP());
+  display.setCursor(0, 20);
+  display.print(F("RX:")); display.print(rxCount);
+  display.print(F(" R:")); display.print(lastRssi);
+  display.print(F(" S:")); display.print(lastSnr, 1);
+  display.setCursor(0, 30);
+  if (gps.location.isValid()) {
+    display.print(gps.location.lat(), 4); display.print(',');
+    display.print(gps.location.lng(), 4);
+  } else {
+    display.print(F("GPS: searching (")); display.print(gps.satellites.value());
+    display.print(F(" sat)"));
+  }
+  display.setCursor(0, 42);
+  display.print(F("GPS bytes: ")); display.print(gpsBytes);
+  display.setCursor(0, 54);
+  display.print(statusLine);
+  display.display();
+}
+
+String base64Encode(const uint8_t* input, size_t length) {
+  static const char alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  String output;
+  output.reserve(4 * ((length + 2) / 3));
+  for (size_t i = 0; i < length; i += 3) {
+    const size_t remaining = length - i;
+    const uint32_t word = (static_cast<uint32_t>(input[i]) << 16) |
+        (remaining > 1 ? static_cast<uint32_t>(input[i + 1]) << 8 : 0) |
+        (remaining > 2 ? input[i + 2] : 0);
+    output += alphabet[(word >> 18) & 0x3F];
+    output += alphabet[(word >> 12) & 0x3F];
+    output += remaining > 1 ? alphabet[(word >> 6) & 0x3F] : '=';
+    output += remaining > 2 ? alphabet[word & 0x3F] : '=';
+  }
+  return output;
+}
+
+int base64Value(char character) {
+  if (character >= 'A' && character <= 'Z') return character - 'A';
+  if (character >= 'a' && character <= 'z') return character - 'a' + 26;
+  if (character >= '0' && character <= '9') return character - '0' + 52;
+  if (character == '+') return 62;
+  if (character == '/') return 63;
+  return -1;
+}
+
+size_t decodeBase64(const char* input, uint8_t* output, size_t capacity) {
+  size_t outputLength = 0;
+  uint32_t word = 0;
+  uint8_t symbols = 0;
+  uint8_t padding = 0;
+  for (const char* p = input; *p; ++p) {
+    if (*p == '=') { word <<= 6; ++symbols; ++padding; }
+    else {
+      const int value = base64Value(*p);
+      if (value < 0 || padding) return 0;
+      word = (word << 6) | static_cast<uint32_t>(value);
+      ++symbols;
+    }
+    if (symbols == 4) {
+      if (padding > 2 || outputLength + 3 - padding > capacity) return 0;
+      output[outputLength++] = (word >> 16) & 0xFF;
+      if (padding < 2) output[outputLength++] = (word >> 8) & 0xFF;
+      if (padding == 0) output[outputLength++] = word & 0xFF;
+      word = 0; symbols = 0; padding = 0;
+    }
+  }
+  return symbols == 0 ? outputLength : 0;
+}
+
+void addGatewayStatus(JsonDocument& doc) {
+  JsonObject stat = doc["stat"].to<JsonObject>();
+  stat["rxnb"] = rxCount;
+  stat["rxok"] = rxCount;
+  if (gps.location.isValid()) {
+    stat["lati"] = gps.location.lat();
+    stat["long"] = gps.location.lng();
+    if (gps.altitude.isValid()) stat["alti"] = gps.altitude.meters();
+  }
+}
+
+bool sendJson(uint8_t identifier, const JsonDocument& doc) {
+  uint8_t packet[1024];
+  const size_t jsonLength = measureJson(doc);
+  if (jsonLength + 12 > sizeof(packet)) { statusLine = "JSON too large"; return false; }
+  packet[0] = 0x02;
+  packet[1] = static_cast<uint8_t>(token >> 8);
+  packet[2] = static_cast<uint8_t>(token++);
+  packet[3] = identifier;
+  memcpy(&packet[4], gatewayEui, sizeof(gatewayEui));
+  serializeJson(doc, &packet[12], sizeof(packet) - 12);
+  if (!udp.beginPacket(LNS_HOST, LNS_PORT)) return false;
+  udp.write(packet, 12 + jsonLength);
+  return udp.endPacket() == 1;
+}
+
+void sendPushData(const uint8_t* payload, size_t length, int16_t rssi, float snr) {
+  StaticJsonDocument<1024> doc;
+  JsonArray rxpk = doc.createNestedArray("rxpk");
+  JsonObject pk = rxpk.createNestedObject();
+  pk["tmst"] = micros(); pk["chan"] = 0; pk["rfch"] = 0;
+  pk["freq"] = LORA_FREQUENCY; pk["stat"] = 1; pk["modu"] = "LORA";
+  char dataRate[16];
+  snprintf(dataRate, sizeof(dataRate), "SF%dBW%d", LORA_SF, static_cast<int>(LORA_BW));
+  pk["datr"] = dataRate; pk["codr"] = "4/5";
+  pk["rssi"] = rssi; pk["lsnr"] = snr; pk["size"] = length;
+  pk["data"] = base64Encode(payload, length);
+  addGatewayStatus(doc);
+  if (doc.overflowed()) { statusLine = "Uplink JSON full"; return; }
+  statusLine = sendJson(PUSH_DATA, doc) ? "Uplink forwarded" : "UDP push failed";
+}
+
+void sendStatus() {
+  StaticJsonDocument<256> doc;
+  addGatewayStatus(doc);
+  if (!sendJson(PUSH_DATA, doc)) statusLine = "Status UDP fail";
+}
+
+void sendPullData() {
+  uint8_t packet[12] = { 0x02, static_cast<uint8_t>(token >> 8),
+      static_cast<uint8_t>(token), PULL_DATA };
+  ++token;
+  memcpy(&packet[4], gatewayEui, sizeof(gatewayEui));
+  if (udp.beginPacket(LNS_HOST, LNS_PORT)) { udp.write(packet, sizeof(packet)); udp.endPacket(); }
+}
+
+void sendTxAck(uint16_t responseToken, const char* error) {
+  char json[80];
+  const int jsonLength = snprintf(json, sizeof(json), "{\"txpk_ack\":{\"error\":\"%s\"}}", error);
+  uint8_t packet[96] = { 0x02, static_cast<uint8_t>(responseToken >> 8),
+      static_cast<uint8_t>(responseToken), TX_ACK };
+  if (jsonLength <= 0 || static_cast<size_t>(jsonLength) + 4 > sizeof(packet)) return;
+  memcpy(&packet[4], json, jsonLength);
+  if (udp.beginPacket(LNS_HOST, LNS_PORT)) { udp.write(packet, jsonLength + 4); udp.endPacket(); }
+}
+
+bool parseDataRate(const char* dataRate, int& sf, float& bandwidth) {
+  int bandwidthKHz = 0;
+  if (!dataRate || sscanf(dataRate, "SF%dBW%d", &sf, &bandwidthKHz) != 2) return false;
+  bandwidth = static_cast<float>(bandwidthKHz);
+  return sf >= 5 && sf <= 12 && bandwidth > 0;
+}
+
+void resumeReceive() {
+  radio.setFrequency(LORA_FREQUENCY);
+  radio.setSpreadingFactor(LORA_SF);
+  radio.setBandwidth(LORA_BW);
+  radio.setCodingRate(LORA_CR);
+  radio.setPreambleLength(LORA_PREAMBLE);
+  radio.setSyncWord(LORA_SYNC_WORD);
+  radio.setCRC(true);
+  setRxMode();
+  if (radio.startReceive() != RADIOLIB_ERR_NONE) statusLine = "RX restart failed";
+}
+
+void handlePullResponse(uint16_t responseToken, const uint8_t* buffer, size_t length) {
+  StaticJsonDocument<768> doc;
+  if (deserializeJson(doc, buffer, length)) {
+    sendTxAck(responseToken, "COLLISION_PACKET"); statusLine = "Bad downlink JSON"; return;
+  }
+  JsonObject txpk = doc["txpk"];
+  const char* encoded = txpk["data"];
+  const char* dataRate = txpk["datr"];
+  const char* codingRate = txpk["codr"] | "4/5";
+  int sf = 0; float bandwidth = 0;
+  if (!encoded || !parseDataRate(dataRate, sf, bandwidth)) {
+    sendTxAck(responseToken, "TX_FREQ"); statusLine = "Unsupported downlink"; return;
+  }
+  const float frequency = txpk["freq"] | 0.0f;
+  if (fabsf(frequency - LORA_FREQUENCY) > 0.001f || sf != LORA_SF ||
+      fabsf(bandwidth - LORA_BW) > 0.1f || strcmp(codingRate, "4/5") != 0) {
+    sendTxAck(responseToken, "TX_FREQ"); statusLine = "DL outside SC config"; return;
+  }
+  uint8_t payload[255];
+  const size_t decoded = decodeBase64(encoded, payload, sizeof(payload));
+  if (decoded == 0 && strlen(encoded) != 0) {
+    sendTxAck(responseToken, "COLLISION_PACKET"); statusLine = "Bad downlink data"; return;
+  }
+  const bool immediate = txpk["imme"] | false;
+  const uint32_t txTimestamp = txpk["tmst"] | 0U;
+  if (!immediate && static_cast<int32_t>(txTimestamp - micros()) < -100000) {
+    sendTxAck(responseToken, "TOO_LATE"); statusLine = "Downlink too late"; return;
+  }
+  radio.standby();
+  radio.setFrequency(frequency); radio.setSpreadingFactor(sf); radio.setBandwidth(bandwidth);
+  radio.setCodingRate(5); radio.setPreambleLength(LORA_PREAMBLE);
+  radio.setSyncWord(LORA_SYNC_WORD); radio.setCRC(true);
+  if (!immediate) {
+    while (static_cast<int32_t>(txTimestamp - micros()) > 2000) delay(1);
+    while (static_cast<int32_t>(txTimestamp - micros()) > 0) delayMicroseconds(50);
+  }
+  setTxMode();
+  const int state = radio.transmit(payload, decoded);
+  sendTxAck(responseToken, state == RADIOLIB_ERR_NONE ? "NONE" : "TX_POWER");
+  statusLine = state == RADIOLIB_ERR_NONE ? "Downlink sent" : "Downlink failed";
+  resumeReceive();
+}
+
+void processGps() {
+  while (gpsSerial.available()) { ++gpsBytes; gps.encode(gpsSerial.read()); }
+}
+
+void processUdp() {
+  const int packetSize = udp.parsePacket();
+  if (packetSize <= 0) return;
+  uint8_t buffer[1024];
+  const int length = udp.read(buffer, min(packetSize, static_cast<int>(sizeof(buffer))));
+  if (length < 4) return;
+  const uint16_t responseToken = (static_cast<uint16_t>(buffer[1]) << 8) | buffer[2];
+  if (buffer[3] == PULL_ACK) statusLine = "TTN connected";
+  else if (buffer[3] == PUSH_ACK) statusLine = "TTN uplink ACK";
+  else if (buffer[3] == PULL_RESP) handlePullResponse(responseToken, &buffer[4], length - 4);
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println(F("\n=== Heltec V4.3 single-channel TTN development gateway ==="));
+  initFEM(); initDisplay(); initGNSS();
+  statusLine = "Connecting WiFi"; updateDisplay();
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  for (int retries = 0; WiFi.status() != WL_CONNECTED && retries < 40; ++retries) delay(500);
+  if (WiFi.status() != WL_CONNECTED) {
+    statusLine = "WiFi failed; reboot"; updateDisplay(); delay(3000); ESP.restart();
+  }
+  generateGatewayEui();
+  udp.begin(1700);
+  SPI.begin(LORA_SCK, LORA_MISO, LORA_MOSI, LORA_CS);
+  const int state = radio.begin(LORA_FREQUENCY);
+  if (state != RADIOLIB_ERR_NONE) {
+    statusLine = "Radio init failed"; Serial.printf("SX1262 init failed: %d\n", state);
+    updateDisplay(); while (true) delay(1000);
+  }
+  radio.setTCXO(1.6);
+  radio.setDio2AsRfSwitch(true);
+  radio.setOutputPower(LORA_POWER);
+  radio.setPacketReceivedAction(setFlag);
+  resumeReceive();
+  Serial.print(F("Gateway EUI: "));
+  for (uint8_t byte : gatewayEui) Serial.printf("%02X", byte);
+  Serial.println();
+  sendPullData(); sendStatus();
+  statusLine = "Listening"; updateDisplay();
+}
+
+void loop() {
+  static uint32_t lastPull = 0, lastStatus = 0, lastDisplay = 0;
+  processGps();
+  processUdp();
+  if (packetReceived) {
+    packetReceived = false;
+    uint8_t payload[255];
+    const size_t length = radio.getPacketLength();
+    const int readState = length <= sizeof(payload) ? radio.readData(payload, length) : RADIOLIB_ERR_PACKET_TOO_LONG;
+    if (readState == RADIOLIB_ERR_NONE) {
+      lastRssi = radio.getRSSI(); lastSnr = radio.getSNR(); ++rxCount;
+      sendPushData(payload, length, lastRssi, lastSnr);
+    } else {
+      statusLine = "Bad uplink packet";
+    }
+    resumeReceive();
+  }
+  if (millis() - lastPull >= 5000) { sendPullData(); lastPull = millis(); }
+  if (millis() - lastStatus >= 30000) { sendStatus(); lastStatus = millis(); }
+  if (millis() - lastDisplay >= 1000) { updateDisplay(); lastDisplay = millis(); }
+  delay(2);
+}
