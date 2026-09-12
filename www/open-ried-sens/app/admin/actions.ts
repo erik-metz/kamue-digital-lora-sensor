@@ -21,7 +21,8 @@ import { clearFailedLogins, loginAllowed, recordFailedLogin } from "@/lib/loginR
 import crypto from "crypto";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
-const SENSOR_ID = /^[A-Za-z0-9_-]{1,64}$/;
+// IDs are auto-generated UUIDs (stored as text, e.g. "550e8400-e29b-41d4-a716-446655440000")
+const SENSOR_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function failure(error: unknown): ActionResult<never> {
   console.error("Admin action failed:", error);
@@ -34,21 +35,20 @@ async function requireAdmin(): Promise<ActionResult> {
     : { ok: false, error: "Nicht autorisiert. Bitte erneut anmelden." };
 }
 
-function validateSensor(input: unknown, requireId: boolean): ActionResult<Required<SensorInput>> {
+function validateSensor(input: unknown): ActionResult<SensorInput> {
   if (!input || typeof input !== "object") return { ok: false, error: "Ungültige Sensordaten." };
   const value = input as Record<string, unknown>;
-  const sensorId = typeof value.sensor_id === "string" ? value.sensor_id.trim() : "";
   const name = typeof value.friendly_name === "string" ? value.friendly_name.trim() : "";
   const description = typeof value.description === "string" ? value.description.trim() : "";
   const latitude = value.latitude;
   const longitude = value.longitude;
-  if ((requireId && !SENSOR_ID.test(sensorId)) || !name || name.length > 255 || description.length > 1000 ||
+  if (!name || name.length > 255 || description.length > 1000 ||
       !(latitude === null || (typeof latitude === "number" && Number.isFinite(latitude) && latitude >= -90 && latitude <= 90)) ||
       !(longitude === null || (typeof longitude === "number" && Number.isFinite(longitude) && longitude >= -180 && longitude <= 180)) ||
       typeof value.is_hidden !== "boolean") {
-    return { ok: false, error: "Bitte prüfe die Sensor-ID sowie alle Eingabefelder." };
+    return { ok: false, error: "Bitte prüfe alle Eingabefelder." };
   }
-  return { ok: true, data: { sensor_id: sensorId, friendly_name: name, latitude, longitude, description: description || null, is_hidden: value.is_hidden } };
+  return { ok: true, data: { friendly_name: name, latitude, longitude, description: description || null, is_hidden: value.is_hidden } };
 }
 
 export async function loginAction(password: unknown): Promise<ActionResult> {
@@ -90,17 +90,16 @@ export async function listSensorsAction(): Promise<ActionResult<SensorItem[]>> {
 
 export async function createSensorAction(input: unknown): Promise<ActionResult<SensorItem>> {
   const auth = await requireAdmin(); if (!auth.ok) return auth;
-  const validated = validateSensor(input, true); if (!validated.ok) return validated;
+  const validated = validateSensor(input); if (!validated.ok) return validated;
   try { const data = await createSensor(validated.data); revalidatePath("/admin"); revalidatePath("/"); return { ok: true, data }; } catch (error) { return failure(error); }
 }
 
 export async function updateSensorAction(id: unknown, input: unknown): Promise<ActionResult<SensorItem>> {
   const auth = await requireAdmin(); if (!auth.ok) return auth;
   if (typeof id !== "string" || !SENSOR_ID.test(id)) return { ok: false, error: "Ungültige Sensor-ID." };
-  const validated = validateSensor(input, false); if (!validated.ok) return validated;
+  const validated = validateSensor(input); if (!validated.ok) return validated;
   try {
-    const { friendly_name, latitude, longitude, description, is_hidden } = validated.data;
-    const data = await updateSensor(id, { friendly_name, latitude, longitude, description, is_hidden });
+    const data = await updateSensor(id, validated.data);
     revalidatePath("/admin"); revalidatePath("/"); return { ok: true, data };
   } catch (error) { return failure(error); }
 }

@@ -52,9 +52,9 @@ async def push_sensor_data(
         # Automatically register sensor if it does not already exist
         await conn.execute(
             """
-            INSERT INTO sensor_metadata (sensor_id, friendly_name, is_hidden)
+            INSERT INTO sensor_metadata (id, friendly_name, is_hidden)
             VALUES (%s, %s, FALSE)
-            ON CONFLICT (sensor_id) DO NOTHING;
+            ON CONFLICT (id) DO NOTHING;
             """,
             (reading.sensor_id, reading.sensor_id),
         )
@@ -97,9 +97,9 @@ async def push_batch_sensor_data(
             # Auto-register distinct sensors in the batch
             await cur.executemany(
                 """
-                INSERT INTO sensor_metadata (sensor_id, friendly_name, is_hidden)
+                INSERT INTO sensor_metadata (id, friendly_name, is_hidden)
                 VALUES (%s, %s, FALSE)
-                ON CONFLICT (sensor_id) DO NOTHING;
+                ON CONFLICT (id) DO NOTHING;
                 """,
                 unique_sensors,
             )
@@ -129,7 +129,7 @@ async def get_raw_telemetry(
     query = """
         SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit
         FROM sensor_data sd
-        JOIN sensor_metadata sm ON sd.sensor_id = sm.sensor_id
+        JOIN sensor_metadata sm ON sd.sensor_id = sm.id
         WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE AND sd.timestamp >= %s AND sd.timestamp <= %s
         ORDER BY sd.timestamp DESC
         LIMIT %s;
@@ -190,7 +190,7 @@ async def get_telemetry_aggregates(
             COUNT(*) AS sample_count,
             sd.unit
         FROM sensor_data sd
-        JOIN sensor_metadata sm ON sd.sensor_id = sm.sensor_id
+        JOIN sensor_metadata sm ON sd.sensor_id = sm.id
         WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE AND sd.timestamp >= %s AND sd.timestamp <= %s
         GROUP BY bucket, sd.unit
         ORDER BY bucket ASC;
@@ -226,7 +226,7 @@ async def get_latest_sensor_reading(
     query = """
         SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit
         FROM sensor_data sd
-        JOIN sensor_metadata sm ON sd.sensor_id = sm.sensor_id
+        JOIN sensor_metadata sm ON sd.sensor_id = sm.id
         WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE
         ORDER BY sd.timestamp DESC
         LIMIT 1;

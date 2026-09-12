@@ -1,7 +1,7 @@
 import { getBackendAdminKey, getBackendUrl } from "@/lib/adminAuth";
 
 export interface SensorItem {
-  sensor_id: string;
+  id: string;
   friendly_name: string;
   latitude: number | null;
   longitude: number | null;
@@ -12,7 +12,6 @@ export interface SensorItem {
 }
 
 export interface SensorInput {
-  sensor_id?: string;
   friendly_name: string;
   latitude: number | null;
   longitude: number | null;
@@ -58,14 +57,14 @@ export function listAdminSensors() {
   return request<SensorItem[]>("/api/v1/admin/sensors");
 }
 
-export function createSensor(input: Required<SensorInput>) {
+export function createSensor(input: SensorInput) {
   return request<SensorItem>("/api/v1/admin/sensors", {
     method: "POST",
     body: JSON.stringify(input),
   });
 }
 
-export function updateSensor(id: string, input: Omit<SensorInput, "sensor_id">) {
+export function updateSensor(id: string, input: SensorInput) {
   return request<SensorItem>(`/api/v1/admin/sensors/${encodeURIComponent(id)}`, {
     method: "PUT",
     body: JSON.stringify(input),
