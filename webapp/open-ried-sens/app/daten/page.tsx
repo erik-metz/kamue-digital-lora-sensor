@@ -1,5 +1,6 @@
 "use client";
 
+import { getBackendUrl } from "@/lib/adminAuth";
 import {
   Activity,
   ArrowLeft,
@@ -18,7 +19,9 @@ import Link from "next/link";
 import { useState } from "react";
 
 export default function DataDocsPage() {
-  const [activeCodeTab, setActiveCodeTab] = useState<"curl" | "python" | "javascript">("curl");
+  const [activeCodeTab, setActiveCodeTab] = useState<
+    "curl" | "python" | "javascript"
+  >("curl");
   const [copiedTab, setCopiedTab] = useState<string | null>(null);
 
   const copyToClipboard = (text: string, tabKey: string) => {
@@ -27,63 +30,74 @@ export default function DataDocsPage() {
     setTimeout(() => setCopiedTab(null), 2000);
   };
 
+  const backendUrl = getBackendUrl();
+  const todayUtcMidnight = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  ).toISOString();
   const codeSnippets = {
     curl: `# 1. Alle aktiven Stationen auflisten
-curl -X GET "https://api.deine-domain.de/api/v1/sensors" \\
-     -H "Accept: application/json"
+    curl -X GET "${new URL("/api/v1/sensors", backendUrl)}" \\
+        -H "Accept: application/json"
 
-# 2. Neuesten Messwert für Station 'ried-01' abrufen
-curl -X GET "https://api.deine-domain.de/api/v1/telemetry/latest?sensor_id=ried-01"
+    # 2. Neuesten Messwert für Station 'ried-01' abrufen
+    curl -X GET "${new URL(
+      "/api/v1/telemetry/latest?sensor_id=ried-01",
+      backendUrl
+    )}"
 
-# 3. 1-Stunden-Durchschnittswerte der letzten 24 Stunden abrufen
-curl -X GET "https://api.deine-domain.de/api/v1/telemetry/aggregates?sensor_id=ried-01&interval=1%20hour&start_time=2026-09-10T00:00:00Z"`,
+    # 3. 1-Stunden-Durchschnittswerte der letzten 24 Stunden abrufen
+    curl -X GET "${new URL(
+      "/api/v1/telemetry/aggregates?sensor_id=ried-01&interval=1%20hour&start_time=" +
+        todayUtcMidnight,
+      backendUrl
+    )}"`,
 
     python: `import requests
-import pandas as pd
+    import pandas as pd
 
-BASE_URL = "https://api.deine-domain.de/api/v1"
+    BASE_URL = "${new URL("/api/v1", backendUrl)}"
 
-# 1. Alle Sensoren abrufen
-sensors_res = requests.get(f"{BASE_URL}/sensors")
-sensors = sensors_res.json()
-print("Verfügbare Stationen:", [s["friendly_name"] for s in sensors])
+    # 1. Alle Sensoren abrufen
+    sensors_res = requests.get(f"{BASE_URL}/sensors")
+    sensors = sensors_res.json()
+    print("Verfügbare Stationen:", [s["friendly_name"] for s in sensors])
 
-# 2. Zeitreihen-Rohdaten laden
-params = {
-    "sensor_id": "ried-01",
-    "start_time": "2026-09-10T00:00:00Z",
-    "limit": 500
-}
-telemetry_res = requests.get(f"{BASE_URL}/telemetry/raw", params=params)
-data = telemetry_res.json()
+    # 2. Zeitreihen-Rohdaten laden
+    params = {
+        "sensor_id": "ried-01",
+        "start_time": "2026-09-10T00:00:00Z",
+        "limit": 500
+    }
+    telemetry_res = requests.get(f"{BASE_URL}/telemetry/raw", params=params)
+    data = telemetry_res.json()
 
-# In Pandas DataFrame umwandeln für Analysen & Plots
-df = pd.DataFrame(data)
-if not df.empty:
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    print(df.head())
-`,
+    # In Pandas DataFrame umwandeln für Analysen & Plots
+    df = pd.DataFrame(data)
+    if not df.empty:
+        df["timestamp"] = pd.to_datetime(df["timestamp"])
+        print(df.head())
+    `,
 
     javascript: `// Mit Javascript (Node.js oder Browser) Sensordaten abfragen
-const BASE_URL = "https://api.deine-domain.de/api/v1";
+    const BASE_URL = "${new URL("/api/v1", backendUrl)}";
 
-async function fetchSensorData() {
-  try {
-    // 1. Alle Stationen laden
-    const sensorsResponse = await fetch(\`\${BASE_URL}/sensors\`);
-    const stations = await sensorsResponse.json();
-    console.log("Aktive Stationen:", stations);
+    async function fetchSensorData() {
+      try {
+        // 1. Alle Stationen laden
+        const sensorsResponse = await fetch(\`\${BASE_URL}/sensors\`);
+        const stations = await sensorsResponse.json();
+        console.log("Aktive Stationen:", stations);
 
-    // 2. Neuesten Messwert abfragen
-    const latestResponse = await fetch(\`\${BASE_URL}/telemetry/latest?sensor_id=ried-01\`);
-    const latestData = await latestResponse.json();
-    console.log("Aktueller Wert:", latestData.value, latestData.unit);
-  } catch (error) {
-    console.error("Fehler beim Datenabruf:", error);
-  }
-}
+        // 2. Neuesten Messwert abfragen
+        const latestResponse = await fetch(\`\${BASE_URL}/telemetry/latest?sensor_id=ried-01\`);
+        const latestData = await latestResponse.json();
+        console.log("Aktueller Wert:", latestData.value, latestData.unit);
+      } catch (error) {
+        console.error("Fehler beim Datenabruf:", error);
+      }
+    }
 
-fetchSensorData();`,
+    fetchSensorData();`,
   };
 
   return (
@@ -161,8 +175,8 @@ fetchSensorData();`,
 
             <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-semibold text-slate-300">
               <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-emerald-400" /> CORS aktiviert
-                (Browser-Ready)
+                <Globe className="w-3.5 h-3.5 text-emerald-400" /> CORS
+                aktiviert (Browser-Ready)
               </span>
               <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
                 <Database className="w-3.5 h-3.5 text-teal-400" /> TimescaleDB
@@ -181,11 +195,12 @@ fetchSensorData();`,
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-emerald-400" /> Schnelleinstieg
-                in Code
+                <Terminal className="w-5 h-5 text-emerald-400" />{" "}
+                Schnelleinstieg in Code
               </h2>
               <p className="text-sm text-slate-400 mt-1">
-                Wähle deine bevorzugte Technologie, um sofort Messdaten abzufragen.
+                Wähle deine bevorzugte Technologie, um sofort Messdaten
+                abzufragen.
               </p>
             </div>
 
@@ -255,8 +270,8 @@ fetchSensorData();`,
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-                <Server className="w-6 h-6 text-emerald-400" /> Endpunkt-Referenz
-                (v1)
+                <Server className="w-6 h-6 text-emerald-400" />{" "}
+                Endpunkt-Referenz (v1)
               </h2>
               <p className="text-sm text-slate-400 mt-1">
                 Alle Abfragen unterstützen JSON und standardisierte ISO-8601
@@ -322,14 +337,18 @@ fetchSensorData();`,
                 <span className="text-xs text-slate-500">Öffentlich</span>
               </div>
               <p className="text-sm text-slate-300">
-                Ruft den zuletzt empfangenen Einzelwert für eine angegebene Station ab.
+                Ruft den zuletzt empfangenen Einzelwert für eine angegebene
+                Station ab.
               </p>
               <div className="text-xs text-slate-400 space-y-1">
                 <strong>Parameter:</strong>
                 <ul className="list-disc list-inside space-y-0.5">
                   <li>
-                    <code className="text-emerald-400 font-mono">sensor_id</code> (string, erforderlich):
-                    Die ID der Station, z.B. <code>ried-01</code>.
+                    <code className="text-emerald-400 font-mono">
+                      sensor_id
+                    </code>{" "}
+                    (string, erforderlich): Die ID der Station, z.B.{" "}
+                    <code>ried-01</code>.
                   </li>
                 </ul>
               </div>
@@ -357,23 +376,31 @@ fetchSensorData();`,
                 <span className="text-xs text-slate-500">Öffentlich</span>
               </div>
               <p className="text-sm text-slate-300">
-                Liefert die historischen Rohdatenpunkte einer Station innerhalb eines
-                definierten Zeitintervalls.
+                Liefert die historischen Rohdatenpunkte einer Station innerhalb
+                eines definierten Zeitintervalls.
               </p>
               <div className="text-xs text-slate-400 space-y-1">
                 <strong>Parameter:</strong>
                 <ul className="list-disc list-inside space-y-0.5">
                   <li>
-                    <code className="text-emerald-400 font-mono">sensor_id</code> (string, erforderlich): ID der Station.
+                    <code className="text-emerald-400 font-mono">
+                      sensor_id
+                    </code>{" "}
+                    (string, erforderlich): ID der Station.
                   </li>
                   <li>
-                    <code className="text-emerald-400 font-mono">start_time</code> (ISO-8601, erforderlich): Startzeitpunkt.
+                    <code className="text-emerald-400 font-mono">
+                      start_time
+                    </code>{" "}
+                    (ISO-8601, erforderlich): Startzeitpunkt.
                   </li>
                   <li>
-                    <code className="text-emerald-400 font-mono">end_time</code> (ISO-8601, optional): Endzeitpunkt (Standard: jetzt).
+                    <code className="text-emerald-400 font-mono">end_time</code>{" "}
+                    (ISO-8601, optional): Endzeitpunkt (Standard: jetzt).
                   </li>
                   <li>
-                    <code className="text-emerald-400 font-mono">limit</code> (int, optional): Max. Punkte (Standard 100, max. 5000).
+                    <code className="text-emerald-400 font-mono">limit</code>{" "}
+                    (int, optional): Max. Punkte (Standard 100, max. 5000).
                   </li>
                 </ul>
               </div>
@@ -393,9 +420,13 @@ fetchSensorData();`,
                 <span className="text-xs text-slate-500">Öffentlich</span>
               </div>
               <p className="text-sm text-slate-300">
-                Berechnet direkt über TimescaleDBs <code className="font-mono text-emerald-400">time_bucket()</code> statistische
-                Kennzahlen (Durchschnitt, Min, Max, Anzahl Messungen) über reguläre
-                Zeitintervalle. Ideal für Diagramme und Dashboards!
+                Berechnet direkt über TimescaleDBs{" "}
+                <code className="font-mono text-emerald-400">
+                  time_bucket()
+                </code>{" "}
+                statistische Kennzahlen (Durchschnitt, Min, Max, Anzahl
+                Messungen) über reguläre Zeitintervalle. Ideal für Diagramme und
+                Dashboards!
               </p>
               <div className="text-xs text-slate-400 space-y-1">
                 <strong>Erlaubte Intervalle:</strong>
@@ -433,7 +464,8 @@ fetchSensorData();`,
               Umweltparameter & Einheiten
             </h2>
             <p className="text-sm text-slate-400 mt-1">
-              Übersicht über die physikalischen Größen der Multisensor-Stationen.
+              Übersicht über die physikalischen Größen der
+              Multisensor-Stationen.
             </p>
           </div>
 
@@ -451,7 +483,9 @@ fetchSensorData();`,
                 Klima
               </span>
               <h4 className="font-bold text-slate-200">Luftfeuchtigkeit</h4>
-              <p className="text-xs text-slate-400">Einheit: % r.F. (percent)</p>
+              <p className="text-xs text-slate-400">
+                Einheit: % r.F. (percent)
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -467,7 +501,9 @@ fetchSensorData();`,
                 Sonne
               </span>
               <h4 className="font-bold text-slate-200">UV-Index</h4>
-              <p className="text-xs text-slate-400">Index: 0 - 11+ (uv_index)</p>
+              <p className="text-xs text-slate-400">
+                Index: 0 - 11+ (uv_index)
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -475,7 +511,9 @@ fetchSensorData();`,
                 Luftqualität
               </span>
               <h4 className="font-bold text-slate-200">VOC-Index</h4>
-              <p className="text-xs text-slate-400">Index: 0 - 500 (voc_index)</p>
+              <p className="text-xs text-slate-400">
+                Index: 0 - 500 (voc_index)
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -483,7 +521,9 @@ fetchSensorData();`,
                 Luftqualität
               </span>
               <h4 className="font-bold text-slate-200">NOx-Index</h4>
-              <p className="text-xs text-slate-400">Index: 0 - 500 (nox_index)</p>
+              <p className="text-xs text-slate-400">
+                Index: 0 - 500 (nox_index)
+              </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
@@ -512,9 +552,12 @@ fetchSensorData();`,
             </h3>
             <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
               Die Telemetriedaten werden unter den Bedingungen der{" "}
-              <strong>Creative Commons Attribution 4.0 International (CC BY 4.0)</strong>{" "}
-              Lizenz bereitgestellt. Bei Verwendung in Projekten bitten wir um die
-              Quellenangabe: <em>„Daten: Open Ried Sens / KAMÜ Kulturzentrum Bürstadt“</em>.
+              <strong>
+                Creative Commons Attribution 4.0 International (CC BY 4.0)
+              </strong>{" "}
+              Lizenz bereitgestellt. Bei Verwendung in Projekten bitten wir um
+              die Quellenangabe:{" "}
+              <em>„Daten: Open Ried Sens / KAMÜ Kulturzentrum Bürstadt“</em>.
             </p>
           </div>
           <a
@@ -549,10 +592,7 @@ fetchSensorData();`,
           </div>
 
           <div className="flex items-center gap-4 text-xs">
-            <Link
-              href="/"
-              className="hover:text-emerald-400 transition-colors"
-            >
+            <Link href="/" className="hover:text-emerald-400 transition-colors">
               Dashboard
             </Link>
             <span>•</span>
