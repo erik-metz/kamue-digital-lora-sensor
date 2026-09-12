@@ -293,15 +293,3 @@ async def admin_delete_sensor(
                 "message": f"Sensor '{sensor_id}' was archived and hidden from public feeds.",
             }
 
-
-# Backward-compatibility alias
-@router.post(
-    "/sensors/register",
-    status_code=status.HTTP_201_CREATED,
-    dependencies=[Security(verify_admin_key)],
-    deprecated=True,
-    summary="Legacy register endpoint (Deprecated, use POST /admin/sensors)",
-    tags=["Sensors Admin"],
-)
-async def legacy_register_sensor(sensor: SensorMetadataCreate, pool: DbPool):
-    return await admin_create_sensor(sensor, pool)
