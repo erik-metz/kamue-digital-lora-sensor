@@ -1,5 +1,4 @@
 secrets.h
-www/vps/.env
 __pycache__/
 *.py[cod]
-* .env
+.env
