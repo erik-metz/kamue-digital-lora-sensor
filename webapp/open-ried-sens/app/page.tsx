@@ -19,6 +19,7 @@ import {
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import HeaderLogo from "./components/HeaderLogo";
 import { SensorNode } from "./components/MapComponent";
 import TelemetryCharts from "./components/TelemetryCharts";
 
@@ -208,33 +209,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo & Brand */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/20">
-              <Radio className="w-6 h-6 font-bold" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-lg text-slate-100 tracking-tight">
-                  Open Ried Sens
-                </span>
-                <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Bürstadt & Lampertheim
-                </span>
-              </div>
-              <p className="text-sm text-slate-400 hidden sm:block">
-                Initiative von{" "}
-                <a
-                  href="https://kamue.me"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-emerald-400 font-medium hover:underline"
-                >
-                  KAMÜ Kulturzentrum
-                </a>{" "}
-                & Bürgerinnen/Bürgern
-              </p>
-            </div>
-          </div>
+          <HeaderLogo />
 
           {/* Quick Nav Links */}
           <nav className="hidden md:flex items-end gap-6 text-sm font-medium text-slate-300">

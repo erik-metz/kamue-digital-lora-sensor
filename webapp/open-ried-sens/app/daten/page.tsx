@@ -11,6 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
+import HeaderLogo from "../components/HeaderLogo";
 import InteractiveCodeSnippets from "./InteractiveCodeSnippets";
 
 export default function DataDocsPage() {
@@ -90,27 +91,8 @@ export default function DataDocsPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 shadow-lg shadow-emerald-500/20 hover:scale-105 transition-transform"
-            >
-              <Radio className="w-6 h-6 font-bold" />
-            </Link>
-            <div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/"
-                  className="font-bold text-lg text-slate-100 tracking-tight hover:text-emerald-400 transition-colors"
-                >
-                  Open Ried Sens
-                </Link>
-                <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                  Open Data & API
-                </span>
-              </div>
-            </div>
-          </div>
+          {/* Logo & Brand */}
+          <HeaderLogo />
 
           <div className="flex items-center gap-3">
             <Link
