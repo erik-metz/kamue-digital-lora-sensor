@@ -44,7 +44,9 @@ export default function AdminPage() {
   const [sensors, setSensors] = useState<SensorItem[]>([]);
   const [loadingSensors, setLoadingSensors] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterVisibility, setFilterVisibility] = useState<"all" | "visible" | "hidden">("all");
+  const [filterVisibility, setFilterVisibility] = useState<
+    "all" | "visible" | "hidden"
+  >("all");
   const [feedbackMessage, setFeedbackMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -203,7 +205,6 @@ export default function AdminPage() {
     setFeedbackMessage(null);
 
     const payload = {
-      sensor_id: createForm.sensor_id.trim(),
       friendly_name: createForm.friendly_name.trim(),
       latitude: createForm.latitude ? parseFloat(createForm.latitude) : null,
       longitude: createForm.longitude ? parseFloat(createForm.longitude) : null,
@@ -385,7 +386,8 @@ export default function AdminPage() {
     const matchesSearch =
       s.sensor_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       s.friendly_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.description && s.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      (s.description &&
+        s.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
     if (!matchesSearch) return false;
     if (filterVisibility === "visible") return !s.is_hidden;
@@ -557,7 +559,9 @@ export default function AdminPage() {
               ) : (
                 <AlertTriangle className="w-5 h-5 shrink-0 text-rose-400" />
               )}
-              <span className="text-sm font-medium">{feedbackMessage.text}</span>
+              <span className="text-sm font-medium">
+                {feedbackMessage.text}
+              </span>
             </div>
             <button
               onClick={() => setFeedbackMessage(null)}
@@ -578,12 +582,16 @@ export default function AdminPage() {
             <p className="text-3xl font-extrabold text-slate-100 mt-2">
               {totalCount}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Registrierte Messpunkte</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Registrierte Messpunkte
+            </p>
           </div>
 
           <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">Öffentlich Sichtbar</span>
+              <span className="text-sm text-slate-400">
+                Öffentlich Sichtbar
+              </span>
               <Eye className="w-4 h-4 text-emerald-400" />
             </div>
             <p className="text-3xl font-extrabold text-emerald-400 mt-2">
@@ -596,7 +604,9 @@ export default function AdminPage() {
 
           <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-400">Ausgeblendet (Privat)</span>
+              <span className="text-sm text-slate-400">
+                Ausgeblendet (Privat)
+              </span>
               <EyeOff className="w-4 h-4 text-amber-400" />
             </div>
             <p className="text-3xl font-extrabold text-amber-400 mt-2">
@@ -686,16 +696,25 @@ export default function AdminPage() {
               <thead className="bg-slate-950/60 border-b border-slate-800 text-xs uppercase tracking-wider text-slate-400">
                 <tr>
                   <th className="py-3.5 px-6 font-semibold">Sensor-ID</th>
-                  <th className="py-3.5 px-6 font-semibold">Bezeichnung & Ort</th>
+                  <th className="py-3.5 px-6 font-semibold">
+                    Bezeichnung & Ort
+                  </th>
                   <th className="py-3.5 px-6 font-semibold">GPS-Koordinaten</th>
-                  <th className="py-3.5 px-6 font-semibold">Status / Sichtbarkeit</th>
-                  <th className="py-3.5 px-6 font-semibold text-right">Aktionen</th>
+                  <th className="py-3.5 px-6 font-semibold">
+                    Status / Sichtbarkeit
+                  </th>
+                  <th className="py-3.5 px-6 font-semibold text-right">
+                    Aktionen
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredSensors.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="py-12 text-center text-slate-500">
+                    <td
+                      colSpan={5}
+                      className="py-12 text-center text-slate-500"
+                    >
                       Keine Sensoren gefunden.
                     </td>
                   </tr>
@@ -724,7 +743,8 @@ export default function AdminPage() {
 
                       {/* GPS Coordinates */}
                       <td className="py-4 px-6 font-mono text-xs text-slate-400">
-                        {sensor.latitude !== null && sensor.longitude !== null ? (
+                        {sensor.latitude !== null &&
+                        sensor.longitude !== null ? (
                           <a
                             href={`https://www.openstreetmap.org/?mlat=${sensor.latitude}&mlon=${sensor.longitude}#map=16/${sensor.latitude}/${sensor.longitude}`}
                             target="_blank"
@@ -738,7 +758,9 @@ export default function AdminPage() {
                             </span>
                           </a>
                         ) : (
-                          <span className="text-slate-600">Keine Koordinaten</span>
+                          <span className="text-slate-600">
+                            Keine Koordinaten
+                          </span>
                         )}
                       </td>
 
@@ -828,22 +850,6 @@ export default function AdminPage() {
             </div>
 
             <form onSubmit={handleCreateSensor} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Sensor-ID * (e.g. ried-06)
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ried-06"
-                  value={createForm.sensor_id}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, sensor_id: e.target.value })
-                  }
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                   Bezeichnung / Name *
