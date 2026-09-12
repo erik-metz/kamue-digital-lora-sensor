@@ -11,7 +11,7 @@ export default function HeaderLogo() {
           <span className="font-bold text-lg text-slate-100 tracking-tight">
             Open Ried Sens
           </span>
-          <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <span className="hidden sm:block text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             Bürstadt & Lampertheim
           </span>
         </div>
