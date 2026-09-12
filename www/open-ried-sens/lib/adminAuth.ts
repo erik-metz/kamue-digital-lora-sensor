@@ -5,7 +5,11 @@ const COOKIE_NAME = "open_ried_admin_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
 export function getAdminSecret(): string {
-  return process.env.ADMIN_PASSWORD || process.env.ADMIN_SECRET || "openried2026";
+  const secret = process.env.ADMIN_PASSWORD || process.env.ADMIN_SECRET;
+  if (!secret) {
+    throw new Error("ADMIN_PASSWORD or ADMIN_SECRET must be configured.");
+  }
+  return secret;
 }
 
 export function getBackendUrl(): string {
