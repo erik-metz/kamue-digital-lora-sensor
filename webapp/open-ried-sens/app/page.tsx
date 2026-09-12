@@ -237,7 +237,7 @@ export default function Home() {
           </div>
 
           {/* Quick Nav Links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+          <nav className="hidden md:flex items-end gap-6 text-sm font-medium text-slate-300">
             {/* <a
               href="#projekt"
               className="hover:text-emerald-400 transition-colors"
