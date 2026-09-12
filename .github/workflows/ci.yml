@@ -29,12 +29,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f webapp/vps/requirements.txt ]; then pip install -r webapp/vps/requirements.txt; fi
+          if [ -f www/vps/requirements.txt ]; then pip install -r www/vps/requirements.txt; fi
           pip install ruff pytest
 
       - name: Lint code with Ruff
         run: |
-          ruff check webapp/vps/ --fix
+          ruff check www/vps/ --fix
 
   build-and-push-ghcr:
     name: Build & Push Docker Image to GHCR
@@ -59,7 +59,7 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
-          context: ./webapp/vps
-          file: ./webapp/vps/dockerfile
+          context: ./www/vps
+          file: ./www/vps/dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/kamue-digital-lora-sensor:latest

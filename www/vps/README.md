@@ -38,9 +38,9 @@ This directory contains the cloud backend service and container configuration de
 
 The deployment pipeline is defined in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml):
 
-1. **Code Validation**: Every push and pull request runs `ruff check webapp/vps/` to enforce code quality and styling.
+1. **Code Validation**: Every push and pull request runs `ruff check www/vps/` to enforce code quality and styling.
 2. **Container Build & Push**: On commits pushed to `main`:
-   - Builds the Docker image from `webapp/vps/dockerfile`.
+   - Builds the Docker image from `www/vps/dockerfile`.
    - Authenticates to **GitHub Container Registry** (`ghcr.io`).
    - Pushes the image tagged as `ghcr.io/<repo-owner>/kamue-digital-lora-sensor:latest`.
 3. **EC2 Continuous Deployment**:
