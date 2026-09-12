@@ -11,7 +11,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
-import InteractiveCodeNippets from "./InteractiveCodeNippets";
+import InteractiveCodeSnippets from "./InteractiveCodeSnippets";
 
 export default function DataDocsPage() {
   const backendUrl = getBackendUrl();
@@ -177,7 +177,7 @@ export default function DataDocsPage() {
 
         {/* INTERACTIVE CODE SNIPPETS */}
         <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-          <InteractiveCodeNippets codeSnippets={codeSnippets} />
+          <InteractiveCodeSnippets codeSnippets={codeSnippets} />
         </section>
 
         {/* API ENDPOINTS DIRECTORY */}

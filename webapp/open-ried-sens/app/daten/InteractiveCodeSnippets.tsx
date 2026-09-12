@@ -3,7 +3,17 @@
 import { Check, Copy, Terminal } from "lucide-react";
 import { useState } from "react";
 
-export default function InteractiveCodeNippets(codeSnippets: string) {
+interface InteractiveCodeSnippetsProps {
+  codeSnippets: {
+    curl: string;
+    python: string;
+    javascript: string;
+  };
+}
+
+export default function InteractiveCodeSnippets({
+  codeSnippets,
+}: InteractiveCodeSnippetsProps) {
   const [activeCodeTab, setActiveCodeTab] = useState<
     "curl" | "python" | "javascript"
   >("curl");
