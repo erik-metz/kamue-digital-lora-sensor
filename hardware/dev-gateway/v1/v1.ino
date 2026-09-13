@@ -68,6 +68,7 @@ uint16_t token = 0;
 volatile bool packetReceived = false;
 uint32_t rxCount = 0;
 uint32_t gpsBytes = 0;
+uint32_t gpsSentences = 0;
 int16_t lastRssi = 0;
 float lastSnr = 0;
 String statusLine = "Booting";
@@ -123,20 +124,41 @@ void initDisplay() {
 }
 
 void initGNSS() {
-  // From the working sensor node, excluding GPIO 5 because it is FEM_CTX.
+  // Working sequence from the tracker node (v1.ino), adapted for the gateway.
+  // GPIO 5 must NOT be used: it is FEM_CTX on this board.
+  // VEXT is already driven LOW by initDisplay(); re-assert it here for safety.
+  pinMode(VEXT_PIN, OUTPUT);
+  digitalWrite(VEXT_PIN, LOW);
+  delay(50);
+
   pinMode(GNSS_PWR_PIN, OUTPUT);
   digitalWrite(GNSS_PWR_PIN, HIGH);
+
   pinMode(GNSS_EN_PIN, OUTPUT);
-  digitalWrite(GNSS_EN_PIN, LOW);
+  digitalWrite(GNSS_EN_PIN, LOW);   // active LOW enable for L76K on V4
+
   pinMode(GNSS_WAKE_PIN, OUTPUT);
-  digitalWrite(GNSS_WAKE_PIN, HIGH);
+  digitalWrite(GNSS_WAKE_PIN, HIGH); // force L76K awake
+  delay(100);
+
+  // Active-LOW reset pulse on pin 42 only (pin 5 is FEM_CTX)
   pinMode(GNSS_RST_PIN, OUTPUT);
+  digitalWrite(GNSS_RST_PIN, HIGH);
+  delay(10);
   digitalWrite(GNSS_RST_PIN, LOW);
   delay(150);
   digitalWrite(GNSS_RST_PIN, HIGH);
   delay(1000);
+
   gpsSerial.setRxBufferSize(2048);
   gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+  delay(50);
+
+  // Quectel L76K PMTK wakeup / exit standby (same as working tracker)
+  gpsSerial.println(F("$PMTK000*32"));
+  gpsSerial.println(F("$PMTK225,0*2B"));
+
+  Serial.println(F("[GNSS] init: VEXT LOW, PWR:3 HIGH, EN:34 LOW, WAKE:40 HIGH, RST:42 pulsed, UART 9600 on RX:38 TX:39"));
 }
 
 void updateDisplay() {
@@ -160,7 +182,9 @@ void updateDisplay() {
     display.print(F(" sat)"));
   }
   display.setCursor(0, 42);
-  display.print(F("GPS bytes: ")); display.print(gpsBytes);
+  display.print(F("B:")); display.print(gpsBytes);
+  display.print(F(" S:")); display.print(gpsSentences);
+  display.print(F(" ck:")); display.print(gps.failedChecksum());
   display.setCursor(0, 54);
   display.print(statusLine);
   display.display();
@@ -345,7 +369,43 @@ void handlePullResponse(uint16_t responseToken, const uint8_t* buffer, size_t le
 }
 
 void processGps() {
-  while (gpsSerial.available()) { ++gpsBytes; gps.encode(gpsSerial.read()); }
+  // Drain UART and feed TinyGPS++ (same approach as working tracker)
+  while (gpsSerial.available() > 0) {
+    char c = gpsSerial.read();
+    ++gpsBytes;
+    if (gps.encode(c)) {
+      ++gpsSentences;
+    }
+  }
+
+  // If still no valid NMEA after several seconds, re-assert power and send PMTK wakeups.
+  // Do not retoggle pinouts that conflict with the RF FEM (GPIO 5).
+  static uint32_t lastGpsRecover = 0;
+  if (millis() > 8000 && gpsSentences == 0 && (millis() - lastGpsRecover > 10000)) {
+    lastGpsRecover = millis();
+    Serial.print(F("[GNSS] no NMEA yet (bytes="));
+    Serial.print(gpsBytes);
+    Serial.println(F("). Re-asserting power rails and sending PMTK wakeups."));
+
+    pinMode(VEXT_PIN, OUTPUT);
+    digitalWrite(VEXT_PIN, LOW);
+    pinMode(GNSS_PWR_PIN, OUTPUT);
+    digitalWrite(GNSS_PWR_PIN, HIGH);
+    pinMode(GNSS_EN_PIN, OUTPUT);
+    digitalWrite(GNSS_EN_PIN, LOW);
+    pinMode(GNSS_WAKE_PIN, OUTPUT);
+    digitalWrite(GNSS_WAKE_PIN, HIGH);
+    delay(50);
+
+    // Soft re-init UART without changing pins
+    gpsSerial.end();
+    delay(30);
+    gpsSerial.setRxBufferSize(2048);
+    gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+    delay(50);
+    gpsSerial.println(F("$PMTK000*32"));
+    gpsSerial.println(F("$PMTK225,0*2B"));
+  }
 }
 
 void processUdp() {
