@@ -27,6 +27,8 @@
 #define OLED_RST       21
 #define SCREEN_WIDTH   128
 #define SCREEN_HEIGHT  64
+#define BAT_ADC_PIN     1
+#define BAT_CTRL_PIN   37       // HIGH enables measurement, as on sensor-node/v1
 
 // GPS. GPIO 5 must NOT be used here: it controls the RF FEM on this board.
 #define GNSS_PWR_PIN   3
@@ -69,6 +71,14 @@ volatile bool packetReceived = false;
 uint32_t rxCount = 0;
 uint32_t gpsBytes = 0;
 uint32_t gpsSentences = 0;
+uint32_t lastGpsSentence = 0;
+uint32_t lastGpsProbe = 0;
+uint8_t gpsProbeIndex = 0;
+// Retain the V4 UART pins: the tracker's other candidates overlap OLED,
+// GNSS control, or gateway peripherals. Probe only enable level and baud.
+const uint32_t gpsProbeBauds[] = { GPS_BAUD, GPS_BAUD, 115200, 115200 };
+const uint8_t gpsProbeEnable[] = { LOW, HIGH, LOW, HIGH };
+const uint32_t GPS_DATA_TIMEOUT_MS = 15000;
 int16_t lastRssi = 0;
 float lastSnr = 0;
 String statusLine = "Booting";
@@ -158,15 +168,59 @@ void initGNSS() {
   gpsSerial.println(F("$PMTK000*32"));
   gpsSerial.println(F("$PMTK225,0*2B"));
 
+  lastGpsProbe = millis();
   Serial.println(F("[GNSS] init: VEXT LOW, PWR:3 HIGH, EN:34 LOW, WAKE:40 HIGH, RST:42 pulsed, UART 9600 on RX:38 TX:39"));
 }
+
+// Same divider sampling and voltage-based estimate as sensor-node/v1.
+float readBatteryVoltage() {
+  pinMode(BAT_CTRL_PIN, OUTPUT);
+  digitalWrite(BAT_CTRL_PIN, HIGH);
+  delay(10);
+  uint32_t totalMv = 0;
+  const int samples = 10;
+  for (int i = 0; i < samples; ++i) {
+    totalMv += analogReadMilliVolts(BAT_ADC_PIN);
+    delay(2);
+  }
+  digitalWrite(BAT_CTRL_PIN, LOW);
+  return (static_cast<float>(totalMv) / samples) * 4.9f / 1000.0f;
+}
+
+int getBatteryPercentage(float v) {
+  if (v >= 4.18f) return 100;
+  if (v <= 3.30f) return 0;
+
+  int pct = 0;
+  if (v >= 4.00f) {
+    pct = 90 + (int)((v - 4.00f) / 0.18f * 10.0f);
+  } else if (v >= 3.90f) {
+    pct = 75 + (int)((v - 3.90f) / 0.10f * 15.0f);
+  } else if (v >= 3.80f) {
+    pct = 55 + (int)((v - 3.80f) / 0.10f * 20.0f);
+  } else if (v >= 3.70f) {
+    pct = 35 + (int)((v - 3.70f) / 0.10f * 20.0f);
+  } else if (v >= 3.50f) {
+    pct = 15 + (int)((v - 3.50f) / 0.20f * 20.0f);
+  } else {
+    pct = (int)((v - 3.30f) / 0.20f * 15.0f);
+  }
+
+  if (pct > 100) return 100;
+  if (pct < 0) return 0;
+  return pct;
+}
+
 
 void updateDisplay() {
   if (!displayReady) return;
   display.clearDisplay();
   display.setTextSize(1);
   display.setCursor(0, 0);
-  display.print(F("SC-GW EU868 SF")); display.print(LORA_SF);
+  const float batteryVolts = readBatteryVoltage();
+  display.print(F("Battery: "));
+  display.print(batteryVolts, 1); display.print(F("V "));
+  display.print(getBatteryPercentage(batteryVolts)); display.print('%');
   display.setCursor(0, 10);
   display.print(F("IP: ")); display.print(WiFi.localIP());
   display.setCursor(0, 20);
@@ -174,18 +228,18 @@ void updateDisplay() {
   display.print(F(" R:")); display.print(lastRssi);
   display.print(F(" S:")); display.print(lastSnr, 1);
   display.setCursor(0, 30);
-  if (gps.location.isValid()) {
+  if (gps.location.isValid() && gps.location.age() < 5000) {
     display.print(gps.location.lat(), 4); display.print(',');
     display.print(gps.location.lng(), 4);
+  } else if (gpsSentences == 0 || millis() - lastGpsSentence >= GPS_DATA_TIMEOUT_MS) {
+    display.print(F("GPS: no data"));
   } else {
-    display.print(F("GPS: searching (")); display.print(gps.satellites.value());
-    display.print(F(" sat)"));
+    display.print(F("GPS: searching "));
+    display.print(gps.satellites.isValid() && gps.satellites.age() < 5000
+        ? gps.satellites.value() : 0);
+    display.print(F(" sat"));
   }
   display.setCursor(0, 42);
-  display.print(F("B:")); display.print(gpsBytes);
-  display.print(F(" S:")); display.print(gpsSentences);
-  display.print(F(" ck:")); display.print(gps.failedChecksum());
-  display.setCursor(0, 54);
   display.print(statusLine);
   display.display();
 }
@@ -369,42 +423,58 @@ void handlePullResponse(uint16_t responseToken, const uint8_t* buffer, size_t le
 }
 
 void processGps() {
-  // Drain UART and feed TinyGPS++ (same approach as working tracker)
   while (gpsSerial.available() > 0) {
-    char c = gpsSerial.read();
+    const char c = gpsSerial.read();
     ++gpsBytes;
     if (gps.encode(c)) {
       ++gpsSentences;
+      lastGpsSentence = millis();
     }
   }
 
-  // If still no valid NMEA after several seconds, re-assert power and send PMTK wakeups.
-  // Do not retoggle pinouts that conflict with the RF FEM (GPIO 5).
-  static uint32_t lastGpsRecover = 0;
-  if (millis() > 8000 && gpsSentences == 0 && (millis() - lastGpsRecover > 10000)) {
-    lastGpsRecover = millis();
-    Serial.print(F("[GNSS] no NMEA yet (bytes="));
-    Serial.print(gpsBytes);
-    Serial.println(F("). Re-asserting power rails and sending PMTK wakeups."));
+  const uint32_t now = millis();
+  // Valid NMEA without a satellite fix means the receiver is working. Leave
+  // it powered and acquiring; only probe when the serial stream is absent.
+  if ((gpsSentences == 0 || now - lastGpsSentence >= GPS_DATA_TIMEOUT_MS) &&
+      now - lastGpsProbe >= GPS_DATA_TIMEOUT_MS) {
+    gpsProbeIndex = (gpsProbeIndex + 1) %
+        (sizeof(gpsProbeBauds) / sizeof(gpsProbeBauds[0]));
+    Serial.printf("[GNSS][AUTO_PROBE] No valid NMEA: bytes=%lu, checksums_failed=%lu; baud=%lu RX=%d TX=%d EN=%s\n",
+        static_cast<unsigned long>(gpsBytes),
+        static_cast<unsigned long>(gps.failedChecksum()),
+        static_cast<unsigned long>(gpsProbeBauds[gpsProbeIndex]), GPS_RX, GPS_TX,
+        gpsProbeEnable[gpsProbeIndex] == LOW ? "LOW" : "HIGH");
 
+    gpsSerial.end();
+    // Discard partial sentences and stale fixes when changing configuration.
+    gps = TinyGPSPlus();
     pinMode(VEXT_PIN, OUTPUT);
     digitalWrite(VEXT_PIN, LOW);
     pinMode(GNSS_PWR_PIN, OUTPUT);
     digitalWrite(GNSS_PWR_PIN, HIGH);
     pinMode(GNSS_EN_PIN, OUTPUT);
-    digitalWrite(GNSS_EN_PIN, LOW);
+    digitalWrite(GNSS_EN_PIN, gpsProbeEnable[gpsProbeIndex]);
     pinMode(GNSS_WAKE_PIN, OUTPUT);
     digitalWrite(GNSS_WAKE_PIN, HIGH);
-    delay(50);
-
-    // Soft re-init UART without changing pins
-    gpsSerial.end();
-    delay(30);
+    delay(150);
     gpsSerial.setRxBufferSize(2048);
-    gpsSerial.begin(GPS_BAUD, SERIAL_8N1, GPS_RX, GPS_TX);
+    gpsSerial.begin(gpsProbeBauds[gpsProbeIndex], SERIAL_8N1, GPS_RX, GPS_TX);
     delay(50);
     gpsSerial.println(F("$PMTK000*32"));
     gpsSerial.println(F("$PMTK225,0*2B"));
+    lastGpsProbe = millis();
+  }
+
+  static uint32_t lastGpsLog = 0;
+  if (now - lastGpsLog >= 5000) {
+    lastGpsLog = now;
+    Serial.printf("[GNSS] bytes=%lu valid=%lu failed=%lu satellites=%lu fix=%s baud=%lu EN=%s\n",
+        static_cast<unsigned long>(gpsBytes), static_cast<unsigned long>(gpsSentences),
+        static_cast<unsigned long>(gps.failedChecksum()),
+        static_cast<unsigned long>(gps.satellites.value()),
+        gps.location.isValid() && gps.location.age() < 5000 ? "yes" : "no",
+        static_cast<unsigned long>(gpsProbeBauds[gpsProbeIndex]),
+        gpsProbeEnable[gpsProbeIndex] == LOW ? "LOW" : "HIGH");
   }
 }
 
@@ -428,7 +498,11 @@ void setup() {
   statusLine = "Connecting WiFi"; updateDisplay();
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  for (int retries = 0; WiFi.status() != WL_CONNECTED && retries < 40; ++retries) delay(500);
+  for (int retries = 0; WiFi.status() != WL_CONNECTED && retries < 40; ++retries) {
+    // Keep the GPS UART drained while WiFi connects.
+    processGps();
+    delay(500);
+  }
   if (WiFi.status() != WL_CONNECTED) {
     statusLine = "WiFi failed; reboot"; updateDisplay(); delay(3000); ESP.restart();
   }
