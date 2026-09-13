@@ -139,9 +139,9 @@ class ShakeCollector:
             async with await psycopg.AsyncConnection.connect(conninfo) as conn:
                 async with conn.cursor() as cur:
                     query = """
-                        INSERT INTO sensor_metadata (sensor_id, friendly_name, latitude, longitude, is_hidden, description)
+                        INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, is_hidden, description)
                         VALUES (%s, %s, %s, %s, FALSE, %s)
-                        ON CONFLICT (sensor_id) DO UPDATE SET
+                        ON CONFLICT (id) DO UPDATE SET
                             friendly_name = EXCLUDED.friendly_name,
                             latitude = EXCLUDED.latitude,
                             longitude = EXCLUDED.longitude,
