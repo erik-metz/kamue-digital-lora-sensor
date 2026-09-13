@@ -51,20 +51,7 @@ async function fetchSensors(): Promise<SensorNode[]> {
         lat: s.latitude!,
         lng: s.longitude!,
         status: "online" as const,
-        // Placeholder until you enrich with /telemetry/latest (or a bulk endpoint)
-        batteryPct: 0,
-        rssi: 0,
-        snr: 0,
-        temp: 0,
-        humidity: 0,
-        rainMm: 0,
-        uvIndex: 0,
-        vocIndex: 0,
-        noxIndex: 0,
-        pm25: 0,
-        noiseDb: 0,
-        noiseLabel: "Ruhig" as const,
-        lastSeen: "—",
+
       }));
   } catch {
     return [];

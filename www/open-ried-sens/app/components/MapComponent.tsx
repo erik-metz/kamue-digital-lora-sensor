@@ -11,19 +11,7 @@ export interface SensorNode {
   lat: number;
   lng: number;
   status: "online" | "warning" | "offline";
-  batteryPct: number;
-  rssi: number;
-  snr: number;
-  temp: number;
-  humidity: number;
-  rainMm: number;
-  uvIndex: number;
-  vocIndex: number;
-  noxIndex: number;
-  pm25: number;
-  noiseDb: number;
-  noiseLabel: "Fahrzeugverkehr" | "Passanten/Sprache" | "Wind/Natur" | "Ruhig";
-  lastSeen: string;
+
 }
 
 interface MapProps {
@@ -130,34 +118,14 @@ export default function MapComponent({
         icon: createCustomIcon(node, isSelected),
       }).addTo(map);
 
-      const popupContent = `
-          <div style="font-family: system-ui, sans-serif; color: #e2e8f0; min-width: 200px; padding: 4px;">
-            <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px; color: #0284c7;">
-              ${node.name}
-            </div>
-            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 2px;">
-              📍 ${node.locationName}
-            </div>
-            <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
-              🏠 ${node.address}
-            </div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; margin-bottom: 8px; background: #2d3748; padding: 6px; border-radius: 6px;">
-              <div>🌡️ Temp: <b>${node.temp.toFixed(1)} °C</b></div>
-              <div>💧 Feuchte: <b>${node.humidity}%</b></div>
-              <div>🔊 Lärm: <b>${node.noiseDb} dB</b></div>
-              <div>🏷️ Typ: <b>${node.noiseLabel}</b></div>
-              <div>🌫️ PM2.5: <b>${node.pm25} µg</b></div>
-              <div>🔋 Akku: <b>${node.batteryPct}%</b></div>
-            </div>
-
-            <div style="font-size: 10px; color: #94a3b8; display: flex; justify-content: space-between;">
-              <span>LoRa RSSI: ${node.rssi} dBm</span>
-              <span>Letztes Signal: ${node.lastSeen}</span>
-            </div>
-          </div>
-        `;
-
+      const popupContent = document.createElement("div");
+      const title = document.createElement("strong");
+      title.textContent = node.name;
+      const description = document.createElement("p");
+      description.textContent = node.address;
+      const hint = document.createElement("p");
+      hint.textContent = "Messwerte und Zeitverlauf unter der Karte";
+      popupContent.append(title, description, hint);
       marker.bindPopup(popupContent);
 
       marker.on("click", () => {

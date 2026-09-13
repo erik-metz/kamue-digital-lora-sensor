@@ -1,230 +1,112 @@
 "use client";
 
-import { useState } from "react";
-import { SensorNode } from "./MapComponent";
-import { Thermometer, Volume2, CloudFog, Signal, Activity, Wind, Sun, Droplets } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useEffect, useState } from "react";
+import type { SensorNode } from "./MapComponent";
+import { Activity } from "lucide-react";
+import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 
-interface TelemetryChartsProps {
-  node: SensorNode;
-}
+type Reading = { metric: string; unit: string; value: number; timestamp: string };
+type Bucket = { metric: string; unit: string; bucket: string; avg_value: number | null };
+type Telemetry = { readings: Reading[]; history: Bucket[]; start: string; end: string };
+const seriesKey = (reading: { metric: string; unit: string }) => JSON.stringify([reading.metric, reading.unit]);
+const metricLabel = (reading: { metric: string; unit: string }) => {
+  const labels: Record<string, string> = { pgv: "Peak-Vibration (PGV)", rms: "RMS-Tremor", waveform: "Wellenform", temperature: "Temperatur", humidity: "Luftfeuchtigkeit" };
+  const units: Record<string, string> = { celsius: "Temperatur", "°C": "Temperatur", dBm: "Signalstärke", mm: "Niederschlag" };
+  return labels[reading.metric] ?? (reading.metric === "value" ? units[reading.unit] ?? "Messwert" : reading.metric);
+};
+const number = (value: number) => value.toLocaleString("de-DE", { maximumFractionDigits: 2 });
+const time = (value: string) => new Date(value).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-export default function TelemetryCharts({ node }: TelemetryChartsProps) {
-  const [activeTab, setActiveTab] = useState<"klima" | "laerm" | "luft" | "lora">("klima");
+export default function TelemetryCharts({ node, nodes, onSelectNode }: {
+  node: SensorNode; nodes: SensorNode[]; onSelectNode: (id: string) => void;
+}) {
+  const [data, setData] = useState<Telemetry | null>(null);
+  const [error, setError] = useState(false);
+  const [selectedSeries, setSelectedSeries] = useState("");
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function refresh() {
+      try {
+        const response = await fetch(`/api/telemetry?${new URLSearchParams({ sensor_id: node.id })}`, { signal: controller.signal });
+        if (!response.ok) throw new Error("Telemetry unavailable");
+        const result: Telemetry = await response.json();
+        if (!controller.signal.aborted) { setData(result); setError(false); }
+      } catch {
+        if (!controller.signal.aborted) setError(true);
+      } finally {
+        if (!controller.signal.aborted) timer = setTimeout(refresh, 30000);
+      }
+    }
+    void refresh();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [node.id]);
 
-  // Simulated 12-point time series data for the selected node
-  const generateHistoryData = () => {
-    const hours = ["00:00", "02:00", "04:00", "06:00", "08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"];
-    return hours.map((time, idx) => {
-      const offset = (Math.sin(idx) * 2.5);
-      return {
-        time,
-        temp: Math.round((node.temp + offset) * 10) / 10,
-        humidity: Math.min(100, Math.max(30, Math.round(node.humidity - offset * 3))),
-        noiseDb: Math.min(95, Math.max(35, Math.round(node.noiseDb + offset * 4))),
-        pm25: Math.min(50, Math.max(5, Math.round(node.pm25 + Math.cos(idx) * 3))),
-        rssi: Math.round(node.rssi + Math.sin(idx * 2) * 3),
-      };
-    });
-  };
-
-  const history = generateHistoryData();
+  const readings = data?.readings ?? [];
+  const active = readings.find(reading => seriesKey(reading) === selectedSeries) ?? readings[0];
+  const history = active ? (data?.history ?? []).filter(bucket => seriesKey(bucket) === seriesKey(active) && bucket.avg_value !== null).sort((a, b) => Date.parse(a.bucket) - Date.parse(b.bucket)) : [];
+  const values = history.map(bucket => bucket.avg_value!);
+  const min = values.length ? Math.min(...values) : 0;
+  const max = values.length ? Math.max(...values) : 0;
+  const padding = (max - min) * 0.1 || Math.max(Math.abs(max) * 0.05, 1);
+  const lower = min - padding;
+  const upper = max + padding;
+  const start = data ? Date.parse(data.start) : 0;
+  const end = data ? Date.parse(data.end) : 1;
+  const points = history.map(bucket => ({
+    x: 65 + Math.max(0, Math.min(1, (Date.parse(bucket.bucket) - start) / (end - start))) * 720,
+    y: 180 - ((bucket.avg_value! - lower) / (upper - lower)) * 155,
+    bucket,
+  }));
+  // Leave gaps when more than one aggregation bucket is missing.
+  const path = points.map((point, index) => `${index === 0 || Date.parse(point.bucket.bucket) - Date.parse(points[index - 1].bucket.bucket) > 600000 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
 
   return (
-    <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 backdrop-blur-xl shadow-xl flex flex-col gap-6">
-      {/* Header & Tab Selector */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+    <section id="messwerte" className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6 space-y-6">
+      <div className="grid gap-5 lg:grid-cols-2 border-b border-slate-800 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-emerald-400" />
-            <h3 className="text-lg font-bold text-slate-100">
-              Echtzeit-Analyse & Zeitverlauf
-            </h3>
-          </div>
-          <p className="text-sm text-slate-400 mt-1">
-          Station: <span className="text-emerald-400 font-semibold">{node.name}</span> ({node.locationName})
-        </p>
-      </div>
-
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-          <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1 text-sm">
-            <TabsTrigger
-              value="klima"
-              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
-            >
-            <Thermometer className="w-3.5 h-3.5" /> Klima & Wetter
-            </TabsTrigger>
-            <TabsTrigger
-              value="laerm"
-              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
-            >
-            <Volume2 className="w-3.5 h-3.5" /> Lärm & Mikrofon
-            </TabsTrigger>
-            <TabsTrigger
-              value="luft"
-              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
-            >
-            <CloudFog className="w-3.5 h-3.5" /> Luft & Feinstaub
-            </TabsTrigger>
-            <TabsTrigger
-              value="lora"
-              className="h-auto flex-none rounded-lg px-3 py-1.5 text-slate-400 hover:text-slate-200 data-active:border-emerald-500/30 data-active:bg-emerald-500/20 data-active:text-emerald-300"
-            >
-            <Signal className="w-3.5 h-3.5" /> LoRaWAN Signal
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
-
-      {/* Grid of Key Sensor Values */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-sm text-slate-400 flex items-center gap-1.5">
-            <Thermometer className="w-4 h-4 text-amber-400" /> Temperatur
-          </span>
-          <span className="text-2xl font-bold text-slate-100 mt-2">
-            {node.temp.toFixed(1)} <span className="text-sm font-normal text-slate-400">°C</span>
-          </span>
-          <span className="text-xs text-slate-500 mt-1">24h Max: {(node.temp + 3.2).toFixed(1)} °C</span>
+          <h3 className="flex items-center gap-2 text-lg font-bold"><Activity className="size-5 text-emerald-400" /> Messwerte & Zeitverlauf</h3>
+          <p className="mt-2 text-sm text-slate-400">{node.address}</p>
+          <p className="mt-2 text-xs text-slate-500 break-all">{node.id} · {node.lat.toFixed(5)}, {node.lng.toFixed(5)}</p>
         </div>
-
-        <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-sm text-slate-400 flex items-center gap-1.5">
-            <Droplets className="w-4 h-4 text-blue-400" /> Luftfeuchtigkeit
-          </span>
-          <span className="text-2xl font-bold text-slate-100 mt-2">
-            {node.humidity} <span className="text-sm font-normal text-slate-400">%</span>
-          </span>
-          <span className="text-xs text-slate-500 mt-1">Taupunkt: ~{(node.temp - (100 - node.humidity) / 5).toFixed(1)} °C</span>
-        </div>
-
-        <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-sm text-slate-400 flex items-center gap-1.5">
-            <Volume2 className="w-4 h-4 text-purple-400" /> Akustik & Lärm
-          </span>
-          <span className="text-2xl font-bold text-slate-100 mt-2">
-            {node.noiseDb} <span className="text-sm font-normal text-slate-400">dB(A)</span>
-          </span>
-          <span className="text-xs text-emerald-400 mt-1 font-medium">
-            Klassifikation: {node.noiseLabel}
-          </span>
-        </div>
-
-        <div className="bg-slate-950/60 border border-slate-800/80 p-4 rounded-xl flex flex-col">
-          <span className="text-sm text-slate-400 flex items-center gap-1.5">
-            <CloudFog className="w-4 h-4 text-cyan-400" /> Feinstaub PM2.5
-          </span>
-          <span className="text-2xl font-bold text-slate-100 mt-2">
-            {node.pm25} <span className="text-sm font-normal text-slate-400">µg/m³</span>
-          </span>
-          <span className="text-xs text-emerald-400 mt-1 font-medium">
-            Status: Sehr gut
-          </span>
+        <div className="min-w-0">
+          <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-emerald-400">Ausgewählte Station</p>
+          <Combobox items={nodes} value={node} itemToStringValue={item => item.name} onValueChange={item => { if (item) onSelectNode(item.id); }} autoHighlight>
+            <ComboboxInput aria-label="Station auswählen" placeholder="Standort suchen…" className="w-full border-slate-700 bg-slate-950 text-slate-100" />
+            <ComboboxContent className="border-slate-700 bg-slate-900 text-slate-100">
+              <ComboboxEmpty>Kein Standort gefunden</ComboboxEmpty>
+              <ComboboxList>{item => <ComboboxItem key={item.id} value={item} className="whitespace-normal">{item.name}</ComboboxItem>}</ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
       </div>
-
-      {/* SVG Time-Series Chart */}
-      <div className="bg-slate-950/80 border border-slate-800 p-5 rounded-xl">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-sm font-semibold uppercase tracking-wider text-slate-400">
-            {activeTab === "klima" && "24h-Temperaturverlauf (°C)"}
-            {activeTab === "laerm" && "24h-Lärmpegelmessung (dB SPL)"}
-            {activeTab === "luft" && "24h-Feinstaubbelastung PM2.5 (µg/m³)"}
-            {activeTab === "lora" && "24h-LoRaWAN RSSI Signalstärke (dBm)"}
-          </h4>
-          <span className="text-sm text-slate-500 font-mono">Sensortakt: 10 Min.</span>
-        </div>
-
-        {/* Responsive Custom SVG Line Chart */}
-        <div className="w-full h-48 relative">
-          <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150">
-            <defs>
-              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
-                <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
-              </linearGradient>
-            </defs>
-
-            {/* Grid lines */}
-            {[30, 60, 90, 120].map((y, i) => (
-              <line
-                key={i}
-                x1="0"
-                y1={y}
-                x2="500"
-                y2={y}
-                stroke="#1e293b"
-                strokeDasharray="4 4"
-                strokeWidth="1"
-              />
-            ))}
-
-            {/* Render Polyline based on active tab */}
-            {(() => {
-              const getValue = (d: typeof history[0]) => {
-                if (activeTab === "klima") return d.temp;
-                if (activeTab === "laerm") return d.noiseDb;
-                if (activeTab === "luft") return d.pm25;
-                return Math.abs(d.rssi);
-              };
-
-              const vals = history.map(getValue);
-              const minVal = Math.min(...vals) - 2;
-              const maxVal = Math.max(...vals) + 2;
-
-              const points = history.map((d, i) => {
-                const x = (i / (history.length - 1)) * 500;
-                const val = getValue(d);
-                const y = 140 - ((val - minVal) / (maxVal - minVal || 1)) * 110;
-                return { x, y, val, time: d.time };
-              });
-
-              const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-              const areaD = `${pathD} L 500 150 L 0 150 Z`;
-
-              return (
-                <>
-                  <path d={areaD} fill="url(#chartGradient)" />
-                  <path d={pathD} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
-                  {points.map((p, idx) => (
-                    <g key={idx} className="group">
-                      <circle
-                        cx={p.x}
-                        cy={p.y}
-                        r="4"
-                        className="fill-slate-950 stroke-emerald-400 stroke-[2.5] hover:r-6 transition-all cursor-pointer"
-                      />
-                    </g>
-                  ))}
-                </>
-              );
-            })()}
-          </svg>
-        </div>
-
-        {/* X-Axis Timestamps */}
-        <div className="flex justify-between items-center text-xs text-slate-500 font-mono mt-3 px-1">
-          {history.map((h, i) => (
-            <span key={i}>{h.time}</span>
-          ))}
-        </div>
+      <div aria-live="polite">
+        {error ? <p role="alert" className="text-amber-300">Messdaten konnten nicht aktualisiert werden. {data ? "Die zuletzt geladenen Werte bleiben sichtbar." : "Bitte später erneut versuchen."}</p> : !data ? <p className="text-slate-400">Messdaten werden geladen…</p> : readings.length === 0 ? <p className="text-slate-400">Für diese Station sind noch keine Messwerte gespeichert.</p> : null}
       </div>
-
-      {/* Additional Sensor Specs Footer */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-slate-400 bg-slate-950/40 p-4 rounded-xl border border-slate-800/60">
-        <div className="flex items-center gap-2">
-          <Sun className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>UV-Index: <strong className="text-slate-200">{node.uvIndex} (Mäßig)</strong></span>
+      {readings.length > 0 && <>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          {readings.map(reading => <button key={seriesKey(reading)} type="button" aria-pressed={seriesKey(reading) === (active && seriesKey(active))} onClick={() => setSelectedSeries(seriesKey(reading))} className="min-w-0 text-left rounded-xl border border-slate-700 bg-slate-950/60 p-4 aria-pressed:border-emerald-400 focus-visible:outline-2 focus-visible:outline-emerald-400">
+            <span className="block text-sm text-slate-400">{metricLabel(reading)}</span>
+            <span className="block mt-2 text-2xl font-bold break-words">{number(reading.value)} <span className="text-sm font-normal text-slate-400">{reading.unit}</span></span>
+            <span className="block mt-2 text-xs text-slate-500">Stand: {time(reading.timestamp)}</span>
+          </button>)}
         </div>
-        <div className="flex items-center gap-2">
-          <Wind className="w-4 h-4 text-cyan-400 shrink-0" />
-          <span>Gaswerte: <strong className="text-slate-200">VOC {node.vocIndex} | NOx {node.noxIndex}</strong></span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Droplets className="w-4 h-4 text-blue-400 shrink-0" />
-          <span>Regenmenge (24h): <strong className="text-slate-200">{node.rainMm.toFixed(1)} mm</strong></span>
-        </div>
-      </div>
-    </div>
+        {active && <div className="rounded-xl border border-slate-800 bg-slate-950/80 p-4">
+          <h4 className="font-semibold">{metricLabel(active)} · {active.unit}</h4>
+          <p className="text-xs text-slate-400 mt-1">Letzte 24 Stunden · 5-Minuten-Mittelwerte · Uhrzeit Europe/Berlin</p>
+          {history.length === 0 ? <p className="py-10 text-center text-slate-400">Keine Messwerte in den letzten 24 Stunden.</p> : <>
+            <svg viewBox="0 0 800 210" role="img" aria-label={`${metricLabel(active)} in ${active.unit}, letzte 24 Stunden`} className="w-full mt-5">
+              {[lower, (lower + upper) / 2, upper].map((value, index) => <g key={index}>
+                <line x1="65" x2="785" y1={180 - index * 77.5} y2={180 - index * 77.5} stroke="#334155" strokeDasharray="4 4" />
+                <text x="57" y={184 - index * 77.5} textAnchor="end" fill="#94a3b8" fontSize="11">{number(value)}</text>
+              </g>)}
+              <path d={path} fill="none" stroke="#34d399" strokeWidth="2" />
+              {points.map(point => <circle key={point.bucket.bucket} cx={point.x} cy={point.y} r="2" fill="#34d399"><title>{time(point.bucket.bucket)}: {number(point.bucket.avg_value!)} {active.unit}</title></circle>)}
+            </svg>
+            <div className="flex justify-between text-xs text-slate-500"><span>{time(data!.start)}</span><span>{time(data!.end)}</span></div>
+          </>}
+        </div>}
+      </>}
+    </section>
   );
 }
