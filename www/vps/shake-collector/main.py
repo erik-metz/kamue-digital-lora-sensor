@@ -342,7 +342,7 @@ class ShakeCollector:
         async with websockets.connect(
             clean_url,
             subprotocols=["caps"],
-            extra_headers=headers,
+            additional_headers=headers,
             ping_interval=20,
             ping_timeout=20,
             max_size=10 * 1024 * 1024,

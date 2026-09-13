@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-ENV PYTHONUNBUFFERED=1
+# Ensure /app is in the Python path
 ENV PYTHONPATH=/app
 
 COPY requirements.txt .

@@ -86,7 +86,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: ./www/vps/api
-          file: ./www/vps/api/Dockerfile
+          file: ./www/vps/api/v1/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-api:latest
 
