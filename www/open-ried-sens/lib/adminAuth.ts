@@ -1,37 +1,23 @@
+import { env } from "@/env";
 import crypto from "crypto";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "open_ried_admin_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds
 
-export function getAdminSecret(): string {
-  const secret = process.env.ADMIN_PASSWORD || process.env.ADMIN_SECRET;
-  if (!secret) {
-    throw new Error("ADMIN_PASSWORD or ADMIN_SECRET must be configured.");
-  }
-  return secret;
-}
-
 export function getBackendUrl(): string {
-  return (process.env.BACKEND_API_URL || "http://localhost:8080").replace(/\/+$/, "");
-}
-
-export function getBackendAdminKey(): string {
-  return (
-    process.env.BACKEND_ADMIN_API_KEY ||
-    process.env.ADMIN_API_KEY ||
-    process.env.API_KEY ||
-    ""
-  );
+  return (env.BACKEND_API_URL || "http://localhost:8080").replace(/\/+$/, "");
 }
 
 /**
  * Creates a cryptographically signed session token.
  */
 export function createSessionToken(): string {
-  const secret = getAdminSecret();
   const timestamp = Date.now().toString();
-  const hmac = crypto.createHmac("sha256", secret).update(`admin-session:${timestamp}`).digest("hex");
+  const hmac = crypto
+    .createHmac("sha256", env.ADMIN_PASSWORD)
+    .update(`admin-session:${timestamp}`)
+    .digest("hex");
   return `${timestamp}.${hmac}`;
 }
 
@@ -52,11 +38,16 @@ export function verifySessionToken(token: string | undefined | null): boolean {
     return false;
   }
 
-  const secret = getAdminSecret();
-  const actualHmac = crypto.createHmac("sha256", secret).update(`admin-session:${timestampStr}`).digest("hex");
+  const actualHmac = crypto
+    .createHmac("sha256", env.ADMIN_PASSWORD)
+    .update(`admin-session:${timestampStr}`)
+    .digest("hex");
 
   try {
-    return crypto.timingSafeEqual(Buffer.from(actualHmac), Buffer.from(expectedHmac));
+    return crypto.timingSafeEqual(
+      Buffer.from(actualHmac),
+      Buffer.from(expectedHmac)
+    );
   } catch {
     return false;
   }

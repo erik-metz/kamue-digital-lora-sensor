@@ -1,4 +1,5 @@
-import { getBackendAdminKey, getBackendUrl } from "@/lib/adminAuth";
+import { env } from "@/env";
+import { getBackendUrl } from "@/lib/adminAuth";
 
 export interface SensorItem {
   id: string;
@@ -26,10 +27,8 @@ export class BackendError extends Error {
 }
 
 function adminHeaders(json = false): HeadersInit {
-  const key = getBackendAdminKey();
-  if (!key) throw new BackendError("Backend admin credentials are not configured.");
   return {
-    Authorization: `Bearer ${key}`,
+    Authorization: `Bearer ${env.BACKEND_ADMIN_API_KEY}`,
     ...(json ? { "Content-Type": "application/json" } : {}),
   };
 }
@@ -43,12 +42,18 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       cache: "no-store",
     });
   } catch {
-    throw new BackendError("The telemetry backend is currently unavailable.", 502);
+    throw new BackendError(
+      "The telemetry backend is currently unavailable.",
+      502
+    );
   }
 
   if (!response.ok) {
     // Do not relay backend error bodies to the browser.
-    throw new BackendError("The backend could not complete this request.", response.status);
+    throw new BackendError(
+      "The backend could not complete this request.",
+      response.status
+    );
   }
   return response.json() as Promise<T>;
 }
@@ -65,10 +70,13 @@ export function createSensor(input: SensorInput) {
 }
 
 export function updateSensor(id: string, input: SensorInput) {
-  return request<SensorItem>(`/api/v1/admin/sensors/${encodeURIComponent(id)}`, {
-    method: "PUT",
-    body: JSON.stringify(input),
-  });
+  return request<SensorItem>(
+    `/api/v1/admin/sensors/${encodeURIComponent(id)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(input),
+    }
+  );
 }
 
 export function setSensorVisibility(id: string, is_hidden: boolean) {
@@ -80,7 +88,9 @@ export function setSensorVisibility(id: string, is_hidden: boolean) {
 
 export function deleteSensor(id: string, purgeTelemetry: boolean) {
   return request<{ status: "hidden" | "purged" }>(
-    `/api/v1/admin/sensors/${encodeURIComponent(id)}?purge_telemetry=${purgeTelemetry}`,
+    `/api/v1/admin/sensors/${encodeURIComponent(
+      id
+    )}?purge_telemetry=${purgeTelemetry}`,
     { method: "DELETE" }
   );
 }

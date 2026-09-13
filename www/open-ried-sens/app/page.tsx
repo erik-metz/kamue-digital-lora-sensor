@@ -1,13 +1,4 @@
-"use client";
-
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
+import { env } from "@/env";
 import {
   Activity,
   Building2,
@@ -16,181 +7,74 @@ import {
   Database,
   HeartHandshake,
   Layers,
-  MapPin,
   Radio,
-  RefreshCw,
   Terminal,
   Volume2,
   Wifi,
-  Zap,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useState } from "react";
+import DashboardClient from "./components/DashboardClient.tsx";
 import HeaderLogo from "./components/HeaderLogo";
 import { SensorNode } from "./components/MapComponent";
-import TelemetryCharts from "./components/TelemetryCharts";
 
-// Client-only dynamic load for Leaflet map
-const MapComponent = dynamic(() => import("./components/MapComponent"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[420px] rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400">
-      <RefreshCw className="w-6 h-6 animate-spin text-emerald-400 mr-2" />
-      Interaktive Karte wird geladen...
-    </div>
-  ),
-});
+export const revalidate = 300; // 5 minutes
 
-const INITIAL_NODES: SensorNode[] = [
-  {
-    id: "ried-01",
-    name: "Station 1: Bürstadt Mitte",
-    locationName: "KAMÜ Kulturzentrum",
-    address: "Industriestr. 11, 68642 Bürstadt",
-    lat: 49.6425,
-    lng: 8.456,
-    status: "online",
-    batteryPct: 96,
-    rssi: -84,
-    snr: 9.5,
-    temp: 21.4,
-    humidity: 58,
-    rainMm: 0.0,
-    uvIndex: 4,
-    vocIndex: 110,
-    noxIndex: 22,
-    pm25: 12,
-    noiseDb: 54,
-    noiseLabel: "Passanten/Sprache",
-    lastSeen: "Vor 12 Sek.",
-  },
-  {
-    id: "ried-02",
-    name: "Station 2: Lampertheim Nord",
-    locationName: "Privatgrundstück Nordstadt",
-    address: "Am Sandacker 4, 68623 Lampertheim",
-    lat: 49.605,
-    lng: 8.468,
-    status: "online",
-    batteryPct: 91,
-    rssi: -92,
-    snr: 7.8,
-    temp: 20.8,
-    humidity: 62,
-    rainMm: 0.2,
-    uvIndex: 3,
-    vocIndex: 95,
-    noxIndex: 35,
-    pm25: 16,
-    noiseDb: 68,
-    noiseLabel: "Fahrzeugverkehr",
-    lastSeen: "Vor 45 Sek.",
-  },
-  {
-    id: "ried-03",
-    name: "Station 3: Ried-West",
-    locationName: "Rheinauen Biotop",
-    address: "Rheinauenweg, 68642 Bürstadt",
-    lat: 49.621,
-    lng: 8.415,
-    status: "online",
-    batteryPct: 88,
-    rssi: -101,
-    snr: 4.2,
-    temp: 19.5,
-    humidity: 74,
-    rainMm: 0.0,
-    uvIndex: 5,
-    vocIndex: 45,
-    noxIndex: 12,
-    pm25: 8,
-    noiseDb: 41,
-    noiseLabel: "Wind/Natur",
-    lastSeen: "Vor 1 Min.",
-  },
-  {
-    id: "ried-04",
-    name: "Station 4: Bürstadt Süd",
-    locationName: "Agrar- & Feldmesspunkt",
-    address: "Riedstraße 22, 68642 Bürstadt",
-    lat: 49.631,
-    lng: 8.472,
-    status: "online",
-    batteryPct: 100,
-    rssi: -79,
-    snr: 11.0,
-    temp: 22.1,
-    humidity: 54,
-    rainMm: 0.0,
-    uvIndex: 5,
-    vocIndex: 80,
-    noxIndex: 18,
-    pm25: 11,
-    noiseDb: 38,
-    noiseLabel: "Ruhig",
-    lastSeen: "Vor 2 Min.",
-  },
-  {
-    id: "ried-05",
-    name: "Station 5: Lampertheim Ost",
-    locationName: "Garten & Wohnumfeld",
-    address: "Wormser Straße 58, 68623 Lampertheim",
-    lat: 49.589,
-    lng: 8.489,
-    status: "online",
-    batteryPct: 84,
-    rssi: -95,
-    snr: 6.1,
-    temp: 21.0,
-    humidity: 60,
-    rainMm: 0.0,
-    uvIndex: 4,
-    vocIndex: 105,
-    noxIndex: 28,
-    pm25: 14,
-    noiseDb: 52,
-    noiseLabel: "Passanten/Sprache",
-    lastSeen: "Vor 3 Min.",
-  },
-];
+type ApiSensor = {
+  id: string;
+  friendly_name: string;
+  latitude: number | null;
+  longitude: number | null;
+  description?: string | null;
+  is_hidden?: boolean;
+};
 
-export default function Home() {
-  const [nodes] = useState<SensorNode[]>([]);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>();
-  const [liveLogs] = useState<
-    Array<{
-      id: string;
-      timestamp: string;
-      node: string;
-      payload: string;
-      rssi: number;
-    }>
-  >([
-    {
-      id: "log-1",
-      timestamp: "12:28:44",
-      node: "ried-01",
-      payload: "01 56 B2 4E 00 81 C3 A2 60",
-      rssi: -84,
-    },
-    {
-      id: "log-2",
-      timestamp: "12:27:12",
-      node: "ried-02",
-      payload: "01 54 A0 1C 00 82 DC FF 5B",
-      rssi: -92,
-    },
-    {
-      id: "log-3",
-      timestamp: "12:25:30",
-      node: "ried-03",
-      payload: "01 4F 88 E1 00 7E BB D4 58",
-      rssi: -101,
-    },
-  ]);
+async function fetchSensors(): Promise<SensorNode[]> {
+  try {
+    const res = await fetch(
+      new URL("/api/v1/sensors", env.BACKEND_API_URL).href,
+      {
+        headers: { Accept: "application/json" },
+        next: { revalidate: 300 },
+      }
+    );
+    if (!res.ok) return [];
 
-  const selectedNode = nodes.find((n) => n.id === selectedNodeId) || nodes[0];
+    const data: ApiSensor[] = await res.json();
+
+    return data
+      .filter((s) => !s.is_hidden && s.latitude != null && s.longitude != null)
+      .map((s) => ({
+        id: s.id,
+        name: s.friendly_name,
+        locationName: s.friendly_name,
+        address: s.description ?? "—",
+        lat: s.latitude!,
+        lng: s.longitude!,
+        status: "online" as const,
+        // Placeholder until you enrich with /telemetry/latest (or a bulk endpoint)
+        batteryPct: 0,
+        rssi: 0,
+        snr: 0,
+        temp: 0,
+        humidity: 0,
+        rainMm: 0,
+        uvIndex: 0,
+        vocIndex: 0,
+        noxIndex: 0,
+        pm25: 0,
+        noiseDb: 0,
+        noiseLabel: "Ruhig" as const,
+        lastSeen: "—",
+      }));
+  } catch {
+    return [];
+  }
+}
+
+export default async function Home() {
+  const nodes = await fetchSensors();
+  const liveLogs = [];
+  const onlineCount = nodes.filter((n) => n.status === "online").length;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -244,7 +128,7 @@ export default function Home() {
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full text-sm text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="font-medium text-emerald-400">
-              5/5 Stationen Aktiv
+              {onlineCount}/{nodes.length} Stationen Aktiv
             </span>
           </div>
         </div>
@@ -405,251 +289,108 @@ export default function Home() {
 
         {/* DASHBOARD & KARTEN SECTION */}
         <section id="dashboard" className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-4">
-            <div>
-              <div className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-                <Zap className="w-3.5 h-3.5" /> Sensor-Dashboard
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-                Echtzeitdaten aus Bürstadt & Lampertheim
-              </h2>
-            </div>
-          </div>
-
-          {/* Interactive Map & Selected Node Stats */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Map Column (2 Cols) */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-emerald-400" /> Standorte im
-                  Hessischen Ried
-                </h3>
-                <span className="text-sm text-slate-400">
-                  Klick auf Marker für Details
-                </span>
-              </div>
-              <MapComponent
-                nodes={nodes}
-                selectedNodeId={selectedNodeId}
-                onSelectNode={(id) => setSelectedNodeId(id)}
-              />
-            </div>
-
-            {/* Selected Node Overview Card (1 Col) */}
-            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between space-y-6">
-              <div>
-                <div className="flex items-start justify-between border-b border-slate-800 pb-4 gap-3">
-                  <div className="flex-1 min-w-0">
-                    <span className="text-xs uppercase font-bold text-emerald-400 tracking-wider">
-                      Ausgewählte Station
-                    </span>
-
-                    <div className="mt-1 w-full">
-                      <Combobox
-                        items={nodes}
-                        value={selectedNode}
-                        itemToStringValue={(node) =>
-                          `${node.locationName} ${node.name} ${node.address}`
-                        }
-                        onValueChange={(node) => {
-                          if (node) setSelectedNodeId(node.id);
-                        }}
-                        autoHighlight
-                      >
-                        <ComboboxInput
-                          aria-label="Station auswählen"
-                          placeholder="Standort suchen…"
-                          className="w-full rounded-xl border-slate-700 bg-slate-950/80 text-slate-100 shadow-none focus-within:border-emerald-500/60 focus-within:ring-1 focus-within:ring-emerald-500/30"
-                        />
-                        <ComboboxContent className="border border-slate-700 bg-slate-900 text-slate-100 shadow-2xl">
-                          <ComboboxEmpty className="py-3 text-slate-500">
-                            Kein Standort gefunden
-                          </ComboboxEmpty>
-                          <ComboboxList className="max-h-48 p-1">
-                            {(node) => (
-                              <ComboboxItem
-                                key={node.id}
-                                value={node}
-                                className="flex-col items-start gap-0 rounded-lg px-3 py-2.5 text-slate-300 data-highlighted:bg-slate-800/80 data-highlighted:text-slate-100"
-                              >
-                                <span className="font-semibold leading-tight">
-                                  {node.locationName}
-                                </span>
-                                <span className="mt-0.5 text-xs text-slate-500">
-                                  {node.name} · {node.address}
-                                </span>
-                              </ComboboxItem>
-                            )}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
-                    </div>
-
-                    {/* Address line */}
-                    <p className="text-sm text-slate-500 mt-1.5 flex items-center gap-1">
-                      🏠 {selectedNode.address}
-                    </p>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 mt-5">
-                    Aktiv
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-xs">
-                      Temperatur
-                    </span>
-                    <span className="text-lg font-bold text-slate-100">
-                      {selectedNode.temp.toFixed(1)} °C
-                    </span>
-                  </div>
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-xs">
-                      Luftfeuchtigkeit
-                    </span>
-                    <span className="text-lg font-bold text-slate-100">
-                      {selectedNode.humidity}%
-                    </span>
-                  </div>
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-xs">
-                      Lärmanalyse
-                    </span>
-                    <span className="text-lg font-bold text-slate-100">
-                      {selectedNode.noiseDb} dB
-                    </span>
-                    <span className="text-xs text-emerald-400 block">
-                      {selectedNode.noiseLabel}
-                    </span>
-                  </div>
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/60">
-                    <span className="text-slate-400 block text-xs">
-                      Akkustand
-                    </span>
-                    <span className="text-lg font-bold text-slate-100">
-                      {selectedNode.batteryPct}%
-                    </span>
-                    <span className="text-xs text-slate-500 block">
-                      Solar-Ladekreis
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Signal & Gateway Status Footer */}
-              <div className="pt-4 border-t border-slate-800 flex items-center justify-between text-sm text-slate-400">
-                <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                  Automatische TTN-Übertragung
-                </span>
-                <span className="text-slate-500 font-mono">LoRaWAN OTAA</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Time-Series Charts Component */}
-          <TelemetryCharts node={selectedNode} />
+          <DashboardClient nodes={nodes} />
         </section>
 
         {/* TELEMETRIE & LORAWAN TTN LOGS SECTION */}
-        <section
-          id="telemetrie"
-          className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-        >
-          {/* LoRaWAN & TTN Infrastructure Overview (1 Col) */}
-          <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center">
-                <Wifi className="w-5 h-5" />
+        {false && (
+          <section
+            id="telemetrie"
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            {/* LoRaWAN & TTN Infrastructure Overview (1 Col) */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center">
+                  <Wifi className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-100">
+                    LoRaWAN & TTN Aufbau
+                  </h3>
+                  <p className="text-sm text-slate-400">
+                    Regionale Funkabdeckung
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-slate-100">
-                  LoRaWAN & TTN Aufbau
-                </h3>
-                <p className="text-sm text-slate-400">
-                  Regionale Funkabdeckung
-                </p>
-              </div>
-            </div>
 
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Da in Bürstadt und Lampertheim bisher keine flächendeckenden
-              LoRaWAN-Gateways existieren, installieren wir im Rahmen dieser
-              Initiative eigene LoRaWAN-Gateways mit Anbindung an{" "}
-              <a
-                href="https://www.thethingsindustries.com"
-                target="_blank"
-                rel="noreferrer"
-                className="text-emerald-400 underline font-medium hover:text-emerald-300 transition-colors"
-              >
-                The Things Network (TTN)
-              </a>
-              .
-            </p>
-
-            <div className="space-y-2 text-sm text-slate-300">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>
-                  Standard: <strong>EU868 (868 MHz)</strong>
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>
-                  Aktivierung: <strong>OTAA (Over-The-Air)</strong>
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>
-                  Payload: <strong>Kompakte 9-Byte Binärkodierung</strong>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Live TTN Packet Log Viewer (2 Cols) */}
-          <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Terminal className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-sm font-bold text-slate-100">
-                  Live-Uplink Datenstream (TTN Feed)
-                </h3>
-              </div>
-              <span className="text-sm font-mono text-slate-500">
-                FPort: 1 | Payload Format: Binary
-              </span>
-            </div>
-
-            {/* Log Output Box */}
-            <div className="bg-slate-950 font-mono text-sm p-4 rounded-xl border border-slate-800/80 space-y-2.5 max-h-56 overflow-y-auto">
-              {liveLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-300 border-b border-slate-900/80 pb-2"
+              <p className="text-sm text-slate-300 leading-relaxed">
+                Da in Bürstadt und Lampertheim bisher keine flächendeckenden
+                LoRaWAN-Gateways existieren, installieren wir im Rahmen dieser
+                Initiative eigene LoRaWAN-Gateways mit Anbindung an{" "}
+                <a
+                  href="https://www.thethingsindustries.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-emerald-400 underline font-medium hover:text-emerald-300 transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">[{log.timestamp}]</span>
-                    <span className="text-emerald-400 font-bold">
-                      {log.node}
-                    </span>
-                    <span className="text-slate-400 text-xs">→ Payload:</span>
-                    <span className="text-amber-300 font-bold tracking-wider">
-                      {log.payload}
-                    </span>
-                  </div>
-                  <span className="text-slate-500 text-xs">
-                    RSSI: {log.rssi} dBm
+                  The Things Network (TTN)
+                </a>
+                .
+              </p>
+
+              <div className="space-y-2 text-sm text-slate-300">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    Standard: <strong>EU868 (868 MHz)</strong>
                   </span>
                 </div>
-              ))}
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    Aktivierung: <strong>OTAA (Over-The-Air)</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>
+                    Payload: <strong>Kompakte 9-Byte Binärkodierung</strong>
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+
+            {/* Live TTN Packet Log Viewer (2 Cols) */}
+            <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 p-6 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-emerald-400" />
+                  <h3 className="text-sm font-bold text-slate-100">
+                    Live-Uplink Datenstream (TTN Feed)
+                  </h3>
+                </div>
+                <span className="text-sm font-mono text-slate-500">
+                  FPort: 1 | Payload Format: Binary
+                </span>
+              </div>
+
+              {/* Log Output Box */}
+              <div className="bg-slate-950 font-mono text-sm p-4 rounded-xl border border-slate-800/80 space-y-2.5 max-h-56 overflow-y-auto">
+                {liveLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-300 border-b border-slate-900/80 pb-2"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500">[{log.timestamp}]</span>
+                      <span className="text-emerald-400 font-bold">
+                        {log.node}
+                      </span>
+                      <span className="text-slate-400 text-xs">→ Payload:</span>
+                      <span className="text-amber-300 font-bold tracking-wider">
+                        {log.payload}
+                      </span>
+                    </div>
+                    <span className="text-slate-500 text-xs">
+                      RSSI: {log.rssi} dBm
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
 
       {/* Footer */}
