@@ -6,6 +6,8 @@ and pushes telemetry into the Open Ried Sens TimescaleDB backend.
 """
 
 import asyncio
+import copy
+import re
 from datetime import datetime, timezone, timedelta
 import io
 import json
@@ -50,13 +52,14 @@ try:
     logger.info("ObsPy successfully imported for MiniSEED decoding.")
 except ImportError:
     HAS_OBSPY = False
-    logger.warning("ObsPy not available; using fallback header/sample extractor.")
+    logger.warning("ObsPy not available; waveform ingestion requires ObsPy.")
 
 
 class ShakeCollector:
-    def __init__(self) -> None:
+    def __init__(self, station_settings=None) -> None:
+        self.settings = station_settings or settings
         self.running = False
-        self.clean_ws_url, self.auth_user, self.auth_pass = self._parse_ws_url(settings.SHAKE_WS_URL)
+        self.clean_ws_url, self.auth_user, self.auth_pass = self._parse_ws_url(self.settings.SHAKE_WS_URL)
         self.sample_buffer: list[tuple[float, float]] = []  # (utc_timestamp_sec, value)
         self.last_flush_time = asyncio.get_event_loop().time()
         self.http_client: httpx.AsyncClient | None = None
@@ -76,10 +79,11 @@ class ShakeCollector:
 
     async def initialize(self) -> None:
         """Initializes HTTP or DB clients and registers station metadata."""
-        if settings.INGEST_MODE == "api":
-            self.http_client = httpx.AsyncClient(timeout=10.0)
+        if self.settings.INGEST_MODE == "api":
+            if self.http_client is None:
+                self.http_client = httpx.AsyncClient(timeout=10.0)
             await self._register_metadata_api()
-        elif settings.INGEST_MODE == "direct_db":
+        elif self.settings.INGEST_MODE == "direct_db":
             await self._register_metadata_db()
 
     async def _register_metadata_api(self) -> None:
@@ -89,21 +93,21 @@ class ShakeCollector:
 
         sensors = [
             {
-                "sensor_id": settings.SENSOR_ID,
-                "friendly_name": settings.SENSOR_NAME,
-                "latitude": settings.LATITUDE,
-                "longitude": settings.LONGITUDE,
+                "sensor_id": self.settings.SENSOR_ID,
+                "friendly_name": self.settings.SENSOR_NAME,
+                "latitude": self.settings.LATITUDE,
+                "longitude": self.settings.LONGITUDE,
                 "is_hidden": False,
-                "description": settings.SENSOR_DESCRIPTION,
+                "description": self.settings.SENSOR_DESCRIPTION,
             },
         ]
 
-        admin_key = settings.ADMIN_API_KEY or settings.API_KEY
+        admin_key = self.settings.ADMIN_API_KEY or self.settings.API_KEY
         headers = {"Authorization": f"Bearer {admin_key}"} if admin_key else {}
 
         for sensor in sensors:
             try:
-                url = f"{settings.API_URL}/admin/sensors"
+                url = f"{self.settings.API_URL}/admin/sensors"
                 res = await self.http_client.post(url, json=sensor, headers=headers)
                 if res.status_code in (200, 201):
                     logger.info("Registered sensor metadata for '%s'", sensor["sensor_id"])
@@ -116,8 +120,10 @@ class ShakeCollector:
                         res.status_code,
                         res.text,
                     )
+                    raise RuntimeError(f"Metadata registration failed: {res.status_code}")
             except Exception as e: # noqa: BLE001
                 logger.warning("Failed to register metadata for '%s' via API: %s", sensor["sensor_id"], e)
+                raise
 
     async def _register_metadata_db(self) -> None:
         """Registers sensor stations directly in TimescaleDB."""
@@ -125,8 +131,8 @@ class ShakeCollector:
             import psycopg
 
             conninfo = (
-                f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@"
-                f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+                f"postgresql://{self.settings.DB_USER}:{self.settings.DB_PASSWORD}@"
+                f"{self.settings.DB_HOST}:{self.settings.DB_PORT}/{self.settings.DB_NAME}"
             )
             async with await psycopg.AsyncConnection.connect(conninfo) as conn:
                 async with conn.cursor() as cur:
@@ -143,32 +149,33 @@ class ShakeCollector:
                     await cur.execute(
                         query,
                         (
-                            settings.SENSOR_ID,
-                            settings.SENSOR_NAME,
-                            settings.LATITUDE,
-                            settings.LONGITUDE,
-                            settings.SENSOR_DESCRIPTION,
+                            self.settings.SENSOR_ID,
+                            self.settings.SENSOR_NAME,
+                            self.settings.LATITUDE,
+                            self.settings.LONGITUDE,
+                            self.settings.SENSOR_DESCRIPTION,
                         ),
                     )
                 await conn.commit()
             logger.info("Registered station metadata directly in TimescaleDB.")
         except Exception as e: # noqa: BLE001
             logger.error("Failed to register metadata directly in TimescaleDB: %s", e)
+            raise
 
     async def push_telemetry(self, readings: list[dict]) -> None:
         """Pushes batched readings to the backend API or direct TimescaleDB."""
         if not readings:
             return
 
-        if settings.INGEST_MODE == "api":
+        if self.settings.INGEST_MODE == "api":
             if not self.http_client:
                 return
             headers = {}
-            if settings.API_KEY:
-                headers["Authorization"] = f"Bearer {settings.API_KEY}"
+            if self.settings.API_KEY:
+                headers["Authorization"] = f"Bearer {self.settings.API_KEY}"
             try:
                 res = await self.http_client.post(
-                    f"{settings.API_URL}/telemetry/batch",
+                    f"{self.settings.API_URL}/telemetry/batch",
                     json={"readings": readings},
                     headers=headers,
                 )
@@ -179,13 +186,13 @@ class ShakeCollector:
             except Exception as e: # noqa: BLE001
                 logger.error("HTTP error pushing telemetry batch: %s", e)
 
-        elif settings.INGEST_MODE == "direct_db":
+        elif self.settings.INGEST_MODE == "direct_db":
             try:
                 import psycopg
 
                 conninfo = (
-                    f"postgresql://{settings.DB_USER}:{settings.DB_PASSWORD}@"
-                    f"{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+                    f"postgresql://{self.settings.DB_USER}:{self.settings.DB_PASSWORD}@"
+                    f"{self.settings.DB_HOST}:{self.settings.DB_PORT}/{self.settings.DB_NAME}"
                 )
                 async with await psycopg.AsyncConnection.connect(conninfo) as conn:
                     async with conn.cursor() as cur:
@@ -217,6 +224,9 @@ class ShakeCollector:
             try:
                 st = obspy_read(io.BytesIO(payload), format="MSEED")
                 for tr in st:
+                    if tr.id != self.settings.channel_identifier:
+                        logger.warning("Ignoring unexpected channel %s for %s", tr.id, self.settings.SHAKE_STATION)
+                        continue
                     sr = float(tr.stats.sampling_rate)
                     dt = 1.0 / sr if sr > 0 else 0.01
                     t0 = tr.stats.starttime.timestamp
@@ -226,32 +236,13 @@ class ShakeCollector:
             except Exception as e: # noqa: BLE001
                 logger.warning("Error parsing MiniSEED with ObsPy: %s", e)
         else:
-            # Fallback: extract sample rate and sample count from fixed section of data header
-            try:
-                if len(payload) < 48:
-                    return
-                # BTIME at byte 20..30
-                year, doy, hour, minute, sec, sec0001 = struct.unpack(">HHBBBxH", payload[20:30])
-                nsamp, sr_fac, sr_mul = struct.unpack(">hhh", payload[30:36])
-
-                sr = float(sr_fac * sr_mul) if sr_fac > 0 and sr_mul > 0 else 100.0
-                dt = 1.0 / sr
-                base_date = datetime(year, 1, 1, tzinfo=timezone.utc) + timedelta(
-                    days=doy - 1, hours=hour, minutes=minute, seconds=sec, microseconds=sec0001 * 100
-                )
-                t0 = base_date.timestamp()
-
-                # Basic mock/placeholder samples if Steim unpacker is not present
-                for idx in range(min(nsamp, 50)):
-                    self.sample_buffer.append((t0 + (idx * dt), 0.0))
-            except Exception as e: # noqa: BLE001
-                logger.warning("Error in fallback MiniSEED header parsing: %s", e)
+            raise RuntimeError("ObsPy is required to decode real waveform samples")
 
     async def flush_window_if_due(self) -> None:
         """Flushes buffered samples if sampling interval has elapsed."""
         now_loop = asyncio.get_event_loop().time()
         elapsed = now_loop - self.last_flush_time
-        if elapsed < settings.SAMPLING_INTERVAL_SEC or not self.sample_buffer:
+        if elapsed < self.settings.SAMPLING_INTERVAL_SEC or not self.sample_buffer:
             return
 
         # Snapshot and clear buffer
@@ -280,14 +271,14 @@ class ShakeCollector:
 
         readings = [
             {
-                "sensor_id": settings.SENSOR_ID,
+                "sensor_id": self.settings.SENSOR_ID,
                 "metric": "pgv",
                 "value": round(pgv, 2),
                 "unit": "counts",
                 "timestamp": ts_iso,
             },
             {
-                "sensor_id": settings.SENSOR_ID,
+                "sensor_id": self.settings.SENSOR_ID,
                 "metric": "rms",
                 "value": round(rms, 2),
                 "unit": "counts",
@@ -295,14 +286,14 @@ class ShakeCollector:
             },
         ]
 
-        if settings.STORE_RAW_WAVEFORM:
-            step = max(1, settings.RAW_DECIMATION_FACTOR)
+        if self.settings.STORE_RAW_WAVEFORM:
+            step = max(1, self.settings.RAW_DECIMATION_FACTOR)
             for idx in range(0, len(samples), step):
                 t_sec, val = samples[idx]
                 sample_iso = datetime.fromtimestamp(t_sec, tz=timezone.utc).isoformat()
                 readings.append(
                     {
-                        "sensor_id": settings.SENSOR_ID,
+                        "sensor_id": self.settings.SENSOR_ID,
                         "metric": "waveform",
                         "value": round(val, 2),
                         "unit": "counts",
@@ -312,7 +303,7 @@ class ShakeCollector:
 
         logger.info(
             "Flushing %s window: %d raw samples -> PGV=%.1f counts, RMS=%.1f counts",
-            settings.SHAKE_STATION,
+            self.settings.SHAKE_STATION,
             len(samples),
             pgv,
             rms,
@@ -353,10 +344,10 @@ class ShakeCollector:
             req_cmd = (
                 f"begin request\n"
                 f"time {time_str}:\n"
-                f"stream add {settings.channel_identifier}\n"
+                f"stream add {self.settings.channel_identifier}\n"
                 f"end"
             )
-            logger.info("Requesting live channel: %s (from %s)", settings.channel_identifier, time_str)
+            logger.info("Requesting live channel: %s (from %s)", self.settings.channel_identifier, time_str)
             await ws.send(req_cmd)
 
             # Receive stream loop
@@ -381,7 +372,7 @@ class ShakeCollector:
                     while offset + 6 <= msg_len:
                         _, dlen = struct.unpack_from("<hi", msg, offset)
                         offset += 6
-                        if offset + dlen > msg_len:
+                        if dlen <= 0 or offset + dlen > msg_len:
                             break
                         payload = msg[offset : offset + dlen]
                         offset += dlen
@@ -392,42 +383,108 @@ class ShakeCollector:
     async def run(self) -> None:
         """Main execution loop with auto-reconnection and exponential backoff."""
         self.running = True
-        await self.initialize()
-
-        backoff = settings.RECONNECT_DELAY_SEC
+        backoff = self.settings.RECONNECT_DELAY_SEC
         while self.running:
             try:
+                await self.initialize()
                 await self.connect_and_stream()
-                backoff = settings.RECONNECT_DELAY_SEC
+                backoff = self.settings.RECONNECT_DELAY_SEC
             except asyncio.CancelledError:
                 break
             except Exception as e: # noqa: BLE001
-                logger.error("Connection error: %s. Reconnecting in %.1fs...", e, backoff)
+                logger.error("Station %s connection error: %s. Reconnecting in %.1fs...", self.settings.SHAKE_STATION, e, backoff)
                 await asyncio.sleep(backoff)
-                backoff = min(backoff * 1.5, settings.MAX_RECONNECT_DELAY_SEC)
+                backoff = min(backoff * 1.5, self.settings.MAX_RECONNECT_DELAY_SEC)
 
         if self.http_client:
             await self.http_client.aclose()
         logger.info("Shake Collector shutdown complete.")
 
 
-async def main() -> None:
-    collector = ShakeCollector()
+def station_settings_list(base):
+    """Keep the original station metadata; isolate all additional station settings."""
+    codes = list(dict.fromkeys(code.strip().upper() for code in base.SHAKE_STATIONS.split(",") if code.strip()))
+    if not codes:
+        codes = [base.SHAKE_STATION]
+    result = []
+    for code in codes:
+        if not re.fullmatch(r"[A-Z0-9]{5}", code):
+            raise ValueError(f"Invalid Raspberry Shake station: {code}")
+        config = copy.copy(base)
+        config.SHAKE_STATION = code
+        if code != base.SHAKE_STATION:
+            config.SENSOR_ID = f"shake-{code.lower()}"
+            config.SENSOR_NAME = f"Raspberry Shake {code}"
+            config.SENSOR_DESCRIPTION = f"Raspberry Shake {code}, vertical geophone"
+            config.LATITUDE = None
+            config.LONGITUDE = None
+        result.append(config)
+    return result
 
+
+async def discover_station(config):
+    """Resolve an active vertical geophone channel and its actual coordinates."""
+    async with httpx.AsyncClient(timeout=20.0) as client:
+        response = await client.get(
+            f"{config.SHAKE_FDSN_URL.rstrip('/')}/station/1/query",
+            params={"network": config.SHAKE_NETWORK, "station": config.SHAKE_STATION,
+                    "level": "channel", "format": "text", "channel": "EHZ,SHZ",
+                    "endafter": datetime.now(timezone.utc).isoformat()},
+        )
+        response.raise_for_status()
+    channels = []
+    for line in response.text.splitlines():
+        if not line or line.startswith("#"):
+            continue
+        fields = line.split("|")
+        if len(fields) >= 6 and fields[0] == config.SHAKE_NETWORK and fields[1] == config.SHAKE_STATION and fields[3] in ("EHZ", "SHZ"):
+            channels.append(fields)
+    if not channels:
+        raise ValueError(f"No active vertical geophone channel for {config.SHAKE_STATION}")
+    fields = sorted(channels, key=lambda row: (row[3] != config.SHAKE_CHANNEL, row[2] != config.SHAKE_LOCATION, row[2]))[0]
+    config.SHAKE_LOCATION, config.SHAKE_CHANNEL = fields[2], fields[3]
+    config.LATITUDE, config.LONGITUDE = float(fields[4]), float(fields[5])
+    config.SENSOR_DESCRIPTION = f"Raspberry Shake {config.SHAKE_STATION}, vertical geophone channel {config.channel_identifier}"
+
+
+async def run_station(config, startup_delay=0):
+    await asyncio.sleep(startup_delay)
+    # Metadata failures affect only this station; do not invent coordinates.
+    while config.LATITUDE is None or config.LONGITUDE is None:
+        try:
+            await discover_station(config)
+        except Exception as error:
+            logger.warning("Metadata unavailable for %s: %s; retrying in 60s", config.SHAKE_STATION, error)
+            await asyncio.sleep(60)
+    collector = ShakeCollector(config)
+    try:
+        await collector.run()
+    finally:
+        if collector.http_client:
+            await collector.http_client.aclose()
+
+
+async def main() -> None:
+    configs = station_settings_list(settings)
+    logger.info("Starting %d station collectors: %s", len(configs), ", ".join(c.SHAKE_STATION for c in configs))
+    tasks = [asyncio.create_task(run_station(config, index * 0.4), name=config.SHAKE_STATION) for index, config in enumerate(configs)]
     loop = asyncio.get_running_loop()
 
     def stop_signal():
-        logger.info("Received termination signal, stopping collector...")
-        collector.running = False
+        for task in tasks:
+            task.cancel()
 
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:
             loop.add_signal_handler(sig, stop_signal)
         except NotImplementedError:
-            # Windows/non-POSIX signal handling fallback
             pass
-
-    await collector.run()
+    try:
+        await asyncio.gather(*tasks)
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":

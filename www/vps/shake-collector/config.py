@@ -8,6 +8,7 @@ try:
     class Settings(BaseSettings):
         # Raspberry Shake station settings
         SHAKE_NETWORK: str = "AM"
+        SHAKE_STATIONS: str = "R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342"
         SHAKE_STATION: str = "R498E"
         SHAKE_LOCATION: str = "00"
         SHAKE_CHANNEL: str = "EHZ"
@@ -55,6 +56,7 @@ try:
 except ImportError:
     class Settings:  # type: ignore[no-redef]
         def __init__(self, **kwargs):
+            self.SHAKE_STATIONS = kwargs.get("SHAKE_STATIONS", os.getenv("SHAKE_STATIONS", "R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342"))
             self.SHAKE_NETWORK = kwargs.get("SHAKE_NETWORK", os.getenv("SHAKE_NETWORK", "AM"))
             self.SHAKE_STATION = kwargs.get("SHAKE_STATION", os.getenv("SHAKE_STATION", "R498E"))
             self.SHAKE_LOCATION = kwargs.get("SHAKE_LOCATION", os.getenv("SHAKE_LOCATION", "00"))

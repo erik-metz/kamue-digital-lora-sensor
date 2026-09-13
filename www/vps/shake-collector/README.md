@@ -85,3 +85,45 @@ Historical main-station readings paired with RMS timestamps become `pgv`;
 unpaired readings keep `value`, since legacy raw samples and peak measurements
 were not explicitly distinguished. The merge is repeatable and preserves readings.
 For customized station IDs, adapt the migration's two station IDs before applying.
+
+## Continuous multi-station collection
+
+The default `SHAKE_STATIONS` list now includes:
+
+```dotenv
+SHAKE_STATIONS=R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342
+```
+
+One container runs an independent streaming worker for each station. Each worker
+registers one sensor (`shake-r82e7`, `shake-r79f9`, etc.) and continuously writes
+`pgv` and `rms` readings in counts, using the configured window interval (5 seconds
+by default). R498E retains its existing ID, name, and configured coordinates.
+
+Additional stations resolve their vertical geophone channel and coordinates from
+[Raspberry Shake's FDSN metadata service](https://manual.raspberryshake.org/fdsn.html).
+R5DFB uses SHZ; the other requested stations use EHZ. No acceleration or pressure
+channels are mixed into the geophone metrics. Metadata availability does not
+confirm that a station is currently transmitting live data.
+
+Metadata failures retry every 60 seconds for that station. Streaming connections
+reconnect independently; one unavailable station does not stop the others.
+Missing data is not replaced with synthetic readings. ObsPy must be installed to
+decode waveform data (included in the container requirements).
+
+To collect a different set, override `SHAKE_STATIONS` in the VPS `.env`. To retain
+single-station collection, set `SHAKE_STATIONS=R498E`. An empty list falls back to
+`SHAKE_STATION`. Restart the container after changing configuration.
+
+After committing/pushing the changes and waiting for the collector image build,
+run in the VPS Compose directory:
+
+```bash
+docker compose pull shake-collector
+docker compose up -d --no-deps --force-recreate shake-collector
+docker compose logs --tail=100 shake-collector
+```
+
+The startup log should list ten stations, followed by metadata registration and
+station-specific `Flushing ...` messages as live samples arrive. No further DB
+migration is required if the earlier `metric` schema update is already deployed.
+The frontend discovers registered stations on its next sensor-list refresh.
