@@ -66,3 +66,14 @@ DELETE FROM sensor_metadata
 WHERE id = 'shake-r498e-rms'
   AND EXISTS (SELECT 1 FROM sensor_metadata WHERE id = 'shake-r498e')
   AND NOT EXISTS (SELECT 1 FROM sensor_data WHERE sensor_id = 'shake-r498e-rms');
+
+-- Published, versioned monthly export snapshots (UploadThing file keys stay private).
+CREATE TABLE IF NOT EXISTS data_archives (
+    month VARCHAR(7) PRIMARY KEY CHECK (month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
+    generated_at TIMESTAMPTZ NOT NULL,
+    is_complete BOOLEAN NOT NULL,
+    reading_count BIGINT NOT NULL CHECK (reading_count >= 0),
+    size_bytes BIGINT NOT NULL CHECK (size_bytes >= 0),
+    station_ids TEXT[] NOT NULL,
+    files JSONB NOT NULL
+);

@@ -1,4 +1,4 @@
-import { getBackendUrl } from "@/lib/adminAuth";
+import { env } from "@/env";
 import {
   Activity,
   ArrowLeft,
@@ -7,85 +7,28 @@ import {
   ExternalLink,
   Globe,
   Radio,
-  Server,
   ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import HeaderLogo from "../components/HeaderLogo";
-import InteractiveCodeSnippets from "./InteractiveCodeSnippets";
+import DataDownload from "./DataDownload";
+import ArchiveDownloads from "./ArchiveDownloads";
+import { Suspense } from "react";
 
-export default function DataDocsPage() {
-  const backendUrl = getBackendUrl();
-  const now = new Date();
-  const todayUtcMidnight = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-  ).toISOString();
-  const codeSnippets = {
-    curl: `# 1. Alle aktiven Stationen auflisten
-    curl -X GET "${new URL("/api/v1/sensors", backendUrl)}" \\
-        -H "Accept: application/json"
+const API_DOCS_URL = "https://open-ried-sens.duckdns.org/docs";
 
-    # 2. Neuesten Messwert für Station 'ried-01' abrufen
-    curl -X GET "${new URL(
-      "/api/v1/telemetry/latest?sensor_id=ried-01",
-      backendUrl
-    )}"
-
-    # 3. 1-Stunden-Durchschnittswerte der letzten 24 Stunden abrufen
-    curl -X GET "${new URL(
-      "/api/v1/telemetry/aggregates?sensor_id=ried-01&interval=1%20hour&start_time=" +
-        todayUtcMidnight,
-      backendUrl
-    )}"`,
-
-    python: `import requests
-    import pandas as pd
-
-    BASE_URL = "${new URL("/api/v1", backendUrl)}"
-
-    # 1. Alle Sensoren abrufen
-    sensors_res = requests.get(f"{BASE_URL}/sensors")
-    sensors = sensors_res.json()
-    print("Verfügbare Stationen:", [s["friendly_name"] for s in sensors])
-
-    # 2. Zeitreihen-Rohdaten laden
-    params = {
-        "sensor_id": "ried-01",
-        "start_time": "2026-09-10T00:00:00Z",
-        "limit": 500
-    }
-    telemetry_res = requests.get(f"{BASE_URL}/telemetry/raw", params=params)
-    data = telemetry_res.json()
-
-    # In Pandas DataFrame umwandeln für Analysen & Plots
-    df = pd.DataFrame(data)
-    if not df.empty:
-        df["timestamp"] = pd.to_datetime(df["timestamp"])
-        print(df.head())
-    `,
-
-    javascript: `// Mit Javascript (Node.js oder Browser) Sensordaten abfragen
-    const BASE_URL = "${new URL("/api/v1", backendUrl)}";
-
-    async function fetchSensorData() {
-      try {
-        // 1. Alle Stationen laden
-        const sensorsResponse = await fetch(\`\${BASE_URL}/sensors\`);
-        const stations = await sensorsResponse.json();
-        console.log("Aktive Stationen:", stations);
-
-        // 2. Neuesten Messwert abfragen
-        const latestResponse = await fetch(\`\${BASE_URL}/telemetry/latest?sensor_id=ried-01\`);
-        const latestData = await latestResponse.json();
-        console.log("Aktueller Wert:", latestData.value, latestData.unit);
-      } catch (error) {
-        console.error("Fehler beim Datenabruf:", error);
-      }
-    }
-
-    fetchSensorData();`,
-  };
-
+export default async function DataDocsPage() {
+  let stations: { id: string; friendly_name: string }[] = [];
+  let stationsError = false;
+  try {
+    const response = await fetch(new URL("/api/v1/sensors", env.BACKEND_API_URL), {
+      cache: "no-store", signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) throw new Error("Stations unavailable");
+    stations = await response.json();
+  } catch {
+    stationsError = true;
+  }
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
       {/* Header */}
@@ -140,14 +83,32 @@ export default function DataDocsPage() {
               abgefragt werden.
             </p>
 
+            <div className="space-y-3 pt-2">
+              <a
+                href={API_DOCS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-400 px-5 py-3 font-semibold text-slate-950 transition-colors hover:bg-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-400"
+              >
+                API im Browser ausprobieren
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only"> (öffnet in einem neuen Tab)</span>
+              </a>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Die interaktive FastAPI-Dokumentation zeigt die verfügbaren
+                Abfragen und ihre Parameter. Zum Einstieg den GET-Endpunkt
+                /api/v1/sensors öffnen, „Try it out“ und dann „Execute“ wählen.
+                Die Antwort enthält die verfügbaren Stationen für weitere
+                Messdaten-Abfragen – direkt im Browser, ohne eigenen Code.
+              </p>
+            </div>
+
             <div className="flex flex-wrap items-center gap-3 pt-2 text-xs font-semibold text-slate-300">
               <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
-                <Globe className="w-3.5 h-3.5 text-emerald-400" /> CORS
-                aktiviert (Browser-Ready)
+                <Globe className="w-3.5 h-3.5 text-emerald-400" /> Öffentlich zugänglich
               </span>
               <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-teal-400" /> TimescaleDB
-                Hypertable
+                <Database className="w-3.5 h-3.5 text-teal-400" /> CSV für eigene Analysen
               </span>
               <span className="px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 flex items-center gap-1.5">
                 <ShieldCheck className="w-3.5 h-3.5 text-blue-400" /> Keine
@@ -157,200 +118,51 @@ export default function DataDocsPage() {
           </div>
         </section>
 
-        {/* INTERACTIVE CODE SNIPPETS */}
         <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-          <InteractiveCodeSnippets codeSnippets={codeSnippets} />
+          <h2 className="text-2xl font-bold">Messdaten als CSV herunterladen</h2>
+          <p className="text-slate-400">
+            Für Excel, LibreOffice oder eigene Analysen: Station und Zeitraum
+            auswählen oder mit einer kleinen Stichprobe starten.
+          </p>
+          <DataDownload stations={stations} unavailable={stationsError} />
+          <p className="text-sm text-slate-400">
+            Jede Zeile enthält Zeitpunkt (UTC), Stations-ID, Messgröße, Wert und
+            Einheit. CSV-Format: UTF-8, Komma als Trennzeichen, Dezimalpunkt.
+            Die Stichprobe enthält bis zu 100 der neuesten Messwerte aus den
+            letzten 30 Tagen. Zeitraum-Downloads enthalten alle passenden
+            Messwerte bis maximal 4.999 Zeilen. Bei größeren Datenmengen bitte
+            den Zeitraum verkürzen oder eine Messgröße auswählen.
+          </p>
         </section>
 
-        {/* API ENDPOINTS DIRECTORY */}
-        <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div>
-              <h2 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-                <Server className="w-6 h-6 text-emerald-400" />{" "}
-                Endpunkt-Referenz (v1)
-              </h2>
-              <p className="text-sm text-slate-400 mt-1">
-                Alle Abfragen unterstützen JSON und standardisierte ISO-8601
-                Zeitformate.
-              </p>
-            </div>
+        <Suspense fallback={<p className="text-slate-400">Monatsarchive werden geladen …</p>}>
+          <ArchiveDownloads />
+        </Suspense>
 
-            <a
-              href="http://localhost:8080/docs"
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl hover:bg-emerald-500/20 transition-all w-fit"
-            >
-              <span>Interaktive Swagger UI öffnen</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          <div className="grid grid-cols-1 gap-5">
-            {/* Endpoint 1: Sensors List */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-slate-700 transition-colors">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs border border-emerald-500/20">
-                    GET
-                  </span>
-                  <span className="font-mono text-sm sm:text-base font-bold text-slate-200">
-                    /api/v1/sensors
-                  </span>
-                </div>
-                <span className="text-xs text-slate-500">Öffentlich</span>
-              </div>
-              <p className="text-sm text-slate-300">
-                Liefert die Liste aller öffentlich sichtbaren Messstationen
-                inklusive Name, GPS-Koordinaten (Breite/Länge) und Beschreibung.
-              </p>
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs text-slate-400 overflow-x-auto">
-                {`[
-  {
-    "sensor_id": "ried-01",
-    "friendly_name": "Station 1: Bürstadt Mitte",
-    "latitude": 49.6425,
-    "longitude": 8.456,
-    "is_hidden": false,
-    "description": "KAMÜ Kulturzentrum Industriestr. 11",
-    "created_at": "2026-09-11T12:00:00Z"
-  }
-]`}
-              </div>
-            </div>
-
-            {/* Endpoint 2: Latest Telemetry */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-slate-700 transition-colors">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs border border-emerald-500/20">
-                    GET
-                  </span>
-                  <span className="font-mono text-sm sm:text-base font-bold text-slate-200">
-                    /api/v1/telemetry/latest
-                  </span>
-                </div>
-                <span className="text-xs text-slate-500">Öffentlich</span>
-              </div>
-              <p className="text-sm text-slate-300">
-                Ruft den zuletzt empfangenen Einzelwert für eine angegebene
-                Station ab.
-              </p>
-              <div className="text-xs text-slate-400 space-y-1">
-                <strong>Parameter:</strong>
-                <ul className="list-disc list-inside space-y-0.5">
-                  <li>
-                    <code className="text-emerald-400 font-mono">
-                      sensor_id
-                    </code>{" "}
-                    (string, erforderlich): Die ID der Station, z.B.{" "}
-                    <code>ried-01</code>.
-                  </li>
-                </ul>
-              </div>
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 font-mono text-xs text-slate-400 overflow-x-auto">
-                {`{
-  "sensor_id": "ried-01",
-  "timestamp": "2026-09-11T19:42:00Z",
-  "value": 21.4,
-  "unit": "celsius"
-}`}
-              </div>
-            </div>
-
-            {/* Endpoint 3: Raw Telemetry */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-slate-700 transition-colors">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs border border-emerald-500/20">
-                    GET
-                  </span>
-                  <span className="font-mono text-sm sm:text-base font-bold text-slate-200">
-                    /api/v1/telemetry/raw
-                  </span>
-                </div>
-                <span className="text-xs text-slate-500">Öffentlich</span>
-              </div>
-              <p className="text-sm text-slate-300">
-                Liefert die historischen Rohdatenpunkte einer Station innerhalb
-                eines definierten Zeitintervalls.
-              </p>
-              <div className="text-xs text-slate-400 space-y-1">
-                <strong>Parameter:</strong>
-                <ul className="list-disc list-inside space-y-0.5">
-                  <li>
-                    <code className="text-emerald-400 font-mono">
-                      sensor_id
-                    </code>{" "}
-                    (string, erforderlich): ID der Station.
-                  </li>
-                  <li>
-                    <code className="text-emerald-400 font-mono">
-                      start_time
-                    </code>{" "}
-                    (ISO-8601, erforderlich): Startzeitpunkt.
-                  </li>
-                  <li>
-                    <code className="text-emerald-400 font-mono">end_time</code>{" "}
-                    (ISO-8601, optional): Endzeitpunkt (Standard: jetzt).
-                  </li>
-                  <li>
-                    <code className="text-emerald-400 font-mono">limit</code>{" "}
-                    (int, optional): Max. Punkte (Standard 100, max. 5000).
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Endpoint 4: Aggregates */}
-            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-4 hover:border-slate-700 transition-colors">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 font-mono font-bold text-xs border border-emerald-500/20">
-                    GET
-                  </span>
-                  <span className="font-mono text-sm sm:text-base font-bold text-slate-200">
-                    /api/v1/telemetry/aggregates
-                  </span>
-                </div>
-                <span className="text-xs text-slate-500">Öffentlich</span>
-              </div>
-              <p className="text-sm text-slate-300">
-                Berechnet direkt über TimescaleDBs{" "}
-                <code className="font-mono text-emerald-400">
-                  time_bucket()
-                </code>{" "}
-                statistische Kennzahlen (Durchschnitt, Min, Max, Anzahl
-                Messungen) über reguläre Zeitintervalle. Ideal für Diagramme und
-                Dashboards!
-              </p>
-              <div className="text-xs text-slate-400 space-y-1">
-                <strong>Erlaubte Intervalle:</strong>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {[
-                    "5 minutes",
-                    "15 minutes",
-                    "30 minutes",
-                    "1 hour",
-                    "3 hours",
-                    "6 hours",
-                    "12 hours",
-                    "1 day",
-                    "7 days",
-                    "1 month",
-                  ].map((iv) => (
-                    <span
-                      key={iv}
-                      className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 font-mono text-[11px] text-slate-300"
-                    >
-                      {iv}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+        <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-5">
+          <h2 className="text-2xl font-bold">In Postman oder Insomnia starten</h2>
+          <p className="text-slate-400">
+            Eine Datei für beide Tools: Die OpenAPI-Definition enthält alle
+            öffentlichen Stations- und Messdaten-Abfragen mit Parametern und
+            Antwortformaten. Die öffentliche Serveradresse ist bereits
+            hinterlegt. Ein API-Key ist nicht erforderlich.
+          </p>
+          <a
+            href="/api/public-openapi"
+            download="open-ried-sens-public.openapi.json"
+            className="inline-flex rounded-xl border border-slate-700 px-5 py-3 font-semibold text-emerald-300 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-400"
+          >
+            OpenAPI für Postman &amp; Insomnia herunterladen
+          </a>
+          <ol className="list-decimal pl-5 space-y-2 text-sm text-slate-300">
+            <li>In Postman „Import“ wählen und die Datei als Collection importieren. In Insomnia „Import“ → „File“ wählen und die Datei importieren.</li>
+            <li>Zuerst GET /api/v1/sensors ausführen und eine Stations-ID aus dem Feld „id“ kopieren.</li>
+            <li>Diese ID bei weiteren Abfragen als „sensor_id“ bzw. „id“ einsetzen. Für historische Daten zusätzlich „start_time“ im ISO-8601-Format angeben, z. B. 2026-09-13T00:00:00Z.</li>
+          </ol>
+          <p className="text-xs text-slate-400">
+            Die Datei wird beim Download aus der aktuellen API-Definition erzeugt.
+            Bei API-Änderungen erneut herunterladen und importieren.
+          </p>
         </section>
 
         {/* SENSOR PARAMETERS GLOSSARY */}

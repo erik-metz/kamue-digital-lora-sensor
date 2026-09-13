@@ -54,6 +54,22 @@ services:
       - backend-api
       - timescaledb
 
+  archive-worker:
+    build: ./archive-worker
+    profiles: ["archives"]
+    restart: unless-stopped
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      UPLOADTHING_TOKEN: ${UPLOADTHING_TOKEN:-}
+      ARCHIVE_PART_MB: ${ARCHIVE_PART_MB:-64}
+    depends_on:
+      - timescaledb
+      - backend-api
+
   nginx:
     image: nginx:alpine
     restart: always

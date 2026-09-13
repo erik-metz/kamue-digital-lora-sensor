@@ -151,3 +151,11 @@ docker compose up -d --force-recreate backend-api
 # Clean up stale dangling images to save EC2 disk space
 docker image prune -f
 ```
+
+## Public bulk data archives
+
+The optional `archive-worker` service generates monthly ZIP parts, publishes them
+through UploadThing and records a public download catalogue. See
+[archive-worker/README.md](archive-worker/README.md) for credentials, first-run
+backfill, scheduling, refreshes and operational requirements. The website's
+Daten page offers monthly links and a script for downloading full years.

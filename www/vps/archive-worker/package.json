@@ -1,0 +1,21 @@
+{
+  "name": "open-ried-sens-archive-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node worker.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "pg": "^8.16.3",
+    "pg-query-stream": "^4.10.3",
+    "uploadthing": "^7.7.4",
+    "yazl": "^3.3.1"
+  },
+  "overrides": {
+    "effect": "^3.20.0"
+  }
+}
