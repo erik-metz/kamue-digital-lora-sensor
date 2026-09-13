@@ -4,8 +4,8 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 import psycopg_pool
 
-from api.dependencies import get_db_pool, verify_admin_key
-from api.v1.schemas import (
+from dependencies import get_db_pool, verify_admin_key
+from schemas import (
     SensorMetadataCreate,
     SensorMetadataResponse,
     SensorMetadataUpdate,

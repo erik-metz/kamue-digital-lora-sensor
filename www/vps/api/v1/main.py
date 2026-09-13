@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import psycopg
 import psycopg_pool
 from psycopg.rows import dict_row
-from api.v1.router import api_router as v1_router
+from router import api_router as v1_router
 
 import logging
 

@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 import psycopg_pool
-from api.dependencies import get_db_pool, verify_ingestion_key
-from api.v1.schemas import (
+from dependencies import get_db_pool, verify_ingestion_key
+from schemas import (
     BatchSensorReadings,
     SensorAggregateResponse,
     SensorReading,
