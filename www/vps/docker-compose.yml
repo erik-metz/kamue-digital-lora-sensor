@@ -55,7 +55,7 @@ services:
       - timescaledb
 
   archive-worker:
-    build: ./archive-worker
+    image: ghcr.io/erik-metz/open-ried-sens-archive-worker:latest
     profiles: ["archives"]
     restart: unless-stopped
     environment:

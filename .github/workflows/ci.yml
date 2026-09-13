@@ -130,3 +130,11 @@ jobs:
           file: ./www/vps/shake-collector/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-shake-collector:latest
+
+      - name: Build and Push Docker Image Archive Worker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/archive-worker
+          file: ./www/vps/archive-worker/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-archive-worker:latest

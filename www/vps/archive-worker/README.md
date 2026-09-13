@@ -19,10 +19,13 @@ lists every part and a Python script downloads whole years or the entire archive
    token belongs only to the worker, not the frontend or any public environment.
    Optionally set `ARCHIVE_PART_MB=64` (1–256 MiB). This is the approximate maximum
    CSV size per ZIP; metadata and ZIP overhead add a little to the final file.
-4. From `www/vps` on the VPS, run:
+4. After pushing the changes to `main`, wait for the GHCR build to succeed.
+   Copy the updated `docker-compose.yml` to the VPS. From the directory containing
+   that file (for example `/home/ubuntu/my-app`), run:
 
    ```sh
-   docker compose --profile archives build archive-worker
+   docker compose --profile archives pull backend-api archive-worker
+   docker compose up -d backend-api
    docker compose --profile archives run --rm archive-worker node worker.mjs
    docker compose --profile archives up -d archive-worker
    docker compose logs -f archive-worker
@@ -32,9 +35,13 @@ The first run backfills closed months from the earliest public reading. The
 service checks on startup and every 24 hours for missing closed months. Failed
 runs retry on the next check; a PostgreSQL advisory lock prevents overlapping
 workers. The current month is normally left to the live API. No external
-scheduler or AWS account is necessary. The service is opt-in and requires the
-repository's `archive-worker` folder on the VPS; it is built locally rather than
-pulled by Watchtower. Rebuild it after code changes.
+scheduler or AWS account is necessary. The service is opt-in and uses
+`ghcr.io/erik-metz/open-ried-sens-archive-worker:latest`, built by GitHub Actions
+after the validation jobs pass. No source folder or Docker build tools are
+needed on the VPS. Once started, the existing Watchtower service monitors and
+updates it like the other GHCR services. If the new GHCR package is private,
+make it public or configure the same registry credentials used for the other
+services before pulling it.
 
 ## Refreshes and current-month snapshots
 
