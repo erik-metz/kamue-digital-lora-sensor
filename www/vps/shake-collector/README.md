@@ -19,15 +19,9 @@ Daemon container service that streams real-time seismic waveform telemetry from 
 
 | Variable                | Default                                                      | Description                                                                 |
 | :---------------------- | :----------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| `SHAKE_STATIONS` | `R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342` | Comma-separated station codes |
 | `SHAKE_NETWORK`         | `AM`                                                         | Raspberry Shake network code                                                |
-| `SHAKE_STATION`         | `R498E`                                                      | Station identifier                                                          |
-| `SHAKE_LOCATION`        | `00`                                                         | Location identifier                                                         |
-| `SHAKE_CHANNEL`         | `EHZ`                                                        | Channel code (EHZ: Short period vertical geophone)                          |
 | `SHAKE_WS_URL`          | `wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/` | CAPS WebSocket endpoint                                                     |
-| `SENSOR_ID`             | `shake-r498e`                                                | Unique identifier stored in `sensor_metadata`                               |
-| `SENSOR_NAME`           | `Station 5: Bürstadt Seismometer (Raspberry Shake R498E)`    | Friendly station name                                                       |
-| `LATITUDE`              | `49.65766`                                                   | Station latitude (Bürstadt / Bobstadt)                                      |
-| `LONGITUDE`             | `8.43426`                                                    | Station longitude (Bürstadt / Bobstadt)                                     |
 | `INGEST_MODE`           | `api`                                                        | Ingestion mode: `api` (via backend-api) or `direct_db` (TimescaleDB direct) |
 | `API_URL`               | `http://backend-api:8080/api/v1`                             | Backend API URL (for Docker internal network)                               |
 | `API_KEY`               | -                                                            | Ingestion bearer token                                                      |
@@ -53,7 +47,7 @@ python main.py
 
 ## One station, multiple metrics
 
-The collector registers only `shake-r498e` (or the configured sensor ID).
+Each collector worker registers one ID derived from its station code (for example `shake-r498e`).
 Each window submits two readings with that same ID and timestamp:
 
 ```json
@@ -97,9 +91,9 @@ SHAKE_STATIONS=R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342
 One container runs an independent streaming worker for each station. Each worker
 registers one sensor (`shake-r82e7`, `shake-r79f9`, etc.) and continuously writes
 `pgv` and `rms` readings in counts, using the configured window interval (5 seconds
-by default). R498E retains its existing ID, name, and configured coordinates.
+by default). R498E retains its existing ID; all stations discover their coordinates and channels automatically.
 
-Additional stations resolve their vertical geophone channel and coordinates from
+All stations resolve their vertical geophone channel and coordinates from
 [Raspberry Shake's FDSN metadata service](https://manual.raspberryshake.org/fdsn.html).
 R5DFB uses SHZ; the other requested stations use EHZ. No acceleration or pressure
 channels are mixed into the geophone metrics. Metadata availability does not
@@ -111,8 +105,8 @@ Missing data is not replaced with synthetic readings. ObsPy must be installed to
 decode waveform data (included in the container requirements).
 
 To collect a different set, override `SHAKE_STATIONS` in the VPS `.env`. To retain
-single-station collection, set `SHAKE_STATIONS=R498E`. An empty list falls back to
-`SHAKE_STATION`. Restart the container after changing configuration.
+single-station collection, set `SHAKE_STATIONS=R498E`. An empty list is rejected.
+Restart the container after changing configuration.
 
 After committing/pushing the changes and waiting for the collector image build,
 run in the VPS Compose directory:
@@ -127,3 +121,9 @@ The startup log should list ten stations, followed by metadata registration and
 station-specific `Flushing ...` messages as live samples arrive. No further DB
 migration is required if the earlier `metric` schema update is already deployed.
 The frontend discovers registered stations on its next sensor-list refresh.
+
+The old single-station environment variables (`SHAKE_STATION`, `SHAKE_LOCATION`,
+`SHAKE_CHANNEL`, `SHAKE_SENSOR_ID`, `SHAKE_SENSOR_NAME`, `SHAKE_SENSOR_DESCRIPTION`,
+`SHAKE_LATITUDE`, and `SHAKE_LONGITUDE`) are no longer read and can be removed
+from existing VPS `.env` files. Keep the station list, connection, ingestion, and
+sampling settings. Sensor IDs are generated as `shake-<lowercase station code>`.

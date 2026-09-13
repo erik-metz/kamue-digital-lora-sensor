@@ -15,10 +15,23 @@ class StationTests(unittest.IsolatedAsyncioTestCase):
         configs = main.station_settings_list(main.settings)
         self.assertEqual(len(configs), 10)
         self.assertEqual(len({c.SENSOR_ID for c in configs}), 10)
-        self.assertEqual(configs[0].SENSOR_ID, main.settings.SENSOR_ID)
+        self.assertEqual(configs[0].SENSOR_ID, 'shake-r498e')
         self.assertIsNone(configs[1].LATITUDE)
         self.assertEqual(configs[-1].SENSOR_ID, 'shake-sc342')
-        self.assertEqual(main.settings.SHAKE_STATION, 'R498E')
+        self.assertIsNone(configs[0].LATITUDE)
+
+    def test_legacy_station_environment_is_ignored(self):
+        with patch.dict("os.environ", {
+            "SHAKE_STATIONS": "SC342",
+            "SHAKE_STATION": "R498E",
+            "SHAKE_SENSOR_ID": "wrong-id",
+            "SENSOR_ID": "wrong-id",
+            "SHAKE_LATITUDE": "49.65766",
+            "LATITUDE": "49.65766",
+        }):
+            config = main.station_settings_list(type(main.settings)())[0]
+        self.assertEqual(config.SENSOR_ID, "shake-sc342")
+        self.assertIsNone(config.LATITUDE)
 
     async def test_windows_do_not_mix_stations(self):
         configs = main.station_settings_list(main.settings)
@@ -35,8 +48,7 @@ class StationTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(readings[0]['value'], index + 1)
 
     async def test_discovers_shz_and_actual_coordinates(self):
-        config = copy.copy(main.settings)
-        config.SHAKE_STATION = 'R5DFB'
+        config = main.StationSettings(main.settings, 'R5DFB')
         client = AsyncMock()
         client.__aenter__.return_value = client
         client.get.return_value = SimpleNamespace(
@@ -53,9 +65,8 @@ class StationTests(unittest.IsolatedAsyncioTestCase):
         client = AsyncMock()
         client.__aenter__.return_value = client
         client.get.return_value = SimpleNamespace(text='', raise_for_status=lambda: None)
-        with patch.object(main, 'httpx', SimpleNamespace(AsyncClient=lambda **kwargs: client)):
-            with self.assertRaises(ValueError):
-                await main.discover_station(copy.copy(main.settings))
+        with patch.object(main, 'httpx', SimpleNamespace(AsyncClient=lambda **kwargs: client)), self.assertRaises(ValueError):
+            await main.discover_station(main.StationSettings(main.settings, 'R498E'))
 
     def test_duplicate_station_codes_are_collected_once(self):
         config = copy.copy(main.settings)
@@ -69,6 +80,5 @@ class StationTests(unittest.IsolatedAsyncioTestCase):
         ):
             collector.process_mseed_payload(b'packet')
         self.assertEqual(collector.sample_buffer, [])
-        with patch.object(main, 'HAS_OBSPY', False):
-            with self.assertRaises(RuntimeError):
-                collector.process_mseed_payload(b'packet')
+        with patch.object(main, 'HAS_OBSPY', False), self.assertRaises(RuntimeError):
+            collector.process_mseed_payload(b'packet')

@@ -9,18 +9,9 @@ try:
         # Raspberry Shake station settings
         SHAKE_NETWORK: str = "AM"
         SHAKE_STATIONS: str = "R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342"
-        SHAKE_STATION: str = "R498E"
-        SHAKE_LOCATION: str = "00"
-        SHAKE_CHANNEL: str = "EHZ"
         SHAKE_WS_URL: str = "wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/"
         SHAKE_FDSN_URL: str = "https://data.raspberryshake.org/fdsnws"
 
-        # Station metadata in Open Ried Sens
-        SENSOR_ID: str = "shake-r498e"
-        SENSOR_NAME: str = "Station 5: Bürstadt Seismometer (Raspberry Shake R498E)"
-        SENSOR_DESCRIPTION: str = "Raspberry Shake 1D Seismograph (Vertical Geophone Channel EHZ, Bürstadt/Bobstadt)"
-        LATITUDE: float = 49.65766
-        LONGITUDE: float = 8.43426
 
         # Ingestion destination: "api" (recommended) or "direct_db"
         INGEST_MODE: str = "api"
@@ -49,26 +40,15 @@ try:
             extra="ignore",
         )
 
-        @property
-        def channel_identifier(self) -> str:
-            return f"{self.SHAKE_NETWORK}.{self.SHAKE_STATION}.{self.SHAKE_LOCATION}.{self.SHAKE_CHANNEL}"
 
 except ImportError:
     class Settings:  # type: ignore[no-redef]
         def __init__(self, **kwargs):
             self.SHAKE_STATIONS = kwargs.get("SHAKE_STATIONS", os.getenv("SHAKE_STATIONS", "R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342"))
             self.SHAKE_NETWORK = kwargs.get("SHAKE_NETWORK", os.getenv("SHAKE_NETWORK", "AM"))
-            self.SHAKE_STATION = kwargs.get("SHAKE_STATION", os.getenv("SHAKE_STATION", "R498E"))
-            self.SHAKE_LOCATION = kwargs.get("SHAKE_LOCATION", os.getenv("SHAKE_LOCATION", "00"))
-            self.SHAKE_CHANNEL = kwargs.get("SHAKE_CHANNEL", os.getenv("SHAKE_CHANNEL", "EHZ"))
             self.SHAKE_WS_URL = kwargs.get("SHAKE_WS_URL", os.getenv("SHAKE_WS_URL", "wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/"))
             self.SHAKE_FDSN_URL = kwargs.get("SHAKE_FDSN_URL", os.getenv("SHAKE_FDSN_URL", "https://data.raspberryshake.org/fdsnws"))
 
-            self.SENSOR_ID = kwargs.get("SENSOR_ID", os.getenv("SHAKE_SENSOR_ID", "shake-r498e"))
-            self.SENSOR_NAME = kwargs.get("SENSOR_NAME", os.getenv("SHAKE_SENSOR_NAME", "Station 5: Bürstadt Seismometer (Raspberry Shake R498E)"))
-            self.SENSOR_DESCRIPTION = kwargs.get("SENSOR_DESCRIPTION", os.getenv("SHAKE_SENSOR_DESCRIPTION", "Raspberry Shake 1D Seismograph (Vertical Geophone Channel EHZ, Bürstadt/Bobstadt)"))
-            self.LATITUDE = float(kwargs.get("LATITUDE", os.getenv("SHAKE_LATITUDE", "49.65766")))
-            self.LONGITUDE = float(kwargs.get("LONGITUDE", os.getenv("SHAKE_LONGITUDE", "8.43426")))
 
             self.INGEST_MODE = kwargs.get("INGEST_MODE", os.getenv("SHAKE_INGEST_MODE", "api"))
             self.API_URL = kwargs.get("API_URL", os.getenv("API_URL", "http://backend-api:8080/api/v1"))
@@ -88,9 +68,28 @@ except ImportError:
             self.RECONNECT_DELAY_SEC = float(kwargs.get("RECONNECT_DELAY_SEC", "5.0"))
             self.MAX_RECONNECT_DELAY_SEC = float(kwargs.get("MAX_RECONNECT_DELAY_SEC", "60.0"))
 
-        @property
-        def channel_identifier(self) -> str:
-            return f"{self.SHAKE_NETWORK}.{self.SHAKE_STATION}.{self.SHAKE_LOCATION}.{self.SHAKE_CHANNEL}"
 
 
 settings = Settings()
+
+
+class StationSettings:
+    """Runtime station metadata, resolved from FDSN rather than environment fields."""
+
+    def __init__(self, base, code):
+        self.base = base
+        self.SHAKE_STATION = code
+        self.SHAKE_LOCATION = "00"
+        self.SHAKE_CHANNEL = "EHZ"
+        self.SENSOR_ID = f"shake-{code.lower()}"
+        self.SENSOR_NAME = f"Raspberry Shake {code}"
+        self.SENSOR_DESCRIPTION = f"Raspberry Shake {code}, vertical geophone"
+        self.LATITUDE = None
+        self.LONGITUDE = None
+
+    def __getattr__(self, name):
+        return getattr(self.base, name)
+
+    @property
+    def channel_identifier(self):
+        return f"{self.SHAKE_NETWORK}.{self.SHAKE_STATION}.{self.SHAKE_LOCATION}.{self.SHAKE_CHANNEL}"

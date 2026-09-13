@@ -20,7 +20,7 @@ class MetricTests(unittest.IsolatedAsyncioTestCase):
         ), patch.object(main.settings, 'RAW_DECIMATION_FACTOR', 1):
             await collector.flush_window_if_due()
         readings = collector.push_telemetry.call_args.args[0]
-        self.assertEqual({r['sensor_id'] for r in readings}, {main.settings.SENSOR_ID})
+        self.assertEqual({r['sensor_id'] for r in readings}, {collector.settings.SENSOR_ID})
         self.assertEqual([r['metric'] for r in readings],
                          ['pgv', 'rms', 'waveform', 'waveform', 'waveform'])
         self.assertEqual(readings[0]['value'], 3)
@@ -35,7 +35,7 @@ class MetricTests(unittest.IsolatedAsyncioTestCase):
         await collector._register_metadata_api()
         collector.http_client.post.assert_awaited_once()
         self.assertEqual(collector.http_client.post.call_args.kwargs['json']['sensor_id'],
-                         main.settings.SENSOR_ID)
+                         collector.settings.SENSOR_ID)
 
 
 if __name__ == '__main__':

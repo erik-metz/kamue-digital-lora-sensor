@@ -6,17 +6,16 @@ and pushes telemetry into the Open Ried Sens TimescaleDB backend.
 """
 
 import asyncio
-import copy
-import re
-from datetime import datetime, timezone, timedelta
 import io
 import json
 import logging
 import math
+import re
 import signal
 import statistics
 import struct
 import sys
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit, urlunsplit
 
 try:
@@ -36,7 +35,7 @@ try:
 except ImportError:
     websockets = None  # type: ignore
 
-from config import settings
+from config import StationSettings, settings
 
 logging.basicConfig(
     level=logging.INFO,
@@ -57,7 +56,7 @@ except ImportError:
 
 class ShakeCollector:
     def __init__(self, station_settings=None) -> None:
-        self.settings = station_settings or settings
+        self.settings = station_settings or station_settings_list(settings)[0]
         self.running = False
         self.clean_ws_url, self.auth_user, self.auth_pass = self._parse_ws_url(self.settings.SHAKE_WS_URL)
         self.sample_buffer: list[tuple[float, float]] = []  # (utc_timestamp_sec, value)
@@ -121,7 +120,7 @@ class ShakeCollector:
                         res.text,
                     )
                     raise RuntimeError(f"Metadata registration failed: {res.status_code}")
-            except Exception as e: # noqa: BLE001
+            except Exception as e:
                 logger.warning("Failed to register metadata for '%s' via API: %s", sensor["sensor_id"], e)
                 raise
 
@@ -158,7 +157,7 @@ class ShakeCollector:
                     )
                 await conn.commit()
             logger.info("Registered station metadata directly in TimescaleDB.")
-        except Exception as e: # noqa: BLE001
+        except Exception as e:
             logger.error("Failed to register metadata directly in TimescaleDB: %s", e)
             raise
 
@@ -266,7 +265,7 @@ class ShakeCollector:
             pgv = float(max(abs(d) for d in detrended))
             rms = float(math.sqrt(sum(d * d for d in detrended) / len(detrended)))
 
-        ts_utc = datetime.now(timezone.utc)
+        ts_utc = datetime.now(UTC)
         ts_iso = ts_utc.isoformat()
 
         readings = [
@@ -290,7 +289,7 @@ class ShakeCollector:
             step = max(1, self.settings.RAW_DECIMATION_FACTOR)
             for idx in range(0, len(samples), step):
                 t_sec, val = samples[idx]
-                sample_iso = datetime.fromtimestamp(t_sec, tz=timezone.utc).isoformat()
+                sample_iso = datetime.fromtimestamp(t_sec, tz=UTC).isoformat()
                 readings.append(
                     {
                         "sensor_id": self.settings.SENSOR_ID,
@@ -335,7 +334,7 @@ class ShakeCollector:
             await ws.send(auth_cmd)
 
             # Format start time in UTC: YYYY,MM,DD,HH,MM,SS (required by CAPS)
-            t_start = datetime.now(timezone.utc) - timedelta(seconds=10)
+            t_start = datetime.now(UTC) - timedelta(seconds=10)
             time_str = (
                 f"{t_start.year},{t_start.month:02d},{t_start.day:02d},"
                 f"{t_start.hour:02d},{t_start.minute:02d},{t_start.second:02d}"
@@ -354,7 +353,7 @@ class ShakeCollector:
             while self.running:
                 try:
                     msg = await asyncio.wait_for(ws.recv(), timeout=15.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Ping / keep-alive check
                     await self.flush_window_if_due()
                     continue
@@ -402,24 +401,14 @@ class ShakeCollector:
 
 
 def station_settings_list(base):
-    """Keep the original station metadata; isolate all additional station settings."""
+    """Create isolated runtime metadata for every configured station."""
     codes = list(dict.fromkeys(code.strip().upper() for code in base.SHAKE_STATIONS.split(",") if code.strip()))
     if not codes:
-        codes = [base.SHAKE_STATION]
-    result = []
+        raise ValueError("SHAKE_STATIONS must contain at least one station")
     for code in codes:
         if not re.fullmatch(r"[A-Z0-9]{5}", code):
             raise ValueError(f"Invalid Raspberry Shake station: {code}")
-        config = copy.copy(base)
-        config.SHAKE_STATION = code
-        if code != base.SHAKE_STATION:
-            config.SENSOR_ID = f"shake-{code.lower()}"
-            config.SENSOR_NAME = f"Raspberry Shake {code}"
-            config.SENSOR_DESCRIPTION = f"Raspberry Shake {code}, vertical geophone"
-            config.LATITUDE = None
-            config.LONGITUDE = None
-        result.append(config)
-    return result
+    return [StationSettings(base, code) for code in codes]
 
 
 async def discover_station(config):
@@ -429,7 +418,7 @@ async def discover_station(config):
             f"{config.SHAKE_FDSN_URL.rstrip('/')}/station/1/query",
             params={"network": config.SHAKE_NETWORK, "station": config.SHAKE_STATION,
                     "level": "channel", "format": "text", "channel": "EHZ,SHZ",
-                    "endafter": datetime.now(timezone.utc).isoformat()},
+                    "endafter": datetime.now(UTC).isoformat()},
         )
         response.raise_for_status()
     channels = []
@@ -441,7 +430,7 @@ async def discover_station(config):
             channels.append(fields)
     if not channels:
         raise ValueError(f"No active vertical geophone channel for {config.SHAKE_STATION}")
-    fields = sorted(channels, key=lambda row: (row[3] != config.SHAKE_CHANNEL, row[2] != config.SHAKE_LOCATION, row[2]))[0]
+    fields = min(channels, key=lambda row: (row[3] != config.SHAKE_CHANNEL, row[2] != config.SHAKE_LOCATION, row[2]))
     config.SHAKE_LOCATION, config.SHAKE_CHANNEL = fields[2], fields[3]
     config.LATITUDE, config.LONGITUDE = float(fields[4]), float(fields[5])
     config.SENSOR_DESCRIPTION = f"Raspberry Shake {config.SHAKE_STATION}, vertical geophone channel {config.channel_identifier}"
@@ -453,7 +442,7 @@ async def run_station(config, startup_delay=0):
     while config.LATITUDE is None or config.LONGITUDE is None:
         try:
             await discover_station(config)
-        except Exception as error:
+        except (httpx.HTTPError, ValueError) as error:
             logger.warning("Metadata unavailable for %s: %s; retrying in 60s", config.SHAKE_STATION, error)
             await asyncio.sleep(60)
     collector = ShakeCollector(config)
