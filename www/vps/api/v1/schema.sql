@@ -44,3 +44,25 @@ SELECT create_hypertable('sensor_data', 'timestamp', if_not_exists => TRUE);
 -- Ensure index exists for fast range queries per sensor
 CREATE INDEX IF NOT EXISTS idx_sensor_data_composite 
 ON sensor_data (sensor_id, timestamp DESC);
+
+-- A station can publish multiple independently queryable measurements.
+ALTER TABLE sensor_data ADD COLUMN IF NOT EXISTS metric VARCHAR(64) NOT NULL DEFAULT 'value';
+CREATE INDEX IF NOT EXISTS idx_sensor_data_metric
+ON sensor_data (sensor_id, metric, timestamp DESC);
+
+-- Merge the legacy R498E RMS pseudo-station without losing its history.
+-- Paired window timestamps identify historical PGV; unpaired samples retain
+-- "value" because old raw waveform samples had no metric discriminator.
+UPDATE sensor_data pgv SET metric = 'pgv'
+WHERE pgv.sensor_id = 'shake-r498e' AND pgv.metric = 'value'
+  AND EXISTS (
+      SELECT 1 FROM sensor_data rms
+      WHERE rms.sensor_id = 'shake-r498e-rms' AND rms.timestamp = pgv.timestamp
+  );
+UPDATE sensor_data SET sensor_id = 'shake-r498e', metric = 'rms'
+WHERE sensor_id = 'shake-r498e-rms'
+  AND EXISTS (SELECT 1 FROM sensor_metadata WHERE id = 'shake-r498e');
+DELETE FROM sensor_metadata
+WHERE id = 'shake-r498e-rms'
+  AND EXISTS (SELECT 1 FROM sensor_metadata WHERE id = 'shake-r498e')
+  AND NOT EXISTS (SELECT 1 FROM sensor_data WHERE sensor_id = 'shake-r498e-rms');

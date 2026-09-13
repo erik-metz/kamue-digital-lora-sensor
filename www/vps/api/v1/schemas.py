@@ -2,6 +2,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 class SensorMetadataCreate(BaseModel):
+    sensor_id: str | None = Field(default=None, min_length=1, max_length=64)
     friendly_name: str = Field(..., min_length=1, max_length=255, json_schema_extra={"example": "Station 1: Bürstadt Mitte"})
     latitude: float | None = Field(None, ge=-90.0, le=90.0, json_schema_extra={"example": 49.6425})
     longitude: float | None = Field(None, ge=-180.0, le=180.0, json_schema_extra={"example": 8.4560})
@@ -29,6 +30,7 @@ class SensorMetadataResponse(BaseModel):
     updated_at: datetime | None = None
 
 class SensorReading(BaseModel):
+    metric: str = Field(default="value", min_length=1, max_length=64)
     sensor_id: str = Field(..., json_schema_extra={"example": "temp-sensor-01"})
     value: float = Field(..., json_schema_extra={"example": 24.5})
     unit: str = Field(..., json_schema_extra={"example": "celsius"})
@@ -38,6 +40,7 @@ class BatchSensorReadings(BaseModel):
     readings: list[SensorReading]
 
 class SensorAggregateResponse(BaseModel):
+    metric: str = "value"
     bucket: datetime
     avg_value: float | None
     min_value: float | None

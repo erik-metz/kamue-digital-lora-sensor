@@ -45,8 +45,8 @@ async def push_sensor_data(
     """Inserts a single sensor reading from an authenticated source."""
     ts = reading.timestamp or datetime.now(timezone.utc)
     query = """
-        INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
-        VALUES (%s, %s, %s, %s);
+        INSERT INTO sensor_data (timestamp, sensor_id, value, unit, metric)
+        VALUES (%s, %s, %s, %s, %s);
     """
     async with pool.connection() as conn:
         # Automatically register sensor if it does not already exist
@@ -58,7 +58,7 @@ async def push_sensor_data(
             """,
             (reading.sensor_id, reading.sensor_id),
         )
-        await conn.execute(query, (ts, reading.sensor_id, reading.value, reading.unit))
+        await conn.execute(query, (ts, reading.sensor_id, reading.value, reading.unit, reading.metric))
     return {"status": "inserted", "timestamp": ts}
 
 
@@ -82,15 +82,15 @@ async def push_batch_sensor_data(
 
     now_utc = datetime.now(timezone.utc)
     records = [
-        (item.timestamp or now_utc, item.sensor_id, item.value, item.unit)
+        (item.timestamp or now_utc, item.sensor_id, item.value, item.unit, item.metric)
         for item in payload.readings
     ]
 
     unique_sensors = [(s_id, s_id) for s_id in {item.sensor_id for item in payload.readings}]
 
     query = """
-        INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
-        VALUES (%s, %s, %s, %s);
+        INSERT INTO sensor_data (timestamp, sensor_id, value, unit, metric)
+        VALUES (%s, %s, %s, %s, %s);
     """
     async with pool.connection() as conn, conn.transaction():
         async with conn.cursor() as cur:
@@ -121,21 +121,23 @@ async def get_raw_telemetry(
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
     end_time: datetime | None = Query(None, description="End timestamp"),
     limit: int = Query(default=100, ge=1, le=5000, description="Max points to return (1-5000)"),
+    metric: str | None = Query(None, min_length=1, max_length=64),
     pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
     """Retrieves raw historical data points for a specific visible sensor over a time range."""
     end = end_time or datetime.now(timezone.utc)
 
     query = """
-        SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit
+        SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit, sd.metric
         FROM sensor_data sd
         JOIN sensor_metadata sm ON sd.sensor_id = sm.id
-        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE AND sd.timestamp >= %s AND sd.timestamp <= %s
+        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE
+          AND (%s::text IS NULL OR sd.metric = %s) AND sd.timestamp >= %s AND sd.timestamp <= %s
         ORDER BY sd.timestamp DESC
         LIMIT %s;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (sensor_id, start_time, end, limit))
+        cur = await conn.execute(query, (sensor_id, metric, metric, start_time, end, limit))
         rows = await cur.fetchall()
 
     return [
@@ -144,6 +146,7 @@ async def get_raw_telemetry(
             "timestamp": row["timestamp"],
             "value": row["value"],
             "unit": row["unit"],
+            "metric": row["metric"],
         }
         for row in rows
     ]
@@ -163,6 +166,7 @@ async def get_telemetry_aggregates(
     ),
     start_time: datetime = Query(..., description="Start timestamp (ISO 8601)"),
     end_time: datetime | None = Query(None, description="End timestamp"),
+    metric: str | None = Query(None, min_length=1, max_length=64),
     pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
     """
@@ -188,15 +192,17 @@ async def get_telemetry_aggregates(
             MIN(sd.value) AS min_value,
             MAX(sd.value) AS max_value,
             COUNT(*) AS sample_count,
-            sd.unit
+            sd.unit,
+            sd.metric
         FROM sensor_data sd
         JOIN sensor_metadata sm ON sd.sensor_id = sm.id
-        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE AND sd.timestamp >= %s AND sd.timestamp <= %s
-        GROUP BY bucket, sd.unit
+        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE
+          AND (%s::text IS NULL OR sd.metric = %s) AND sd.timestamp >= %s AND sd.timestamp <= %s
+        GROUP BY bucket, sd.unit, sd.metric
         ORDER BY bucket ASC;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (cleaned_interval, sensor_id, start_time, end))
+        cur = await conn.execute(query, (cleaned_interval, sensor_id, metric, metric, start_time, end))
         rows = await cur.fetchall()
 
     return [
@@ -207,6 +213,7 @@ async def get_telemetry_aggregates(
             "max_value": row["max_value"],
             "sample_count": row["sample_count"],
             "unit": row["unit"],
+            "metric": row["metric"],
         }
         for row in rows
     ]
@@ -220,19 +227,21 @@ async def get_telemetry_aggregates(
 )
 async def get_latest_sensor_reading(
     sensor_id: str = Query(..., description="The ID of the sensor"),
+    metric: str | None = Query(None, min_length=1, max_length=64),
     pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
     """Retrieves the single most recent data point for a given visible sensor."""
     query = """
-        SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit
+        SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit, sd.metric
         FROM sensor_data sd
         JOIN sensor_metadata sm ON sd.sensor_id = sm.id
         WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE
+          AND (%s::text IS NULL OR sd.metric = %s)
         ORDER BY sd.timestamp DESC
         LIMIT 1;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (sensor_id,))
+        cur = await conn.execute(query, (sensor_id, metric, metric))
         row = await cur.fetchone()
 
     if not row:
@@ -242,3 +251,27 @@ async def get_latest_sensor_reading(
         )
 
     return dict(row)
+
+
+@router.get(
+    "/telemetry/latest/metrics",
+    response_model=list[SensorReading],
+    summary="Get the latest reading of each metric for a sensor (Public)",
+    tags=["Telemetry Public"],
+)
+async def get_latest_sensor_metrics(
+    sensor_id: str = Query(..., description="The ID of the sensor"),
+    pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
+):
+    query = """
+        SELECT DISTINCT ON (sd.metric, sd.unit)
+            sd.timestamp, sd.sensor_id, sd.value, sd.unit, sd.metric
+        FROM sensor_data sd
+        JOIN sensor_metadata sm ON sd.sensor_id = sm.id
+        WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE
+        ORDER BY sd.metric, sd.unit, sd.timestamp DESC;
+    """
+    async with pool.connection() as conn:
+        cur = await conn.execute(query, (sensor_id,))
+        rows = await cur.fetchall()
+    return [dict(row) for row in rows]

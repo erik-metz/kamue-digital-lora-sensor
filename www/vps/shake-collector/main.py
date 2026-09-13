@@ -96,14 +96,6 @@ class ShakeCollector:
                 "is_hidden": False,
                 "description": settings.SENSOR_DESCRIPTION,
             },
-            {
-                "sensor_id": f"{settings.SENSOR_ID}-rms",
-                "friendly_name": f"{settings.SENSOR_NAME} (RMS Tremor)",
-                "latitude": settings.LATITUDE,
-                "longitude": settings.LONGITUDE,
-                "is_hidden": False,
-                "description": f"RMS vibration noise floor for {settings.SENSOR_ID}",
-            },
         ]
 
         admin_key = settings.ADMIN_API_KEY or settings.API_KEY
@@ -158,16 +150,6 @@ class ShakeCollector:
                             settings.SENSOR_DESCRIPTION,
                         ),
                     )
-                    await cur.execute(
-                        query,
-                        (
-                            f"{settings.SENSOR_ID}-rms",
-                            f"{settings.SENSOR_NAME} (RMS Tremor)",
-                            settings.LATITUDE,
-                            settings.LONGITUDE,
-                            f"RMS vibration noise floor for {settings.SENSOR_ID}",
-                        ),
-                    )
                 await conn.commit()
             logger.info("Registered station metadata directly in TimescaleDB.")
         except Exception as e: # noqa: BLE001
@@ -213,13 +195,14 @@ class ShakeCollector:
                                 r["sensor_id"],
                                 r["value"],
                                 r["unit"],
+                                r["metric"],
                             )
                             for r in readings
                         ]
                         await cur.executemany(
                             """
-                            INSERT INTO sensor_data (timestamp, sensor_id, value, unit)
-                            VALUES (%s, %s, %s, %s);
+                            INSERT INTO sensor_data (timestamp, sensor_id, value, unit, metric)
+                            VALUES (%s, %s, %s, %s, %s);
                             """,
                             records,
                         )
@@ -298,12 +281,14 @@ class ShakeCollector:
         readings = [
             {
                 "sensor_id": settings.SENSOR_ID,
+                "metric": "pgv",
                 "value": round(pgv, 2),
                 "unit": "counts",
                 "timestamp": ts_iso,
             },
             {
-                "sensor_id": f"{settings.SENSOR_ID}-rms",
+                "sensor_id": settings.SENSOR_ID,
+                "metric": "rms",
                 "value": round(rms, 2),
                 "unit": "counts",
                 "timestamp": ts_iso,
@@ -318,6 +303,7 @@ class ShakeCollector:
                 readings.append(
                     {
                         "sensor_id": settings.SENSOR_ID,
+                        "metric": "waveform",
                         "value": round(val, 2),
                         "unit": "counts",
                         "timestamp": sample_iso,
@@ -327,7 +313,7 @@ class ShakeCollector:
         logger.info(
             "Flushing %s window: %d raw samples -> PGV=%.1f counts, RMS=%.1f counts",
             settings.SHAKE_STATION,
-            len(values),
+            len(samples),
             pgv,
             rms,
         )

@@ -50,3 +50,38 @@ python test_connection.py
 # 3. Start collector
 python main.py
 ```
+
+## One station, multiple metrics
+
+The collector registers only `shake-r498e` (or the configured sensor ID).
+Each window submits two readings with that same ID and timestamp:
+
+```json
+{"readings": [
+  {"sensor_id": "shake-r498e", "metric": "pgv", "value": 42.0, "unit": "counts"},
+  {"sensor_id": "shake-r498e", "metric": "rms", "value": 12.5, "unit": "counts"}
+]}
+```
+
+Optional raw samples use `metric: "waveform"`. Units remain `counts`; these
+values are not calibrated physical velocity. Other ingestion clients can omit
+`metric`, which defaults to `value` for backward compatibility.
+
+Use `/api/v1/telemetry/latest/metrics?sensor_id=shake-r498e` to fetch all latest
+measurements. Existing `/telemetry/latest`, `/telemetry/raw`, and
+`/telemetry/aggregates` accept `metric=pgv` or `metric=rms`. Aggregates always
+group by metric and unit so the two measurements are never averaged together.
+The existing latest endpoint retains its single-reading response.
+
+### Updating an existing deployment
+
+Stop the old collector, deploy/restart the updated API first (it applies
+`schema.sql` on startup), then start the updated collector. Direct DB ingestion
+also requires this schema update before the collector starts.
+
+The schema migration merges historical `shake-r498e-rms` readings into
+`shake-r498e` with metric `rms`, then removes the redundant metadata entry.
+Historical main-station readings paired with RMS timestamps become `pgv`;
+unpaired readings keep `value`, since legacy raw samples and peak measurements
+were not explicitly distinguished. The merge is repeatable and preserves readings.
+For customized station IDs, adapt the migration's two station IDs before applying.
