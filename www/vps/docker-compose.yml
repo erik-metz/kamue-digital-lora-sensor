@@ -11,6 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - timescale_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
 
   backend-api:
     image: ghcr.io/erik-metz/open-ried-sens-api:latest
