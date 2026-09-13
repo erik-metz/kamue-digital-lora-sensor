@@ -29,7 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f www/vps/requirements.txt ]; then pip install -r www/vps/requirements.txt; fi
+          if [ -f www/vps/api/requirements.txt ]; then pip install -r www/vps/api/requirements.txt; fi
+          if [ -f www/vps/shake-collector/requirements.txt ]; then pip install -r www/vps/shake-collector/requirements.txt; fi
           pip install ruff pytest
 
       - name: Lint code with Ruff
@@ -56,18 +57,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Docker Image API
         uses: docker/build-push-action@v6
         with:
-          context: ./www/vps
-          file: ./www/vps/dockerfile
+          context: ./www/vps/api
+          file: ./www/vps/api/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/kamue-digital-lora-sensor:latest
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-api:latest
 
-      - name: Build and Push Shake Collector Image
+      - name: Build and Push Docker Image Shake Collector
         uses: docker/build-push-action@v6
         with:
           context: ./www/vps/shake-collector
           file: ./www/vps/shake-collector/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/kamue-digital-shake-collector:latest
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-shake-collector:latest
