@@ -13,7 +13,7 @@ services:
       - timescale_data:/var/lib/postgresql/data
 
   backend-api:
-    image: ghcr.io/erik-metz/kamue-digital-lora-sensor:latest
+    image: ghcr.io/erik-metz/open-ried-sens-api:latest
     container_name: backend_api
     restart: always
     ports:
@@ -30,10 +30,7 @@ services:
       - timescaledb
 
   shake-collector:
-    build:
-      context: ./shake-collector
-      dockerfile: Dockerfile
-    image: ghcr.io/erik-metz/kamue-digital-shake-collector:latest
+    image: ghcr.io/erik-metz/open-ried-sens-shake-collector:latest
     container_name: shake_collector
     restart: always
     environment:
@@ -43,7 +40,7 @@ services:
       SHAKE_CHANNEL: ${SHAKE_CHANNEL:-EHZ}
       SHAKE_WS_URL: ${SHAKE_WS_URL:-wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/}
       SENSOR_ID: ${SHAKE_SENSOR_ID:-shake-r498e}
-      SENSOR_NAME: ${SHAKE_SENSOR_NAME:-Station 5: Bürstadt Seismometer (Raspberry Shake R498E)}
+      SENSOR_NAME: "${SHAKE_SENSOR_NAME:-Station 5: Bürstadt Seismometer (Raspberry Shake R498E)}"
       LATITUDE: ${SHAKE_LATITUDE:-49.65766}
       LONGITUDE: ${SHAKE_LONGITUDE:-8.43426}
       INGEST_MODE: ${SHAKE_INGEST_MODE:-api}
