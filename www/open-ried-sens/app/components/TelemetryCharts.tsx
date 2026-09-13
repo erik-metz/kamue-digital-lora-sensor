@@ -71,7 +71,7 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
         </div>
         <div className="min-w-0">
           <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-emerald-400">Ausgewählte Station</p>
-          <Combobox items={nodes} value={node} itemToStringValue={item => item.name} onValueChange={item => { if (item) onSelectNode(item.id); }} autoHighlight>
+          <Combobox items={nodes} value={node} itemToStringLabel={item => item.name} itemToStringValue={item => item.id} onValueChange={item => { if (item) onSelectNode(item.id); }} autoHighlight>
             <ComboboxInput aria-label="Station auswählen" placeholder="Standort suchen…" className="w-full border-slate-700 bg-slate-950 text-slate-100" />
             <ComboboxContent className="border-slate-700 bg-slate-900 text-slate-100">
               <ComboboxEmpty>Kein Standort gefunden</ComboboxEmpty>
