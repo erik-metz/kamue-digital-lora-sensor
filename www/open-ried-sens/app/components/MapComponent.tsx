@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import L from "leaflet";
+import { useEffect, useRef } from "react";
 
 export interface SensorNode {
   id: string;
@@ -28,11 +28,15 @@ export interface SensorNode {
 
 interface MapProps {
   nodes: SensorNode[];
-  selectedNodeId: string;
+  selectedNodeId: string | undefined;
   onSelectNode: (id: string) => void;
 }
 
-export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: MapProps) {
+export default function MapComponent({
+  nodes,
+  selectedNodeId,
+  onSelectNode,
+}: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
@@ -43,14 +47,15 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: Ma
     if (!mapInstanceRef.current) {
       // Center map around Bürstadt / Lampertheim (Hessisches Ried)
       const map = L.map(mapContainerRef.current, {
-        center: [49.620, 8.460],
+        center: [49.62, 8.46],
         zoom: 12,
         zoomControl: true,
       });
 
       // Standard free OpenStreetMap tile server (no API key required)
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution:
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
       }).addTo(map);
 
@@ -65,7 +70,12 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: Ma
 
     // Custom Icon SVG generator
     const createCustomIcon = (node: SensorNode, isSelected: boolean) => {
-      const color = node.status === "online" ? "#10b981" : node.status === "warning" ? "#f59e0b" : "#ef4444";
+      const color =
+        node.status === "online"
+          ? "#10b981"
+          : node.status === "warning"
+          ? "#f59e0b"
+          : "#ef4444";
       const ringColor = isSelected ? "#3b82f6" : "transparent";
 
       const html = `
@@ -163,7 +173,6 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: Ma
       map.panTo([targetNode.lat, targetNode.lng]);
       markersRef.current[targetNode.id]?.openPopup();
     }
-
   }, [nodes, selectedNodeId, onSelectNode]);
 
   return (
@@ -177,12 +186,22 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode }: Ma
       <div ref={mapContainerRef} className="w-full h-full z-0" />
       <style jsx global>{`
         @keyframes pulse {
-          0% { transform: scale(0.95); opacity: 0.8; }
-          50% { transform: scale(1.25); opacity: 0.3; }
-          100% { transform: scale(0.95); opacity: 0.8; }
+          0% {
+            transform: scale(0.95);
+            opacity: 0.8;
+          }
+          50% {
+            transform: scale(1.25);
+            opacity: 0.3;
+          }
+          100% {
+            transform: scale(0.95);
+            opacity: 0.8;
+          }
         }
         .leaflet-tile-pane {
-          filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3);
+          filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg)
+            saturate(0.3);
         }
         .leaflet-popup-content-wrapper {
           background: #1e293b !important;

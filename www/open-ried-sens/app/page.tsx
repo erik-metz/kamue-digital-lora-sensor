@@ -1,6 +1,14 @@
 "use client";
 
 import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
+import {
   Activity,
   Building2,
   CheckCircle2,
@@ -22,14 +30,6 @@ import { useState } from "react";
 import HeaderLogo from "./components/HeaderLogo";
 import { SensorNode } from "./components/MapComponent";
 import TelemetryCharts from "./components/TelemetryCharts";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
 
 // Client-only dynamic load for Leaflet map
 const MapComponent = dynamic(() => import("./components/MapComponent"), {
@@ -156,8 +156,8 @@ const INITIAL_NODES: SensorNode[] = [
 ];
 
 export default function Home() {
-  const [nodes] = useState<SensorNode[]>(INITIAL_NODES);
-  const [selectedNodeId, setSelectedNodeId] = useState<string>("ried-01");
+  const [nodes] = useState<SensorNode[]>([]);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>();
   const [liveLogs] = useState<
     Array<{
       id: string;
