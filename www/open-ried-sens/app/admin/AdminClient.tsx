@@ -42,30 +42,6 @@ export default function AdminClient({
   // Dashboard state
   const [sensors, setSensors] = useState<SensorItem[]>(initialSensors);
 
-  const sensorsHa = [
-    {
-      id: "shake-r498e",
-      friendly_name: "Station 5: Bürstadt Seismometer (Raspberry Shake R498E)",
-      latitude: 49.65766,
-      longitude: 8.43426,
-      is_hidden: false,
-      description:
-        "Raspberry Shake 1D Seismograph (Vertical Geophone Channel EHZ, Bürstadt/Bobstadt)",
-      created_at: "2026-09-13T10:51:09.292937Z",
-      updated_at: "2026-09-13T13:02:51.818814Z",
-    },
-    {
-      id: "shake-r498e-rms",
-      friendly_name:
-        "Station 5: Bürstadt Seismometer (Raspberry Shake R498E) (RMS Tremor)",
-      latitude: 49.65766,
-      longitude: 8.43426,
-      is_hidden: false,
-      description: "RMS vibration noise floor for shake-r498e",
-      created_at: "2026-09-13T10:51:09.292937Z",
-      updated_at: "2026-09-13T13:02:51.818814Z",
-    },
-  ];
 
   const [loadingSensors, setLoadingSensors] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
