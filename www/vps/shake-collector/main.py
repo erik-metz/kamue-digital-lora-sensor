@@ -124,7 +124,7 @@ class ShakeCollector:
                         res.status_code,
                         res.text,
                     )
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 logger.warning("Failed to register metadata for '%s' via API: %s", sensor["sensor_id"], e)
 
     async def _register_metadata_db(self) -> None:
@@ -170,7 +170,7 @@ class ShakeCollector:
                     )
                 await conn.commit()
             logger.info("Registered station metadata directly in TimescaleDB.")
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             logger.error("Failed to register metadata directly in TimescaleDB: %s", e)
 
     async def push_telemetry(self, readings: list[dict]) -> None:
@@ -194,7 +194,7 @@ class ShakeCollector:
                     logger.debug("Successfully pushed %d readings via API.", len(readings))
                 else:
                     logger.error("API push error %s: %s", res.status_code, res.text)
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 logger.error("HTTP error pushing telemetry batch: %s", e)
 
         elif settings.INGEST_MODE == "direct_db":
@@ -225,7 +225,7 @@ class ShakeCollector:
                         )
                     await conn.commit()
                 logger.debug("Direct DB inserted %d readings.", len(readings))
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 logger.error("Database insertion error: %s", e)
 
     def process_mseed_payload(self, payload: bytes) -> None:
@@ -240,7 +240,7 @@ class ShakeCollector:
                     samples = tr.data
                     for idx, val in enumerate(samples):
                         self.sample_buffer.append((t0 + (idx * dt), float(val)))
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 logger.warning("Error parsing MiniSEED with ObsPy: %s", e)
         else:
             # Fallback: extract sample rate and sample count from fixed section of data header
@@ -261,7 +261,7 @@ class ShakeCollector:
                 # Basic mock/placeholder samples if Steim unpacker is not present
                 for idx in range(min(nsamp, 50)):
                     self.sample_buffer.append((t0 + (idx * dt), 0.0))
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 logger.warning("Error in fallback MiniSEED header parsing: %s", e)
 
     async def flush_window_if_due(self) -> None:
@@ -393,7 +393,7 @@ class ShakeCollector:
                     offset = 0
                     msg_len = len(msg)
                     while offset + 6 <= msg_len:
-                        req_id, dlen = struct.unpack_from("<hi", msg, offset)
+                        _, dlen = struct.unpack_from("<hi", msg, offset)
                         offset += 6
                         if offset + dlen > msg_len:
                             break
@@ -415,7 +415,7 @@ class ShakeCollector:
                 backoff = settings.RECONNECT_DELAY_SEC
             except asyncio.CancelledError:
                 break
-            except Exception as e:
+            except Exception as e: # noqa: BLE001
                 logger.error("Connection error: %s. Reconnecting in %.1fs...", e, backoff)
                 await asyncio.sleep(backoff)
                 backoff = min(backoff * 1.5, settings.MAX_RECONNECT_DELAY_SEC)
