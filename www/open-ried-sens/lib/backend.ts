@@ -70,6 +70,7 @@ export function createSensor(input: SensorInput) {
 }
 
 export function updateSensor(id: string, input: SensorInput) {
+  console.log("in updateSensor", { id, input });
   return request<SensorItem>(
     `/api/v1/admin/sensors/${encodeURIComponent(id)}`,
     {
