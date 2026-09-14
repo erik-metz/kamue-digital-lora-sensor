@@ -116,6 +116,67 @@ test("parking valueLabel formats x/y frei when capacity is available and preserv
   assert.equal(model.valueLabel(withCap[0]), "4 frei");
 });
 
+test("normalizeParkingName strips spot numbers, letters and prefixes", () => {
+  assert.equal(model.normalizeParkingName("Kaiserstraße Nr. 2"), "Kaiserstraße");
+  assert.equal(model.normalizeParkingName("Kaiserstraße Nr. 15"), "Kaiserstraße");
+  assert.equal(model.normalizeParkingName("Wilhelmstraße 42 L"), "Wilhelmstraße");
+  assert.equal(model.normalizeParkingName("Wilhelmstraße 46 R"), "Wilhelmstraße");
+  assert.equal(model.normalizeParkingName("Hallenbadparkplatz Links"), "Hallenbadparkplatz");
+  assert.equal(model.normalizeParkingName("lub2-parking-81"), "lub2-parking");
+  assert.equal(model.normalizeParkingName("Bodentemperatur Kaiserstraße Nr. 2"), "Kaiserstraße");
+});
+
+test("parking spots with individual spot numbers are grouped by street and merge companion puck temperatures", () => {
+  const sensors = [
+    sensor([reading("parking_free", 1, "count"), reading("parking_occupied", 0, "count"), reading("parking_capacity", 1, "count")], {
+      id: "p1", friendly_name: "Kaiserstraße Nr. 1", latitude: 49.5941, longitude: 8.4677,
+      description: "Smart City; urn:ngsi-ld:ParkingSpotSum:IoT-Plan-Nwave-lub-parking-62"
+    }),
+    sensor([reading("parking_free", 0, "count"), reading("parking_occupied", 1, "count"), reading("parking_capacity", 1, "count")], {
+      id: "p2", friendly_name: "Kaiserstraße Nr. 2", latitude: 49.5942, longitude: 8.4679,
+      description: "Smart City; urn:ngsi-ld:ParkingSpotSum:IoT-Plan-Nwave-lub-parking-67"
+    }),
+    sensor([reading("parking_free", 1, "count"), reading("parking_occupied", 0, "count"), reading("parking_capacity", 1, "count")], {
+      id: "p3", friendly_name: "Kaiserstraße Nr. 3", latitude: 49.5943, longitude: 8.4678,
+      description: "Smart City; urn:ngsi-ld:ParkingSpotSum:IoT-Plan-Nwave-lub-parking-71"
+    }),
+    // Companion puck temperature sensors
+    sensor([reading("temperature", 14.5, "°C")], {
+      id: "t1", friendly_name: "Bodentemperatur Kaiserstraße Nr. 2", latitude: 49.5942, longitude: 8.4679,
+      description: "Smart City; urn:ngsi-ld:WeatherObserved:IoT-Plan-Nwave-lub-parking-67"
+    }),
+    sensor([reading("temperature", 15.5, "°C")], {
+      id: "t2", friendly_name: "Bodentemperatur Kaiserstraße Nr. 3", latitude: 49.5943, longitude: 8.4678,
+      description: "Smart City; urn:ngsi-ld:WeatherObserved:IoT-Plan-Nwave-lub-parking-71"
+    }),
+  ];
+
+  const stations = model.toStationNodes(sensors);
+  // All 3 parking spots + 2 temperature pucks should collapse into 1 clean station
+  assert.equal(stations.length, 1);
+  const station = stations[0];
+  assert.equal(station.name, "Kaiserstraße");
+  assert.deepEqual([...station.categories], ["parking", "soil"]);
+  assert.equal(station.isAggregate, true);
+
+  // Centroid latitude: (49.5941 + 49.5942 + 49.5943) / 3 = 49.5942
+  assert.ok(Math.abs(station.lat - 49.5942) < 0.0001);
+  assert.ok(Math.abs(station.lng - 8.4678) < 0.0001);
+
+  const free = station.readings.find(r => r.metric === "parking_free");
+  const occupied = station.readings.find(r => r.metric === "parking_occupied");
+  const capacity = station.readings.find(r => r.metric === "parking_capacity");
+  const soilTemp = station.readings.find(r => r.metric === "soil_temperature");
+
+  assert.equal(free?.value, 2);
+  assert.equal(occupied?.value, 1);
+  assert.equal(capacity?.value, 3);
+  assert.equal(model.valueLabel(free, station.readings), "2/3 frei");
+  // Soil temperature is averaged: (14.5 + 15.5) / 2 = 15.0 °C
+  assert.equal(soilTemp?.value, 15);
+  assert.equal(soilTemp?.unit, "°C");
+});
+
 test("traffic and all soil metrics have dedicated categories", () => {
   assert.deepEqual([...model.categoriesFor(sensor([reading("traffic_cars_hourly", 10, "count")]))], ["traffic"]);
   assert.deepEqual([...model.categoriesFor(sensor([reading("soil_tension_30cm", 10, "kPa")]))], ["soil"]);

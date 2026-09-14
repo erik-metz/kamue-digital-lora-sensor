@@ -57,14 +57,45 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
   return CATEGORY_IDS.filter(id => categories.has(id));
 }
 
+export function normalizeParkingName(name: string): string {
+  let s = name.trim();
+  s = s.replace(/^Bodentemperatur\s+/i, "");
+  s = s.replace(/\s+Nr\.?\s*\d+.*$/i, "");
+  s = s.replace(/\s+No\.?\s*\d+.*$/i, "");
+  s = s.replace(/\s+#\s*\d+.*$/i, "");
+  s = s.replace(/\s+(Links|Rechts)$/i, "");
+  s = s.replace(/\s+\d+\s*[LR]$/i, "");
+  s = s.replace(/\s+[LR]$/i, "");
+  s = s.replace(/-\d+$/, "");
+  return s.trim();
+}
+
+export function isParkingPuckTemperature(sensor: ApiMapSensor): boolean {
+  const name = sensor.friendly_name.toLowerCase();
+  const desc = (sensor.description ?? "").toLowerCase();
+  const src = (sensor.source_entity_id ?? "").toLowerCase();
+  const id = sensor.id.toLowerCase();
+  const isPuck = desc.includes("nwave") || desc.includes("parking") || src.includes("nwave") || src.includes("parking") || id.includes("parking");
+  const isTemp = name.includes("bodentemperatur") || name.includes("temperatur") ||
+    sensor.entity_type === "WeatherObserved" ||
+    (sensor.readings ?? []).some(r => ["temperature", "soil_temperature"].includes(r.metric));
+  const isParkingReading = (sensor.readings ?? []).some(r => r.metric.startsWith("parking_")) ||
+    sensor.entity_type === "ParkingSpotSum" ||
+    sensor.entity_type?.startsWith("Parking");
+  return isPuck && isTemp && !isParkingReading;
+}
+
 export function toStationNodes(sensors: ApiMapSensor[]): StationNode[] {
   const visible = sensors.filter(s => !s.is_hidden);
   const parkingSensors: ApiMapSensor[] = [];
+  const puckTempSensors: ApiMapSensor[] = [];
   const result: StationNode[] = [];
 
   for (const s of visible) {
     const categories = categoriesFor(s);
-    if (categories.length === 1 && categories[0] === "parking") {
+    if (isParkingPuckTemperature(s)) {
+      puckTempSensors.push(s);
+    } else if (categories.length === 1 && categories[0] === "parking") {
       parkingSensors.push(s);
     } else {
       result.push({
@@ -75,32 +106,35 @@ export function toStationNodes(sensors: ApiMapSensor[]): StationNode[] {
     }
   }
 
-  // Group parking sensors that share the same station name and location
+  // Group parking sensors that share the same normalized station name and proximity
   const parkingGroups: ApiMapSensor[][] = [];
   for (const sensor of parkingSensors) {
-    const nameKey = sensor.friendly_name.trim().toLowerCase();
+    const normName = normalizeParkingName(sensor.friendly_name).toLowerCase();
     const existing = parkingGroups.find(group => {
       const lead = group[0];
-      if (lead.friendly_name.trim().toLowerCase() !== nameKey) return false;
+      const leadNorm = normalizeParkingName(lead.friendly_name).toLowerCase();
+      if (leadNorm !== normName) return false;
       if (lead.latitude == null || lead.longitude == null || sensor.latitude == null || sensor.longitude == null) {
         return lead.latitude == null && sensor.latitude == null && lead.longitude == null && sensor.longitude == null;
       }
-      return Math.hypot(lead.latitude - sensor.latitude, lead.longitude - sensor.longitude) <= 0.005;
+      return Math.hypot(lead.latitude - sensor.latitude, lead.longitude - sensor.longitude) <= 0.003;
     });
     if (existing) existing.push(sensor);
     else parkingGroups.push([sensor]);
   }
 
+  const matchedPuckIds = new Set<string>();
+
   for (const group of parkingGroups) {
-    if (group.length === 1) {
-      const s = group[0];
-      result.push({
-        id: s.id, name: s.friendly_name, locationName: s.friendly_name, address: s.description ?? "",
-        lat: s.latitude, lng: s.longitude, categories: ["parking"],
-        readings: (s.readings ?? []).filter(r => Number.isFinite(r.value) && Number.isFinite(Date.parse(r.timestamp))),
-      });
-      continue;
-    }
+    const isSingle = group.length === 1;
+    const primary = group[0];
+    const groupNorm = normalizeParkingName(primary.friendly_name).toLowerCase();
+    const stationName = isSingle ? primary.friendly_name : (normalizeParkingName(primary.friendly_name) || primary.friendly_name);
+
+    // Compute centroid coordinates
+    const withCoords = group.filter(s => s.latitude != null && s.longitude != null);
+    const lat = withCoords.length ? withCoords.reduce((sum, s) => sum + s.latitude!, 0) / withCoords.length : primary.latitude;
+    const lng = withCoords.length ? withCoords.reduce((sum, s) => sum + s.longitude!, 0) / withCoords.length : primary.longitude;
 
     let totalFree = 0;
     let hasFree = false;
@@ -157,18 +191,57 @@ export function toStationNodes(sensors: ApiMapSensor[]): StationNode[] {
     if (hasOccupied) readings.push({ metric: "parking_occupied", value: totalOccupied, unit: "count", timestamp });
     if (hasCapacity) readings.push({ metric: "parking_capacity", value: totalCapacity, unit: "count", timestamp });
 
-    const primary = group[0];
-    const withCoords = group.find(s => s.latitude != null && s.longitude != null) ?? primary;
+    // Integrate companion puck temperature sensors for this parking group
+    const matchingPucks = puckTempSensors.filter(p => {
+      const pNorm = normalizeParkingName(p.friendly_name).toLowerCase();
+      if (pNorm !== groupNorm) return false;
+      if (lat == null || lng == null || p.latitude == null || p.longitude == null) return true;
+      return Math.hypot(lat - p.latitude, lng - p.longitude) <= 0.003;
+    });
+
+    const categories: Category[] = ["parking"];
+    const tempVals: number[] = [];
+    let latestTempTime = "";
+    for (const p of matchingPucks) {
+      matchedPuckIds.add(p.id);
+      const valid = (p.readings ?? []).filter(r => Number.isFinite(r.value) && ["temperature", "soil_temperature", "value"].includes(r.metric));
+      for (const tr of valid) {
+        tempVals.push(tr.value);
+        if (!latestTempTime || Date.parse(tr.timestamp) > Date.parse(latestTempTime)) latestTempTime = tr.timestamp;
+      }
+    }
+
+    if (tempVals.length > 0) {
+      const avgTemp = Math.round((tempVals.reduce((a, b) => a + b, 0) / tempVals.length) * 10) / 10;
+      readings.push({ metric: "soil_temperature", value: avgTemp, unit: "°C", timestamp: latestTempTime || timestamp });
+      if (!categories.includes("soil")) categories.push("soil");
+    }
+
     result.push({
       id: primary.id,
-      name: primary.friendly_name,
-      locationName: primary.friendly_name,
+      name: stationName,
+      locationName: stationName,
       address: primary.description ?? "",
-      lat: withCoords.latitude,
-      lng: withCoords.longitude,
-      categories: ["parking"],
+      lat,
+      lng,
+      categories,
       readings,
-      isAggregate: true,
+      isAggregate: !isSingle || tempVals.length > 0,
+    });
+  }
+
+  // Any unmatched puck temperature sensors are emitted as standalone soil sensors to preserve data
+  for (const puck of puckTempSensors) {
+    if (matchedPuckIds.has(puck.id)) continue;
+    result.push({
+      id: puck.id,
+      name: puck.friendly_name,
+      locationName: puck.friendly_name,
+      address: puck.description ?? "",
+      lat: puck.latitude,
+      lng: puck.longitude,
+      categories: ["soil"],
+      readings: (puck.readings ?? []).filter(r => Number.isFinite(r.value) && Number.isFinite(Date.parse(r.timestamp))),
     });
   }
 
