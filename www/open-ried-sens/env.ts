@@ -5,8 +5,7 @@ export const env = createEnv({
   server: {
     BACKEND_API_URL: z.url(),
     ADMIN_PASSWORD: z.string().min(1),
-    // Independent 32-byte signing key; cookies must not verify password guesses.
-    ADMIN_SESSION_SECRET: z.string().regex(/^[a-fA-F0-9]{64}$/),
+    ADMIN_SESSION_SECRET: z.string().min(1),
     BACKEND_ADMIN_API_KEY: z
       .string()
       .min(1)
