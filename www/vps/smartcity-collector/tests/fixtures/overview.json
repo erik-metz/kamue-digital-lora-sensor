@@ -1,0 +1,342 @@
+{
+  "panels": [
+    {
+      "widgets": [
+        {
+          "widgetData": {
+            "data": {
+              "combinedWidgets": [
+                {
+                  "tabs": [
+                    {
+                      "mapWidgetValues": [
+                        {
+                          "attributes": "waterSurfaceDistance",
+                          "chartUnit": "cm"
+                        },
+                        {
+                          "attributes": "soilMoistureVwc",
+                          "chartUnit": "% nFK"
+                        },
+                        {
+                          "attributes": "soilTemperature",
+                          "chartUnit": "°C"
+                        },
+                        {
+                          "attributes": "dateObserved",
+                          "chartUnit": ""
+                        }
+                      ],
+                      "query": {
+                        "id": "7c4671ca-ad9e-439e-9d9d-f65fb8d59646",
+                        "updatedAt": "2026-09-14T06:36:03.576Z",
+                        "queryData": [
+                          {
+                            "id": "urn:ngsi-ld:GreenspaceRecord:lub-climatebox-humidity-4",
+                            "type": "GreenspaceRecord",
+                            "dateObserved": {
+                              "type": "DateTime",
+                              "value": "2026-01-11T14:49:38.00Z",
+                              "metadata": {}
+                            },
+                            "location": {
+                              "type": "geo:json",
+                              "value": {
+                                "type": "Point",
+                                "coordinates": [
+                                  8.464450836,
+                                  49.644250987
+                                ]
+                              },
+                              "metadata": {}
+                            },
+                            "name": {
+                              "type": "Text",
+                              "value": "Climatebox 4",
+                              "metadata": {}
+                            },
+                            "soilMoistureVwc": {
+                              "type": "Number",
+                              "value": 0,
+                              "metadata": {}
+                            },
+                            "soilTemperature": {
+                              "type": "Number",
+                              "value": null,
+                              "metadata": {}
+                            },
+                            "waterSurfaceDistance": {
+                              "type": "Number",
+                              "value": 0,
+                              "metadata": {}
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "mapWidgetValues": [
+                        {
+                          "attributes": "NO2",
+                          "chartUnit": "ppm"
+                        },
+                        {
+                          "attributes": "O3",
+                          "chartUnit": "ppm"
+                        },
+                        {
+                          "attributes": "PM10",
+                          "chartUnit": "ppm"
+                        },
+                        {
+                          "attributes": "PM25",
+                          "chartUnit": "ppm"
+                        },
+                        {
+                          "attributes": "airQualityIndex",
+                          "chartUnit": ""
+                        }
+                      ],
+                      "query": {
+                        "id": "fb7f4e4c-7e7e-45bd-8773-94ec44c3fb68",
+                        "updatedAt": "2026-09-14T06:36:02.094Z",
+                        "queryData": [
+                          {
+                            "id": "urn:ngsi-ld:AirQualityObserved:uba-DEHE063",
+                            "type": "AirQualityObserved",
+                            "location": {
+                              "type": "GeoProperty",
+                              "value": {
+                                "type": "Point",
+                                "coordinates": [
+                                  8.6391253,
+                                  49.6432641
+                                ]
+                              }
+                            },
+                            "NO2": {
+                              "type": "Property",
+                              "value": 27,
+                              "observedAt": "2026-09-11T13:00:00.000Z"
+                            },
+                            "PM10": {
+                              "type": "Property",
+                              "value": 9,
+                              "observedAt": "2026-09-11T13:00:00.000Z"
+                            },
+                            "PM25": {
+                              "type": "Property",
+                              "value": 4,
+                              "observedAt": "2026-09-11T13:00:00.000Z"
+                            },
+                            "name": {
+                              "type": "Property",
+                              "value": "Heppenheim-Lehrstraße "
+                            },
+                            "dateObserved": {
+                              "type": "Property",
+                              "value": "2026-09-11T13:00:00.000Z"
+                            },
+                            "airQualityIndex": {
+                              "type": "Property",
+                              "value": 1,
+                              "observedAt": "2026-09-11T13:00:00.000Z"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "mapWidgetValues": [
+                        {
+                          "attributes": "temperature",
+                          "chartUnit": "°C"
+                        },
+                        {
+                          "attributes": "relativeHumidity",
+                          "chartUnit": "%"
+                        },
+                        {
+                          "attributes": "",
+                          "chartUnit": ""
+                        }
+                      ],
+                      "query": {
+                        "id": "08fd10e4-ffc6-4ac3-88f9-7c8d1020432c",
+                        "updatedAt": "2026-09-14T06:36:07.789Z",
+                        "queryData": [
+                          {
+                            "id": "urn:ngsi-ld:WeatherObserved:IoT-Plan-Glatteis-70B3D57BA0006570",
+                            "type": "WeatherObserved",
+                            "location": {
+                              "type": "GeoProperty",
+                              "value": {
+                                "type": "Point",
+                                "coordinates": [
+                                  8.4092654,
+                                  49.6563801
+                                ]
+                              }
+                            },
+                            "name": {
+                              "type": "Property",
+                              "value": "Lindenstraße Stadtverwaltung"
+                            },
+                            "relativeHumidity": {
+                              "type": "Property",
+                              "value": 94.19,
+                              "observedAt": "2026-09-14T06:01:24.488Z"
+                            },
+                            "temperature": {
+                              "type": "Property",
+                              "value": 16.28,
+                              "observedAt": "2026-09-14T06:01:24.488Z"
+                            },
+                            "dateObserved": {
+                              "type": "Property",
+                              "value": "2026-09-14T06:01:24.468Z"
+                            },
+                            "roadSurfaceConditionLabel": {
+                              "type": "Property",
+                              "value": "GERING"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "mapWidgetValues": [
+                        {
+                          "attributes": "anzahlParkplaetze",
+                          "chartUnit": ""
+                        },
+                        {
+                          "attributes": "status_isFreeSum",
+                          "chartUnit": ""
+                        },
+                        {
+                          "attributes": "dateObserved",
+                          "chartUnit": ""
+                        }
+                      ],
+                      "query": {
+                        "id": "c9a75df7-38ec-4db1-b397-9913fd44d75b",
+                        "updatedAt": "2026-09-14T06:36:04.400Z",
+                        "queryData": [
+                          {
+                            "id": "urn:ngsi-ld:ParkingSpotSum:IoT-Plan-Nwave-lub-parking-1",
+                            "type": "ParkingSpotSum",
+                            "location": {
+                              "type": "GeoProperty",
+                              "value": {
+                                "type": "Point",
+                                "coordinates": [
+                                  8.45118999,
+                                  49.64223798
+                                ]
+                              }
+                            },
+                            "name": {
+                              "type": "Property",
+                              "value": "Rathausstr. 2"
+                            },
+                            "status_isFreeSum": {
+                              "type": "Property",
+                              "value": 1,
+                              "observedAt": "2026-09-13T14:48:35.723Z"
+                            },
+                            "anzahlParkplaetze": {
+                              "type": "Property",
+                              "value": 1,
+                              "observedAt": "2026-09-13T14:48:35.723Z"
+                            },
+                            "dateObserved": {
+                              "type": "Property",
+                              "value": "2026-09-13T14:48:35.723Z"
+                            },
+                            "status_isOccupiedSum": {
+                              "type": "Property",
+                              "value": 0,
+                              "observedAt": "2026-09-13T14:48:35.723Z"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "chartUnit": "%",
+                      "query": {
+                        "id": "40694690-3d39-4100-a2c9-9c438c1297c8",
+                        "updatedAt": "2026-09-14T06:33:01.334Z",
+                        "queryData": [
+                          {
+                            "id": "urn:ngsi-ld:WeatherForecast:DWD-Weather-FC1-P0176",
+                            "type": "WeatherForecast",
+                            "precipitationProbability": {
+                              "type": "Number",
+                              "value": 1.5,
+                              "metadata": {}
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "chartUnit": "m",
+                      "query": {
+                        "id": "b06ae0d1-781f-4d57-ad33-4b4a1668f37f",
+                        "updatedAt": "2026-09-14T06:36:02.208Z",
+                        "queryData": [
+                          {
+                            "id": "urn:ngsi-ld:FloodMonitoring:IoT-Plan-Decentlab-lub-pegel-1",
+                            "type": "FloodMonitoring",
+                            "currentLevelDelta": {
+                              "type": "Property",
+                              "value": 0.36,
+                              "observedAt": "2026-09-14T06:27:15.213Z"
+                            }
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "query": {
+                        "id": "8061a95b-1e9c-48af-a603-f02ff93cb37e",
+                        "updatedAt": "2026-09-14T06:36:08.016Z",
+                        "queryData": [
+                          {
+                            "id": "urn:ngsi-ld:ParkingGroup:AmDom",
+                            "type": "ParkingGroup",
+                            "name": {
+                              "type": "Property",
+                              "value": "Am Dom",
+                              "observedAt": "2026-09-14T06:35:04.975Z"
+                            },
+                            "totalOccupied": {
+                              "type": "Property",
+                              "value": 9,
+                              "observedAt": "2026-09-14T06:35:04.975Z"
+                            },
+                            "dateObserved": {
+                              "type": "Property",
+                              "value": "2026-09-14T06:35:04.975Z"
+                            },
+                            "totalSpotNumber": {
+                              "type": "Property",
+                              "value": "32",
+                              "observedAt": "2026-09-14T06:35:04.975Z"
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

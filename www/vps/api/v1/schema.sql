@@ -77,3 +77,53 @@ CREATE TABLE IF NOT EXISTS data_archives (
     station_ids TEXT[] NOT NULL,
     files JSONB NOT NULL
 );
+
+-- Smart City collector: scoped provenance/idempotency, without altering TTN/Shake.
+CREATE TABLE IF NOT EXISTS smartcity_sources (
+    sensor_id VARCHAR(64) PRIMARY KEY REFERENCES sensor_metadata(id) ON DELETE CASCADE,
+    tenant VARCHAR(64) NOT NULL,
+    entity_id TEXT NOT NULL,
+    entity_type TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    source_name TEXT NOT NULL,
+    last_fetched_at TIMESTAMPTZ NOT NULL,
+    UNIQUE (tenant, entity_id)
+);
+
+-- Mapping identity cannot silently change units or meaning between polls.
+CREATE TABLE IF NOT EXISTS smartcity_metrics (
+    sensor_id VARCHAR(64) NOT NULL REFERENCES smartcity_sources(sensor_id) ON DELETE CASCADE,
+    metric VARCHAR(64) NOT NULL,
+    attribute TEXT NOT NULL,
+    unit VARCHAR(32) NOT NULL,
+    PRIMARY KEY (sensor_id, metric),
+    UNIQUE (sensor_id, attribute)
+);
+
+CREATE TABLE IF NOT EXISTS smartcity_observations (
+    sensor_id VARCHAR(64) NOT NULL,
+    metric VARCHAR(64) NOT NULL,
+    observed_at TIMESTAMPTZ NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    payload_hash TEXT NOT NULL,
+    first_fetched_at TIMESTAMPTZ NOT NULL,
+    last_fetched_at TIMESTAMPTZ NOT NULL,
+    source_updated_at TIMESTAMPTZ,
+    query_ids TEXT[] NOT NULL,
+    revision INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (sensor_id, metric, observed_at),
+    FOREIGN KEY (sensor_id, metric) REFERENCES smartcity_metrics(sensor_id, metric) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS smartcity_revisions (
+    sensor_id VARCHAR(64) NOT NULL,
+    metric VARCHAR(64) NOT NULL,
+    observed_at TIMESTAMPTZ NOT NULL,
+    revision INTEGER NOT NULL,
+    previous_value DOUBLE PRECISION NOT NULL,
+    previous_payload_hash TEXT NOT NULL,
+    revised_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (sensor_id, metric, observed_at, revision),
+    FOREIGN KEY (sensor_id, metric, observed_at)
+        REFERENCES smartcity_observations(sensor_id, metric, observed_at) ON DELETE CASCADE
+);
