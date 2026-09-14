@@ -66,16 +66,20 @@ test("sessions require independent signing key, expiry and valid timestamps", ()
   assert.equal(auth.verifySessionToken(token), false);
 });
 
-test("marker IDs remain literal text without reaching any HTML sink", () => {
-  const document = { createElement(tag) {
-    return { tag, style: {}, children: [], append(...nodes) { this.children.push(...nodes); },
+test("markers render icons and safe value text, never sensor IDs as HTML", () => {
+  function element(tag) {
+    return { tag, style: { setProperty() {} }, children: [], attrs: {},
+      setAttribute(key, value) { this.attrs[key] = value; }, append(...nodes) { this.children.push(...nodes); },
       set innerHTML(_) { throw new Error("HTML parsing is forbidden for markers"); },
     };
-  } };
-  const { createMarkerContent } = load("lib/mapMarker.ts", {}, { document });
+  }
+  const document = { createElement: element, createElementNS: (_, tag) => element(tag) };
+  const model = load("lib/mapData.ts", {});
+  const { createMarkerContent } = load("lib/mapMarker.ts", { "./mapData": model }, { document });
   const payload = "<img src=x onerror=alert(1)>";
-  const marker = createMarkerContent(payload, "green", "blue", true);
+  const marker = createMarkerContent("weather", "#f59e0b", false, payload);
+  assert.equal(marker.children[0].tag, "svg");
   assert.equal(marker.children[1].textContent, payload);
   assert.equal(marker.children[1].children.length, 0);
-  assert.equal(createMarkerContent("shake-r498e", "green", "blue", false).children[1].textContent, "r498e");
+  assert.equal(createMarkerContent("weather", "#f59e0b", false).children.length, 1);
 });

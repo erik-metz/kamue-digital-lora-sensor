@@ -1,178 +1,150 @@
 "use client";
 
 import L from "leaflet";
-import { createMarkerContent } from "@/lib/mapMarker";
-import { useEffect, useRef } from "react";
+import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "./map.css";
+import { createClusterContent, createMarkerContent } from "@/lib/mapMarker";
+import { CATEGORIES, markerCategory, observationLabel, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { useEffect, useRef, useState } from "react";
+export type { SensorNode } from "@/lib/mapData";
 
-export interface SensorNode {
-  id: string;
-  name: string;
-  locationName: string;
-  address: string;
-  lat: number;
-  lng: number;
-  status: "online" | "warning" | "offline";
-
-}
-
+type ColoredMarker = L.Marker & { categoryColor: string };
 interface MapProps {
   nodes: SensorNode[];
   selectedNodeId: string | undefined;
   onSelectNode: (id: string) => void;
+  categories: Category[];
+  mode: MapMode;
+  now: number;
 }
 
-export default function MapComponent({
-  nodes,
-  selectedNodeId,
-  onSelectNode,
-}: MapProps) {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const previousSelectionRef = useRef<string | undefined>(undefined);
-  const markersRef = useRef<{ [key: string]: L.Marker }>({});
+export default function MapComponent({ nodes, selectedNodeId, onSelectNode, categories, mode, now }: MapProps) {
+  const container = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const groupRef = useRef<L.MarkerClusterGroup | null>(null);
+  const markers = useRef(new Map<string, ColoredMarker>());
+  const selectedRef = useRef<string | undefined>(undefined);
+  const onSelectRef = useRef(onSelectNode);
+  const [ready, setReady] = useState(false);
+  const [zoom, setZoom] = useState(12);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
 
   useEffect(() => {
-    if (!mapContainerRef.current) return;
-
-    if (!mapInstanceRef.current) {
-      // Center map around Bürstadt / Lampertheim (Hessisches Ried)
-      const map = L.map(mapContainerRef.current, {
-        center: [49.62, 8.46],
-        zoom: 12,
-        zoomControl: true,
-      });
-
-      // Standard free OpenStreetMap tile server (no API key required)
+    let cancelled = false;
+    const currentMarkers = markers.current;
+    async function initialize() {
+      // MarkerCluster extends the global Leaflet instance. Load only in the browser.
+      (window as typeof window & { L: typeof L }).L = L;
+      await import("leaflet.markercluster");
+      if (cancelled || !container.current) return;
+      const map = L.map(container.current, { center: [49.62, 8.46], zoom: 12, maxZoom: 19 });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19,
       }).addTo(map);
-
-      mapInstanceRef.current = map;
-    }
-
-    const map = mapInstanceRef.current;
-
-    // Remove existing markers
-    Object.values(markersRef.current).forEach((marker) => marker.remove());
-    markersRef.current = {};
-
-    // Custom Icon SVG generator
-    const createCustomIcon = (node: SensorNode, isSelected: boolean) => {
-      const color =
-        node.status === "online"
-          ? "#10b981"
-          : node.status === "warning"
-          ? "#f59e0b"
-          : "#ef4444";
-      const ringColor = isSelected ? "#3b82f6" : "transparent";
-
-      const content = createMarkerContent(node.id, color, ringColor, isSelected);
-
-      return L.divIcon({
-        html: content,
-        className: "custom-leaflet-marker",
-        iconSize: [38, 38],
-        iconAnchor: [19, 19],
-        popupAnchor: [0, -20],
+      const group = L.markerClusterGroup({
+        maxClusterRadius: 55, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
+        animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+        iconCreateFunction: cluster => L.divIcon({
+          html: createClusterContent(cluster.getAllChildMarkers().map(m => (m as ColoredMarker).categoryColor), cluster.getChildCount()),
+          className: "map-cluster-icon", iconSize: [44, 44], iconAnchor: [22, 22],
+        }),
       });
+      map.addLayer(group);
+      map.on("zoomend", () => setZoom(map.getZoom()));
+      mapRef.current = map;
+      groupRef.current = group;
+      setReady(true);
+    }
+    void initialize().catch(() => { if (!cancelled) setFailed(true); });
+    return () => {
+      cancelled = true;
+      mapRef.current?.remove();
+      mapRef.current = null;
+      groupRef.current = null;
+      currentMarkers.clear();
     };
-
-    nodes.forEach((node) => {
-      const isSelected = node.id === selectedNodeId;
-      const marker = L.marker([node.lat, node.lng], {
-        icon: createCustomIcon(node, isSelected),
-      }).addTo(map);
-
-      const popupContent = document.createElement("div");
-      const title = document.createElement("strong");
-      title.textContent = node.name;
-      const description = document.createElement("p");
-      description.textContent = node.address;
-      const hint = document.createElement("p");
-      hint.textContent = "Messwerte und Zeitverlauf unter der Karte";
-      popupContent.append(title, description, hint);
-      marker.bindPopup(popupContent);
-
-      marker.on("click", () => {
-        onSelectNode(node.id);
-      });
-
-      markersRef.current[node.id] = marker;
-    });
-
-    // Center map to selected node if changed
-    const targetNode = nodes.find((n) => n.id === selectedNodeId);
-    if (previousSelectionRef.current === undefined && nodes.length > 0) {
-      map.fitBounds(L.latLngBounds(nodes.map((node) => [node.lat, node.lng])), {
-        padding: [30, 30],
-        maxZoom: 12,
-      });
-    } else if (targetNode && previousSelectionRef.current !== selectedNodeId) {
-      map.panTo([targetNode.lat, targetNode.lng]);
-      markersRef.current[targetNode.id]?.openPopup();
-    }
-    previousSelectionRef.current = selectedNodeId;
-  }, [nodes, selectedNodeId, onSelectNode]);
-
-  useEffect(() => () => {
-    mapInstanceRef.current?.remove();
-    mapInstanceRef.current = null;
-    markersRef.current = {};
-    previousSelectionRef.current = undefined;
   }, []);
 
-  return (
-    <div className="relative w-full h-[420px] rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
-      <link
-        rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossOrigin=""
-      />
-      <div ref={mapContainerRef} className="w-full h-full z-0" />
-      <style jsx global>{`
-        @keyframes pulse {
-          0% {
-            transform: scale(0.95);
-            opacity: 0.8;
-          }
-          50% {
-            transform: scale(1.25);
-            opacity: 0.3;
-          }
-          100% {
-            transform: scale(0.95);
-            opacity: 0.8;
-          }
-        }
-        .leaflet-tile-pane {
-          filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg)
-            saturate(0.3);
-        }
-        .leaflet-popup-content-wrapper {
-          background: #1e293b !important;
-          color: #e2e8f0 !important;
-          border-radius: 12px !important;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6) !important;
-          border: 1px solid #334155 !important;
-        }
-        .leaflet-popup-content {
-          color: #e2e8f0 !important;
-          margin: 12px !important;
-        }
-        .leaflet-popup-tip {
-          background: #1e293b !important;
-        }
-        .leaflet-popup-close-button {
-          color: #94a3b8 !important;
-        }
-        .leaflet-popup-close-button:hover {
-          color: #e2e8f0 !important;
-          background: transparent !important;
-        }
-      `}</style>
+  // Reconcile only changed inventory/icons. Selecting a station does not rebuild layers.
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!ready || !group) return;
+    const ids = new Set(nodes.map(n => n.id));
+    for (const [id, marker] of markers.current) {
+      if (!ids.has(id)) { group.removeLayer(marker); markers.current.delete(id); }
+    }
+    const added: ColoredMarker[] = [];
+    for (const node of nodes) {
+      const category = markerCategory(node, categories);
+      const reading = primaryReading(node, category, mode);
+      const state = readingFreshness(reading, now);
+      const muted = state === "stale" || state === "unknown";
+      const color = mode === "temperature" ? muted ? "#94a3b8" : temperatureColor(reading!.value) : CATEGORIES[category].color;
+      const icon = L.divIcon({
+        html: createMarkerContent(category, color, muted, zoom >= 16 ? valueLabel(reading) : ""),
+        className: `map-sensor-icon${node.id === selectedRef.current ? " map-sensor-selected" : ""}`,
+        iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -20],
+      });
+      let marker = markers.current.get(node.id);
+      if (!marker) {
+        marker = L.marker([node.lat, node.lng], { icon, title: node.name, alt: node.name, keyboard: true }) as ColoredMarker;
+        marker.on("click", () => onSelectRef.current(node.id));
+        markers.current.set(node.id, marker);
+        added.push(marker);
+      } else {
+        marker.setIcon(icon);
+        if (!marker.getLatLng().equals([node.lat, node.lng])) marker.setLatLng([node.lat, node.lng]);
+      }
+      marker.categoryColor = mode === "temperature" ? "#94a3b8" : CATEGORIES[category].color;
+      const tooltip = document.createElement("span");
+      tooltip.textContent = node.name;
+      if (marker.getTooltip()) marker.setTooltipContent(tooltip);
+      else marker.bindTooltip(tooltip, { direction: "top", offset: [0, -16] });
+      const popup = document.createElement("div");
+      const title = document.createElement("strong"); title.textContent = node.name;
+      const tags = document.createElement("p"); tags.textContent = node.categories.map(c => CATEGORIES[c].label).join(" · ");
+      const value = document.createElement("p"); value.textContent = valueLabel(reading) || "Keine Messdaten";
+      value.className = "map-popup-value";
+      const time = document.createElement("p"); time.textContent = observationLabel(reading, now);
+      const hint = document.createElement("p"); hint.textContent = "Alle Messwerte und Stationsdetails unter der Karte";
+      popup.append(title, tags, value, time, hint);
+      if (marker.getPopup()) marker.setPopupContent(popup);
+      else marker.bindPopup(popup);
+    }
+    group.addLayers(added);
+    group.refreshClusters();
+  }, [nodes, categories, mode, now, ready, zoom]);
+
+  useEffect(() => {
+    if (!ready) return;
+    if (selectedRef.current === selectedNodeId) return;
+    const previous = selectedRef.current && markers.current.get(selectedRef.current);
+    if (previous) {
+      previous.getElement()?.classList.remove("map-sensor-selected");
+      previous.closePopup();
+    }
+    selectedRef.current = selectedNodeId;
+    const marker = selectedNodeId && markers.current.get(selectedNodeId);
+    if (marker) {
+      groupRef.current?.zoomToShowLayer(marker, () => {
+        if (selectedRef.current !== selectedNodeId) return;
+        marker.getElement()?.classList.add("map-sensor-selected");
+        marker.openPopup();
+      });
+    }
+  }, [selectedNodeId, ready]);
+
+  return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
+    <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
+    {failed ? <p role="alert" className="absolute inset-0 bg-slate-900 p-8">Die Karte konnte nicht geladen werden. Bitte lade die Seite erneut.</p> : null}
+    <div className="absolute top-3 right-3 z-[400] flex gap-2">
+      <button type="button" className="map-control" onClick={() => mapRef.current?.setView([49.62, 8.46], 12)}>Ried</button>
+      <button type="button" className="map-control" disabled={!nodes.length} onClick={() => {
+        if (nodes.length) mapRef.current?.fitBounds(L.latLngBounds(nodes.map(n => [n.lat, n.lng])), { padding: [45, 45], maxZoom: 15 });
+      }}>Alle Standorte</button>
     </div>
-  );
+    {!nodes.length && ready ? <p className="absolute bottom-8 left-3 right-3 z-[400] rounded-xl bg-slate-950/95 p-4 text-sm text-slate-200">Keine Standorte für diese Auswahl. Wähle eine weitere Gruppe oder „Alle“.</p> : null}
+  </div>;
 }

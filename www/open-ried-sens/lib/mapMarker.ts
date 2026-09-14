@@ -1,15 +1,46 @@
-/** Build a marker without interpreting stored sensor IDs as HTML. */
-export function createMarkerContent(id: string, color: string, ringColor: string, selected: boolean): HTMLElement {
+import { CATEGORIES, type Category } from "./mapData";
+
+/** No sensor IDs or stored HTML are rendered inside a marker. */
+export function createMarkerContent(category: Category, color: string, muted: boolean, value = ""): HTMLElement {
   const content = document.createElement("div");
-  content.style.cssText = "position:relative;width:38px;height:38px;display:flex;align-items:center;justify-content:center";
-  const ring = document.createElement("div");
-  ring.style.cssText = "position:absolute;width:38px;height:38px;border-radius:50%;opacity:0.7";
-  ring.style.background = ringColor;
-  ring.style.animation = selected ? "pulse 2s infinite" : "none";
-  const label = document.createElement("div");
-  label.style.cssText = "width:28px;height:28px;border-radius:50%;background:#0f172a;box-shadow:0 4px 12px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:bold";
-  label.style.border = `3px solid ${color}`;
-  label.textContent = id.split("-")[1] || id;
-  content.append(ring, label);
+  content.className = `sensor-marker${muted ? " sensor-marker-muted" : ""}`;
+  content.style.setProperty("--marker-color", color);
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  icon.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", CATEGORIES[category].path);
+  icon.append(path);
+  content.append(icon);
+  if (value) {
+    const label = document.createElement("span");
+    label.className = "sensor-marker-value";
+    label.textContent = value;
+    content.append(label);
+  }
+  return content;
+}
+
+export function createClusterContent(colors: string[], count: number): HTMLElement {
+  const content = document.createElement("div");
+  content.className = "sensor-cluster";
+  const counts = new Map<string, number>();
+  for (const color of colors) counts.set(color, (counts.get(color) ?? 0) + 1);
+  let offset = 0;
+  const stops = [...counts].map(([color, size]) => {
+    const start = offset;
+    offset += size / colors.length * 100;
+    return `${color} ${start}% ${offset}%`;
+  });
+  content.style.background = `conic-gradient(${stops.join(",")})`;
+  content.title = `${count} Standorte – zum Vergrößern anklicken`;
+  const label = document.createElement("span");
+  label.textContent = String(count);
+  content.append(label);
   return content;
 }

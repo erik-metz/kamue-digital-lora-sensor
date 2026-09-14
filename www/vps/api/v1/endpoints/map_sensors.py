@@ -44,6 +44,6 @@ async def get_map_sensors(pool=Depends(get_db_pool)):
     sensors = []
     for row in rows:
         item = dict(row)
-        item["readings"] = [r for r in item["readings"] if math.isfinite(r["value"])]
+        item["readings"] = [r for r in item["readings"] if isinstance(r["value"], (int, float)) and math.isfinite(r["value"])]
         sensors.append(item)
     return {"generated_at": datetime.now(UTC), "sensors": sensors}

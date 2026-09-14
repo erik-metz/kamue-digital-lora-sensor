@@ -75,3 +75,39 @@ the database or plaintext API ports. Set the VPS `ADMIN_API_KEY` to match
 `BACKEND_ADMIN_API_KEY`; it must differ from the ingestion `API_KEY`.
 
 Run security regression checks with `npm run test:security`.
+# Sensor map
+
+The dashboard uses clustered Leaflet markers without permanent sensor IDs.
+Theme buttons support multiple selections and persist them in local storage.
+Clicking a theme from the initial "Alle" selection isolates that theme; subsequent
+clicks add/remove themes. "Zurücksetzen" restores all themes and category colours.
+The map and station selector use the same filtered inventory. Multi-theme stations
+are counted once on the map, so category totals can overlap.
+
+The initial viewport stays around Bürstadt/Lampertheim. "Alle Standorte" fits the
+selected inventory, including regional stations. Cluster rings show theme
+composition; clicking expands a cluster, and colocated markers spread apart at
+maximum zoom. Names appear on hover, measurements in popups, and short values at
+zoom 16+. Technical IDs and source descriptions are under "Stationsdetails".
+
+"Temperatur · °C" uses five labelled temperature bins for current Celsius
+readings; it excludes stations without a compatible temperature measurement.
+Icons still distinguish themes, including soil versus weather. Old/missing values
+are muted and dashed; in temperature mode they are gray. Temperature clusters
+remain neutral count bubbles rather than implying an averaged temperature.
+
+Freshness describes the observation, never device connectivity: seismic readings
+are current for 2 minutes, general weather/water readings for 2 hours, air-quality
+index for 3 hours, and explicit soil metrics for 6 hours. Parking is an event-driven
+last-reported state and is not labelled online/offline. Every popup includes its
+source timestamp. These are display heuristics, not provider uptime guarantees.
+
+The server and `/api/map-sensors` proxy read `/api/v1/map/sensors` once per refresh
+(60 seconds). The backend reads its `sensor_latest` table, maintained by a database
+trigger for inserts, corrections and deletes. Deploy the updated API/schema before
+the frontend. First migration backfills existing history once and may take time on
+large databases; subsequent restarts do not repeat the backfill. A 404 from an older
+API falls back to metadata-only markers with an explicit message that readings are
+unavailable; it does not invent status or fetch measurements separately per station.
+
+Validation: `npm run test:map`, `npm run test:security`, `npm run build`.

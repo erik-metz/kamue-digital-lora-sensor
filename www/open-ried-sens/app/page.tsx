@@ -1,4 +1,4 @@
-import { env } from "@/env";
+import { fetchMapData } from "@/lib/mapBackend";
 import {
   Activity,
   Building2,
@@ -15,59 +15,19 @@ import {
 import Link from "next/link";
 import DashboardClient from "./components/DashboardClient.tsx";
 import HeaderLogo from "./components/HeaderLogo";
-import { SensorNode } from "./components/MapComponent";
+
 
 export const dynamic = "force-dynamic";
 
-type ApiSensor = {
-  id: string;
-  friendly_name: string;
-  latitude: number | null;
-  longitude: number | null;
-  description?: string | null;
-  is_hidden?: boolean;
-};
-
-async function fetchSensors(): Promise<SensorNode[] | null> {
-  try {
-    const res = await fetch(
-      new URL("/api/v1/sensors", env.BACKEND_API_URL).href,
-      {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-        signal: AbortSignal.timeout(10_000),
-      }
-    );
-    if (!res.ok) {
-      console.error("Public sensor request failed", { status: res.status });
-      return null;
-    }
-
-    const data: ApiSensor[] = await res.json();
-
-    return data
-      .filter((s) => !s.is_hidden && s.latitude != null && s.longitude != null)
-      .map((s) => ({
-        id: s.id,
-        name: s.friendly_name,
-        locationName: s.friendly_name,
-        address: s.description ?? "—",
-        lat: s.latitude!,
-        lng: s.longitude!,
-        status: "online" as const,
-
-      }));
-  } catch {
-    console.error("Public sensor request failed: backend unavailable or invalid response");
-    return null;
-  }
+async function fetchSensors() {
+  try { return await fetchMapData(); }
+  catch { return null; }
 }
 
 export default async function Home() {
   const sensors = await fetchSensors();
-  const nodes = sensors ?? [];
+  const nodes = sensors?.nodes ?? [];
   const liveLogs = [];
-  const onlineCount = nodes.filter((n) => n.status === "online").length;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -121,7 +81,7 @@ export default async function Home() {
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full text-sm text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="font-medium text-emerald-400">
-              {sensors === null ? "Stationen nicht erreichbar" : `${onlineCount}/${nodes.length} Stationen Aktiv`}
+              {sensors === null ? "Stationen nicht erreichbar" : `${nodes.length} Sensorstandorte`}
             </span>
           </div>
         </div>
@@ -282,7 +242,7 @@ export default async function Home() {
 
         {/* DASHBOARD & KARTEN SECTION */}
         <section id="dashboard" className="space-y-8">
-          <DashboardClient nodes={nodes} loadFailed={sensors === null} />
+          <DashboardClient nodes={nodes} loadFailed={sensors === null} readingsAvailable={sensors?.readingsAvailable ?? false} />
         </section>
 
         {/* TELEMETRIE & LORAWAN TTN LOGS SECTION */}

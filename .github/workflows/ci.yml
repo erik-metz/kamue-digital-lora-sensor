@@ -92,6 +92,11 @@ jobs:
         env:
           SMARTCITY_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
           SMARTCITY_TEST_TIMESCALE: "1"
+      - run: pip install -r www/vps/api/requirements.txt
+      - run: PYTHONPATH=www/vps/api/v1 python -m unittest discover -s www/vps/api/v1/tests -p test_map_sensors.py
+        env:
+          MAP_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
+          MAP_TEST_TIMESCALE: "1"
 
   validate-frontend-security:
     name: Frontend security regression tests
@@ -106,6 +111,8 @@ jobs:
       - run: npm ci
         working-directory: www/open-ried-sens
       - run: npm run test:security
+        working-directory: www/open-ried-sens
+      - run: npm run test:map
         working-directory: www/open-ried-sens
 
   validate-archive-worker:

@@ -10,7 +10,7 @@ type Bucket = { metric: string; unit: string; bucket: string; avg_value: number 
 type Telemetry = { readings: Reading[]; history: Bucket[]; start: string; end: string };
 const seriesKey = (reading: { metric: string; unit: string }) => JSON.stringify([reading.metric, reading.unit]);
 const metricLabel = (reading: { metric: string; unit: string }) => {
-  const labels: Record<string, string> = { pgv: "Peak-Vibration (PGV)", rms: "RMS-Tremor", waveform: "Wellenform", temperature: "Temperatur", humidity: "Luftfeuchtigkeit" };
+  const labels: Record<string, string> = { pgv: "Peak-Vibration (PGV)", rms: "RMS-Tremor", waveform: "Wellenform", temperature: "Temperatur", humidity: "Luftfeuchtigkeit", relative_humidity: "Luftfeuchtigkeit", soil_temperature: "Bodentemperatur", water_surface_distance: "Abstand zur Wasseroberfläche", water_level_delta: "Wasserstandsänderung", air_quality_index: "Luftqualitätsindex", parking_free: "Freie Stellplätze", parking_occupied: "Belegte Stellplätze", parking_capacity: "Stellplätze gesamt" };
   const units: Record<string, string> = { celsius: "Temperatur", "°C": "Temperatur", dBm: "Signalstärke", mm: "Niederschlag" };
   return labels[reading.metric] ?? (reading.metric === "value" ? units[reading.unit] ?? "Messwert" : reading.metric);
 };
@@ -66,8 +66,12 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
       <div className="grid gap-5 lg:grid-cols-2 border-b border-slate-800 pb-5">
         <div>
           <h3 className="flex items-center gap-2 text-lg font-bold"><Activity className="size-5 text-emerald-400" /> Messwerte & Zeitverlauf</h3>
-          <p className="mt-2 text-sm text-slate-400">{node.address}</p>
-          <p className="mt-2 text-xs text-slate-500 break-all">{node.id} · {node.lat.toFixed(5)}, {node.lng.toFixed(5)}</p>
+          <p className="mt-2 text-sm text-slate-300">{node.name}</p>
+          <details className="mt-2 text-xs text-slate-500">
+            <summary className="cursor-pointer">Stationsdetails</summary>
+            <p className="mt-2 break-all">{node.id} · {node.lat.toFixed(5)}, {node.lng.toFixed(5)}</p>
+            <p className="mt-2 break-words">{node.address}</p>
+          </details>
         </div>
         <div className="min-w-0">
           <p className="mb-2 text-xs uppercase tracking-wider font-semibold text-emerald-400">Ausgewählte Station</p>
