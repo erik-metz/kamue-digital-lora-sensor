@@ -2,10 +2,9 @@ import os
 import secrets
 from typing import Annotated
 
+import psycopg_pool
 from fastapi import HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-
-import psycopg_pool
 
 security = HTTPBearer()
 
@@ -13,6 +12,13 @@ def _get_env_key(var_name: str) -> str:
     """Retrieves an API key from environment, ensuring non-empty stripped value."""
     key = os.getenv(var_name, "").strip()
     return key
+
+
+def validate_api_keys() -> None:
+    ingestion = _get_env_key("API_KEY")
+    admin = _get_env_key("ADMIN_API_KEY")
+    if not ingestion or not admin or secrets.compare_digest(ingestion, admin):
+        raise RuntimeError("Configure distinct, non-empty API_KEY and ADMIN_API_KEY")
 
 
 def verify_ingestion_key(
@@ -39,9 +45,9 @@ def verify_admin_key(
     credentials: Annotated[HTTPAuthorizationCredentials, Security(security)]
 ) -> str:
     """Verifies bearer token for administrative mutations (Next.js app)."""
-    # Allow ADMIN_API_KEY, or fall back to API_KEY if ADMIN_API_KEY is not separately defined
-    expected_key = _get_env_key("ADMIN_API_KEY") or _get_env_key("API_KEY")
-    if not expected_key:
+    # Never promote an ingestion credential to an administrator.
+    expected_key = _get_env_key("ADMIN_API_KEY")
+    if not expected_key or secrets.compare_digest(expected_key, _get_env_key("API_KEY")):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Admin API key is not configured on the server.",

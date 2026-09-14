@@ -59,3 +59,19 @@ npm run build
 ```
 
 Öffne [http://localhost:3000](http://localhost:3000) im Browser.
+# Security configuration
+
+Copy `.env.example` and configure `ADMIN_PASSWORD`, `BACKEND_API_URL`,
+`BACKEND_ADMIN_API_KEY`, and `ADMIN_SESSION_SECRET`. Generate the session secret
+with `openssl rand -hex 32`; it must be 64 hexadecimal characters and independent
+of the password. Use separate credentials/secrets for development and production.
+All environments require the correct password to log in. Changing the session
+secret signs out every administrator; existing password-signed cookies are no
+longer accepted after this upgrade. Keep the session secret consistent across
+instances of the same deployment, separately from the Server Actions encryption key.
+
+Use the HTTPS backend URL for a remote VPS. Its Docker services no longer publish
+the database or plaintext API ports. Set the VPS `ADMIN_API_KEY` to match
+`BACKEND_ADMIN_API_KEY`; it must differ from the ingestion `API_KEY`.
+
+Run security regression checks with `npm run test:security`.

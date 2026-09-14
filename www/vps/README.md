@@ -65,7 +65,30 @@ API_PORT=8080
 
 # Bearer API Key required for ingesting data (LoRa tracker / TTN webhook)
 API_KEY=open-ried-sens-live-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ADMIN_API_KEY=open_ried_sens_admin_replace_with_separate_random_key
 ```
+
+Both API keys are required and must differ. Generate independent random values
+(for example `openssl rand -hex 32`); retain the `open_ried_sens_admin_` prefix
+for the admin key used by the Next.js frontend. The API fails startup if a key
+is absent or both keys are equal. Set `BACKEND_ADMIN_API_KEY` on the frontend
+to the same admin value. The collector needs the admin key for API-mode metadata
+registration; ingestion credentials alone cannot perform that operation.
+
+Only nginx publishes host ports (80/443). PostgreSQL and the backend communicate
+over the Compose network and must not be exposed on public ports 5432/8080.
+Use `docker compose exec timescaledb psql -U <user> -d <database>` for database
+administration. A separately run local API may still listen on localhost:8080.
+Recreate the Compose services when deploying these changes: updating an image
+alone does not remove existing host port mappings. Verify external firewall
+rules and listeners after deployment.
+
+Public aggregate requests permit at most 31 days and 2,000 time buckets, and
+return at most 5,000 rows across metrics/units. Choose coarser intervals or a
+metric filter when rejected; use monthly archives for bulk history. Queries
+have a five-second database timeout. nginx limits each source IP to 10 requests
+per second (burst 20) and 10 concurrent connections, returning 429 on excess.
+The API also bounds its connection pool and waiting queue.
 
 ---
 

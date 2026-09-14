@@ -7,8 +7,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - timescale_data:/var/lib/postgresql/data
 
@@ -18,16 +16,14 @@ services:
     working_dir: /app/v1
     command: uvicorn main:app --host 0.0.0.0 --port 8080
     restart: always
-    ports:
-      - "8080:8080"
     environment:
       DB_HOST: timescaledb
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-      API_KEY: ${API_KEY}
-      ADMIN_API_KEY: ${ADMIN_API_KEY:-${API_KEY}}
+      API_KEY: ${API_KEY:?Set a dedicated ingestion key}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?Set a distinct admin key}
     depends_on:
       - timescaledb
 
@@ -42,7 +38,7 @@ services:
       INGEST_MODE: ${SHAKE_INGEST_MODE:-direct_db}
       API_URL: http://backend-api:8080/api/v1
       API_KEY: ${API_KEY}
-      ADMIN_API_KEY: ${ADMIN_API_KEY:-${API_KEY}}
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?Set a distinct admin key}
       DB_HOST: timescaledb
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}

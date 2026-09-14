@@ -15,7 +15,7 @@ export function getBackendUrl(): string {
 export function createSessionToken(): string {
   const timestamp = Date.now().toString();
   const hmac = crypto
-    .createHmac("sha256", env.ADMIN_PASSWORD)
+    .createHmac("sha256", Buffer.from(env.ADMIN_SESSION_SECRET, "hex"))
     .update(`admin-session:${timestamp}`)
     .digest("hex");
   return `${timestamp}.${hmac}`;
@@ -30,16 +30,16 @@ export function verifySessionToken(token: string | undefined | null): boolean {
   if (parts.length !== 2) return false;
 
   const [timestampStr, expectedHmac] = parts;
-  const timestamp = parseInt(timestampStr, 10);
-  if (isNaN(timestamp)) return false;
+  if (!/^\d{13}$/.test(timestampStr) || !/^[a-f0-9]{64}$/.test(expectedHmac)) return false;
+  const timestamp = Number(timestampStr);
 
   // Check expiration (7 days)
-  if (Date.now() - timestamp > SESSION_MAX_AGE * 1000) {
+  if (timestamp > Date.now() || Date.now() - timestamp >= SESSION_MAX_AGE * 1000) {
     return false;
   }
 
   const actualHmac = crypto
-    .createHmac("sha256", env.ADMIN_PASSWORD)
+    .createHmac("sha256", Buffer.from(env.ADMIN_SESSION_SECRET, "hex"))
     .update(`admin-session:${timestampStr}`)
     .digest("hex");
 

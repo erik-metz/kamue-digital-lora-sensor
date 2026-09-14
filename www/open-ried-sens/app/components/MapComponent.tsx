@@ -1,6 +1,7 @@
 "use client";
 
 import L from "leaflet";
+import { createMarkerContent } from "@/lib/mapMarker";
 import { useEffect, useRef } from "react";
 
 export interface SensorNode {
@@ -66,45 +67,10 @@ export default function MapComponent({
           : "#ef4444";
       const ringColor = isSelected ? "#3b82f6" : "transparent";
 
-      const html = `
-        <div style="
-          position: relative;
-          width: 38px;
-          height: 38px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        ">
-          <div style="
-            position: absolute;
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: ${ringColor};
-            opacity: 0.7;
-            animation: ${isSelected ? "pulse 2s infinite" : "none"};
-          "></div>
-          <div style="
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: #0f172a;
-            border: 3px solid ${color};
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #ffffff;
-            font-size: 11px;
-            font-weight: bold;
-          ">
-            ${node.id.split("-")[1] || node.id}
-          </div>
-        </div>
-      `;
+      const content = createMarkerContent(node.id, color, ringColor, isSelected);
 
       return L.divIcon({
-        html,
+        html: content,
         className: "custom-leaflet-marker",
         iconSize: [38, 38],
         iconAnchor: [19, 19],

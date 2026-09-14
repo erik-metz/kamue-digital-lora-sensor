@@ -1,15 +1,16 @@
+import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import quote_plus
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+
 import psycopg
 import psycopg_pool
+from dependencies import validate_api_keys
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 from router import api_router as v1_router
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,7 @@ async def init_db(pool: psycopg_pool.AsyncConnectionPool) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    validate_api_keys()
     user = os.getenv("DB_USER", "")
     password = os.getenv("DB_PASSWORD", "")
     host = os.getenv("DB_HOST", "timescaledb")
@@ -41,6 +43,9 @@ async def lifespan(app: FastAPI):
     app.state.pool = psycopg_pool.AsyncConnectionPool(
         conninfo=conninfo,
         open=False,
+        max_size=10,
+        max_waiting=32,
+        timeout=5,
         kwargs={"row_factory": dict_row},
     )
     await app.state.pool.open()

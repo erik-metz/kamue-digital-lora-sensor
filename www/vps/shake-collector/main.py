@@ -101,7 +101,9 @@ class ShakeCollector:
             },
         ]
 
-        admin_key = self.settings.ADMIN_API_KEY or self.settings.API_KEY
+        admin_key = self.settings.ADMIN_API_KEY
+        if not admin_key or admin_key == self.settings.API_KEY:
+            raise RuntimeError("API metadata registration requires a distinct ADMIN_API_KEY")
         headers = {"Authorization": f"Bearer {admin_key}"} if admin_key else {}
 
         for sensor in sensors:

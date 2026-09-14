@@ -100,9 +100,8 @@ export async function loginAction(password: unknown): Promise<ActionResult> {
     const given = Buffer.from(password);
     const secret = Buffer.from(env.ADMIN_PASSWORD);
     if (
-      (given.length !== secret.length ||
-        !crypto.timingSafeEqual(given, secret)) &&
-      process.env.NODE_ENV === "production"
+      given.length !== secret.length ||
+      !crypto.timingSafeEqual(given, secret)
     ) {
       recordFailedLogin(clientId);
       return { ok: false, error: "Ungültige Anmeldedaten." };

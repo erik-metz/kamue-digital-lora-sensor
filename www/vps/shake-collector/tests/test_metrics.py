@@ -32,10 +32,23 @@ class MetricTests(unittest.IsolatedAsyncioTestCase):
         collector = main.ShakeCollector()
         collector.http_client = AsyncMock()
         collector.http_client.post.return_value.status_code = 201
-        await collector._register_metadata_api()
+        with patch.object(collector.settings, 'ADMIN_API_KEY', 'test-admin'), patch.object(
+            collector.settings, 'API_KEY', 'test-ingest'
+        ):
+            await collector._register_metadata_api()
         collector.http_client.post.assert_awaited_once()
         self.assertEqual(collector.http_client.post.call_args.kwargs['json']['sensor_id'],
                          collector.settings.SENSOR_ID)
+
+    async def test_registration_never_falls_back_to_ingestion_key(self):
+        collector = main.ShakeCollector()
+        collector.http_client = AsyncMock()
+        for admin_key in ('', 'test-ingest'):
+            with patch.object(collector.settings, 'ADMIN_API_KEY', admin_key), patch.object(
+                collector.settings, 'API_KEY', 'test-ingest'
+            ), self.assertRaises(RuntimeError):
+                await collector._register_metadata_api()
+        collector.http_client.post.assert_not_awaited()
 
 
 if __name__ == '__main__':

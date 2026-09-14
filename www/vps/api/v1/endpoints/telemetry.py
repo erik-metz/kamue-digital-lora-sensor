@@ -1,7 +1,10 @@
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+import math
+from datetime import UTC, datetime, timedelta
+
 import psycopg_pool
 from dependencies import get_db_pool, verify_ingestion_key
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+from psycopg.errors import QueryCanceled
 from schemas import (
     BatchSensorReadings,
     SensorAggregateResponse,
@@ -28,6 +31,28 @@ ALLOWED_INTERVALS = {
     "1 month",
 }
 
+MAX_AGGREGATE_ROWS = 5000
+INTERVAL_SECONDS = {
+    "1 minute": 60, "5 minutes": 300, "10 minutes": 600,
+    "15 minutes": 900, "30 minutes": 1800, "1 hour": 3600,
+    "2 hours": 7200, "3 hours": 10800, "6 hours": 21600,
+    "12 hours": 43200, "1 day": 86400, "7 days": 604800,
+    "1 week": 604800, "30 days": 2592000, "1 month": 2419200,
+}
+
+
+def validate_aggregate_range(start: datetime, end: datetime, interval: str):
+    # Treat legacy timezone-less input as UTC, consistently with public docs.
+    start = start.replace(tzinfo=UTC) if start.tzinfo is None else start.astimezone(UTC)
+    end = end.replace(tzinfo=UTC) if end.tzinfo is None else end.astimezone(UTC)
+    span = end - start
+    if span < timedelta(0) or span > timedelta(days=31):
+        raise HTTPException(400, "Aggregate ranges must be ordered and at most 31 days; use archives for bulk history.")
+    # Add one for partial buckets at the boundaries.
+    if math.ceil(span.total_seconds() / INTERVAL_SECONDS[interval]) + 1 > 2000:
+        raise HTTPException(400, "Too many time buckets; use a coarser interval or shorter range.")
+    return start, end
+
 
 # --- INGESTION ENDPOINTS (LoRaWAN / TTN Webhook) ---
 
@@ -43,7 +68,7 @@ async def push_sensor_data(
     pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
     """Inserts a single sensor reading from an authenticated source."""
-    ts = reading.timestamp or datetime.now(timezone.utc)
+    ts = reading.timestamp or datetime.now(UTC)
     query = """
         INSERT INTO sensor_data (timestamp, sensor_id, value, unit, metric)
         VALUES (%s, %s, %s, %s, %s);
@@ -80,7 +105,7 @@ async def push_batch_sensor_data(
             detail="Readings array cannot be empty.",
         )
 
-    now_utc = datetime.now(timezone.utc)
+    now_utc = datetime.now(UTC)
     records = [
         (item.timestamp or now_utc, item.sensor_id, item.value, item.unit, item.metric)
         for item in payload.readings
@@ -92,18 +117,17 @@ async def push_batch_sensor_data(
         INSERT INTO sensor_data (timestamp, sensor_id, value, unit, metric)
         VALUES (%s, %s, %s, %s, %s);
     """
-    async with pool.connection() as conn, conn.transaction():
-        async with conn.cursor() as cur:
-            # Auto-register distinct sensors in the batch
-            await cur.executemany(
-                """
+    async with pool.connection() as conn, conn.transaction(), conn.cursor() as cur:
+        # Auto-register distinct sensors in the batch
+        await cur.executemany(
+            """
                 INSERT INTO sensor_metadata (id, friendly_name, is_hidden)
                 VALUES (%s, %s, FALSE)
                 ON CONFLICT (id) DO NOTHING;
                 """,
-                unique_sensors,
-            )
-            await cur.executemany(query, records)
+            unique_sensors,
+        )
+        await cur.executemany(query, records)
 
     return {"status": "success", "inserted_count": len(records)}
 
@@ -125,7 +149,7 @@ async def get_raw_telemetry(
     pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_pool),
 ):
     """Retrieves raw historical data points for a specific visible sensor over a time range."""
-    end = end_time or datetime.now(timezone.utc)
+    end = end_time or datetime.now(UTC)
 
     query = """
         SELECT sd.timestamp, sd.sensor_id, sd.value, sd.unit, sd.metric
@@ -183,7 +207,8 @@ async def get_telemetry_aggregates(
             ),
         )
 
-    end = end_time or datetime.now(timezone.utc)
+    end = end_time or datetime.now(UTC)
+    start_time, end = validate_aggregate_range(start_time, end, cleaned_interval)
 
     query = """
         SELECT 
@@ -199,11 +224,19 @@ async def get_telemetry_aggregates(
         WHERE sd.sensor_id = %s AND sm.is_hidden = FALSE
           AND (%s::text IS NULL OR sd.metric = %s) AND sd.timestamp >= %s AND sd.timestamp <= %s
         GROUP BY bucket, sd.unit, sd.metric
-        ORDER BY bucket ASC;
+        ORDER BY bucket ASC
+        LIMIT %s;
     """
-    async with pool.connection() as conn:
-        cur = await conn.execute(query, (cleaned_interval, sensor_id, metric, metric, start_time, end))
-        rows = await cur.fetchall()
+    try:
+        async with pool.connection() as conn, conn.transaction():
+            # Transaction-local: also bounds database work before LIMIT is applied.
+            await conn.execute("SET LOCAL statement_timeout = '5s'")
+            cur = await conn.execute(query, (cleaned_interval, sensor_id, metric, metric, start_time, end, MAX_AGGREGATE_ROWS + 1))
+            rows = await cur.fetchall()
+    except QueryCanceled:
+        raise HTTPException(503, "Query exceeded its time budget; shorten the range.") from None
+    if len(rows) > MAX_AGGREGATE_ROWS:
+        raise HTTPException(422, "Too many results; select a metric or shorten the range.")
 
     return [
         {

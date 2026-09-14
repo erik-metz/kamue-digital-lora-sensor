@@ -36,7 +36,7 @@ jobs:
         run: |
           ruff check www/vps/api/ --fix
 
-      - name: Test archive catalogue
+      - name: Test API security and archive catalogue
         run: PYTHONPATH=www/vps/api/v1 python -m unittest discover -s www/vps/api/v1/tests
 
   validate-shake-collector-code:
@@ -62,6 +62,24 @@ jobs:
       - name: Lint code with Ruff
         run: |
           ruff check www/vps/shake-collector/ --fix
+
+      - name: Test collector
+        run: python -m unittest discover -s www/vps/shake-collector/tests
+
+  validate-frontend-security:
+    name: Frontend security regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: www/open-ried-sens/package-lock.json
+      - run: npm ci
+        working-directory: www/open-ried-sens
+      - run: npm run test:security
+        working-directory: www/open-ried-sens
 
   validate-archive-worker:
     name: Archive export tests
@@ -99,6 +117,7 @@ jobs:
       - validate-api-code
       - validate-shake-collector-code
       - validate-archive-worker
+      - validate-frontend-security
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
