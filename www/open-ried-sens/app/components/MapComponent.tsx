@@ -109,7 +109,6 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const value = document.createElement("p"); value.textContent = valueLabel(reading) || "Keine Messdaten";
       value.className = "map-popup-value";
       const time = document.createElement("p"); time.textContent = observationLabel(reading, now);
-      const hint = document.createElement("p"); hint.textContent = "Alle Messwerte und Stationsdetails unter der Karte";
       const parking = parkingSummary(node.readings);
       popup.append(title, tags);
       if (reading?.metric.startsWith("traffic_")) {
@@ -137,7 +136,6 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
           popup.append(line);
         }
       }
-      popup.append(hint);
       if (marker.getPopup()) marker.setPopupContent(popup);
       else marker.bindPopup(popup, { autoPanPaddingTopLeft: L.point(15, 65), autoPanPaddingBottomRight: L.point(15, 15), maxHeight: 300 });
     }
