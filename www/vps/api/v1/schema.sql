@@ -127,3 +127,63 @@ CREATE TABLE IF NOT EXISTS smartcity_revisions (
     FOREIGN KEY (sensor_id, metric, observed_at)
         REFERENCES smartcity_observations(sensor_id, metric, observed_at) ON DELETE CASCADE
 );
+
+-- Map summaries read a small current-value table, never the full hypertable.
+CREATE TABLE IF NOT EXISTS sensor_latest (
+    sensor_id VARCHAR(64) NOT NULL REFERENCES sensor_metadata(id) ON DELETE CASCADE,
+    metric VARCHAR(64) NOT NULL,
+    unit VARCHAR(32) NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    PRIMARY KEY (sensor_id, metric, unit)
+);
+
+CREATE OR REPLACE FUNCTION maintain_sensor_latest() RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'DELETE' OR (TG_OP = 'UPDATE' AND
+        (OLD.sensor_id, OLD.metric, OLD.unit, OLD.timestamp) IS DISTINCT FROM
+        (NEW.sensor_id, NEW.metric, NEW.unit, NEW.timestamp)) THEN
+        DELETE FROM sensor_latest WHERE sensor_id = OLD.sensor_id AND metric = OLD.metric
+            AND unit = OLD.unit AND timestamp = OLD.timestamp;
+        IF FOUND THEN
+            INSERT INTO sensor_latest (sensor_id, metric, unit, timestamp, value)
+                SELECT sensor_id, metric, unit, timestamp, value FROM sensor_data
+                WHERE sensor_id = OLD.sensor_id AND metric = OLD.metric AND unit = OLD.unit
+                ORDER BY timestamp DESC LIMIT 1
+            ON CONFLICT (sensor_id, metric, unit) DO UPDATE SET
+                timestamp = EXCLUDED.timestamp, value = EXCLUDED.value
+            WHERE sensor_latest.timestamp <= EXCLUDED.timestamp;
+        END IF;
+    END IF;
+    IF TG_OP <> 'DELETE' THEN
+        INSERT INTO sensor_latest (sensor_id, metric, unit, timestamp, value)
+            VALUES (NEW.sensor_id, NEW.metric, NEW.unit, NEW.timestamp, NEW.value)
+        ON CONFLICT (sensor_id, metric, unit) DO UPDATE SET
+            timestamp = EXCLUDED.timestamp, value = EXCLUDED.value
+        WHERE sensor_latest.timestamp <= EXCLUDED.timestamp;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER sensor_latest_changed
+AFTER INSERT OR UPDATE OR DELETE ON sensor_data
+FOR EACH ROW EXECUTE FUNCTION maintain_sensor_latest();
+
+CREATE TABLE IF NOT EXISTS telemetry_schema_migrations (
+    name TEXT PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+DO $$
+BEGIN
+    PERFORM pg_advisory_xact_lock(734219, 2);
+    IF NOT EXISTS (SELECT 1 FROM telemetry_schema_migrations WHERE name = 'sensor_latest_v1') THEN
+        INSERT INTO sensor_latest (sensor_id, metric, unit, timestamp, value)
+            SELECT DISTINCT ON (sensor_id, metric, unit) sensor_id, metric, unit, timestamp, value
+            FROM sensor_data ORDER BY sensor_id, metric, unit, timestamp DESC
+        ON CONFLICT (sensor_id, metric, unit) DO UPDATE SET
+            timestamp = EXCLUDED.timestamp, value = EXCLUDED.value
+        WHERE sensor_latest.timestamp < EXCLUDED.timestamp;
+        INSERT INTO telemetry_schema_migrations (name) VALUES ('sensor_latest_v1');
+    END IF;
+END $$;
