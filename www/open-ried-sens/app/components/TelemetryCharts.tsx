@@ -55,8 +55,7 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
     y: 180 - ((bucket.avg_value! - lower) / (upper - lower)) * 155,
     bucket,
   }));
-  // Leave gaps when more than one aggregation bucket is missing.
-  const path = points.map((point, index) => `${index === 0 || Date.parse(point.bucket.bucket) - Date.parse(points[index - 1].bucket.bucket) > 600000 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
+  const path = points.map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`).join(" ");
 
   return (
     <section id="messwerte" className="min-w-0 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-6 space-y-6">
@@ -109,8 +108,8 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
                 <line x1="65" x2="785" y1={180 - index * 77.5} y2={180 - index * 77.5} stroke="#334155" strokeDasharray="4 4" />
                 <text x="57" y={184 - index * 77.5} textAnchor="end" fill="#94a3b8" fontSize="11">{number(value)}</text>
               </g>)}
-              {!snapshots && <path d={path} fill="none" stroke="#34d399" strokeWidth="2" />}
-              {points.map(point => <circle key={point.bucket.bucket} cx={point.x} cy={point.y} r="2" fill="#34d399"><title>{time(point.bucket.bucket)}: {number(point.bucket.avg_value!)} {unitLabel(active.unit)}</title></circle>)}
+              {points.length > 1 && <path d={path} fill="none" stroke="#34d399" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
+              {points.map((point, index) => <circle key={`${point.bucket.bucket}-${index}`} cx={point.x} cy={point.y} r="2" fill="#34d399"><title>{time(point.bucket.bucket)}: {number(point.bucket.avg_value!)} {unitLabel(active.unit)}</title></circle>)}
             </svg>
             <div className="flex justify-between text-xs text-slate-500"><span>{time(data!.start)}</span><span>{time(data!.end)}</span></div>
           </>}
