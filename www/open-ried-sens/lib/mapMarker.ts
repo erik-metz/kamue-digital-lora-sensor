@@ -26,6 +26,20 @@ export function createMarkerContent(category: Category, color: string, muted: bo
   return content;
 }
 
+export function createTempPinContent(color: string, muted: boolean, value = ""): HTMLElement {
+  const content = document.createElement("div");
+  content.className = `sensor-temp-pin${muted ? " sensor-temp-pin-muted" : ""}`;
+  content.style.setProperty("--marker-color", color);
+  if (value) {
+    const label = document.createElement("span");
+    label.className = "sensor-marker-value";
+    label.textContent = value;
+    content.append(label);
+  }
+  return content;
+}
+
+
 export function createClusterContent(colors: string[], count: number, labelText?: string): HTMLElement {
   const content = document.createElement("div");
   content.className = "sensor-cluster";

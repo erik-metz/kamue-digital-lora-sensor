@@ -1,13 +1,18 @@
 import { fetchMapData } from "@/lib/mapBackend";
 import {
   Activity,
+  AudioWaveform,
   Building2,
+  CarFront,
   CheckCircle2,
+  CircleParking,
   CloudSun,
   Database,
+  Droplets,
   HeartHandshake,
   Layers,
   Radio,
+  Sprout,
   Terminal,
   Volume2,
   Wifi,
@@ -169,73 +174,244 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* MULTISENSORIK SPEZIFIKATIONEN SECTION */}
+        {/* MULTISENSORIK & SMART-CITY SPEZIFIKATIONEN SECTION */}
         <section id="sensorik" className="space-y-6">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
+          <div className="text-center max-w-3xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-              Umfassende Multisensor-Stationen
+              Erfasste Sensordaten & Messgrößen
             </h2>
             <p className="text-base text-slate-400">
-              Jede Messstation ist mit moderner Sensorik für hochpräzise Umwelt-
-              und Umfelddaten ausgestattet.
+              Unser offenes Netzwerk bündelt hochpräzise Umwelt-, Mobilitäts- und Geodaten aus
+              Multisensor-Stationen, Smart-City-Systemen und Seismometern.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Sensor 1: Klima */}
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
-                <CloudSun className="w-5 h-5" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {/* Sensor 1: Klima & Wetter */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <CloudSun className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Klima & Wetter
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Präzise Erfassung von Temperatur, relativer Luftfeuchtigkeit,
+                  Niederschlagsmenge (Regen), UV-Index und barometrischem Luftdruck.
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-100">
-                Klima & Wetter
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Präzise Erfassung von Temperatur, relativer Luftfeuchtigkeit,
-                Niederschlagsmenge (Regen) und UV-Index.
-              </p>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">°C (Temperatur)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">% r.F. (Luftfeuchte)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">mm (Niederschlag)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">UV-Index</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">hPa (Luftdruck)</span>
+                </div>
+              </div>
             </div>
 
-            {/* Sensor 2: Luftqualität */}
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
-                <Activity className="w-5 h-5" />
+            {/* Sensor 2: Gase & Luftqualität */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                  <Activity className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Gase & Luftqualität
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Messung von flüchtigen organischen Verbindungen (VOC), Stickoxiden (NOx),
+                  Stickstoffdioxid (NO₂), Ozon (O₃) und CO₂ für gesunde Außenluft.
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-100">
-                Gase & Luftqualität
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Messung von VOC-Index (flüchtige organische Verbindungen) und
-                NOx (Stickoxide) für gesunde Außenluft.
-              </p>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">VOC-Index</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">NOx-Index</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">ppm (CO₂)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">µg/m³ (NO₂, O₃)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">AQI (Index)</span>
+                </div>
+              </div>
             </div>
 
             {/* Sensor 3: Feinstaub */}
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <Layers className="w-5 h-5" />
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Feinstaub (PM1.0 – PM10)
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Optische Lasermessung zur kontinuierlichen Analyse von Schwebstaub- und
+                  Partikelbelastungen in Wohngebieten und an Verkehrsknoten.
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-100">
-                Feinstaub (PM2.5 & PM10)
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Optische Feinstaubmessung zur Analyse von Partikelbelastungen in
-                Wohngebieten und Verkehrsknoten.
-              </p>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">PM2.5 (µg/m³)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">PM10 (µg/m³)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">PM1.0 / PM4.0</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">Partikel/cm³</span>
+                </div>
+              </div>
             </div>
 
             {/* Sensor 4: Akustik & Lärm */}
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-3 hover:border-slate-700 transition-colors">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
-                <Volume2 className="w-5 h-5" />
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                  <Volume2 className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Akustische Lärmanalyse
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Digitales Messmikrofon mit intelligenter On-Device-Klassifikation zur
+                  Echtzeit-Unterscheidung lokaler Schall- und Lärmquellen.
+                </p>
               </div>
-              <h3 className="text-base font-bold text-slate-100">
-                Akustische Lärmanalyse
-              </h3>
-              <p className="text-sm text-slate-400 leading-relaxed">
-                Mikrofon mit intelligenter Klassifikation zur Unterscheidung von
-                Fahrzeugen, Passanten/Sprache und Wind.
-              </p>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">dB / dB(A) (Pegel)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">Kfz-Verkehr</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">Passanten / Sprache</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">Wind & Natur</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sensor 5: Erschütterungen & Seismik (Raspberry Shake) */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center">
+                  <AudioWaveform className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Erschütterungen & Seismik
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Raspberry-Shake-Seismometer zur Erfassung von Mikroseismik, Erdbeben,
+                  Bodenerschütterungen und Hintergrund-Vibrationsrauschen.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">µm/s (PGV Vibration)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">µm/s (RMS-Tremor)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">Counts (Wellenform)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">100 Hz MiniSEED</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sensor 6: Parkraum & Stellplätze */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center">
+                  <CircleParking className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Parkraum & Stellplätze
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Smart-City-Überwachung von Parkplätzen und Parkierungszonen in Bürstadt und
+                  Lampertheim zur Reduzierung des Parksuchverkehrs.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Freie Plätze (Anzahl)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Belegte Plätze (Anzahl)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Gesamtkapazität</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Auslastungsgrad (%)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sensor 7: Verkehrsfluss & Mobilität */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-400 flex items-center justify-center">
+                  <CarFront className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Verkehrsfluss & Mobilität
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Automatisierte Zählung und Kategorisierung des Verkehrsaufkommens nach
+                  Fahrzeugarten, Radfahrern und Passanten an Hauptverkehrsachsen.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">PKW & LKW (Counts)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Busse & Motorräder</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Fahrräder (Counts)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Passanten (Counts)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Stunden- & Tagessummen</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sensor 8: Bodenfeuchte & Bewässerung */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-lime-500/10 border border-lime-500/20 text-lime-400 flex items-center justify-center">
+                  <Sprout className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Boden & Bewässerung
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Tiefengestaffelte Bodenfeuchte- und Saugspannungsmessung für bedarfsgerechte
+                  Stadtgrün- und Baumbewässerung sowie landwirtschaftliche Analysen.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">Bodenfeuchte 30/60cm (%)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">% nFK (Feldkapazität)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">kPa (Saugspannung)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">°C (Bodentemperatur)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Sensor 9: Pegel & Wasserstände */}
+            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center">
+                  <Droplets className="w-5 h-5" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Pegel & Wasserstände
+                </h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Kontinuierliche Pegelüberwachung an Gewässern, Entwässerungsgräben und
+                  Rückhaltebecken zur Früherkennung von Starkregen- und Hochwasserrisiken.
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten & Größen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">m (Pegel-Delta)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">m (Wasserstand)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">cm (Wasseroberflächenabstand)</span>
+                </div>
+              </div>
             </div>
           </div>
         </section>

@@ -100,12 +100,20 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
       {filtered.length > mapNodes.length && <p className="text-xs text-slate-400">{filtered.length - mapNodes.length} Stationen ohne Kartenposition sind unter „Messwerte & Zeitverlauf“ auswählbar.</p>}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400" aria-label="Kartenlegende">
         {mode === "temperature" ? <>
-          {[['#818cf8', '< 0 °C'], ['#38bdf8', '0–<10 °C'], ['#2dd4bf', '10–<20 °C'], ['#fbbf24', '20–<30 °C'], ['#fb7185', '≥ 30 °C']].map(([color, label]) => <span key={label} className="inline-flex items-center gap-1.5"><span className="size-2.5 rounded-full" style={{ background: color }} />{label}</span>)}
-          <span>Luft- und Bodentemperatur · Symbole zeigen das Thema</span>
-        </> : <span>Symbol & Farbe = Thema · Farbring am Cluster = enthaltene Themen</span>}
+          <div className="flex items-center gap-2">
+            <span>&lt; 0 °C</span>
+            <span className="h-2.5 w-28 sm:w-36 rounded-full border border-slate-700 shadow-inner inline-block" style={{ background: "linear-gradient(to right, #818cf8, #38bdf8, #2dd4bf, #fbbf24, #fb7185)" }} />
+            <span>≥ 30 °C</span>
+          </div>
+          <span>Flächige Temperatur-Interpolation</span>
+          <span>Punkte = Stationen (Klick / Hover für Details)</span>
+        </> : <>
+          <span>Symbol & Farbe = Thema · Farbring am Cluster = enthaltene Themen</span>
+          <span>Zahl im Kreis = Standorte</span>
+        </>}
         <span>Gestrichelt / blass = älterer Messwert oder keine Daten</span>
-        <span>Zahl im Kreis = Standorte</span>
       </div>
+
       <p className="text-xs text-slate-500">Messwerte erscheinen beim Hineinzoomen. Parkplatzwerte zeigen den zuletzt gemeldeten Zustand, keinen Online-Status.</p>
     </div>
     {chartNode ? <TelemetryCharts key={chartNode.id} node={chartNode} nodes={nodes} onSelectNode={setSelectedNodeId} /> : <p className="text-sm text-slate-400">Keine Station in dieser Auswahl. Wähle weitere Themen oder setze die Filter zurück.</p>}

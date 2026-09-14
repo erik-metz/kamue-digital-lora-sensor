@@ -5,8 +5,9 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./map.css";
 import { metricLabel } from "@/lib/telemetryData";
-import { createClusterContent, createMarkerContent } from "@/lib/mapMarker";
+import { createClusterContent, createMarkerContent, createTempPinContent } from "@/lib/mapMarker";
 import { CATEGORIES, markerCategory, observationLabel, parkingSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { TemperatureHeatmapLayer, type TemperaturePoint } from "@/lib/temperatureHeatmap";
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
@@ -29,6 +30,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const groupRef = useRef<L.MarkerClusterGroup | null>(null);
+  const tempPinsGroupRef = useRef<L.LayerGroup | null>(null);
+  const heatmapRef = useRef<TemperatureHeatmapLayer | null>(null);
+  const prevModeRef = useRef<MapMode | null>(null);
   const markers = useRef(new Map<string, ColoredMarker>());
   const selectedRef = useRef<string | undefined>(undefined);
   const onSelectRef = useRef(onSelectNode);
@@ -36,6 +40,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [zoom, setZoom] = useState(12);
   const [failed, setFailed] = useState(false);
   useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -75,7 +80,19 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
           });
         },
       });
-      map.addLayer(group);
+      const tempGroup = L.layerGroup();
+      const heatmap = new TemperatureHeatmapLayer([]);
+      heatmapRef.current = heatmap;
+      tempPinsGroupRef.current = tempGroup;
+
+      if (mode === "temperature") {
+        map.addLayer(heatmap);
+        map.addLayer(tempGroup);
+      } else {
+        map.addLayer(group);
+      }
+      prevModeRef.current = mode;
+
       map.on("zoomend", () => setZoom(map.getZoom()));
       mapRef.current = map;
       groupRef.current = group;
@@ -87,41 +104,84 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       mapRef.current?.remove();
       mapRef.current = null;
       groupRef.current = null;
+      tempPinsGroupRef.current = null;
+      heatmapRef.current = null;
       currentMarkers.clear();
     };
   }, []);
 
   // Reconcile only changed inventory/icons. Selecting a station does not rebuild layers.
   useEffect(() => {
+    const map = mapRef.current;
     const group = groupRef.current;
-    if (!ready || !group) return;
+    const tempGroup = tempPinsGroupRef.current;
+    const heatmap = heatmapRef.current;
+    if (!ready || !map || !group || !tempGroup || !heatmap) return;
+
+    const isTempMode = mode === "temperature";
+    const modeChanged = prevModeRef.current !== mode;
+    if (modeChanged) {
+      if (isTempMode) {
+        group.clearLayers();
+        if (map.hasLayer(group)) map.removeLayer(group);
+        if (!map.hasLayer(heatmap)) map.addLayer(heatmap);
+        if (!map.hasLayer(tempGroup)) map.addLayer(tempGroup);
+      } else {
+        tempGroup.clearLayers();
+        if (map.hasLayer(heatmap)) map.removeLayer(heatmap);
+        if (map.hasLayer(tempGroup)) map.removeLayer(tempGroup);
+        if (!map.hasLayer(group)) map.addLayer(group);
+      }
+      prevModeRef.current = mode;
+    }
+
     const ids = new Set(nodes.map(n => n.id));
     for (const [id, marker] of markers.current) {
-      if (!ids.has(id)) { group.removeLayer(marker); markers.current.delete(id); }
+      if (!ids.has(id)) {
+        group.removeLayer(marker);
+        tempGroup.removeLayer(marker);
+        markers.current.delete(id);
+      }
     }
-    const added: ColoredMarker[] = [];
+
+    const tempPoints: TemperaturePoint[] = [];
+    const groupToAdd: ColoredMarker[] = [];
+    const tempGroupToAdd: ColoredMarker[] = [];
+
     for (const node of nodes) {
       const category = markerCategory(node, categories);
       const reading = primaryReading(node, category, mode);
       const state = readingFreshness(reading, now);
       const muted = state === "stale" || state === "unknown";
-      const color = mode === "temperature" ? muted ? "#94a3b8" : temperatureColor(reading!.value) : CATEGORIES[category].color;
-      const icon = L.divIcon({
-        html: createMarkerContent(category, color, muted, zoom >= 16 ? valueLabel(reading, node.readings) : ""),
-        className: `map-sensor-icon${node.id === selectedRef.current ? " map-sensor-selected" : ""}`,
-        iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -20],
-      });
+      const color = isTempMode ? muted ? "#94a3b8" : temperatureColor(reading!.value) : CATEGORIES[category].color;
+
+      if (isTempMode && reading && Number.isFinite(reading.value) && state === "fresh") {
+        tempPoints.push({ lat: node.lat, lng: node.lng, temp: reading.value });
+      }
+
+      const icon = isTempMode
+        ? L.divIcon({
+            html: createTempPinContent(color, muted, zoom >= 15 ? valueLabel(reading, node.readings) : ""),
+            className: `map-sensor-icon${node.id === selectedRef.current ? " map-sensor-selected" : ""}`,
+            iconSize: [14, 14], iconAnchor: [7, 7], popupAnchor: [0, -10],
+          })
+        : L.divIcon({
+            html: createMarkerContent(category, color, muted, zoom >= 16 ? valueLabel(reading, node.readings) : ""),
+            className: `map-sensor-icon${node.id === selectedRef.current ? " map-sensor-selected" : ""}`,
+            iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -20],
+          });
+
       let marker = markers.current.get(node.id);
       if (!marker) {
         marker = L.marker([node.lat, node.lng], { icon, title: node.name, alt: node.name, keyboard: true }) as ColoredMarker;
         marker.on("click", () => onSelectRef.current(node.id));
         markers.current.set(node.id, marker);
-        added.push(marker);
       } else {
         marker.setIcon(icon);
         if (!marker.getLatLng().equals([node.lat, node.lng])) marker.setLatLng([node.lat, node.lng]);
       }
-      marker.categoryColor = mode === "temperature" ? "#94a3b8" : CATEGORIES[category].color;
+
+      marker.categoryColor = isTempMode ? "#94a3b8" : CATEGORIES[category].color;
       marker.isParking = category === "parking";
       if (category === "parking") {
         const free = node.readings.find(r => r.metric === "parking_free");
@@ -131,10 +191,14 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         marker.parkingFree = free?.value;
         marker.parkingCapacity = total;
       }
+
       const tooltip = document.createElement("span");
-      tooltip.textContent = node.name;
+      tooltip.textContent = isTempMode && reading
+        ? `${node.name} · ${valueLabel(reading, node.readings)}`
+        : node.name;
       if (marker.getTooltip()) marker.setTooltipContent(tooltip);
-      else marker.bindTooltip(tooltip, { direction: "top", offset: [0, -16] });
+      else marker.bindTooltip(tooltip, { direction: "top", offset: isTempMode ? [0, -10] : [0, -16] });
+
       const popup = document.createElement("div");
       const title = document.createElement("strong"); title.textContent = node.name;
       const tags = document.createElement("p"); tags.textContent = node.categories.map(c => CATEGORIES[c].label).join(" · ");
@@ -170,9 +234,22 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       }
       if (marker.getPopup()) marker.setPopupContent(popup);
       else marker.bindPopup(popup, { autoPanPaddingTopLeft: L.point(15, 65), autoPanPaddingBottomRight: L.point(15, 15), maxHeight: 300 });
+
+      if (isTempMode) {
+        if (!tempGroup.hasLayer(marker)) tempGroupToAdd.push(marker);
+      } else {
+        if (!group.hasLayer(marker)) groupToAdd.push(marker);
+      }
     }
-    group.addLayers(added);
-    group.refreshClusters();
+
+    if (isTempMode) {
+      heatmap.setPoints(tempPoints);
+      for (const m of tempGroupToAdd) tempGroup.addLayer(m);
+    } else {
+      heatmap.setPoints([]);
+      if (groupToAdd.length > 0) group.addLayers(groupToAdd);
+      group.refreshClusters();
+    }
   }, [nodes, categories, mode, now, ready, zoom]);
 
   useEffect(() => {
@@ -186,13 +263,20 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     selectedRef.current = selectedNodeId;
     const marker = selectedNodeId && markers.current.get(selectedNodeId);
     if (marker) {
-      groupRef.current?.zoomToShowLayer(marker, () => {
-        if (selectedRef.current !== selectedNodeId) return;
+      if (mode === "category") {
+        groupRef.current?.zoomToShowLayer(marker, () => {
+          if (selectedRef.current !== selectedNodeId) return;
+          marker.getElement()?.classList.add("map-sensor-selected");
+          marker.openPopup();
+        });
+      } else {
+        mapRef.current?.panTo(marker.getLatLng());
         marker.getElement()?.classList.add("map-sensor-selected");
         marker.openPopup();
-      });
+      }
     }
-  }, [selectedNodeId, ready]);
+  }, [selectedNodeId, ready, mode]);
+
 
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
