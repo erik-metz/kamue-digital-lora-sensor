@@ -28,6 +28,7 @@ export default function MapComponent({
 }: MapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const previousSelectionRef = useRef<string | undefined>(undefined);
   const markersRef = useRef<{ [key: string]: L.Marker }>({});
 
   useEffect(() => {
@@ -103,11 +104,24 @@ export default function MapComponent({
 
     // Center map to selected node if changed
     const targetNode = nodes.find((n) => n.id === selectedNodeId);
-    if (targetNode) {
+    if (previousSelectionRef.current === undefined && nodes.length > 0) {
+      map.fitBounds(L.latLngBounds(nodes.map((node) => [node.lat, node.lng])), {
+        padding: [30, 30],
+        maxZoom: 12,
+      });
+    } else if (targetNode && previousSelectionRef.current !== selectedNodeId) {
       map.panTo([targetNode.lat, targetNode.lng]);
       markersRef.current[targetNode.id]?.openPopup();
     }
+    previousSelectionRef.current = selectedNodeId;
   }, [nodes, selectedNodeId, onSelectNode]);
+
+  useEffect(() => () => {
+    mapInstanceRef.current?.remove();
+    mapInstanceRef.current = null;
+    markersRef.current = {};
+    previousSelectionRef.current = undefined;
+  }, []);
 
   return (
     <div className="relative w-full h-[420px] rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">

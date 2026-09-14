@@ -17,7 +17,7 @@ import DashboardClient from "./components/DashboardClient.tsx";
 import HeaderLogo from "./components/HeaderLogo";
 import { SensorNode } from "./components/MapComponent";
 
-export const revalidate = 300; // 5 minutes
+export const dynamic = "force-dynamic";
 
 type ApiSensor = {
   id: string;
@@ -28,16 +28,20 @@ type ApiSensor = {
   is_hidden?: boolean;
 };
 
-async function fetchSensors(): Promise<SensorNode[]> {
+async function fetchSensors(): Promise<SensorNode[] | null> {
   try {
     const res = await fetch(
       new URL("/api/v1/sensors", env.BACKEND_API_URL).href,
       {
         headers: { Accept: "application/json" },
-        next: { revalidate: 300 },
+        cache: "no-store",
+        signal: AbortSignal.timeout(10_000),
       }
     );
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error("Public sensor request failed", { status: res.status });
+      return null;
+    }
 
     const data: ApiSensor[] = await res.json();
 
@@ -54,12 +58,14 @@ async function fetchSensors(): Promise<SensorNode[]> {
 
       }));
   } catch {
-    return [];
+    console.error("Public sensor request failed: backend unavailable or invalid response");
+    return null;
   }
 }
 
 export default async function Home() {
-  const nodes = await fetchSensors();
+  const sensors = await fetchSensors();
+  const nodes = sensors ?? [];
   const liveLogs = [];
   const onlineCount = nodes.filter((n) => n.status === "online").length;
 
@@ -115,7 +121,7 @@ export default async function Home() {
           <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full text-sm text-slate-300">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             <span className="font-medium text-emerald-400">
-              {onlineCount}/{nodes.length} Stationen Aktiv
+              {sensors === null ? "Stationen nicht erreichbar" : `${onlineCount}/${nodes.length} Stationen Aktiv`}
             </span>
           </div>
         </div>
@@ -276,7 +282,7 @@ export default async function Home() {
 
         {/* DASHBOARD & KARTEN SECTION */}
         <section id="dashboard" className="space-y-8">
-          <DashboardClient nodes={nodes} />
+          <DashboardClient nodes={nodes} loadFailed={sensors === null} />
         </section>
 
         {/* TELEMETRIE & LORAWAN TTN LOGS SECTION */}

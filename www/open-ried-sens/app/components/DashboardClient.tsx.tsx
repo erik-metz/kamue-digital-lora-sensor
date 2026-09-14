@@ -18,9 +18,10 @@ const MapComponent = dynamic(() => import("./MapComponent"), {
 
 type Props = {
   nodes: SensorNode[];
+  loadFailed?: boolean;
 };
 
-export default function DashboardClient({ nodes }: Props) {
+export default function DashboardClient({ nodes, loadFailed = false }: Props) {
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>(
     nodes[0]?.id
   );
@@ -31,8 +32,15 @@ export default function DashboardClient({ nodes }: Props) {
     return (
       <section id="dashboard" className="space-y-4">
         <p className="text-slate-400">
-          Aktuell sind keine Stationen verfügbar.
+          {loadFailed
+            ? "Die Stationen konnten nicht geladen werden. Bitte versuche es erneut."
+            : "Aktuell sind keine Stationen verfügbar."}
         </p>
+        {loadFailed && (
+          <button type="button" onClick={() => window.location.reload()} className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-emerald-400">
+            Erneut versuchen
+          </button>
+        )}
       </section>
     );
   }
