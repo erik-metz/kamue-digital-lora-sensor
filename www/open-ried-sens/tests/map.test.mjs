@@ -53,3 +53,51 @@ test("temperature bins agree with the displayed legend, parking zero stays visib
   assert.equal(new Set(bins).size, 5);
   assert.equal(model.valueLabel(reading("parking_free", 0, "count")), "0 frei");
 });
+
+test("parking popup combines counts, preserves zero and derives missing availability", () => {
+  const counts = (free, occupied, capacity) => [reading("parking_free", free, "count"), reading("parking_occupied", occupied, "count"), reading("parking_capacity", capacity, "count")];
+  assert.equal(model.parkingSummary(counts(3, 7, 10)).summary, "3 von 10 Stellplätzen frei");
+  assert.equal(model.parkingSummary(counts(0, 10, 10)).summary, "0 von 10 Stellplätzen frei");
+  assert.equal(model.parkingSummary(counts(1, 0, 1)).summary, "1 von 1 Stellplatz frei");
+  assert.equal(model.parkingSummary(counts(3, 7, 10).slice(1)).summary, "3 von 10 Stellplätzen frei");
+  assert.equal(model.parkingSummary(counts(3, 7, 10).slice(0, 2)).summary, "3 von 10 Stellplätzen frei");
+});
+
+test("parking popup does not invent a total from asynchronous or invalid counts", () => {
+  const free = reading("parking_free", 3, "count");
+  const occupied = reading("parking_occupied", 7, "count", "2026-09-13T11:30:00Z");
+  assert.equal(model.parkingSummary([free, occupied]).summary, "3 Stellplätze frei");
+  assert.ok(model.parkingSummary([free]).details.includes("Gesamtzahl nicht gemeldet"));
+  const bad = model.parkingSummary([free, reading("parking_capacity", 2, "count")]);
+  assert.equal(bad.summary, "3 Stellplätze frei");
+  assert.ok(bad.details.includes("Die gemeldeten Anzahlen sind widersprüchlich."));
+  assert.equal(model.parkingSummary([reading("parking_free", -1, "count")]), undefined);
+  assert.equal(model.parkingSummary([reading("parking_free", 1.5, "count")]), undefined);
+  assert.equal(model.parkingSummary([reading("temperature")]), undefined);
+});
+
+test("station inventory includes parking groups without placing them at invented coordinates", () => {
+  const input = [sensor([reading("parking_free", 3, "count")], { latitude: null, longitude: null })];
+  assert.equal(model.toStationNodes(input).length, 1);
+  assert.equal(model.toMapNodes(input).length, 0);
+  assert.equal(model.toStationNodes([sensor([], {is_hidden:true})]).length, 0);
+});
+test("traffic and all soil metrics have dedicated categories", () => {
+  assert.deepEqual([...model.categoriesFor(sensor([reading("traffic_cars_hourly", 10, "count")]))], ["traffic"]);
+  assert.deepEqual([...model.categoriesFor(sensor([reading("soil_tension_30cm", 10, "kPa")]))], ["soil"]);
+});
+
+const telemetryContext = { exports: {}, Date, Map, Number, JSON };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/telemetryData.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, telemetryContext);
+const telemetry = telemetryContext.exports;
+test("all measurements remain visible from inventory when history or latest request fails", () => {
+  const snapshot = [reading("parking_free", 0, "count"), reading("parking_capacity", 10, "count"), reading("soil_tension", 20, "kPa")];
+  assert.equal(telemetry.mergeReadings(snapshot, []).length, 3);
+  const merged = telemetry.mergeReadings(snapshot, [reading("parking_free", 4, "count", "2026-09-14T11:45:00Z")]);
+  assert.equal(merged.length, 3);
+  assert.equal(merged.find(r => r.metric === "parking_free").value, 4);
+  assert.equal(telemetry.metricLabel(reading("traffic_cars_hourly", 2, "count")), "PKW · Stundensumme");
+  assert.equal(telemetry.unitLabel("count"), "Anzahl");
+});

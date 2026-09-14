@@ -21,6 +21,7 @@ class Settings:
     metrics: frozenset[str]
     state_dir: str
     db: dict
+    additional_dashboard_urls: tuple[str, ...] = ()
 
     @classmethod
     def from_env(cls):
@@ -57,6 +58,15 @@ class Settings:
         tenant = os.getenv("SMARTCITY_TENANT", "buerstadt").strip()
         if not tenant or len(tenant) > 64:
             raise ValueError("SMARTCITY_TENANT must contain 1–64 characters")
+        additional = os.getenv(
+            "SMARTCITY_ADDITIONAL_DASHBOARD_IDS",
+            "24c1807c-3c5a-4809-a57e-33baf13751ea,5a1a6650-26ce-4662-9d52-6e59102e1434,26f92cf2-4b45-4856-b0d3-b606ad186e62",
+        )
+        extra_urls = tuple(
+            f"{base}/dashboards/{UUID(value)}?includeContent=true"
+            for value in sorted(csv(additional))
+            if value != dashboard
+        )
         return cls(
             tenant,
             f"{base}/dashboards/{dashboard}?includeContent=true",
@@ -72,4 +82,5 @@ class Settings:
                 "password": os.getenv("DB_PASSWORD", ""),
                 "connect_timeout": 10,
             },
+            extra_urls,
         )

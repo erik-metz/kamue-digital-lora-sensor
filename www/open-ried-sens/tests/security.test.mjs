@@ -83,3 +83,28 @@ test("markers render icons and safe value text, never sensor IDs as HTML", () =>
   assert.equal(marker.children[1].children.length, 0);
   assert.equal(createMarkerContent("weather", "#f59e0b", false).children.length, 1);
 });
+
+test("telemetry preserves latest parking metrics when history fails", async () => {
+  const readings = [{ metric: "parking_free", value: 0, unit: "count", timestamp: "2026-09-14T12:00:00Z" }];
+  const route = load("app/api/telemetry/route.ts", { "@/env": { env: { BACKEND_API_URL: "https://backend.example" } } }, {
+    URL, URLSearchParams, Response, AbortSignal,
+    fetch: async url => url.pathname.endsWith("/metrics") ? Response.json(readings) : new Response("", {status:503}),
+  });
+  const response = await route.GET(new Request("https://app.example/api/telemetry?sensor_id=parking"));
+  const result = await response.json();
+  assert.equal(response.status, 200);
+  assert.deepEqual(result.readings, readings);
+  assert.equal(result.historyUnavailable, true);
+});
+test("traffic snapshot history preserves counts instead of averaging totals", async () => {
+  const calls = [];
+  const readings = [{ metric: "traffic_cars_hourly", value: 664, unit: "count", timestamp: "2026-09-14T12:00:00Z" }];
+  const route = load("app/api/telemetry/route.ts", { "@/env": { env: { BACKEND_API_URL: "https://backend.example" } } }, {
+    URL, URLSearchParams, Response, AbortSignal,
+    fetch: async url => { calls.push(url); return Response.json(readings); },
+  });
+  const result = await (await route.GET(new Request("https://app.example/api/telemetry?sensor_id=traffic&history_mode=snapshots"))).json();
+  assert.ok(calls.some(url => url.pathname === "/api/v1/telemetry/raw" && url.searchParams.get("limit") === "5000"));
+  assert.equal(result.history[0].avg_value, 664);
+  assert.equal(result.historyMode, "snapshots");
+});

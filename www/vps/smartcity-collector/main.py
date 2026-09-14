@@ -43,6 +43,17 @@ async def fetch(client, url):
         return json.loads(body)
 
 
+async def fetch_dashboards(client, settings):
+    payloads = []
+    for url in (settings.dashboard_url, *settings.additional_dashboard_urls):
+        payload = await fetch(client, url)
+        if not isinstance(payload, dict):
+            raise TypeError("Expected dashboard object")
+        payload["_collector_source_url"] = url
+        payloads.append(payload)
+    return payloads
+
+
 def write_json(directory, name, payload):
     directory.mkdir(parents=True, exist_ok=True)
     temporary = directory / (name + ".tmp")
@@ -90,7 +101,7 @@ async def run(settings, once=False, dry_run=False, input_file=None):
                 payload = (
                     json.loads(Path(input_file).read_text())
                     if input_file
-                    else await fetch(client, settings.dashboard_url)
+                    else await fetch_dashboards(client, settings)
                 )
                 now = datetime.now(UTC)
                 if not dry_run:

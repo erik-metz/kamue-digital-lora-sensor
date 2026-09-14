@@ -25,7 +25,8 @@ LEFT JOIN LATERAL (
     ) r
 ) readings ON TRUE
 WHERE sm.is_hidden = FALSE
-  AND sm.latitude BETWEEN -90 AND 90 AND sm.longitude BETWEEN -180 AND 180
+  AND (sm.latitude IS NULL OR sm.latitude BETWEEN -90 AND 90)
+  AND (sm.longitude IS NULL OR sm.longitude BETWEEN -180 AND 180)
 ORDER BY sm.id LIMIT %s
 """
 

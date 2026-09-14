@@ -1,6 +1,7 @@
 # Smart City snapshot collector
 
-Polls the public Bürstadt/Lampertheim overview every 60 seconds and stores
+Polls the public Bürstadt/Lampertheim overview, main map, traffic map and
+traffic overview every 60 seconds and stores
 source-timestamped numeric observations in Open Ried Sens TimescaleDB. Runs as
 an independent container alongside `shake-collector`; no source credentials or
 browser are needed. This is snapshot polling, not a lossless real-time stream.
@@ -8,7 +9,7 @@ browser are needed. This is snapshot polling, not a lossless real-time stream.
 Source: [public dashboard](https://smartcity-system.de/buerstadt/dashboard_uebersicht)
 and its [JSON response](https://dashboard-service.smartcity-system.de/dashboards/76a90123-ba53-4d77-be9f-f11ef90dd63a?includeContent=true).
 The nested query configuration is fetched with every poll, so no separate
-discovery job is needed. Only the configured dashboard is fetched; the collector
+discovery job is needed. Only the configured dashboards is fetched; the collector
 does not crawl the tenant's other dashboards.
 
 ## Supported measurements
@@ -32,14 +33,38 @@ the source's meaning: some WeatherObserved entities represent soil temperature;
 their source names are preserved. Parking may represent a location or group.
 Water-level delta is not an absolute level.
 
-Precipitation, pollutant concentrations and soil moisture are deliberately not
-mapped yet: observed dashboard labels include `ml/h`, `ppm` for particulate
-matter, and `% nFK` for `soilMoistureVwc`. Their meaning/units need confirmation
-before publication. Forecasts, alerts, categorical text, traffic sums and
-historical aggregates are excluded. Unknown fields are counted in the skipped
-report rather than assigned guessed units.
+Additional supported metrics (2026-09-14):
 
-The 2026-09-14 live dry run accepted 731 readings from 366 source entities.
+- SoilMeasurement: `soil_moisture_30cm`, `soil_moisture_60cm` (%),
+  `soil_tension_30cm`, `soil_tension_60cm` (kPa), `soil_temperature` (°C),
+  and `relative_humidity` (%) when supplied with a verified unit.
+- SoilTension: `soil_tension` (kPa) and `soil_temperature` (°C).
+- GreenspaceRecord: `soil_moisture_nfk` retains the dashboard's literal `% nFK`
+  unit. It is deliberately distinct from volumetric soil moisture.
+- TrafficFlowObservedSumHourly: `traffic_{kind}_hourly`, where kind is `total`,
+  `cars`, `trucks`, `buses`, `bicycles`, `pedestrians`, `motorcycles`, or `other`.
+- TrafficFlowObservedSumDaily / SumDailyCity: matching `_daily` / `_daily_city`
+  metrics. These retain separate station identities and units `count`.
+  The default sources expose 29 hourly counters and two city daily totals.
+  Individual daily detail dashboards can be added by UUID if needed.
+- WeatherObserved.precipitation is accepted only with an explicit mm unit.
+
+Traffic is stored as timestamped **snapshots of source aggregates**, never as raw
+vehicle detections. Exact source window boundaries are not provided; do not infer
+them or sum consecutive reports. The UI displays source reports without further
+averaging for parking/traffic. This does not backfill historical dashboard charts.
+
+Some rainfall labels remain `ml/h` or absent and pollutant labels conflict (`ppm`
+for particulate matter versus `mg/m³` on detail pages). These values remain
+quarantined rather than guessed. Forecasts, alerts, categorical text and static
+points of interest are outside numeric observation telemetry. The skip report
+records unavailable timestamps, units and unsupported types explicitly.
+
+The expanded 2026-09-14 captured-source dry run accepted 1,369 observations
+(including repeated entities at distinct source timestamps) from 536 source entities.
+This covers 29 hourly traffic counters, 2 city daily summaries, 3 water-level
+sensors, 124 SoilTension stations, 10 SoilMeasurement stations, 4 climate boxes,
+104 parking locations, 8 parking groups, 249 weather entities and 3 air-index stations.
 This includes regional sources and Lampertheim, not just Bürstadt. Some records
 are months old. These figures do not imply 366 currently transmitting devices.
 
@@ -80,6 +105,7 @@ Temporal backfill and a supported streaming feed are future additions.
 | --- | --- | --- |
 | SMARTCITY_TENANT | buerstadt | Identity namespace; changing it creates new IDs |
 | SMARTCITY_DASHBOARD_ID | 76a90123-ba53-4d77-be9f-f11ef90dd63a | Overview dashboard UUID |
+| SMARTCITY_ADDITIONAL_DASHBOARD_IDS | main map, traffic map, traffic overview UUIDs | Comma-separated additional dashboards, deduplicated with the overview; set empty in direct environment to disable |
 | SMARTCITY_POLL_SECONDS | 60 | Delay between successful polls, plus up to 10% jitter; minimum 30 |
 | SMARTCITY_ENTITY_IDS | empty | Optional comma-separated exact source URNs |
 | SMARTCITY_METRICS | empty | Optional comma-separated local metric names from the table |
@@ -188,3 +214,29 @@ otherwise only Timescale-specific initialization is omitted for plain PostgreSQL
 CI runs all tests on TimescaleDB/PostgreSQL 16 before publishing the image.
 Fixtures are trimmed public query responses captured on 2026-09-14; the tests
 never need to contact the public service.
+
+
+## Expanded coverage deployment
+
+Update the collector, backend API **and** frontend together. Recreate the collector
+with the updated Compose configuration; clear any old `SMARTCITY_ENTITY_IDS` or
+`SMARTCITY_METRICS` pilot allowlist to collect the full supported scope. No new SQL
+schema migration is required beyond the existing Smart City and latest-reading
+schema. The collector fills coordinates only when both stored coordinates are
+NULL, so previously registered water stations can appear on the map. Existing
+coordinates, names and visibility choices are preserved.
+
+The station inventory now includes visible stations without coordinates. The map
+still shows only valid positions; “Messwerte & Zeitverlauf” lists all stations
+independently of map filters, including parking groups and city totals. Latest
+measurement cards remain visible when the historical query fails. Counts are
+labelled in German and parking summaries show free/total capacity.
+
+Default additional dashboards:
+- `24c1807c-3c5a-4809-a57e-33baf13751ea` — main map (traffic, soil, water).
+- `5a1a6650-26ce-4662-9d52-6e59102e1434` — traffic/parking map.
+- `26f92cf2-4b45-4856-b0d3-b606ad186e62` — traffic overview / city totals.
+
+Each request remains bounded to 20 MiB. Requests are sequential and a failed
+source aborts the poll before DB ingestion; last-success health is not advanced.
+The bounded diagnostic snapshot is now a list of up to four default dashboards.

@@ -66,6 +66,17 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
         cur = await self.conn.execute(query)
         return (await cur.fetchone())[0]
 
+    async def test_new_source_position_repairs_missing_coordinates_only(self):
+        await ingest(self.conn, [self.item])
+        located = replace(self.item, latitude=49.6, longitude=8.4)
+        await ingest(self.conn, [located])
+        self.assertEqual(
+            await self.scalar("SELECT latitude FROM sensor_metadata"), 49.6
+        )
+        await self.conn.execute("UPDATE sensor_metadata SET latitude=50, longitude=9")
+        await ingest(self.conn, [located])
+        self.assertEqual(await self.scalar("SELECT latitude FROM sensor_metadata"), 50)
+
     async def test_replay_and_restart_are_idempotent(self):
         self.assertEqual((await ingest(self.conn, [self.item]))["inserted"], 1)
         async with await psycopg.AsyncConnection.connect(DSN, autocommit=True) as other:

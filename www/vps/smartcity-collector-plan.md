@@ -2,7 +2,10 @@
 
 Investigated 2026-09-14. The first collector implementation is now in
 `smartcity-collector/`; see its README for supported metrics and deployment.
-Historical aggregates, streaming access, and a dedicated provenance UI/export
+Expanded collection now also polls the main map and traffic dashboards, including
+soil/tension, water coordinates and distinctly named traffic aggregate snapshots.
+See the collector README for the current coverage and remaining unit gaps.
+Historical backfill, streaming access, and a dedicated provenance UI/export
 remain follow-up work. No production deployment or 24-hour pilot has been run.
 
 ## Findings verified against the public service

@@ -1,24 +1,33 @@
 import { env } from "@/env";
 
+type RawReading = { metric: string; unit: string; value: number; timestamp: string };
 export async function GET(request: Request) {
-  const sensorId = new URL(request.url).searchParams.get("sensor_id");
+  const params = new URL(request.url).searchParams;
+  const sensorId = params.get("sensor_id");
   if (!sensorId || sensorId.length > 64) {
     return Response.json({ error: "Ungültige Station." }, { status: 400 });
   }
+  const snapshots = params.get("history_mode") === "snapshots";
   const end = new Date();
   const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
   const latest = new URL("/api/v1/telemetry/latest/metrics", env.BACKEND_API_URL);
   latest.searchParams.set("sensor_id", sensorId);
-  const history = new URL("/api/v1/telemetry/aggregates", env.BACKEND_API_URL);
-  history.search = new URLSearchParams({ sensor_id: sensorId, interval: "5 minutes", start_time: start.toISOString(), end_time: end.toISOString() }).toString();
-  try {
-    const responses = await Promise.all([latest, history].map(url => fetch(url, {
-      cache: "no-store", signal: AbortSignal.timeout(15000),
-    })));
-    if (responses.some(response => !response.ok)) throw new Error("Backend unavailable");
-    const [readings, buckets] = await Promise.all(responses.map(response => response.json()));
-    return Response.json({ readings, history: buckets, start: start.toISOString(), end: end.toISOString() });
-  } catch {
+  const history = new URL(snapshots ? "/api/v1/telemetry/raw" : "/api/v1/telemetry/aggregates", env.BACKEND_API_URL);
+  history.search = new URLSearchParams({ sensor_id: sensorId, start_time: start.toISOString(), end_time: end.toISOString(),
+    ...(snapshots ? { limit: "5000" } : { interval: "5 minutes" }),
+  }).toString();
+  const results = await Promise.allSettled([latest, history].map(async url => {
+    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+    if (!response.ok) throw new Error("Backend unavailable");
+    return response.json();
+  }));
+  if (results[0].status === "rejected") {
     return Response.json({ error: "Messdaten konnten nicht geladen werden." }, { status: 502 });
   }
+  const buckets = results[1].status === "fulfilled" ? results[1].value : [];
+  return Response.json({ readings: results[0].value,
+    history: snapshots ? buckets.map((r: RawReading) => ({ metric: r.metric, unit: r.unit, bucket: r.timestamp, avg_value: r.value })) : buckets,
+    historyMode: snapshots ? "snapshots" : "averages", historyUnavailable: results[1].status === "rejected",
+    historyTruncated: snapshots && buckets.length >= 5000, start: start.toISOString(), end: end.toISOString(),
+  });
 }

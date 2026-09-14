@@ -9,7 +9,7 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import Settings
-from main import fetch, retry_after
+from main import fetch, fetch_dashboards, retry_after
 
 
 class HttpTests(unittest.IsolatedAsyncioTestCase):
@@ -37,6 +37,20 @@ class HttpTests(unittest.IsolatedAsyncioTestCase):
             async with httpx.AsyncClient(transport=transport) as client:
                 with self.assertRaises(ValueError):
                     await fetch(client, "https://example.org")
+
+    async def test_default_dashboard_bundle_has_four_sources_and_provenance(self):
+        with patch.dict(os.environ, {}, clear=True):
+            settings = Settings.from_env()
+        requests = []
+
+        def respond(request):
+            requests.append(str(request.url))
+            return httpx.Response(200, json={"panels": []})
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as client:
+            payloads = await fetch_dashboards(client, settings)
+        self.assertEqual(len(requests), 4)
+        self.assertEqual([p["_collector_source_url"] for p in payloads], requests)
 
     def test_retry_after_seconds_and_date(self):
         now = datetime(2026, 9, 14, 7, tzinfo=UTC)

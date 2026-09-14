@@ -1,4 +1,4 @@
-"""Normalize public dashboard queries, never rendered charts or temporal aggregates."""
+"""Normalize source snapshots; traffic aggregates retain distinct metric identities."""
 
 import hashlib
 import json
@@ -21,6 +21,7 @@ METRICS = {
     "WeatherObserved": {
         "temperature": Metric("temperature", ("°C", "CEL", "celsius")),
         "relativeHumidity": Metric("relative_humidity", ("%", "P1")),
+        "precipitation": Metric("precipitation", ("mm", "MMT")),
     },
     "FloodMonitoring": {
         "currentLevelDelta": Metric("water_level_delta", ("m", "MTR")),
@@ -28,6 +29,7 @@ METRICS = {
     "GreenspaceRecord": {
         "soilTemperature": Metric("soil_temperature", ("°C", "CEL", "celsius")),
         "waterSurfaceDistance": Metric("water_surface_distance", ("cm", "CMT")),
+        "soilMoistureVwc": Metric("soil_moisture_nfk", ("% nFK",)),
     },
     "AirQualityObserved": {
         "airQualityIndex": Metric("air_quality_index", ("index",), "index"),
@@ -43,6 +45,44 @@ METRICS = {
         "availableSpotNumber": Metric("parking_free", ("count",), "count"),
     },
 }
+
+
+METRICS["SoilMeasurement"] = {
+    "soilTemperature": Metric("soil_temperature", ("°C", "CEL", "celsius")),
+    "relativeHumidity": Metric("relative_humidity", ("%", "P1")),
+    **{
+        f"soilMoisture{depth}": Metric(f"soil_moisture_{depth}cm", ("%", "P1"))
+        for depth in (30, 60)
+    },
+    **{
+        f"soilTension{depth}": Metric(f"soil_tension_{depth}cm", ("kPa",))
+        for depth in (30, 60)
+    },
+}
+METRICS["SoilTension"] = {
+    "soilTemperature": Metric("soil_temperature", ("°C", "CEL", "celsius")),
+    "soilTension": Metric("soil_tension", ("kPa",)),
+}
+# These are snapshots of provider aggregates, NOT individual traffic detections.
+# Never combine hourly, daily and city totals, or sum successive snapshots.
+for entity_type, period in (
+    ("TrafficFlowObservedSumHourly", "hourly"),
+    ("TrafficFlowObservedSumDaily", "daily"),
+    ("TrafficFlowObservedSumDailyCity", "daily_city"),
+):
+    METRICS[entity_type] = {
+        attribute: Metric(f"traffic_{kind}_{period}", ("count",), "count")
+        for attribute, kind in {
+            "gesamt": "total",
+            "pkw": "cars",
+            "lkw": "trucks",
+            "bus": "buses",
+            "fahrrad": "bicycles",
+            "person": "pedestrians",
+            "motorrad": "motorcycles",
+            "sonstige": "other",
+        }.items()
+    }
 
 
 def property_value(value):
@@ -77,6 +117,10 @@ def sensor_id(tenant, entity_id):
 
 def query_tabs(payload):
     """Visit actual widgets and combined children only, not duplicated map data."""
+    if isinstance(payload, list):
+        for dashboard in payload:
+            yield from query_tabs(dashboard)
+        return
     if not isinstance(payload, dict) or not isinstance(payload.get("panels"), list):
         raise TypeError("Expected a dashboard object with panels")
 
@@ -88,7 +132,10 @@ def query_tabs(payload):
                 continue
             for tab in widget.get("tabs") or []:
                 if isinstance(tab, dict) and isinstance(tab.get("query"), dict):
-                    yield tab
+                    yield {
+                        **tab,
+                        "_collector_source_url": payload.get("_collector_source_url"),
+                    }
             widget_data = widget.get("widgetData") or {}
             if not isinstance(widget_data, dict):
                 raise TypeError("Expected widgetData object")
@@ -273,7 +320,7 @@ def normalize(
                     str(name or entity_id)[:240],
                     latitude,
                     longitude,
-                    source_url,
+                    tab.get("_collector_source_url") or source_url,
                     {str(query["id"])} if query.get("id") else set(),
                 )
                 old = readings.get(item.key)
@@ -294,6 +341,16 @@ def normalize(
                             old.name = item.name
                 else:
                     readings[item.key] = item
+    # Location/name may be supplied by a different widget than the newest reading.
+    metadata = {}
+    for item in readings.values():
+        if item.latitude is not None:
+            metadata[item.entity_id] = (item.latitude, item.longitude, item.name)
+    for item in readings.values():
+        if item.latitude is None and item.entity_id in metadata:
+            item.latitude, item.longitude, source_name = metadata[item.entity_id]
+            if item.name == item.entity_id[:240]:
+                item.name = source_name
     for key in conflicts:
         del readings[key]
         skipped["conflicting_observation"] += 1

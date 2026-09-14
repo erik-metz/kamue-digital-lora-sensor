@@ -65,7 +65,7 @@ class LatestMapTests(unittest.IsolatedAsyncioTestCase):
             self.schema_sql = self.schema_sql.replace("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;", "")
             self.schema_sql = self.schema_sql.replace("SELECT create_hypertable('sensor_data', 'timestamp', if_not_exists => TRUE);", "")
         await self.conn.execute(self.schema_sql)
-        await self.conn.execute("INSERT INTO sensor_metadata (id,friendly_name,latitude,longitude,is_hidden) VALUES ('a','Public',49.6,8.4,FALSE),('hidden','Hidden',49.6,8.4,TRUE),('empty','Empty',49.6,8.4,FALSE),('invalid','Invalid',999,8.4,FALSE)")
+        await self.conn.execute("INSERT INTO sensor_metadata (id,friendly_name,latitude,longitude,is_hidden) VALUES ('a','Public',49.6,8.4,FALSE),('hidden','Hidden',49.6,8.4,TRUE),('empty','Empty',49.6,8.4,FALSE),('invalid','Invalid',999,8.4,FALSE),('group','Parking group',NULL,NULL,FALSE)")
         self.now = datetime(2026, 9, 14, 12, tzinfo=UTC)
 
     async def asyncTearDown(self):
@@ -118,6 +118,6 @@ class LatestMapTests(unittest.IsolatedAsyncioTestCase):
 
         response = await get_map_sensors(Pool())
         sensors = {s["id"]: s for s in response["sensors"]}
-        self.assertEqual(set(sensors), {"a", "empty"})
+        self.assertEqual(set(sensors), {"a", "empty", "group"})
         self.assertEqual(sensors["empty"]["readings"], [])
         self.assertEqual({r["metric"] for r in sensors["a"]["readings"]}, {"temperature", "relative_humidity"})

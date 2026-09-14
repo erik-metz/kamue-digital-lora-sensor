@@ -4,8 +4,9 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./map.css";
+import { metricLabel } from "@/lib/telemetryData";
 import { createClusterContent, createMarkerContent } from "@/lib/mapMarker";
-import { CATEGORIES, markerCategory, observationLabel, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, observationLabel, parkingSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
@@ -109,9 +110,36 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       value.className = "map-popup-value";
       const time = document.createElement("p"); time.textContent = observationLabel(reading, now);
       const hint = document.createElement("p"); hint.textContent = "Alle Messwerte und Stationsdetails unter der Karte";
-      popup.append(title, tags, value, time, hint);
+      const parking = parkingSummary(node.readings);
+      popup.append(title, tags);
+      if (reading?.metric.startsWith("traffic_")) {
+        const label = document.createElement("p");
+        label.textContent = metricLabel(reading);
+        popup.append(label);
+      }
+      if (!parking || !reading?.metric.startsWith("parking_")) popup.append(value, time);
+      if (parking) {
+        const summary = document.createElement("p");
+        summary.className = "map-popup-value";
+        summary.textContent = parking.summary;
+        popup.append(summary);
+        for (const detail of parking.details) {
+          const line = document.createElement("p");
+          line.textContent = detail;
+          popup.append(line);
+        }
+        const labels: Record<string, string> = { parking_free: "Freie Plätze", parking_occupied: "Belegte Plätze", parking_capacity: "Gesamtzahl" };
+        const sameTime = new Set(parking.observations.map(r => Date.parse(r.timestamp))).size === 1;
+        for (const observation of sameTime ? parking.observations.slice(0, 1) : parking.observations) {
+          const line = document.createElement("p");
+          line.textContent = sameTime ? observationLabel(observation, now) :
+            `${labels[observation.metric]}: ${observation.value.toLocaleString("de-DE")} · ${observationLabel(observation, now)}`;
+          popup.append(line);
+        }
+      }
+      popup.append(hint);
       if (marker.getPopup()) marker.setPopupContent(popup);
-      else marker.bindPopup(popup);
+      else marker.bindPopup(popup, { autoPanPaddingTopLeft: L.point(15, 65), autoPanPaddingBottomRight: L.point(15, 15), maxHeight: 300 });
     }
     group.addLayers(added);
     group.refreshClusters();

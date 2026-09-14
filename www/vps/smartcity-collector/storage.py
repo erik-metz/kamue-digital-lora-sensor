@@ -33,6 +33,13 @@ async def ingest(conn, observations):
                     ),
                 ),
             )
+            # Repair previously missing source positions, but preserve existing admin values.
+            if item.latitude is not None and item.longitude is not None:
+                await cur.execute(
+                    """UPDATE sensor_metadata SET latitude=%s, longitude=%s
+                       WHERE id=%s AND latitude IS NULL AND longitude IS NULL""",
+                    (item.latitude, item.longitude, sid),
+                )
             # Never reset visibility or overwrite names/coordinates edited by admins.
             await cur.execute(
                 """INSERT INTO smartcity_sources

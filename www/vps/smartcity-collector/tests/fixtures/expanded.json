@@ -1,0 +1,360 @@
+{
+  "panels": [
+    {
+      "widgets": [
+        {
+          "tabs": [
+            {
+              "mapWidgetValues": [],
+              "chartUnit": "",
+              "query": {
+                "id": "8e9d92fc-4efd-48a8-89d9-3cdf521ad019",
+                "updatedAt": "2026-09-14T16:12:08.400Z",
+                "queryData": [
+                  {
+                    "id": "urn:ngsi-ld:TrafficFlowObservedSumDailyCity:Buerstadt",
+                    "type": "TrafficFlowObservedSumDailyCity",
+                    "bus": {
+                      "type": "Property",
+                      "value": 568,
+                      "observedAt": "2026-09-14T16:00:01.071Z"
+                    },
+                    "lkw": {
+                      "type": "Property",
+                      "value": 2008,
+                      "observedAt": "2026-09-14T16:00:01.071Z"
+                    },
+                    "pkw": {
+                      "type": "Property",
+                      "value": 83552,
+                      "observedAt": "2026-09-14T16:00:01.071Z"
+                    },
+                    "person": {
+                      "type": "Property",
+                      "value": 797,
+                      "observedAt": "2026-09-14T16:00:01.071Z"
+                    },
+                    "fahrrad": {
+                      "type": "Property",
+                      "value": 1987,
+                      "observedAt": "2026-09-14T16:00:01.071Z"
+                    },
+                    "motorrad": {
+                      "type": "Property",
+                      "value": 372,
+                      "observedAt": "2026-09-14T16:00:01.071Z"
+                    },
+                    "sonstige": {
+                      "type": "Property",
+                      "value": 210,
+                      "observedAt": "2026-09-14T16:00:01.071Z"
+                    },
+                    "dateObserved": {
+                      "type": "Property",
+                      "value": "2026-09-14T16:00:01.071Z"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "tabs": [
+            {
+              "mapWidgetValues": [
+                {
+                  "attributes": "gesamt",
+                  "chartUnit": ""
+                },
+                {
+                  "attributes": "pkw",
+                  "chartUnit": ""
+                },
+                {
+                  "attributes": "fahrrad",
+                  "chartUnit": ""
+                },
+                {
+                  "attributes": "person",
+                  "chartUnit": ""
+                },
+                {
+                  "attributes": "bus",
+                  "chartUnit": ""
+                },
+                {
+                  "attributes": "",
+                  "chartUnit": ""
+                },
+                {
+                  "attributes": "",
+                  "chartUnit": ""
+                }
+              ],
+              "chartUnit": null,
+              "query": {
+                "id": "70e6156c-c98d-425f-af87-9d707db67a68",
+                "updatedAt": "2026-09-14T16:15:01.635Z",
+                "queryData": [
+                  {
+                    "id": "urn:ngsi-ld:TrafficFlowObservedSumHourly:zde-09c933f9",
+                    "type": "TrafficFlowObservedSumHourly",
+                    "location": {
+                      "type": "GeoProperty",
+                      "value": {
+                        "type": "Point",
+                        "coordinates": [
+                          8.469916,
+                          49.644855
+                        ]
+                      }
+                    },
+                    "bus": {
+                      "type": "Property",
+                      "value": 2,
+                      "observedAt": "2026-09-14T16:00:00.874Z"
+                    },
+                    "name": {
+                      "type": "Property",
+                      "value": "Nibelungenstr. Ost"
+                    },
+                    "lkw": {
+                      "type": "Property",
+                      "value": 10,
+                      "observedAt": "2026-09-14T16:00:00.874Z"
+                    },
+                    "pkw": {
+                      "type": "Property",
+                      "value": 664,
+                      "observedAt": "2026-09-14T16:00:00.874Z"
+                    },
+                    "gesamt": {
+                      "type": "Property",
+                      "value": 749,
+                      "observedAt": "2026-09-14T16:00:00.874Z"
+                    },
+                    "person": {
+                      "type": "Property",
+                      "value": 18,
+                      "observedAt": "2026-09-14T16:00:00.874Z"
+                    },
+                    "fahrrad": {
+                      "type": "Property",
+                      "value": 47,
+                      "observedAt": "2026-09-14T16:00:00.874Z"
+                    },
+                    "motorrad": {
+                      "type": "Property",
+                      "value": 6,
+                      "observedAt": "2026-09-14T16:00:00.874Z"
+                    },
+                    "municipality": {
+                      "type": "Property",
+                      "value": "Bürstadt"
+                    },
+                    "dateObserved": {
+                      "type": "Property",
+                      "value": "2026-09-14T16:00:00.874Z"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "tabs": [
+            {
+              "mapWidgetValues": [
+                {
+                  "attributes": "currentLevelDelta",
+                  "chartUnit": "m"
+                },
+                {
+                  "attributes": "dateObserved",
+                  "chartUnit": ""
+                },
+                {
+                  "attributes": "",
+                  "chartUnit": ""
+                }
+              ],
+              "chartUnit": null,
+              "query": {
+                "id": "5fd42bad-15df-4edc-8e3f-9ff720f89818",
+                "updatedAt": "2026-09-14T16:14:03.736Z",
+                "queryData": [
+                  {
+                    "id": "urn:ngsi-ld:FloodMonitoring:IoT-Plan-Decentlab-lub-pegel-1",
+                    "type": "FloodMonitoring",
+                    "location": {
+                      "type": "GeoProperty",
+                      "value": {
+                        "type": "Point",
+                        "coordinates": [
+                          8.4521782,
+                          49.68081555
+                        ]
+                      }
+                    },
+                    "name": {
+                      "type": "Property",
+                      "value": "22606 Biblis"
+                    },
+                    "currentLevelDelta": {
+                      "type": "Property",
+                      "value": 0.33,
+                      "observedAt": "2026-09-14T16:07:17.453Z"
+                    },
+                    "dateObserved": {
+                      "type": "Property",
+                      "value": "2026-09-14T16:07:17.453Z"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "tabs": [
+            {
+              "mapWidgetValues": [
+                {
+                  "attributes": "soilTension30",
+                  "chartUnit": "kPa"
+                },
+                {
+                  "attributes": "soilTension60",
+                  "chartUnit": "kPa"
+                },
+                {
+                  "attributes": "soilTemperature",
+                  "chartUnit": "°C"
+                },
+                {
+                  "attributes": "soilMoisture30",
+                  "chartUnit": "%"
+                },
+                {
+                  "attributes": "soilMoisture60",
+                  "chartUnit": "%"
+                },
+                {
+                  "attributes": "dateObserved",
+                  "chartUnit": ""
+                }
+              ],
+              "chartUnit": null,
+              "query": {
+                "id": "57a1d7c9-74ba-4d40-98ae-82867ffbdfce",
+                "updatedAt": "2026-09-14T16:15:01.397Z",
+                "queryData": [
+                  {
+                    "id": "urn:ngsi-ld:SoilMeasurement:eui-647fda0000012347",
+                    "type": "SoilMeasurement",
+                    "location": {
+                      "type": "GeoProperty",
+                      "value": {
+                        "type": "Point",
+                        "coordinates": [
+                          8.4758394,
+                          49.5960084
+                        ]
+                      }
+                    },
+                    "soilTension30": {
+                      "type": "Property",
+                      "value": 21.7205,
+                      "observedAt": "2026-09-02T23:52:25.112Z"
+                    },
+                    "soilTension60": {
+                      "type": "Property",
+                      "value": 5.129742,
+                      "observedAt": "2026-09-02T23:52:25.112Z"
+                    },
+                    "soilMoisture30": {
+                      "type": "Property",
+                      "value": 23.52,
+                      "observedAt": "2026-09-02T23:52:25.112Z"
+                    },
+                    "soilMoisture60": {
+                      "type": "Property",
+                      "value": 5.58,
+                      "observedAt": "2026-09-02T23:52:25.112Z"
+                    },
+                    "relativeHumidity": {
+                      "type": "Property",
+                      "value": 99.5,
+                      "observedAt": "2026-09-02T23:52:25.112Z"
+                    },
+                    "dateObserved": {
+                      "type": "Property",
+                      "value": "2026-09-02T23:52:25.112Z"
+                    },
+                    "soilTemperature": {
+                      "type": "Property",
+                      "value": 20.8,
+                      "observedAt": "2026-09-02T23:52:25.112Z"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "tabs": [
+            {
+              "mapWidgetValues": [
+                {
+                  "attributes": "soilTension",
+                  "chartUnit": "kPa"
+                },
+                {
+                  "attributes": "soilTemperature",
+                  "chartUnit": "°C"
+                }
+              ],
+              "chartUnit": null,
+              "query": {
+                "id": "af83625e-577e-497c-8987-9da9b0a12eff",
+                "updatedAt": "2026-09-14T16:14:07.275Z",
+                "queryData": [
+                  {
+                    "id": "urn:ngsi-ld:SoilTension:IoT-Plan-lub2-soilth-31",
+                    "type": "SoilTension",
+                    "location": {
+                      "type": "GeoProperty",
+                      "value": {
+                        "type": "Point",
+                        "coordinates": [
+                          8.5194103,
+                          49.60332826
+                        ]
+                      }
+                    },
+                    "name": {
+                      "type": "Property",
+                      "value": "lub2-soilth-31"
+                    },
+                    "soilTension": {
+                      "type": "Property",
+                      "value": 200,
+                      "observedAt": "2026-09-14T16:11:24.908Z"
+                    },
+                    "dateObserved": {
+                      "type": "Property",
+                      "value": "2026-09-14T16:11:24.888Z"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

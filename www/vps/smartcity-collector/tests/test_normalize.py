@@ -73,6 +73,42 @@ class NormalizerTests(unittest.TestCase):
         self.assertEqual(result.skipped["unsupported_entity_type"], 1)
         self.assertGreater(result.skipped["unmapped_attribute:NO2"], 0)
 
+    def test_expanded_public_fixture(self):
+        payload = json.loads(
+            (Path(__file__).parent / "fixtures/expanded.json").read_text()
+        )
+        result = normalize(payload, "buerstadt", URL, datetime(2026, 9, 15, tzinfo=UTC))
+        metrics = {r.metric for r in result.observations}
+        self.assertTrue(
+            {
+                "traffic_cars_hourly",
+                "traffic_bicycles_hourly",
+                "traffic_cars_daily_city",
+                "soil_tension",
+                "soil_moisture_30cm",
+                "soil_moisture_60cm",
+                "soil_temperature",
+                "water_level_delta",
+            }.issubset(metrics)
+        )
+        traffic = next(
+            r for r in result.observations if r.metric == "traffic_cars_hourly"
+        )
+        self.assertEqual((traffic.value, traffic.unit), (664, "count"))
+        self.assertEqual((traffic.latitude, traffic.longitude), (49.644855, 8.469916))
+
+    def test_dashboard_bundle_deduplicates_and_retains_source(self):
+        first = dashboard()
+        second = copy.deepcopy(first)
+        second["_collector_source_url"] = "https://example.org/map"
+        entity = next(query_tabs(second))["query"]["queryData"][0]
+        entity["location"] = {"value": {"type": "Point", "coordinates": [8.4, 49.6]}}
+        entity["temperature"]["observedAt"] = "2026-09-14T06:00:00Z"
+        result = normalize([first, second], "buerstadt", URL, NOW)
+        self.assertEqual(len(result.observations), 2)
+        self.assertTrue(all(r.latitude == 49.6 for r in result.observations))
+        self.assertEqual(result.observations[0].source_url, "https://example.org/map")
+
     def test_duplicate_widgets_do_not_duplicate_observations(self):
         payload = dashboard()
         widgets = payload["panels"][0]["widgets"]
