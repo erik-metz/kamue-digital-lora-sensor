@@ -245,7 +245,66 @@ export function toStationNodes(sensors: ApiMapSensor[]): StationNode[] {
     });
   }
 
+  offsetTrafficCoordinates(result);
   return result;
+}
+
+export function offsetTrafficCoordinates(nodes: StationNode[]): void {
+  const trafficNodes = nodes.filter(n => n.categories.includes("traffic") && n.lat != null && n.lng != null);
+
+  const locGroups = new Map<string, StationNode[]>();
+  for (const node of trafficNodes) {
+    const key = `${node.lat!.toFixed(4)},${node.lng!.toFixed(4)}`;
+    const group = locGroups.get(key);
+    if (group) group.push(node);
+    else locGroups.set(key, [node]);
+  }
+
+  const fallbackDirs = [
+    { code: "E", dlat: 0.0, dlng: 0.00030 },
+    { code: "W", dlat: 0.0, dlng: -0.00030 },
+    { code: "N", dlat: 0.00022, dlng: 0.0 },
+    { code: "S", dlat: -0.00022, dlng: 0.0 },
+    { code: "NE", dlat: 0.00015, dlng: 0.00020 },
+    { code: "NW", dlat: 0.00015, dlng: -0.00020 },
+    { code: "SE", dlat: -0.00015, dlng: 0.00020 },
+    { code: "SW", dlat: -0.00015, dlng: -0.00020 },
+  ];
+
+  for (const group of locGroups.values()) {
+    if (group.length <= 1) continue;
+
+    const usedDirs = new Set<string>();
+    const unassigned: StationNode[] = [];
+
+    for (const node of group) {
+      const nl = node.name.toLowerCase();
+      if (nl.includes("nord")) {
+        node.lat = Number((node.lat! + 0.00022).toFixed(6));
+        usedDirs.add("N");
+      } else if (nl.includes("süd") || nl.includes("sued")) {
+        node.lat = Number((node.lat! - 0.00022).toFixed(6));
+        usedDirs.add("S");
+      } else if (nl.includes("ost")) {
+        node.lng = Number((node.lng! + 0.00030).toFixed(6));
+        usedDirs.add("E");
+      } else if (nl.includes("west")) {
+        node.lng = Number((node.lng! - 0.00030).toFixed(6));
+        usedDirs.add("W");
+      } else {
+        unassigned.push(node);
+      }
+    }
+
+    for (const node of unassigned) {
+      const dir = fallbackDirs.find(d => !usedDirs.has(d.code));
+      if (dir) {
+        node.lat = Number((node.lat! + dir.dlat).toFixed(6));
+        node.lng = Number((node.lng! + dir.dlng).toFixed(6));
+        usedDirs.add(dir.code);
+      }
+    }
+  }
 }
 export function toMapNodes(sensors: ApiMapSensor[]): SensorNode[] {
   return toStationNodes(sensors).filter(hasCoordinates);
@@ -288,7 +347,11 @@ export function temperatureColor(value: number) {
 export function valueLabel(reading: Reading | undefined, readings?: Reading[]) {
   if (!reading) return "";
   const value = reading.value.toLocaleString("de-DE", { maximumFractionDigits: 1 });
-  if (reading.metric.startsWith("traffic_")) return `${value} gezählt`;
+  if (reading.metric.startsWith("traffic_")) {
+    if (reading.metric.endsWith("_hourly")) return `${value} / h`;
+    if (reading.metric.endsWith("_daily") || reading.metric.endsWith("_daily_city")) return `${value} / Tag`;
+    return `${value} gezählt`;
+  }
   if (reading.metric === "parking_free" || reading.metric === "parking_occupied") {
     if (readings) {
       const parking = parkingSummary(readings);

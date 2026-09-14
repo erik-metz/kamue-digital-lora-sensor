@@ -193,9 +193,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       }
 
       const tooltip = document.createElement("span");
-      tooltip.textContent = isTempMode && reading
-        ? `${node.name} · ${valueLabel(reading, node.readings)}`
-        : node.name;
+      const label = valueLabel(reading, node.readings);
+      tooltip.textContent = label ? `${node.name} · ${label}` : node.name;
       if (marker.getTooltip()) marker.setTooltipContent(tooltip);
       else marker.bindTooltip(tooltip, { direction: "top", offset: isTempMode ? [0, -10] : [0, -16] });
 

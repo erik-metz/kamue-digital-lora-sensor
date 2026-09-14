@@ -182,6 +182,34 @@ test("traffic and all soil metrics have dedicated categories", () => {
   assert.deepEqual([...model.categoriesFor(sensor([reading("soil_tension_30cm", 10, "kPa")]))], ["soil"]);
 });
 
+test("co-located traffic intersection sensors are offset along their respective directional road arms", () => {
+  const sensors = [
+    sensor([reading("traffic_cars_hourly", 180, "count")], { id: "t1", friendly_name: "Kaiserstr. Nord", latitude: 49.594875, longitude: 8.46886, entity_type: "TrafficFlowObservedSumHourly" }),
+    sensor([reading("traffic_cars_hourly", 23, "count")], { id: "t2", friendly_name: "Wilhelmstr. Ost", latitude: 49.594875, longitude: 8.46886, entity_type: "TrafficFlowObservedSumHourly" }),
+    sensor([reading("traffic_cars_hourly", 44, "count")], { id: "t3", friendly_name: "Wilhelmstr. West", latitude: 49.594875, longitude: 8.46886, entity_type: "TrafficFlowObservedSumHourly" }),
+    sensor([reading("traffic_cars_hourly", 399, "count")], { id: "t4", friendly_name: "Kaiserstr. Süd", latitude: 49.594875, longitude: 8.46886, entity_type: "TrafficFlowObservedSumHourly" }),
+  ];
+
+  const nodes = model.toStationNodes(sensors);
+  assert.equal(nodes.length, 4);
+
+  const nord = nodes.find(n => n.name === "Kaiserstr. Nord");
+  const sued = nodes.find(n => n.name === "Kaiserstr. Süd");
+  const ost = nodes.find(n => n.name === "Wilhelmstr. Ost");
+  const west = nodes.find(n => n.name === "Wilhelmstr. West");
+
+  // All 4 sensors must now have distinct coordinates on their road arms
+  assert.ok(nord.lat > 49.594875, "Nord arm should be offset North");
+  assert.ok(sued.lat < 49.594875, "Süd arm should be offset South");
+  assert.ok(ost.lng > 8.46886, "Ost arm should be offset East");
+  assert.ok(west.lng < 8.46886, "West arm should be offset West");
+
+  // Value labels are formatted compactly as / h
+  assert.equal(model.valueLabel(nord.readings[0]), "180 / h");
+  assert.equal(model.valueLabel(sued.readings[0]), "399 / h");
+  assert.equal(model.valueLabel(reading("traffic_cars_daily_city", 5000, "count")), "5.000 / Tag");
+});
+
 const telemetryContext = { exports: {}, Date, Map, Number, JSON };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/telemetryData.ts", import.meta.url), "utf8"), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
