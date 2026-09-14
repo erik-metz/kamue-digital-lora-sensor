@@ -21,6 +21,7 @@ export type ApiMapSensor = {
 export interface StationNode {
   id: string; name: string; locationName: string; address: string; lat: number | null; lng: number | null;
   categories: Category[]; readings: Reading[];
+  isAggregate?: boolean;
 }
 
 export interface SensorNode extends StationNode { lat: number; lng: number }
@@ -57,11 +58,121 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
 }
 
 export function toStationNodes(sensors: ApiMapSensor[]): StationNode[] {
-  return sensors.filter(s => !s.is_hidden).map(s => ({
-    id: s.id, name: s.friendly_name, locationName: s.friendly_name, address: s.description ?? "",
-    lat: s.latitude, lng: s.longitude, categories: categoriesFor(s),
-    readings: (s.readings ?? []).filter(r => Number.isFinite(r.value) && Number.isFinite(Date.parse(r.timestamp))),
-  }));
+  const visible = sensors.filter(s => !s.is_hidden);
+  const parkingSensors: ApiMapSensor[] = [];
+  const result: StationNode[] = [];
+
+  for (const s of visible) {
+    const categories = categoriesFor(s);
+    if (categories.length === 1 && categories[0] === "parking") {
+      parkingSensors.push(s);
+    } else {
+      result.push({
+        id: s.id, name: s.friendly_name, locationName: s.friendly_name, address: s.description ?? "",
+        lat: s.latitude, lng: s.longitude, categories,
+        readings: (s.readings ?? []).filter(r => Number.isFinite(r.value) && Number.isFinite(Date.parse(r.timestamp))),
+      });
+    }
+  }
+
+  // Group parking sensors that share the same station name and location
+  const parkingGroups: ApiMapSensor[][] = [];
+  for (const sensor of parkingSensors) {
+    const nameKey = sensor.friendly_name.trim().toLowerCase();
+    const existing = parkingGroups.find(group => {
+      const lead = group[0];
+      if (lead.friendly_name.trim().toLowerCase() !== nameKey) return false;
+      if (lead.latitude == null || lead.longitude == null || sensor.latitude == null || sensor.longitude == null) {
+        return lead.latitude == null && sensor.latitude == null && lead.longitude == null && sensor.longitude == null;
+      }
+      return Math.hypot(lead.latitude - sensor.latitude, lead.longitude - sensor.longitude) <= 0.005;
+    });
+    if (existing) existing.push(sensor);
+    else parkingGroups.push([sensor]);
+  }
+
+  for (const group of parkingGroups) {
+    if (group.length === 1) {
+      const s = group[0];
+      result.push({
+        id: s.id, name: s.friendly_name, locationName: s.friendly_name, address: s.description ?? "",
+        lat: s.latitude, lng: s.longitude, categories: ["parking"],
+        readings: (s.readings ?? []).filter(r => Number.isFinite(r.value) && Number.isFinite(Date.parse(r.timestamp))),
+      });
+      continue;
+    }
+
+    let totalFree = 0;
+    let hasFree = false;
+    let totalOccupied = 0;
+    let hasOccupied = false;
+    let totalCapacity = 0;
+    let hasCapacity = false;
+    let latestTimestamp = "";
+
+    for (const s of group) {
+      const valid = (s.readings ?? []).filter(r => Number.isFinite(r.value) && Number.isFinite(Date.parse(r.timestamp)));
+      const free = valid.find(r => r.metric === "parking_free");
+      const occupied = valid.find(r => r.metric === "parking_occupied");
+      const capacity = valid.find(r => r.metric === "parking_capacity");
+
+      if (free) {
+        totalFree += free.value;
+        hasFree = true;
+        if (!latestTimestamp || Date.parse(free.timestamp) > Date.parse(latestTimestamp)) latestTimestamp = free.timestamp;
+      }
+      if (occupied) {
+        totalOccupied += occupied.value;
+        hasOccupied = true;
+        if (!latestTimestamp || Date.parse(occupied.timestamp) > Date.parse(latestTimestamp)) latestTimestamp = occupied.timestamp;
+      }
+      if (capacity) {
+        totalCapacity += capacity.value;
+        hasCapacity = true;
+        if (!latestTimestamp || Date.parse(capacity.timestamp) > Date.parse(latestTimestamp)) latestTimestamp = capacity.timestamp;
+      }
+    }
+
+    if (!hasCapacity) {
+      if (hasFree && hasOccupied) {
+        totalCapacity = totalFree + totalOccupied;
+        hasCapacity = true;
+      } else {
+        totalCapacity = group.length;
+        hasCapacity = true;
+      }
+    }
+    if (!hasOccupied && hasCapacity && hasFree) {
+      totalOccupied = Math.max(0, totalCapacity - totalFree);
+      hasOccupied = true;
+    }
+    if (!hasFree && hasCapacity && hasOccupied) {
+      totalFree = Math.max(0, totalCapacity - totalOccupied);
+      hasFree = true;
+    }
+
+    const timestamp = latestTimestamp || new Date().toISOString();
+    const readings: Reading[] = [];
+    if (hasFree) readings.push({ metric: "parking_free", value: totalFree, unit: "count", timestamp });
+    if (hasOccupied) readings.push({ metric: "parking_occupied", value: totalOccupied, unit: "count", timestamp });
+    if (hasCapacity) readings.push({ metric: "parking_capacity", value: totalCapacity, unit: "count", timestamp });
+
+    const primary = group[0];
+    const withCoords = group.find(s => s.latitude != null && s.longitude != null) ?? primary;
+    result.push({
+      id: primary.id,
+      name: primary.friendly_name,
+      locationName: primary.friendly_name,
+      address: primary.description ?? "",
+      lat: withCoords.latitude,
+      lng: withCoords.longitude,
+      categories: ["parking"],
+      readings,
+      isAggregate: true,
+    });
+  }
+
+  return result;
 }
 export function toMapNodes(sensors: ApiMapSensor[]): SensorNode[] {
   return toStationNodes(sensors).filter(hasCoordinates);
@@ -101,12 +212,33 @@ export function markerCategory(node: StationNode, selected: Category[]) {
 export function temperatureColor(value: number) {
   return value < 0 ? "#818cf8" : value < 10 ? "#38bdf8" : value < 20 ? "#2dd4bf" : value < 30 ? "#fbbf24" : "#fb7185";
 }
-export function valueLabel(reading: Reading | undefined) {
+export function valueLabel(reading: Reading | undefined, readings?: Reading[]) {
   if (!reading) return "";
   const value = reading.value.toLocaleString("de-DE", { maximumFractionDigits: 1 });
   if (reading.metric.startsWith("traffic_")) return `${value} gezählt`;
-  return reading.metric === "parking_free" ? `${value} frei` : reading.metric === "parking_occupied" ? `${value} belegt` :
-    `${value} ${["celsius", "CEL"].includes(reading.unit) ? "°C" : reading.unit}`;
+  if (reading.metric === "parking_free" || reading.metric === "parking_occupied") {
+    if (readings) {
+      const parking = parkingSummary(readings);
+      if (parking) {
+        const free = readings.find(r => r.metric === "parking_free" && Number.isSafeInteger(r.value) && r.value >= 0);
+        const capacity = readings.find(r => r.metric === "parking_capacity" && Number.isSafeInteger(r.value) && r.value >= 0);
+        const occupied = readings.find(r => r.metric === "parking_occupied" && Number.isSafeInteger(r.value) && r.value >= 0);
+        const total = capacity?.value ?? (free && occupied && Date.parse(free.timestamp) === Date.parse(occupied.timestamp) ? free.value + occupied.value : undefined);
+        const available = free?.value ?? (total !== undefined && occupied ? total - occupied.value : undefined);
+        if (available !== undefined && total !== undefined) {
+          return `${available.toLocaleString("de-DE")}/${total.toLocaleString("de-DE")} frei`;
+        }
+        if (available !== undefined) {
+          return `${available.toLocaleString("de-DE")} frei`;
+        }
+        if (occupied) {
+          return `${occupied.value.toLocaleString("de-DE")} belegt`;
+        }
+      }
+    }
+    return reading.metric === "parking_free" ? `${value} frei` : `${value} belegt`;
+  }
+  return `${value} ${["celsius", "CEL"].includes(reading.unit) ? "°C" : reading.unit}`;
 }
 export function observationLabel(reading: Reading | undefined, now: number) {
   if (!reading) return "Keine Messdaten";

@@ -10,7 +10,12 @@ import { CATEGORIES, markerCategory, observationLabel, parkingSummary, primaryRe
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
-type ColoredMarker = L.Marker & { categoryColor: string };
+type ColoredMarker = L.Marker & {
+  categoryColor: string;
+  isParking?: boolean;
+  parkingFree?: number;
+  parkingCapacity?: number;
+};
 interface MapProps {
   nodes: SensorNode[];
   selectedNodeId: string | undefined;
@@ -47,10 +52,28 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const group = L.markerClusterGroup({
         maxClusterRadius: 55, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
         animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-        iconCreateFunction: cluster => L.divIcon({
-          html: createClusterContent(cluster.getAllChildMarkers().map(m => (m as ColoredMarker).categoryColor), cluster.getChildCount()),
-          className: "map-cluster-icon", iconSize: [44, 44], iconAnchor: [22, 22],
-        }),
+        iconCreateFunction: cluster => {
+          const childMarkers = cluster.getAllChildMarkers() as ColoredMarker[];
+          const allParking = childMarkers.length > 0 && childMarkers.every(m => m.isParking);
+          let labelText: string | undefined;
+          if (allParking) {
+            let totalFree = 0;
+            let totalCap = 0;
+            let hasValid = false;
+            for (const m of childMarkers) {
+              if (m.parkingFree !== undefined && m.parkingCapacity !== undefined) {
+                totalFree += m.parkingFree;
+                totalCap += m.parkingCapacity;
+                hasValid = true;
+              }
+            }
+            if (hasValid && totalCap > 0) labelText = `${totalFree}/${totalCap}`;
+          }
+          return L.divIcon({
+            html: createClusterContent(childMarkers.map(m => m.categoryColor), cluster.getChildCount(), labelText),
+            className: "map-cluster-icon", iconSize: [44, 44], iconAnchor: [22, 22],
+          });
+        },
       });
       map.addLayer(group);
       map.on("zoomend", () => setZoom(map.getZoom()));
@@ -84,7 +107,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const muted = state === "stale" || state === "unknown";
       const color = mode === "temperature" ? muted ? "#94a3b8" : temperatureColor(reading!.value) : CATEGORIES[category].color;
       const icon = L.divIcon({
-        html: createMarkerContent(category, color, muted, zoom >= 16 ? valueLabel(reading) : ""),
+        html: createMarkerContent(category, color, muted, zoom >= 16 ? valueLabel(reading, node.readings) : ""),
         className: `map-sensor-icon${node.id === selectedRef.current ? " map-sensor-selected" : ""}`,
         iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -20],
       });
@@ -99,6 +122,15 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         if (!marker.getLatLng().equals([node.lat, node.lng])) marker.setLatLng([node.lat, node.lng]);
       }
       marker.categoryColor = mode === "temperature" ? "#94a3b8" : CATEGORIES[category].color;
+      marker.isParking = category === "parking";
+      if (category === "parking") {
+        const free = node.readings.find(r => r.metric === "parking_free");
+        const cap = node.readings.find(r => r.metric === "parking_capacity");
+        const occ = node.readings.find(r => r.metric === "parking_occupied");
+        const total = cap?.value ?? (free && occ ? free.value + occ.value : undefined);
+        marker.parkingFree = free?.value;
+        marker.parkingCapacity = total;
+      }
       const tooltip = document.createElement("span");
       tooltip.textContent = node.name;
       if (marker.getTooltip()) marker.setTooltipContent(tooltip);
@@ -106,7 +138,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const popup = document.createElement("div");
       const title = document.createElement("strong"); title.textContent = node.name;
       const tags = document.createElement("p"); tags.textContent = node.categories.map(c => CATEGORIES[c].label).join(" · ");
-      const value = document.createElement("p"); value.textContent = valueLabel(reading) || "Keine Messdaten";
+      const value = document.createElement("p"); value.textContent = valueLabel(reading, node.readings) || "Keine Messdaten";
       value.className = "map-popup-value";
       const time = document.createElement("p"); time.textContent = observationLabel(reading, now);
       const parking = parkingSummary(node.readings);

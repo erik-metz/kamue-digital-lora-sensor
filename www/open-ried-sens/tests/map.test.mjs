@@ -82,6 +82,40 @@ test("station inventory includes parking groups without placing them at invented
   assert.equal(model.toMapNodes(input).length, 0);
   assert.equal(model.toStationNodes([sensor([], {is_hidden:true})]).length, 0);
 });
+
+test("parking spots at the same station are combined into one station node with aggregate counts and x/y frei label", () => {
+  const spots = [
+    sensor([reading("parking_free", 1, "count"), reading("parking_occupied", 0, "count"), reading("parking_capacity", 1, "count")], { id: "p1", friendly_name: "Bahnhofsallee", latitude: 49.642, longitude: 8.451 }),
+    sensor([reading("parking_free", 1, "count"), reading("parking_occupied", 0, "count"), reading("parking_capacity", 1, "count")], { id: "p2", friendly_name: "Bahnhofsallee", latitude: 49.642, longitude: 8.451 }),
+    sensor([reading("parking_free", 1, "count"), reading("parking_occupied", 0, "count"), reading("parking_capacity", 1, "count")], { id: "p3", friendly_name: "Bahnhofsallee", latitude: 49.642, longitude: 8.451 }),
+    sensor([reading("parking_free", 0, "count"), reading("parking_occupied", 1, "count"), reading("parking_capacity", 1, "count")], { id: "p4", friendly_name: "Bahnhofsallee", latitude: 49.642, longitude: 8.451 }),
+    sensor([reading("parking_free", 1, "count"), reading("parking_occupied", 0, "count"), reading("parking_capacity", 1, "count")], { id: "p5", friendly_name: "Bahnhofsallee", latitude: 49.642, longitude: 8.451 }),
+  ];
+  const stations = model.toStationNodes(spots);
+  assert.equal(stations.length, 1);
+  assert.equal(stations[0].name, "Bahnhofsallee");
+  assert.equal(stations[0].isAggregate, true);
+  const free = stations[0].readings.find(r => r.metric === "parking_free");
+  const occupied = stations[0].readings.find(r => r.metric === "parking_occupied");
+  const capacity = stations[0].readings.find(r => r.metric === "parking_capacity");
+  assert.equal(free?.value, 4);
+  assert.equal(occupied?.value, 1);
+  assert.equal(capacity?.value, 5);
+  assert.equal(model.valueLabel(free, stations[0].readings), "4/5 frei");
+  assert.equal(model.parkingSummary(stations[0].readings).summary, "4 von 5 Stellplätzen frei");
+});
+
+test("parking valueLabel formats x/y frei when capacity is available and preserves fallback", () => {
+  const withCap = [reading("parking_free", 4, "count"), reading("parking_capacity", 5, "count"), reading("parking_occupied", 1, "count")];
+  assert.equal(model.valueLabel(withCap[0], withCap), "4/5 frei");
+  const zeroCap = [reading("parking_free", 0, "count"), reading("parking_capacity", 5, "count"), reading("parking_occupied", 5, "count")];
+  assert.equal(model.valueLabel(zeroCap[0], zeroCap), "0/5 frei");
+  const noCap = [reading("parking_free", 3, "count")];
+  assert.equal(model.valueLabel(noCap[0], noCap), "3 frei");
+  // Backward compatibility when second argument is omitted
+  assert.equal(model.valueLabel(withCap[0]), "4 frei");
+});
+
 test("traffic and all soil metrics have dedicated categories", () => {
   assert.deepEqual([...model.categoriesFor(sensor([reading("traffic_cars_hourly", 10, "count")]))], ["traffic"]);
   assert.deepEqual([...model.categoriesFor(sensor([reading("soil_tension_30cm", 10, "kPa")]))], ["soil"]);

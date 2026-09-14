@@ -38,7 +38,7 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
     return () => { controller.abort(); clearTimeout(timer); };
   }, [node.id, snapshots]);
 
-  const readings = mergeReadings(node.readings, data?.readings ?? []);
+  const readings = node.isAggregate ? node.readings : mergeReadings(node.readings, data?.readings ?? []);
   const parking = parkingSummary(readings);
   const active = readings.find(reading => seriesKey(reading) === selectedSeries) ?? readings[0];
   const history = active ? (data?.history ?? []).filter(bucket => seriesKey(bucket) === seriesKey(active) && bucket.avg_value !== null).sort((a, b) => Date.parse(a.bucket) - Date.parse(b.bucket)) : [];

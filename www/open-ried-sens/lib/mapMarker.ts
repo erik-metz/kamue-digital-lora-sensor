@@ -26,7 +26,7 @@ export function createMarkerContent(category: Category, color: string, muted: bo
   return content;
 }
 
-export function createClusterContent(colors: string[], count: number): HTMLElement {
+export function createClusterContent(colors: string[], count: number, labelText?: string): HTMLElement {
   const content = document.createElement("div");
   content.className = "sensor-cluster";
   const counts = new Map<string, number>();
@@ -38,9 +38,9 @@ export function createClusterContent(colors: string[], count: number): HTMLEleme
     return `${color} ${start}% ${offset}%`;
   });
   content.style.background = `conic-gradient(${stops.join(",")})`;
-  content.title = `${count} Standorte – zum Vergrößern anklicken`;
+  content.title = labelText ? `${labelText} frei – zum Vergrößern anklicken` : `${count} Standorte – zum Vergrößern anklicken`;
   const label = document.createElement("span");
-  label.textContent = String(count);
+  label.textContent = labelText ?? String(count);
   content.append(label);
   return content;
 }
