@@ -1,0 +1,142 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import vm from "node:vm";
+import ts from "typescript";
+
+const source = fs.readFileSync(new URL("../lib/railMobility.ts", import.meta.url), "utf8");
+const context = { exports: {}, Date, Set, Number, Math, JSON, Array };
+vm.runInNewContext(
+  ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  context
+);
+const mobility = context.exports;
+
+test("only active operated Bahnübergänge are included, decommissioned ones excluded", () => {
+  const crossings = mobility.ACTIVE_LEVEL_CROSSINGS;
+  assert.equal(crossings.length, 4, "Must contain exactly the 4 active Bahnübergänge");
+
+  const ids = crossings.map((c) => c.id);
+  assert.ok(ids.includes("bu-buerstadt-mainstr"), "Mainstraße must be included");
+  assert.ok(ids.includes("bu-buerstadt-waldgarten"), "Waldgartenstraße must be included");
+  assert.ok(ids.includes("bu-biblis-kirchstr"), "Kirchstraße must be included");
+  assert.ok(ids.includes("bu-hofheim-bibliser-weg"), "Bibliser Weg must be included");
+
+  // Decommissioned / closed ones must NOT be present
+  assert.ok(!ids.includes("bu-bobstadt"), "Bobstadt BÜ 26 (removed) must not be included");
+  assert.ok(!ids.includes("bu-biblis-pfaffenaue"), "Pfaffenaue (closed) must not be included");
+  assert.ok(!ids.includes("bu-biblis-kreuz"), "Beim Kreuz (removed) must not be included");
+  assert.ok(!ids.includes("bu-lampertheim"), "Lampertheim grade-separated crossings must not be included");
+});
+
+test("all level crossings have valid coordinates within the Ried area", () => {
+  for (const c of mobility.ACTIVE_LEVEL_CROSSINGS) {
+    assert.ok(c.lat >= 49.58 && c.lat <= 49.72, `Crossing ${c.id} lat ${c.lat} out of Ried range`);
+    assert.ok(c.lng >= 8.39 && c.lng <= 8.52, `Crossing ${c.id} lng ${c.lng} out of Ried range`);
+    assert.ok(c.dailyClosureCountAvg > 0, "dailyClosureCountAvg must be positive");
+    assert.ok(c.avgClosureDurationSec > 0, "avgClosureDurationSec must be positive");
+  }
+});
+
+test("all stations have valid EVA numbers and coordinates", () => {
+  const stations = mobility.RIED_STATIONS;
+  assert.ok(stations.length >= 5);
+
+  const evaMap = Object.fromEntries(stations.map((s) => [s.id, s.evaNumber]));
+  assert.equal(evaMap["biblis"], "8000072");
+  assert.equal(evaMap["bobstadt"], "8001034");
+  assert.equal(evaMap["lampertheim"], "8003666");
+  assert.equal(evaMap["hofheim"], "8002900");
+});
+
+test("calculateRiedMobility generates valid trains and respects Ried geofence", () => {
+  const t0 = Date.parse("2026-09-15T08:00:00Z");
+  const { trains, crossings } = mobility.calculateRiedMobility(t0);
+
+  assert.ok(crossings.length === 4);
+  assert.ok(Array.isArray(trains));
+
+  for (const train of trains) {
+    // Check geofence
+    assert.ok(train.lat >= 49.56 && train.lat <= 49.74, `Train ${train.id} lat ${train.lat} outside Ried boundary`);
+    assert.ok(train.lng >= 8.38 && train.lng <= 8.55, `Train ${train.id} lng ${train.lng} outside Ried boundary`);
+
+    if (train.status === "stopped") {
+      assert.equal(train.speedKmh, 0, "Stopped train must have 0 speed");
+      assert.ok(train.currentStationName, "Stopped train must specify currentStationName");
+      assert.ok(train.dwellTimeRemainingSec !== undefined && train.dwellTimeRemainingSec >= 0);
+      assert.ok(train.dwellProgress !== undefined && train.dwellProgress >= 0 && train.dwellProgress <= 1);
+    } else {
+      assert.equal(train.status, "moving");
+      assert.ok(train.speedKmh > 0, "Moving train must have positive speed");
+    }
+  }
+});
+
+test("station dwell changes status to stopped and computes countdown gauge correctly", () => {
+  // Cycle through 100 intervals across 30 minutes to verify transition between moving and stopped
+  let foundStopped = false;
+  let foundMoving = false;
+  let foundGaugeProgress = false;
+
+  for (let m = 0; m < 30; m++) {
+    const timeMs = Date.parse("2026-09-15T08:00:00Z") + m * 60 * 1000 + 15 * 1000;
+    const { trains } = mobility.calculateRiedMobility(timeMs);
+    for (const train of trains) {
+      if (train.status === "stopped") {
+        foundStopped = true;
+        if (train.dwellProgress !== undefined && train.dwellProgress > 0 && train.dwellProgress <= 1) {
+          foundGaugeProgress = true;
+        }
+      }
+      if (train.status === "moving") {
+        foundMoving = true;
+      }
+    }
+  }
+
+  assert.ok(foundStopped, "Must find trains dwelling at stations");
+  assert.ok(foundMoving, "Must find trains moving between stations");
+  assert.ok(foundGaugeProgress, "Departure gauge progress must be computed for dwelling trains");
+});
+
+test("level crossings transition to closing_soon or closed when train is nearby", () => {
+  let foundClosedOrClosing = false;
+  // Sample across 30 minutes
+  for (let s = 0; s < 1800; s += 15) {
+    const timeMs = Date.parse("2026-09-15T08:00:00Z") + s * 1000;
+    const { crossings } = mobility.calculateRiedMobility(timeMs);
+    for (const c of crossings) {
+      if (c.status === "closed" || c.status === "closing_soon") {
+        foundClosedOrClosing = true;
+        assert.ok(c.nextTrainLine, "Must report next train line when closing/closed");
+        break;
+      }
+    }
+    if (foundClosedOrClosing) break;
+  }
+
+  assert.ok(foundClosedOrClosing, "Level crossings must transition to closing or closed during train passages");
+});
+
+test("polyline interpolation returns exact boundary points and valid headings", () => {
+  const points = [
+    [49.6, 8.4],
+    [49.62, 8.42],
+    [49.65, 8.45],
+  ];
+
+  const start = mobility.interpolatePolyline(points, 0);
+  assert.equal(start.lat, 49.6);
+  assert.equal(start.lng, 8.4);
+
+  const end = mobility.interpolatePolyline(points, 1);
+  assert.equal(end.lat, 49.65);
+  assert.equal(end.lng, 8.45);
+
+  const mid = mobility.interpolatePolyline(points, 0.5);
+  assert.ok(mid.lat > 49.6 && mid.lat < 49.65);
+  assert.ok(mid.lng > 8.4 && mid.lng < 8.45);
+});

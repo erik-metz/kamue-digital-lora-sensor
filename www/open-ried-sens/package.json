@@ -7,8 +7,10 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --test tests/map.test.mjs tests/mobility.test.mjs tests/security.test.mjs",
     "test:security": "node --test tests/security.test.mjs",
-    "test:map": "node --test tests/map.test.mjs"
+    "test:map": "node --test tests/map.test.mjs",
+    "test:mobility": "node --test tests/mobility.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

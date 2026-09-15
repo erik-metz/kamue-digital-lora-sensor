@@ -187,3 +187,30 @@ BEGIN
         INSERT INTO telemetry_schema_migrations (name) VALUES ('sensor_latest_v1');
     END IF;
 END $$;
+
+-- 4. Rail Infrastructure & Bahnübergänge
+CREATE TABLE IF NOT EXISTS rail_crossings (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    location_name VARCHAR(255) NOT NULL,
+    street VARCHAR(255) NOT NULL,
+    line VARCHAR(64) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    crossing_type VARCHAR(64) NOT NULL DEFAULT 'road_barrier',
+    note TEXT,
+    daily_closure_count_avg INT NOT NULL DEFAULT 48,
+    avg_closure_duration_sec INT NOT NULL DEFAULT 120,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS rail_crossing_events (
+    id BIGSERIAL PRIMARY KEY,
+    crossing_id VARCHAR(64) NOT NULL REFERENCES rail_crossings(id) ON DELETE CASCADE,
+    train_line VARCHAR(64),
+    destination VARCHAR(128),
+    closed_at TIMESTAMPTZ NOT NULL,
+    opened_at TIMESTAMPTZ,
+    duration_sec INT,
+    source VARCHAR(64) DEFAULT 'schedule_prediction'
+);

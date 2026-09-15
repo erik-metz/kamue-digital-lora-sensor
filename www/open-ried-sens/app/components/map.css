@@ -24,3 +24,35 @@
 .map-sensor-selected .sensor-temp-pin { transform: scale(1.45); border-color: #fff; box-shadow: 0 0 12px #fff, 0 0 14px var(--marker-color); }
 .sensor-temp-pin .sensor-marker-value { top: 18px; }
 
+/* Animated Trains */
+.train-marker { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #0f172a; border: 2.5px solid var(--train-color, #0284c7); box-shadow: 0 0 12px var(--train-color, #0284c7), 0 3px 10px #000a; color: var(--train-color, #0284c7); transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease; cursor: pointer; }
+.train-marker:hover { transform: scale(1.15); box-shadow: 0 0 18px #fff, 0 0 20px var(--train-color, #0284c7); }
+.train-marker svg { width: 20px; height: 20px; }
+.train-marker-moving { border-color: var(--train-color, #0284c7); }
+.train-marker-stopped { border-color: #f59e0b; box-shadow: 0 0 14px #f59e0b, 0 3px 10px #000a; animation: pulse-dwell 2.5s infinite ease-in-out; }
+.train-marker-badge { position: absolute; top: -10px; right: -8px; background: var(--train-color, #0284c7); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 9999px; box-shadow: 0 2px 5px #0008; }
+.train-gauge-container { position: absolute; width: 48px; height: 48px; top: -6px; left: -6px; pointer-events: none; }
+.train-gauge-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.gauge-track { fill: none; stroke: rgba(245, 158, 11, 0.25); stroke-width: 3; }
+.gauge-progress { fill: none; stroke: #f59e0b; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.train-gauge-text { position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: #f59e0b; color: #0f172a; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px; box-shadow: 0 1px 4px #0008; }
+.train-marker-sublabel { position: absolute; top: 38px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 600; background: #0f172af0; border: 1px solid #334155; color: #f8fafc; padding: 2px 6px; border-radius: 5px; box-shadow: 0 2px 6px #0008; }
+
+/* Level Crossings (Bahnübergänge) */
+.crossing-marker { position: relative; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: #0f172a; border: 2.5px solid var(--crossing-color, #10b981); color: var(--crossing-color, #10b981); box-shadow: 0 0 10px var(--crossing-color, #10b981), 0 3px 8px #000a; cursor: pointer; transition: all 0.25s ease; }
+.crossing-marker:hover { transform: scale(1.18); box-shadow: 0 0 16px #fff, 0 0 18px var(--crossing-color); }
+.crossing-marker svg { width: 22px; height: 22px; }
+.crossing-marker-closed { border-color: #ef4444; color: #ef4444; box-shadow: 0 0 18px #ef4444; animation: crossing-blink 1.2s infinite; }
+.crossing-marker-closing_soon { border-color: #f59e0b; color: #f59e0b; box-shadow: 0 0 14px #f59e0b; animation: crossing-blink 2s infinite; }
+.crossing-marker-badge { position: absolute; top: 36px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 11px; font-weight: 700; background: #0f172af0; border: 1px solid var(--crossing-color); color: var(--crossing-color); padding: 2px 6px; border-radius: 5px; box-shadow: 0 2px 6px #0008; }
+
+@keyframes pulse-dwell {
+  0%, 100% { box-shadow: 0 0 10px #f59e0b, 0 3px 10px #000a; }
+  50% { box-shadow: 0 0 22px #f59e0b, 0 0 30px rgba(245, 158, 11, 0.4), 0 3px 10px #000a; }
+}
+
+@keyframes crossing-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.05); }
+}
+

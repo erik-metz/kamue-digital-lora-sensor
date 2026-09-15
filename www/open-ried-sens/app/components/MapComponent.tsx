@@ -5,9 +5,10 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./map.css";
 import { metricLabel } from "@/lib/telemetryData";
-import { createClusterContent, createMarkerContent, createTempPinContent } from "@/lib/mapMarker";
+import { createClusterContent, createMarkerContent, createTempPinContent, createTrainMarkerContent, createLevelCrossingMarkerContent } from "@/lib/mapMarker";
 import { CATEGORIES, markerCategory, observationLabel, parkingSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer, type TemperaturePoint } from "@/lib/temperatureHeatmap";
+import { RIEDBAHN_TRACK, NIBELUNGENBAHN_TRACK, calculateRiedMobility } from "@/lib/railMobility";
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
@@ -39,6 +40,12 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [ready, setReady] = useState(false);
   const [zoom, setZoom] = useState(12);
   const [failed, setFailed] = useState(false);
+  const [showRailMobility, setShowRailMobility] = useState(true);
+  const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
+  const trainsGroupRef = useRef<L.LayerGroup | null>(null);
+  const crossingsGroupRef = useRef<L.LayerGroup | null>(null);
+  const trainMarkers = useRef(new Map<string, L.Marker>());
+  const crossingMarkers = useRef(new Map<string, L.Marker>());
   useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
 
 
@@ -54,6 +61,28 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19,
       }).addTo(map);
+
+      // Add Railway tracks in the Ried
+      const railTracksGroup = L.layerGroup();
+      const riedTrackBg = L.polyline(RIEDBAHN_TRACK, { color: "#334155", weight: 4, opacity: 0.8 });
+      const riedTrackDash = L.polyline(RIEDBAHN_TRACK, { color: "#94a3b8", weight: 2, dashArray: "6, 8", opacity: 0.9 });
+      const nibTrackBg = L.polyline(NIBELUNGENBAHN_TRACK, { color: "#334155", weight: 4, opacity: 0.8 });
+      const nibTrackDash = L.polyline(NIBELUNGENBAHN_TRACK, { color: "#94a3b8", weight: 2, dashArray: "6, 8", opacity: 0.9 });
+      railTracksGroup.addLayer(riedTrackBg);
+      railTracksGroup.addLayer(riedTrackDash);
+      railTracksGroup.addLayer(nibTrackBg);
+      railTracksGroup.addLayer(nibTrackDash);
+
+      const trainsGroup = L.layerGroup();
+      const crossingsGroup = L.layerGroup();
+      railTracksGroupRef.current = railTracksGroup;
+      trainsGroupRef.current = trainsGroup;
+      crossingsGroupRef.current = crossingsGroup;
+
+      map.addLayer(railTracksGroup);
+      map.addLayer(crossingsGroup);
+      map.addLayer(trainsGroup);
+
       const group = L.markerClusterGroup({
         maxClusterRadius: 55, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
         animate: !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -106,6 +135,11 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       groupRef.current = null;
       tempPinsGroupRef.current = null;
       heatmapRef.current = null;
+      railTracksGroupRef.current = null;
+      trainsGroupRef.current = null;
+      crossingsGroupRef.current = null;
+      trainMarkers.current.clear();
+      crossingMarkers.current.clear();
       currentMarkers.clear();
     };
   }, []);
@@ -276,11 +310,150 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     }
   }, [selectedNodeId, ready, mode]);
 
+  // Toggle rail mobility layer visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    const tracks = railTracksGroupRef.current;
+    const trains = trainsGroupRef.current;
+    const crossings = crossingsGroupRef.current;
+    if (!ready || !map || !tracks || !trains || !crossings) return;
+    if (showRailMobility) {
+      if (!map.hasLayer(tracks)) map.addLayer(tracks);
+      if (!map.hasLayer(crossings)) map.addLayer(crossings);
+      if (!map.hasLayer(trains)) map.addLayer(trains);
+    } else {
+      if (map.hasLayer(tracks)) map.removeLayer(tracks);
+      if (map.hasLayer(crossings)) map.removeLayer(crossings);
+      if (map.hasLayer(trains)) map.removeLayer(trains);
+    }
+  }, [showRailMobility, ready]);
+
+  // Real-time animation loop for trains and crossings in the Ried
+  useEffect(() => {
+    if (!ready || !showRailMobility) return;
+
+    function updateMobility() {
+      const trainsGroup = trainsGroupRef.current;
+      const crossingsGroup = crossingsGroupRef.current;
+      if (!trainsGroup || !crossingsGroup) return;
+
+      const { trains, crossings } = calculateRiedMobility(Date.now());
+
+      // 1. Update trains in the Ried corridor
+      const currentTrainIds = new Set(trains.map(t => t.id));
+      for (const [id, marker] of trainMarkers.current) {
+        if (!currentTrainIds.has(id)) {
+          trainsGroup.removeLayer(marker);
+          trainMarkers.current.delete(id);
+        }
+      }
+
+      for (const train of trains) {
+        const icon = L.divIcon({
+          html: createTrainMarkerContent({
+            line: train.line,
+            destination: train.destination,
+            status: train.status,
+            speedKmh: train.speedKmh,
+            currentStationName: train.currentStationName,
+            dwellTimeRemainingSec: train.dwellTimeRemainingSec,
+            dwellProgress: train.dwellProgress,
+          }),
+          className: "map-train-icon",
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+          popupAnchor: [0, -22],
+        });
+
+        let marker = trainMarkers.current.get(train.id);
+        if (!marker) {
+          marker = L.marker([train.lat, train.lng], { icon, zIndexOffset: 500 });
+          marker.bindPopup(() => {
+            const container = document.createElement("div");
+            container.className = "train-popup-details";
+            container.innerHTML = `
+              <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">🚅 ${train.line} nach ${train.destination}</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">Von: ${train.origin} · Strecke: ${train.corridor}</div>
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: ${train.status === 'stopped' ? '#f59e0b' : '#38bdf8'};">
+                ${train.status === 'stopped' ? `🚉 Halt am Bahnsteig ${train.currentStationName} (Abfahrt in ${train.dwellTimeRemainingSec ?? 0}s)` : `⚡ In Fahrt (${train.speedKmh} km/h)`}
+              </div>
+              ${train.approachingCrossingName ? `<div style="font-size: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 4px 6px; border-radius: 4px; margin-top: 6px;">⚠️ Nähert sich <strong>${train.approachingCrossingName}</strong></div>` : ''}
+            `;
+            return container;
+          });
+          trainsGroup.addLayer(marker);
+          trainMarkers.current.set(train.id, marker);
+        } else {
+          marker.setIcon(icon);
+          marker.setLatLng([train.lat, train.lng]);
+        }
+      }
+
+      // 2. Update level crossings
+      for (const crossing of crossings) {
+        const icon = L.divIcon({
+          html: createLevelCrossingMarkerContent({
+            name: crossing.name,
+            street: crossing.street,
+            status: crossing.status,
+            nextTrainLine: crossing.nextTrainLine,
+            secondsUntilClosure: crossing.secondsUntilClosure,
+            secondsUntilClearance: crossing.secondsUntilClearance,
+          }),
+          className: "map-crossing-icon",
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+          popupAnchor: [0, -20],
+        });
+
+        let marker = crossingMarkers.current.get(crossing.id);
+        if (!marker) {
+          marker = L.marker([crossing.lat, crossing.lng], { icon, zIndexOffset: 400 });
+          marker.bindPopup(() => {
+            const container = document.createElement("div");
+            const statusText = crossing.status === 'closed'
+              ? `<span style="color: #ef4444; font-weight: 700;">🔴 GESCHLOSSEN (Zugdurchfahrt)</span>`
+              : crossing.status === 'closing_soon'
+              ? `<span style="color: #f59e0b; font-weight: 700;">🟡 SCHLIESST IN ${crossing.secondsUntilClosure ?? 60}s</span>`
+              : `<span style="color: #10b981; font-weight: 700;">🟢 OFFEN (Freie Durchfahrt)</span>`;
+
+            container.innerHTML = `
+              <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">🛑 ${crossing.name}</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${crossing.street} · ${crossing.line}</div>
+              <div style="font-size: 13px; margin-bottom: 6px;">${statusText}</div>
+              ${crossing.nextTrainLine ? `<div style="font-size: 12px; margin-bottom: 6px;">Nächster Zug: <strong>${crossing.nextTrainLine}</strong> nach <strong>${crossing.nextTrainDestination}</strong></div>` : ''}
+              <div style="font-size: 11px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; margin-top: 6px;">
+                📊 Statistik: Ø ${crossing.dailyClosureCountAvg} Schließungen/Tag · Ø Schließdauer: ${crossing.avgClosureDurationSec}s<br/>
+                ℹ️ ${crossing.note}
+              </div>
+            `;
+            return container;
+          });
+          crossingsGroup.addLayer(marker);
+          crossingMarkers.current.set(crossing.id, marker);
+        } else {
+          marker.setIcon(icon);
+        }
+      }
+    }
+
+    updateMobility();
+    const interval = setInterval(updateMobility, 1000);
+    return () => clearInterval(interval);
+  }, [ready, showRailMobility]);
 
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
     {failed ? <p role="alert" className="absolute inset-0 bg-slate-900 p-8">Die Karte konnte nicht geladen werden. Bitte lade die Seite erneut.</p> : null}
     <div className="absolute top-3 right-3 z-[400] flex gap-2">
+      <button
+        type="button"
+        className={`map-control ${showRailMobility ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowRailMobility(prev => !prev)}
+        title="Züge und Bahnübergänge im Ried ein-/ausblenden"
+      >
+        🚅 Züge & BÜ {showRailMobility ? "An" : "Aus"}
+      </button>
       <button type="button" className="map-control" onClick={() => mapRef.current?.setView([49.62, 8.46], 12)}>Ried</button>
       <button type="button" className="map-control" disabled={!nodes.length} onClick={() => {
         if (nodes.length) mapRef.current?.fitBounds(L.latLngBounds(nodes.map(n => [n.lat, n.lng])), { padding: [45, 45], maxZoom: 15 });
