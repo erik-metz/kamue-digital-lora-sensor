@@ -5,10 +5,11 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./map.css";
 import { metricLabel } from "@/lib/telemetryData";
-import { createClusterContent, createMarkerContent, createTempPinContent, createTrainMarkerContent, createLevelCrossingMarkerContent } from "@/lib/mapMarker";
+import { createClusterContent, createMarkerContent, createTempPinContent, createTrainMarkerContent, createLevelCrossingMarkerContent, createWasteTruckMarkerContent } from "@/lib/mapMarker";
 import { CATEGORIES, markerCategory, observationLabel, parkingSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer, type TemperaturePoint } from "@/lib/temperatureHeatmap";
 import { RIEDBAHN_TRACK, NIBELUNGENBAHN_TRACK, calculateRiedMobility } from "@/lib/railMobility";
+import { calculateWasteTruckMobility } from "@/lib/wasteTruckMobility";
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
@@ -41,17 +42,25 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [zoom, setZoom] = useState(12);
   const [failed, setFailed] = useState(false);
   const [showRailMobility, setShowRailMobility] = useState(true);
+  const [showWasteTrucks, setShowWasteTrucks] = useState(true);
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
   const crossingsGroupRef = useRef<L.LayerGroup | null>(null);
+  const wasteTrucksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
+  const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
+  const wasteDepotMarkers = useRef(new Map<string, L.Marker>());
   useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
 
 
   useEffect(() => {
     let cancelled = false;
     const currentMarkers = markers.current;
+    const currentTrainMarkers = trainMarkers.current;
+    const currentCrossingMarkers = crossingMarkers.current;
+    const currentWasteTruckMarkers = wasteTruckMarkers.current;
+    const currentWasteDepotMarkers = wasteDepotMarkers.current;
     async function initialize() {
       // MarkerCluster extends the global Leaflet instance. Load only in the browser.
       (window as typeof window & { L: typeof L }).L = L;
@@ -75,13 +84,16 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
 
       const trainsGroup = L.layerGroup();
       const crossingsGroup = L.layerGroup();
+      const wasteTrucksGroup = L.layerGroup();
       railTracksGroupRef.current = railTracksGroup;
       trainsGroupRef.current = trainsGroup;
       crossingsGroupRef.current = crossingsGroup;
+      wasteTrucksGroupRef.current = wasteTrucksGroup;
 
       map.addLayer(railTracksGroup);
       map.addLayer(crossingsGroup);
       map.addLayer(trainsGroup);
+      map.addLayer(wasteTrucksGroup);
 
       const group = L.markerClusterGroup({
         maxClusterRadius: 55, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
@@ -138,8 +150,11 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       railTracksGroupRef.current = null;
       trainsGroupRef.current = null;
       crossingsGroupRef.current = null;
-      trainMarkers.current.clear();
-      crossingMarkers.current.clear();
+      wasteTrucksGroupRef.current = null;
+      currentTrainMarkers.clear();
+      currentCrossingMarkers.clear();
+      currentWasteTruckMarkers.clear();
+      currentWasteDepotMarkers.clear();
       currentMarkers.clear();
     };
   }, []);
@@ -328,6 +343,18 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     }
   }, [showRailMobility, ready]);
 
+  // Toggle waste trucks layer visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    const wasteTrucks = wasteTrucksGroupRef.current;
+    if (!ready || !map || !wasteTrucks) return;
+    if (showWasteTrucks) {
+      if (!map.hasLayer(wasteTrucks)) map.addLayer(wasteTrucks);
+    } else {
+      if (map.hasLayer(wasteTrucks)) map.removeLayer(wasteTrucks);
+    }
+  }, [showWasteTrucks, ready]);
+
   // Real-time animation loop for trains and crossings in the Ried
   useEffect(() => {
     if (!ready || !showRailMobility) return;
@@ -442,10 +469,146 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     return () => clearInterval(interval);
   }, [ready, showRailMobility]);
 
+  // Real-time animation loop for ZAKB waste collection trucks in the Ried
+  useEffect(() => {
+    if (!ready || !showWasteTrucks) return;
+
+    function updateWasteTrucks() {
+      const wasteTrucksGroup = wasteTrucksGroupRef.current;
+      if (!wasteTrucksGroup) return;
+
+      const { trucks, depots } = calculateWasteTruckMobility(Date.now());
+
+      // 1. Ensure ZAKB depots are on the map
+      for (const depot of depots) {
+        if (!wasteDepotMarkers.current.has(depot.id)) {
+          const depotIcon = L.divIcon({
+            html: `<div class="waste-depot-marker" title="${depot.name}">♻️</div>`,
+            className: "map-depot-icon",
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -16],
+          });
+          const marker = L.marker([depot.lat, depot.lng], { icon: depotIcon, zIndexOffset: 300 });
+          marker.bindPopup(() => {
+            const container = document.createElement("div");
+            container.className = "depot-popup-details";
+            container.innerHTML = `
+              <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">♻️ ${depot.name}</div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${depot.address}</div>
+              <div style="font-size: 12px; color: #34d399; margin-bottom: 4px;">Zweckverband Abfallwirtschaft Kreis Bergstraße (ZAKB)</div>
+              <div style="font-size: 11px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 4px; margin-top: 4px;">
+                ${depot.type === "headquarters_depot" ? "Zentrale Betriebsleitung, Fuhrpark-Stützpunkt & Biomassezentrum" : "Wertstoffhof, Grünschnittannahme & Problemabfall-Sammelstelle"}
+              </div>
+            `;
+            return container;
+          });
+          wasteTrucksGroup.addLayer(marker);
+          wasteDepotMarkers.current.set(depot.id, marker);
+        }
+      }
+
+      // 2. Update moving waste trucks
+      const currentTruckIds = new Set(trucks.map(t => t.id));
+      for (const [id, marker] of wasteTruckMarkers.current) {
+        if (!currentTruckIds.has(id)) {
+          wasteTrucksGroup.removeLayer(marker);
+          wasteTruckMarkers.current.delete(id);
+        }
+      }
+
+      for (const truck of trucks) {
+        const icon = L.divIcon({
+          html: createWasteTruckMarkerContent({
+            fraction: truck.fraction,
+            fractionLabel: truck.fractionLabel,
+            binColor: truck.binColor,
+            accentColor: truck.accentColor,
+            licensePlate: truck.licensePlate,
+            status: truck.status,
+            speedKmh: truck.speedKmh,
+            currentStreet: truck.currentStreet,
+            nextStreet: truck.nextStreet,
+            expectedTimeWindow: truck.expectedTimeWindow,
+            loadPercent: truck.loadPercent,
+            emptyCountdownSec: truck.emptyCountdownSec,
+            emptyProgress: truck.emptyProgress,
+          }),
+          className: "map-waste-truck-icon",
+          iconSize: [38, 38],
+          iconAnchor: [19, 19],
+          popupAnchor: [0, -22],
+        });
+
+        let marker = wasteTruckMarkers.current.get(truck.id);
+        if (!marker) {
+          marker = L.marker([truck.lat, truck.lng], { icon, zIndexOffset: 450 });
+          marker.bindPopup(() => {
+            const container = document.createElement("div");
+            container.className = "waste-truck-popup-details";
+            const statusBadge = truck.status === "bin_emptying"
+              ? `<span style="color: #f59e0b; font-weight: 700;">🟡 Leerung / Schüttung aktiv (${truck.emptyCountdownSec ?? 0}s verbleibend)</span>`
+              : truck.status === "transit"
+              ? `<span style="color: #38bdf8; font-weight: 700;">🔵 Überführung (${truck.speedKmh} km/h)</span>`
+              : `<span style="color: #10b981; font-weight: 700;">🟢 Sammelfahrt (${truck.speedKmh} km/h)</span>`;
+
+            container.innerHTML = `
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+                <div style="font-weight: 700; font-size: 14px;">🚛 ${truck.name}</div>
+                <span style="font-size: 11px; background: #334155; padding: 2px 6px; border-radius: 4px; font-weight: 700; color: #f8fafc;">${truck.licensePlate}</span>
+              </div>
+              <div style="font-size: 12px; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                <span style="background: ${truck.binColor}; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 9999px;">${truck.fractionLabel}</span>
+                <span style="color: #94a3b8;">${truck.vehicleModel}</span>
+              </div>
+              <div style="font-size: 13px; margin-bottom: 6px;">${statusBadge}</div>
+              <div style="font-size: 12px; margin-bottom: 3px;">📍 Aktuell: <strong>${truck.currentStreet}</strong></div>
+              <div style="font-size: 12px; margin-bottom: 3px;">⏭️ Nächste Station: <strong>${truck.nextStreet}</strong></div>
+              <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 8px;">⏰ Erwartetes Zeitfenster: <strong>${truck.expectedTimeWindow}</strong></div>
+              
+              <div style="background: #1e293b; border-radius: 6px; padding: 6px; margin-bottom: 6px;">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                  <span style="color: #94a3b8;">Ladekapazität</span>
+                  <span style="font-weight: 700; color: #f8fafc;">${truck.loadPercent}% voll</span>
+                </div>
+                <div style="width: 100%; height: 6px; background: #334155; border-radius: 3px; overflow: hidden;">
+                  <div style="width: ${truck.loadPercent}%; height: 100%; background: ${truck.binColor}; border-radius: 3px; transition: width 0.5s ease;"></div>
+                </div>
+              </div>
+
+              <div style="font-size: 11px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; margin-top: 6px;">
+                ℹ️ ${truck.predictionBasis}<br/>
+                Zweckverband Abfallwirtschaft Kreis Bergstraße (ZAKB)
+              </div>
+            `;
+            return container;
+          });
+          wasteTrucksGroup.addLayer(marker);
+          wasteTruckMarkers.current.set(truck.id, marker);
+        } else {
+          marker.setIcon(icon);
+          marker.setLatLng([truck.lat, truck.lng]);
+        }
+      }
+    }
+
+    updateWasteTrucks();
+    const interval = setInterval(updateWasteTrucks, 1000);
+    return () => clearInterval(interval);
+  }, [ready, showWasteTrucks]);
+
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
     {failed ? <p role="alert" className="absolute inset-0 bg-slate-900 p-8">Die Karte konnte nicht geladen werden. Bitte lade die Seite erneut.</p> : null}
-    <div className="absolute top-3 right-3 z-[400] flex gap-2">
+    <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2">
+      <button
+        type="button"
+        className={`map-control ${showWasteTrucks ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowWasteTrucks(prev => !prev)}
+        title="ZAKB Müllabfuhr im Ried ein-/ausblenden"
+      >
+        🚛 Müllabfuhr {showWasteTrucks ? "An" : "Aus"}
+      </button>
       <button
         type="button"
         className={`map-control ${showRailMobility ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}

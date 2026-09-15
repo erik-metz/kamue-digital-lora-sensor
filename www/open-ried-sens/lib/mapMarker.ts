@@ -236,3 +236,138 @@ export function createLevelCrossingMarkerContent(props: LevelCrossingMarkerProps
 
   return content;
 }
+
+export interface WasteTruckMarkerProps {
+  fraction: string;
+  fractionLabel: string;
+  binColor: string;
+  accentColor: string;
+  licensePlate: string;
+  status: "collecting" | "bin_emptying" | "transit";
+  speedKmh: number;
+  currentStreet: string;
+  nextStreet: string;
+  expectedTimeWindow: string;
+  loadPercent: number;
+  emptyCountdownSec?: number;
+  emptyProgress?: number;
+}
+
+export function createWasteTruckMarkerContent(props: WasteTruckMarkerProps): HTMLElement {
+  const isDwell = props.status === "bin_emptying";
+  const content = document.createElement("div");
+  content.className = `waste-truck-marker waste-truck-${props.status} waste-truck-${props.fraction}`;
+  content.style.setProperty("--truck-color", props.binColor);
+  content.style.setProperty("--truck-accent", props.accentColor);
+
+  // Flashing orange beacon on roof
+  const beacon = document.createElement("div");
+  beacon.className = `truck-beacon ${isDwell ? "truck-beacon-rapid" : "truck-beacon-active"}`;
+  content.append(beacon);
+
+  // Waste truck SVG
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "1.75");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  icon.setAttribute("aria-hidden", "true");
+
+  // Compactor body
+  const compactor = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  compactor.setAttribute("x", "2");
+  compactor.setAttribute("y", "7");
+  compactor.setAttribute("width", "11");
+  compactor.setAttribute("height", "9");
+  compactor.setAttribute("rx", "1");
+
+  // Hydraulic press rib
+  const compactorRib = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  compactorRib.setAttribute("x1", "7");
+  compactorRib.setAttribute("y1", "7");
+  compactorRib.setAttribute("x2", "7");
+  compactorRib.setAttribute("y2", "16");
+
+  // Cab
+  const cab = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  cab.setAttribute("d", "M13 10h4l3 3v3h-7z");
+
+  // Window
+  const windowElem = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  windowElem.setAttribute("x", "14.5");
+  windowElem.setAttribute("y", "11");
+  windowElem.setAttribute("width", "3");
+  windowElem.setAttribute("height", "2");
+
+  // Wheels
+  const wheel1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  wheel1.setAttribute("cx", "5.5");
+  wheel1.setAttribute("cy", "17.5");
+  wheel1.setAttribute("r", "1.75");
+  wheel1.setAttribute("fill", "currentColor");
+
+  const wheel2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  wheel2.setAttribute("cx", "16.5");
+  wheel2.setAttribute("cy", "17.5");
+  wheel2.setAttribute("r", "1.75");
+  wheel2.setAttribute("fill", "currentColor");
+
+  icon.append(compactor, compactorRib, cab, windowElem, wheel1, wheel2);
+  content.append(icon);
+
+  // Fraction badge
+  const badge = document.createElement("div");
+  badge.className = "waste-truck-badge";
+  badge.textContent = props.fractionLabel;
+  content.append(badge);
+
+  // Dwell countdown gauge for bin emptying / hydraulic compaction
+  if (isDwell && props.emptyCountdownSec !== undefined) {
+    const gaugeWrap = document.createElement("div");
+    gaugeWrap.className = "truck-gauge-container";
+    const gaugeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    gaugeSvg.setAttribute("viewBox", "0 0 36 36");
+    gaugeSvg.setAttribute("class", "truck-gauge-svg");
+
+    const bgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    bgCircle.setAttribute("class", "truck-gauge-track");
+    bgCircle.setAttribute("cx", "18");
+    bgCircle.setAttribute("cy", "18");
+    bgCircle.setAttribute("r", "15.915");
+
+    const progressCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    progressCircle.setAttribute("class", "truck-gauge-progress");
+    progressCircle.setAttribute("cx", "18");
+    progressCircle.setAttribute("cy", "18");
+    progressCircle.setAttribute("r", "15.915");
+    progressCircle.setAttribute("stroke-dasharray", "100, 100");
+
+    const progress = Math.max(0, Math.min(1, props.emptyProgress ?? 1));
+    const offset = 100 - progress * 100;
+    progressCircle.setAttribute("stroke-dashoffset", String(offset));
+
+    gaugeSvg.append(bgCircle, progressCircle);
+
+    const countdownText = document.createElement("span");
+    countdownText.className = "truck-gauge-text";
+    countdownText.textContent = `${props.emptyCountdownSec}s`;
+
+    gaugeWrap.append(gaugeSvg, countdownText);
+    content.append(gaugeWrap);
+
+    const sublabel = document.createElement("span");
+    sublabel.className = "waste-truck-sublabel";
+    sublabel.textContent = `Leerung: ${props.currentStreet}`;
+    content.append(sublabel);
+  } else {
+    const sublabel = document.createElement("span");
+    sublabel.className = "waste-truck-sublabel";
+    sublabel.textContent = props.status === "transit" ? "Depot-Fahrt" : props.currentStreet;
+    content.append(sublabel);
+  }
+
+  return content;
+}
+
