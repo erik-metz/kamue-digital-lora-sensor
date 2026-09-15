@@ -94,21 +94,21 @@ async def main_loop(settings: Settings):
                                 {"incidents_tracked": stats.get("active_incidents", 0)},
                             )
                         except Exception as exc:
-                            LOG.error("Error during poll cycle: %s", exc, exc_info=True)
+                            LOG.exception("Error during poll cycle: %s", exc)
                             write_health(settings.health_file, "unhealthy", {"error": str(exc)})
 
                         elapsed = asyncio.get_event_loop().time() - start_time
                         sleep_time = max(10, settings.poll_seconds - elapsed)
                         try:
                             await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
-                        except asyncio.TimeoutError:
+                        except TimeoutError:
                             pass
-            except Exception as exc:
+            except (psycopg.Error, OSError) as exc:
                 LOG.error("Database connection failed: %s. Retrying in 10s...", exc)
                 write_health(settings.health_file, "unhealthy", {"error": str(exc)})
                 try:
                     await asyncio.wait_for(stop_event.wait(), timeout=10.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
     LOG.info("Traffic collector daemon shutdown cleanly.")
