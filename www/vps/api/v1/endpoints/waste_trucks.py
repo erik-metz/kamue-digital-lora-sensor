@@ -1,9 +1,9 @@
 """Waste truck fleet and ZAKB collection tracking endpoints."""
 
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+from fastapi import APIRouter, Depends, Query, Security, status
 import psycopg_pool
 from pydantic import BaseModel, Field
 

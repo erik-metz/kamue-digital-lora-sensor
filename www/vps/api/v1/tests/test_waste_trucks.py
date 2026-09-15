@@ -144,7 +144,7 @@ class WasteTrucksTests(unittest.IsolatedAsyncioTestCase):
                     status="bin_emptying",
                     current_street="Kaiserstraße",
                     next_street="Ernst-Ludwig-Straße",
-                    load_percent": 60,
+                    load_percent=60,
                     empty_countdown_sec=25,
                     position_basis="model_prediction",
                 )
