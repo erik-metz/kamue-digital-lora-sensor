@@ -436,6 +436,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         let marker = crossingMarkers.current.get(crossing.id);
         if (!marker) {
           marker = L.marker([crossing.lat, crossing.lng], { icon, zIndexOffset: 400 });
+          marker.on("click", () => {
+            onSelectRef.current(crossing.id);
+          });
           marker.bindPopup(() => {
             const container = document.createElement("div");
             const statusText = crossing.status === 'closed'
@@ -452,6 +455,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
               <div style="font-size: 11px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; margin-top: 6px;">
                 📊 Statistik: Ø ${crossing.dailyClosureCountAvg} Schließungen/Tag · Ø Schließdauer: ${crossing.avgClosureDurationSec}s<br/>
                 ℹ️ ${crossing.note}
+              </div>
+              <div style="margin-top: 8px;">
+                <a href="#messwerte" style="display: block; text-align: center; font-size: 11px; background: #0284c7; color: #fff; padding: 5px 8px; border-radius: 6px; text-decoration: none; font-weight: 600;">📊 Schließungshistorie in Messwerte anzeigen</a>
               </div>
             `;
             return container;

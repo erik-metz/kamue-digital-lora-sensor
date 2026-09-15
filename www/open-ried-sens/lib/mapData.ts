@@ -39,13 +39,14 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     if (r.metric.startsWith("soil_") || r.metric === "water_surface_distance") categories.add("soil");
     if (["water_level_delta", "water_level"].includes(r.metric)) categories.add("water");
     if (["air_quality_index", "NO2", "PM10", "PM25", "O3"].includes(r.metric)) categories.add("air");
-    if (r.metric.startsWith("traffic_")) categories.add("traffic");
+    if (r.metric.startsWith("traffic_") || r.metric.startsWith("crossing_") || r.metric === "closure_duration") categories.add("traffic");
     if (r.metric.startsWith("parking_")) categories.add("parking");
     if (["pgv", "rms", "waveform"].includes(r.metric)) categories.add("seismic");
     if (r.metric === "value" && ["°C", "celsius", "CEL"].includes(r.unit)) categories.add(soil ? "soil" : "weather");
   }
   if (!categories.size) {
     if (sensor.id.startsWith("shake-")) categories.add("seismic");
+    else if (sensor.id.startsWith("bu-")) categories.add("traffic");
     else if (type === "WeatherObserved") categories.add(soil ? "soil" : "weather");
     else if (["GreenspaceRecord", "SoilMeasurement", "SoilTension"].includes(type ?? "")) categories.add("soil");
     else if (type === "FloodMonitoring") categories.add("water");
@@ -249,6 +250,55 @@ export function toStationNodes(sensors: ApiMapSensor[]): StationNode[] {
   return result;
 }
 
+export const DEFAULT_CROSSING_NODES: StationNode[] = [
+  {
+    id: "bu-buerstadt-mainstr",
+    name: "BÜ Mainstraße (Bürstadt)",
+    locationName: "BÜ Mainstraße (Bürstadt)",
+    address: "Nibelungenbahn km 9.8 · RBÜT Halbschrankenanlage",
+    lat: 49.64600,
+    lng: 8.45398,
+    categories: ["traffic"],
+    readings: [{ metric: "crossing_state", value: 0, unit: "state", timestamp: new Date().toISOString() }],
+  },
+  {
+    id: "bu-buerstadt-waldgarten",
+    name: "BÜ Waldgartenstraße (Bürstadt)",
+    locationName: "BÜ Waldgartenstraße (Bürstadt)",
+    address: "Nibelungenbahn km 10.18 · Vollbeschrankter Fußgängerüberweg",
+    lat: 49.64574,
+    lng: 8.45819,
+    categories: ["traffic"],
+    readings: [{ metric: "crossing_state", value: 0, unit: "state", timestamp: new Date().toISOString() }],
+  },
+  {
+    id: "bu-biblis-kirchstr",
+    name: "BÜ Kirchstraße (Biblis)",
+    locationName: "BÜ Kirchstraße (Biblis)",
+    address: "Riedbahn km 27.20 · Modernisierte Schrankenanlage Gemeindesee",
+    lat: 49.68207,
+    lng: 8.44415,
+    categories: ["traffic"],
+    readings: [{ metric: "crossing_state", value: 0, unit: "state", timestamp: new Date().toISOString() }],
+  },
+  {
+    id: "bu-hofheim-bibliser-weg",
+    name: "BÜ Bibliser Weg (Hofheim)",
+    locationName: "BÜ Bibliser Weg (Hofheim)",
+    address: "Worms–Biblis km 6.09 · RBÜT Halbschranken L3411",
+    lat: 49.66258,
+    lng: 8.41341,
+    categories: ["traffic"],
+    readings: [{ metric: "crossing_state", value: 0, unit: "state", timestamp: new Date().toISOString() }],
+  },
+];
+
+export function mergeDefaultCrossings(nodes: StationNode[]): StationNode[] {
+  const existingIds = new Set(nodes.map(s => s.id));
+  const missing = DEFAULT_CROSSING_NODES.filter(c => !existingIds.has(c.id));
+  return missing.length > 0 ? [...nodes, ...missing] : nodes;
+}
+
 export function offsetTrafficCoordinates(nodes: StationNode[]): void {
   const trafficNodes = nodes.filter(n => n.categories.includes("traffic") && n.lat != null && n.lng != null);
 
@@ -314,7 +364,7 @@ export function readingFreshness(reading: Reading | undefined, now: number): Fre
   if (!reading) return "unknown";
   const age = now - Date.parse(reading.timestamp);
   if (!Number.isFinite(age) || age < -300_000) return "unknown";
-  if (reading.metric.startsWith("parking_")) return "state"; // Event-driven, not an online indicator.
+  if (reading.metric.startsWith("parking_") || reading.metric.startsWith("crossing_")) return "state"; // Event-driven, not an online indicator.
   const threshold = ["pgv", "rms"].includes(reading.metric) ? 120_000 :
     reading.metric.startsWith("soil_") || reading.metric === "water_surface_distance" ? 6 * 3600_000 :
     reading.metric === "air_quality_index" ? 3 * 3600_000 : 2 * 3600_000;
@@ -330,7 +380,7 @@ export function primaryReading(node: StationNode, category: Category, mode: MapM
     weather: ["temperature", "relative_humidity", "humidity", "precipitation", "value"],
     soil: ["soil_temperature", "temperature", "water_surface_distance", "soil_moisture"],
     water: ["water_level_delta", "water_level"], air: ["air_quality_index", "PM25", "PM10", "NO2"],
-    traffic: ["traffic_total_hourly", "traffic_cars_hourly", "traffic_cars_daily_city"],
+    traffic: ["crossing_state", "traffic_total_hourly", "traffic_cars_hourly", "traffic_cars_daily_city", "closure_duration"],
     parking: ["parking_free", "parking_occupied", "parking_capacity"], seismic: ["pgv", "rms"], other: [],
   };
   return preferred[category].map(m => node.readings.find(r => r.metric === m)).find(Boolean) ?? node.readings[0];
@@ -347,6 +397,12 @@ export function temperatureColor(value: number) {
 export function valueLabel(reading: Reading | undefined, readings?: Reading[]) {
   if (!reading) return "";
   const value = reading.value.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+  if (reading.metric === "crossing_state") {
+    return reading.value >= 2 ? "Geschlossen" : reading.value >= 1 ? "Schließt bald" : "Offen (Frei)";
+  }
+  if (reading.metric === "closure_duration") {
+    return `${Math.round(reading.value)}s Schließdauer`;
+  }
   if (reading.metric.startsWith("traffic_")) {
     if (reading.metric.endsWith("_hourly")) return `${value} / h`;
     if (reading.metric.endsWith("_daily") || reading.metric.endsWith("_daily_city")) return `${value} / Tag`;

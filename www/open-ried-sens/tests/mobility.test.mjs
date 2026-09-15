@@ -140,3 +140,47 @@ test("polyline interpolation returns exact boundary points and valid headings", 
   assert.ok(mid.lat > 49.6 && mid.lat < 49.65);
   assert.ok(mid.lng > 8.4 && mid.lng < 8.45);
 });
+
+test("DEFAULT_CROSSING_NODES and mergeDefaultCrossings retain active crossings", () => {
+  const mapDataSrc = fs.readFileSync(new URL("../lib/mapData.ts", import.meta.url), "utf8");
+  const mapDataContext = { exports: {}, Date, Set, Number, Math, JSON, Array };
+  vm.runInNewContext(
+    ts.transpileModule(mapDataSrc, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+    mapDataContext
+  );
+  const mapData = mapDataContext.exports;
+
+  assert.equal(mapData.DEFAULT_CROSSING_NODES.length, 4);
+  const initialNodes = [{ id: "sensor-1", name: "Sensor 1", locationName: "S1", address: "", lat: 49.6, lng: 8.4, categories: ["weather"], readings: [] }];
+  const merged = mapData.mergeDefaultCrossings(initialNodes);
+  assert.equal(merged.length, 5);
+  assert.ok(merged.some((n) => n.id === "bu-buerstadt-mainstr"));
+
+  // Idempotent when crossings already exist
+  const mergedAgain = mapData.mergeDefaultCrossings(merged);
+  assert.equal(mergedAgain.length, 5);
+});
+
+test("crossingStateLabel formats crossing states accurately", () => {
+  const telemSrc = fs.readFileSync(new URL("../lib/telemetryData.ts", import.meta.url), "utf8");
+  const telemContext = { exports: {}, Date, Set, Number, Math, JSON, Array, RegExp };
+  vm.runInNewContext(
+    ts.transpileModule(telemSrc, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+    }).outputText,
+    telemContext
+  );
+  const telem = telemContext.exports;
+
+  assert.equal(telem.crossingStateLabel(0), "Offen (Frei)");
+  assert.equal(telem.crossingStateLabel(1), "Schließt bald");
+  assert.equal(telem.crossingStateLabel(2), "Geschlossen");
+
+  assert.equal(telem.metricLabel({ metric: "crossing_state", unit: "state" }), "Schrankenzustand");
+  assert.equal(telem.metricLabel({ metric: "closure_duration", unit: "s" }), "Schließdauer");
+  assert.equal(telem.metricLabel({ metric: "crossing_closures", unit: "count" }), "Schließungen gesamt");
+  assert.equal(telem.unitLabel("state"), "Zustand");
+});
+

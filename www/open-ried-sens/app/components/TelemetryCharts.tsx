@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { hasCoordinates, parkingSummary, type StationNode } from "@/lib/mapData";
-import { seriesKey, metricLabel, unitLabel, mergeReadings } from "@/lib/telemetryData";
+import { seriesKey, metricLabel, unitLabel, mergeReadings, crossingStateLabel } from "@/lib/telemetryData";
 import { Activity } from "lucide-react";
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 
@@ -88,11 +88,40 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
         {parking.details.map(detail => <p key={detail} className="mt-1 text-sm text-slate-300">{detail}</p>)}
         <p className="mt-2 text-xs text-slate-400">Zuletzt gemeldeter Zustand; Messzeitpunkte stehen bei den einzelnen Werten.</p>
       </div>}
+      {(node.id.startsWith("bu-") || readings.some(r => r.metric.startsWith("crossing_"))) && (() => {
+        const currentCrossingState = readings.find(r => r.metric === "crossing_state")?.value ?? 0;
+        return (
+          <div className="rounded-xl border border-sky-500/40 bg-sky-950/20 p-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xl font-bold">Bahnübergang Status & Zeitverlauf</span>
+              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                currentCrossingState >= 2
+                  ? "bg-red-500/20 text-red-400 border border-red-500"
+                  : currentCrossingState >= 1
+                  ? "bg-amber-500/20 text-amber-400 border border-amber-500"
+                  : "bg-emerald-500/20 text-emerald-400 border border-emerald-500"
+              }`}>
+                {crossingStateLabel(currentCrossingState)}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-slate-300">{node.address || "Aktiver Schienenübergang im Hessischen Ried"}</p>
+            <p className="mt-2 text-xs text-slate-400">Statusverlauf der letzten 24 Stunden. 0 = Offen (Frei), 1 = Vorwarnung (Schließt bald), 2 = Schranken geschlossen.</p>
+          </div>
+        );
+      })()}
       {readings.length > 0 && <>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {readings.map(reading => <button key={seriesKey(reading)} type="button" aria-pressed={seriesKey(reading) === (active && seriesKey(active))} onClick={() => setSelectedSeries(seriesKey(reading))} className="min-w-0 text-left rounded-xl border border-slate-700 bg-slate-950/60 p-4 aria-pressed:border-emerald-400 focus-visible:outline-2 focus-visible:outline-emerald-400">
             <span className="block text-sm text-slate-400">{metricLabel(reading)}</span>
-            <span className="block mt-2 text-2xl font-bold break-words">{number(reading.value)} <span className="text-sm font-normal text-slate-400">{unitLabel(reading.unit)}</span></span>
+            <span className="block mt-2 text-2xl font-bold break-words">
+              {reading.metric === "crossing_state" ? (
+                crossingStateLabel(reading.value)
+              ) : (
+                <>
+                  {number(reading.value)} <span className="text-sm font-normal text-slate-400">{unitLabel(reading.unit)}</span>
+                </>
+              )}
+            </span>
             <span className="block mt-2 text-xs text-slate-500">Stand: {time(reading.timestamp)}</span>
           </button>)}
         </div>
@@ -104,12 +133,23 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
           {data?.historyTruncated && <p className="mt-2 text-sm text-amber-200">Es werden die neuesten 5.000 Meldungen dieses Zeitraums angezeigt.</p>}
           {history.length === 0 ? <p className="py-10 text-center text-slate-400">Keine Messwerte in den letzten 24 Stunden.</p> : <>
             <svg viewBox="0 0 800 210" role="img" aria-label={`${metricLabel(active)} in ${unitLabel(active.unit)}, letzte 24 Stunden`} className="w-full mt-5">
-              {[lower, (lower + upper) / 2, upper].map((value, index) => <g key={index}>
-                <line x1="65" x2="785" y1={180 - index * 77.5} y2={180 - index * 77.5} stroke="#334155" strokeDasharray="4 4" />
-                <text x="57" y={184 - index * 77.5} textAnchor="end" fill="#94a3b8" fontSize="11">{number(value)}</text>
-              </g>)}
-              {points.length > 1 && <path d={path} fill="none" stroke="#34d399" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
-              {points.map((point, index) => <circle key={`${point.bucket.bucket}-${index}`} cx={point.x} cy={point.y} r="2" fill="#34d399"><title>{time(point.bucket.bucket)}: {number(point.bucket.avg_value!)} {unitLabel(active.unit)}</title></circle>)}
+              {active.metric === "crossing_state" ? (
+                [0, 1, 2].map((stateVal, idx) => (
+                  <g key={idx}>
+                    <line x1="65" x2="785" y1={180 - idx * 77.5} y2={180 - idx * 77.5} stroke="#334155" strokeDasharray="4 4" />
+                    <text x="57" y={184 - idx * 77.5} textAnchor="end" fill="#94a3b8" fontSize="11">
+                      {stateVal === 2 ? "Geschlossen" : stateVal === 1 ? "Schließt bald" : "Offen"}
+                    </text>
+                  </g>
+                ))
+              ) : (
+                [lower, (lower + upper) / 2, upper].map((value, index) => <g key={index}>
+                  <line x1="65" x2="785" y1={180 - index * 77.5} y2={180 - index * 77.5} stroke="#334155" strokeDasharray="4 4" />
+                  <text x="57" y={184 - index * 77.5} textAnchor="end" fill="#94a3b8" fontSize="11">{number(value)}</text>
+                </g>)
+              )}
+              {points.length > 1 && <path d={path} fill="none" stroke={active.metric === "crossing_state" ? "#38bdf8" : "#34d399"} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
+              {points.map((point, index) => <circle key={`${point.bucket.bucket}-${index}`} cx={point.x} cy={point.y} r="2.5" fill={active.metric === "crossing_state" ? "#38bdf8" : "#34d399"}><title>{time(point.bucket.bucket)}: {active.metric === "crossing_state" ? crossingStateLabel(point.bucket.avg_value!) : `${number(point.bucket.avg_value!)} ${unitLabel(active.unit)}`}</title></circle>)}
             </svg>
             <div className="flex justify-between text-xs text-slate-500"><span>{time(data!.start)}</span><span>{time(data!.end)}</span></div>
           </>}

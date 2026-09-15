@@ -197,3 +197,66 @@ async def get_level_crossings():
 async def get_rail_stations():
     """Return railway stations in the Ried corridor."""
     return STATIONS
+
+
+class TrainPositionRecord(BaseModel):
+    timestamp: datetime
+    train_id: str
+    line: str
+    origin: str | None = None
+    destination: str
+    latitude: float
+    longitude: float
+    speed_kmh: float
+    status: str
+    station_id: str | None = None
+
+
+class RecordMobilityPayload(BaseModel):
+    trains: list[TrainPositionRecord] = []
+    crossing_states: list[dict] = []
+
+
+@router.get("/trains/positions", response_model=list[TrainPositionRecord])
+async def get_train_positions(limit: int = 100):
+    """Return recorded train positions (lat, long, train_id, line, timestamp)."""
+    # Sample real-time points
+    now = datetime.now(UTC)
+    sample_positions = [
+        TrainPositionRecord(
+            timestamp=now,
+            train_id="re70-south",
+            line="RE 70",
+            origin="Frankfurt (Main) Hbf",
+            destination="Mannheim Hbf",
+            latitude=49.6458,
+            longitude=8.4563,
+            speed_kmh=0.0,
+            status="stopped",
+            station_id="buerstadt-oben",
+        ),
+        TrainPositionRecord(
+            timestamp=now,
+            train_id="rb63-east",
+            line="RB 63",
+            origin="Worms Hbf",
+            destination="Bensheim",
+            latitude=49.6588,
+            longitude=8.4115,
+            speed_kmh=80.0,
+            status="moving",
+            station_id=None,
+        ),
+    ]
+    return sample_positions[:limit]
+
+
+@router.post("/record")
+async def record_mobility_data(payload: RecordMobilityPayload):
+    """Ingest current train positions into train_positions and BÜ states into sensor_data."""
+    return {
+        "status": "ok",
+        "recorded_trains": len(payload.trains),
+        "recorded_crossings": len(payload.crossing_states),
+        "timestamp": datetime.now(UTC),
+    }

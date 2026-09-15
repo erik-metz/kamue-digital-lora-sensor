@@ -214,3 +214,40 @@ CREATE TABLE IF NOT EXISTS rail_crossing_events (
     duration_sec INT,
     source VARCHAR(64) DEFAULT 'schedule_prediction'
 );
+
+-- 5. Moving Trains Positioning (TimescaleDB Hypertable)
+CREATE TABLE IF NOT EXISTS train_positions (
+    timestamp TIMESTAMPTZ NOT NULL,
+    train_id VARCHAR(64) NOT NULL,
+    line VARCHAR(32) NOT NULL,
+    origin VARCHAR(128),
+    destination VARCHAR(128) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    speed_kmh DOUBLE PRECISION NOT NULL,
+    status VARCHAR(32) NOT NULL, -- 'moving' | 'stopped'
+    station_id VARCHAR(64)       -- if stopped
+);
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        PERFORM create_hypertable('train_positions', 'timestamp', if_not_exists => TRUE);
+    END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_train_positions_id_time ON train_positions (train_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_train_positions_time ON train_positions (timestamp DESC);
+
+-- 6. Register the 4 Active Bahnübergänge in sensor_metadata for telemetry history
+INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, is_hidden, description)
+VALUES
+    ('bu-buerstadt-mainstr', 'BÜ Mainstraße (Bürstadt)', 49.64600, 8.45398, FALSE, 'Nibelungenbahn km 9.8 · RBÜT Halbschrankenanlage'),
+    ('bu-buerstadt-waldgarten', 'BÜ Waldgartenstraße (Bürstadt)', 49.64574, 8.45819, FALSE, 'Nibelungenbahn km 10.18 · Vollbeschrankter Fußgängerüberweg'),
+    ('bu-biblis-kirchstr', 'BÜ Kirchstraße (Biblis)', 49.68207, 8.44415, FALSE, 'Riedbahn km 27.20 · Modernisierte Schrankenanlage Gemeindesee'),
+    ('bu-hofheim-bibliser-weg', 'BÜ Bibliser Weg (Hofheim)', 49.66258, 8.41341, FALSE, 'Worms–Biblis km 6.09 · RBÜT Halbschranken L3411')
+ON CONFLICT (id) DO UPDATE SET
+    friendly_name = EXCLUDED.friendly_name,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    description = EXCLUDED.description,
+    is_hidden = FALSE;

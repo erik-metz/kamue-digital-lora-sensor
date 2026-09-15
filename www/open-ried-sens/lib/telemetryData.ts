@@ -10,6 +10,7 @@ const LABELS: Record<string, string> = {
   water_surface_distance: "Abstand zur Wasseroberfläche", water_level_delta: "Abweichung vom Referenz-Wasserstand", water_level: "Wasserstand",
   air_quality_index: "Luftqualitätsindex", NO2: "Stickstoffdioxid (NO₂)", O3: "Ozon (O₃)", PM10: "Feinstaub (PM₁₀)", PM25: "Feinstaub (PM₂,₅)",
   parking_free: "Freie Stellplätze", parking_occupied: "Belegte Stellplätze", parking_capacity: "Stellplätze gesamt",
+  crossing_state: "Schrankenzustand", closure_duration: "Schließdauer", crossing_closures: "Schließungen gesamt",
 };
 export function metricLabel(reading: { metric: string; unit: string }): string {
   const traffic = reading.metric.match(/^traffic_(.+)_(hourly|daily_city|daily)$/);
@@ -20,7 +21,12 @@ export function metricLabel(reading: { metric: string; unit: string }): string {
   return LABELS[reading.metric] ?? (reading.metric === "value" ? ({ celsius: "Temperatur", "°C": "Temperatur", dBm: "Signalstärke", mm: "Niederschlag" } as Record<string, string>)[reading.unit] ?? "Messwert" : reading.metric);
 }
 export function unitLabel(unit: string) {
-  return ({ count: "Anzahl", counts: "Zählwerte", index: "Index", celsius: "°C", CEL: "°C" } as Record<string, string>)[unit] ?? unit;
+  return ({ count: "Anzahl", counts: "Zählwerte", index: "Index", celsius: "°C", CEL: "°C", state: "Zustand", s: "Sekunden", sec: "Sekunden" } as Record<string, string>)[unit] ?? unit;
+}
+export function crossingStateLabel(value: number): string {
+  if (value >= 2) return "Geschlossen";
+  if (value >= 1) return "Schließt bald";
+  return "Offen (Frei)";
 }
 export function mergeReadings(...groups: Reading[][]): Reading[] {
   const latest = new Map<string, Reading>();
