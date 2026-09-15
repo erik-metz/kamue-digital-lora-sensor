@@ -10,6 +10,8 @@ import { CATEGORIES, markerCategory, observationLabel, parkingSummary, primaryRe
 import { TemperatureHeatmapLayer, type TemperaturePoint } from "@/lib/temperatureHeatmap";
 import { RIEDBAHN_TRACK, NIBELUNGENBAHN_TRACK, calculateRiedMobility } from "@/lib/railMobility";
 import { calculateWasteTruckMobility } from "@/lib/wasteTruckMobility";
+import { calculateBusMobility, getBusStopDepartures, RIED_BUS_STOPS, type LiveBus, type BusStop } from "@/lib/busMobility";
+import { createBusMarkerContent, createBusStopMarkerContent } from "@/lib/mapMarker";
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
@@ -43,14 +45,20 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [failed, setFailed] = useState(false);
   const [showRailMobility, setShowRailMobility] = useState(true);
   const [showWasteTrucks, setShowWasteTrucks] = useState(true);
+  const [showBuses, setShowBuses] = useState(true);
+  const [showBusStops, setShowBusStops] = useState(true);
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
   const crossingsGroupRef = useRef<L.LayerGroup | null>(null);
   const wasteTrucksGroupRef = useRef<L.LayerGroup | null>(null);
+  const busesGroupRef = useRef<L.LayerGroup | null>(null);
+  const busStopsGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
   const wasteDepotMarkers = useRef(new Map<string, L.Marker>());
+  const busMarkers = useRef(new Map<string, L.Marker>());
+  const busStopMarkers = useRef(new Map<string, L.Marker>());
   useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
 
 
@@ -61,6 +69,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     const currentCrossingMarkers = crossingMarkers.current;
     const currentWasteTruckMarkers = wasteTruckMarkers.current;
     const currentWasteDepotMarkers = wasteDepotMarkers.current;
+    const currentBusMarkers = busMarkers.current;
+    const currentBusStopMarkers = busStopMarkers.current;
     async function initialize() {
       // MarkerCluster extends the global Leaflet instance. Load only in the browser.
       (window as typeof window & { L: typeof L }).L = L;
@@ -85,15 +95,25 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const trainsGroup = L.layerGroup();
       const crossingsGroup = L.layerGroup();
       const wasteTrucksGroup = L.layerGroup();
+      const busesGroup = L.layerGroup();
+      const busStopsGroup = L.layerGroup();
+
       railTracksGroupRef.current = railTracksGroup;
       trainsGroupRef.current = trainsGroup;
       crossingsGroupRef.current = crossingsGroup;
       wasteTrucksGroupRef.current = wasteTrucksGroup;
+      busesGroupRef.current = busesGroup;
+      busStopsGroupRef.current = busStopsGroup;
 
       map.addLayer(railTracksGroup);
       map.addLayer(crossingsGroup);
       map.addLayer(trainsGroup);
       map.addLayer(wasteTrucksGroup);
+      map.addLayer(busesGroup);
+      // Bus stops become visible at zoom >= 13
+      if (map.getZoom() >= 13) {
+        map.addLayer(busStopsGroup);
+      }
 
       const group = L.markerClusterGroup({
         maxClusterRadius: 55, showCoverageOnHover: false, spiderfyOnMaxZoom: true,
@@ -151,10 +171,14 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       trainsGroupRef.current = null;
       crossingsGroupRef.current = null;
       wasteTrucksGroupRef.current = null;
+      busesGroupRef.current = null;
+      busStopsGroupRef.current = null;
       currentTrainMarkers.clear();
       currentCrossingMarkers.clear();
       currentWasteTruckMarkers.clear();
       currentWasteDepotMarkers.clear();
+      currentBusMarkers.clear();
+      currentBusStopMarkers.clear();
       currentMarkers.clear();
     };
   }, []);
@@ -354,6 +378,31 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       if (map.hasLayer(wasteTrucks)) map.removeLayer(wasteTrucks);
     }
   }, [showWasteTrucks, ready]);
+
+  // Toggle VRN buses layer visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    const buses = busesGroupRef.current;
+    if (!ready || !map || !buses) return;
+    if (showBuses) {
+      if (!map.hasLayer(buses)) map.addLayer(buses);
+    } else {
+      if (map.hasLayer(buses)) map.removeLayer(buses);
+    }
+  }, [showBuses, ready]);
+
+  // Toggle bus stops layer visibility (only visible at zoom >= 13)
+  useEffect(() => {
+    const map = mapRef.current;
+    const busStops = busStopsGroupRef.current;
+    if (!ready || !map || !busStops) return;
+    const shouldShow = showBusStops && zoom >= 13;
+    if (shouldShow) {
+      if (!map.hasLayer(busStops)) map.addLayer(busStops);
+    } else {
+      if (map.hasLayer(busStops)) map.removeLayer(busStops);
+    }
+  }, [showBusStops, zoom, ready]);
 
   // Real-time animation loop for trains and crossings in the Ried
   useEffect(() => {
@@ -603,10 +652,226 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     return () => clearInterval(interval);
   }, [ready, showWasteTrucks]);
 
+  // Initialize and populate bus stops in the Ried
+  useEffect(() => {
+    if (!ready) return;
+    const busStopsGroup = busStopsGroupRef.current;
+    if (!busStopsGroup) return;
+
+    for (const stop of RIED_BUS_STOPS) {
+      if (!busStopMarkers.current.has(stop.id)) {
+        const icon = L.divIcon({
+          html: createBusStopMarkerContent({
+            name: stop.name,
+            lines: stop.lines,
+            isSchoolStop: stop.isSchoolStop,
+            isTrainHub: stop.isTrainHub,
+          }),
+          className: "map-bus-stop-icon",
+          iconSize: [26, 26],
+          iconAnchor: [13, 13],
+          popupAnchor: [0, -14],
+        });
+
+        const marker = L.marker([stop.lat, stop.lng], { icon, zIndexOffset: 200 });
+        const tooltip = document.createElement("span");
+        tooltip.textContent = stop.isSchoolStop ? `🎒 ${stop.name} (Schulbushaltestelle)` : `🚏 ${stop.name}`;
+        marker.bindTooltip(tooltip, { direction: "top", offset: [0, -12] });
+
+        marker.bindPopup(() => {
+          const container = document.createElement("div");
+          container.className = "bus-stop-popup-details";
+          const departures = getBusStopDepartures(stop.id, Date.now());
+
+          let departureRowsHtml = "";
+          if (departures.length === 0) {
+            departureRowsHtml = `<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 8px;">Keine anstehenden Abfahrten</td></tr>`;
+          } else {
+            for (const dep of departures) {
+              const lineClass = dep.isSchoolBus ? "bus-line-pill bus-line-pill-school" : "bus-line-pill";
+              departureRowsHtml += `
+                <tr>
+                  <td style="font-weight: 700; white-space: nowrap;">${dep.scheduledTime}</td>
+                  <td><span class="${lineClass}">${dep.isSchoolBus ? "🎒 " : ""}${dep.line}</span></td>
+                  <td style="max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${dep.destination}</td>
+                  <td style="white-space: nowrap; font-weight: 600; color: ${dep.estimatedTime.includes("Jetzt") || dep.estimatedTime.includes("in ") ? "#38bdf8" : "#94a3b8"};">${dep.estimatedTime}</td>
+                </tr>
+              `;
+            }
+          }
+
+          container.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+              <span style="font-size: 18px;">🚏</span>
+              <div>
+                <div style="font-weight: 700; font-size: 14px; color: #f8fafc;">${stop.name}</div>
+                <div style="font-size: 11px; color: #94a3b8;">${stop.municipality} · ${stop.platforms?.join(", ") ?? "Haltestelle"}</div>
+              </div>
+            </div>
+
+            ${stop.isSchoolStop ? `
+              <div style="font-size: 11px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 4px 6px; border-radius: 4px; margin-bottom: 6px; color: #fbbf24;">
+                🎒 <strong>Schulbushaltestelle</strong> für ${stop.nearbySchoolName ?? "Schulzentrum"}
+              </div>
+            ` : ""}
+
+            ${stop.isTrainHub ? `
+              <div style="font-size: 11px; background: rgba(2, 132, 199, 0.15); border: 1px solid #0284c7; padding: 4px 6px; border-radius: 4px; margin-bottom: 6px; color: #38bdf8;">
+                🚉 <strong>Umsteigeknoten Bahn ↔ Bus</strong> (Riedbahn & Nibelungenbahn)
+              </div>
+            ` : ""}
+
+            <div style="font-size: 11px; font-weight: 600; color: #cbd5e1; margin-top: 4px;">
+              Bediente Linien: ${stop.lines.map(l => `<span class="bus-line-pill" style="margin-right: 4px; font-size: 10px;">${l}</span>`).join("")}
+            </div>
+
+            <div style="margin-top: 8px; border-top: 1px solid #334155; padding-top: 6px;">
+              <div style="font-size: 12px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px;">Abfahrtsmonitor (Echtzeit):</div>
+              <table class="bus-departure-table">
+                <thead>
+                  <tr>
+                    <th>Abfahrt</th>
+                    <th>Linie</th>
+                    <th>Richtung</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${departureRowsHtml}
+                </tbody>
+              </table>
+            </div>
+          `;
+          return container;
+        });
+
+        busStopsGroup.addLayer(marker);
+        busStopMarkers.current.set(stop.id, marker);
+      }
+    }
+  }, [ready]);
+
+  // Real-time animation loop for VRN buses in the Ried
+  useEffect(() => {
+    if (!ready || !showBuses) return;
+
+    function updateBuses() {
+      const busesGroup = busesGroupRef.current;
+      if (!busesGroup) return;
+
+      const { buses } = calculateBusMobility(Date.now());
+
+      // 1. Remove markers of buses no longer active
+      const currentBusIds = new Set(buses.map(b => b.id));
+      for (const [id, marker] of busMarkers.current) {
+        if (!currentBusIds.has(id)) {
+          busesGroup.removeLayer(marker);
+          busMarkers.current.delete(id);
+        }
+      }
+
+      // 2. Update active buses
+      for (const bus of buses) {
+        const icon = L.divIcon({
+          html: createBusMarkerContent({
+            line: bus.line,
+            destination: bus.destination,
+            status: bus.status,
+            speedKmh: bus.speedKmh,
+            currentStopName: bus.currentStopName,
+            dwellTimeRemainingSec: bus.dwellTimeRemainingSec,
+            dwellProgress: bus.dwellProgress,
+            isSchoolBus: bus.isSchoolBus,
+            delayMinutes: bus.delayMinutes,
+            wheelchairAccessible: bus.wheelchairAccessible,
+          }),
+          className: "map-bus-icon",
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
+          popupAnchor: [0, -20],
+        });
+
+        let marker = busMarkers.current.get(bus.id);
+        if (!marker) {
+          marker = L.marker([bus.lat, bus.lng], { icon, zIndexOffset: 450 });
+          marker.bindPopup(() => {
+            const container = document.createElement("div");
+            container.className = "bus-popup-details";
+            container.innerHTML = `
+              <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px; color: ${bus.isSchoolBus ? "#fbbf24" : "#38bdf8"};">
+                🚌 ${bus.isSchoolBus ? "🎒 Schulbus " : "Linie "}${bus.line} nach ${bus.destination}
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">
+                Start: ${bus.origin} · Betreiber: ${bus.operator}
+              </div>
+
+              ${bus.isSchoolBus && bus.schoolBusReason ? `
+                <div style="font-size: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 4px 6px; border-radius: 4px; margin-bottom: 6px; color: #fbbf24;">
+                  🎒 <strong>${bus.schoolBusReason}</strong>
+                </div>
+              ` : ""}
+
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: ${bus.status === 'stopped' ? '#f59e0b' : '#38bdf8'};">
+                ${bus.status === 'stopped'
+                  ? `🚏 Halt an Haltestelle <strong>${bus.currentStopName}</strong> (Abfahrt in ${bus.dwellTimeRemainingSec ?? 0}s)`
+                  : `⚡ In Fahrt (${bus.speedKmh} km/h) → Nächster Halt: ${bus.nextStopName ?? "Planmäßig"}`}
+              </div>
+
+              <div style="font-size: 12px; margin-top: 4px; margin-bottom: 4px;">
+                Pünktlichkeit: ${bus.delayMinutes > 0
+                  ? `<span style="color: #ef4444; font-weight: 700;">⚠️ +${bus.delayMinutes} Min Verspätung</span>`
+                  : `<span style="color: #10b981; font-weight: 700;">✅ Pünktlich nach Fahrplan</span>`}
+                · ♿ Niederflur (barrierefrei)
+              </div>
+
+              ${bus.approachingCrossingWarning ? `
+                <div style="font-size: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 4px 6px; border-radius: 4px; margin-top: 6px; color: #fca5a5;">
+                  ${bus.approachingCrossingWarning}
+                </div>
+              ` : ""}
+
+              ${bus.intermodalConnectionInfo ? `
+                <div style="font-size: 12px; background: rgba(2, 132, 199, 0.15); border: 1px solid #0284c7; padding: 4px 6px; border-radius: 4px; margin-top: 6px; color: #38bdf8;">
+                  ${bus.intermodalConnectionInfo}
+                </div>
+              ` : ""}
+            `;
+            return container;
+          });
+          busesGroup.addLayer(marker);
+          busMarkers.current.set(bus.id, marker);
+        } else {
+          marker.setIcon(icon);
+          marker.setLatLng([bus.lat, bus.lng]);
+        }
+      }
+    }
+
+    updateBuses();
+    const interval = setInterval(updateBuses, 1000);
+    return () => clearInterval(interval);
+  }, [ready, showBuses]);
+
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
     {failed ? <p role="alert" className="absolute inset-0 bg-slate-900 p-8">Die Karte konnte nicht geladen werden. Bitte lade die Seite erneut.</p> : null}
     <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2">
+      <button
+        type="button"
+        className={`map-control ${showBuses ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowBuses(prev => !prev)}
+        title="VRN Busse im Ried ein-/ausblenden"
+      >
+        🚌 Busse {showBuses ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showBusStops && zoom >= 13 ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowBusStops(prev => !prev)}
+        title={zoom < 13 ? "Haltestellen ab Zoomstufe 13 sichtbar (aktuell: Zoom " + zoom + ")" : "VRN Haltestellen ein-/ausblenden"}
+      >
+        🚏 Haltestellen {showBusStops ? (zoom >= 13 ? "An" : "Zoom ≥13") : "Aus"}
+      </button>
       <button
         type="button"
         className={`map-control ${showWasteTrucks ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
@@ -631,3 +896,4 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     {!nodes.length && ready ? <p className="absolute bottom-8 left-3 right-3 z-[400] rounded-xl bg-slate-950/95 p-4 text-sm text-slate-200">Keine Standorte für diese Auswahl. Wähle eine weitere Gruppe oder „Alle“.</p> : null}
   </div>;
 }
+

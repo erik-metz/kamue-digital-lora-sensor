@@ -360,3 +360,102 @@ ON CONFLICT (id) DO UPDATE SET
     assigned_fraction = EXCLUDED.assigned_fraction,
     assigned_municipality = EXCLUDED.assigned_municipality;
 
+-- 8. Bus Infrastructure & VRN GTFS-RT Telemetry
+CREATE TABLE IF NOT EXISTS bus_stops (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    lines TEXT[] NOT NULL,
+    is_school_stop BOOLEAN NOT NULL DEFAULT FALSE,
+    nearby_school_name VARCHAR(255),
+    is_train_hub BOOLEAN NOT NULL DEFAULT FALSE,
+    platforms TEXT[] DEFAULT ARRAY['Steig 1'],
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS bus_lines (
+    id VARCHAR(64) PRIMARY KEY,
+    line_number VARCHAR(32) NOT NULL,
+    operator VARCHAR(128) NOT NULL,
+    route_name VARCHAR(255) NOT NULL,
+    color VARCHAR(16) DEFAULT '#0284c7',
+    is_school_line BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS bus_positions (
+    timestamp TIMESTAMPTZ NOT NULL,
+    vehicle_id VARCHAR(64) NOT NULL,
+    trip_id VARCHAR(64),
+    line VARCHAR(32) NOT NULL,
+    origin VARCHAR(128),
+    destination VARCHAR(128) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    heading DOUBLE PRECISION,
+    speed_kmh DOUBLE PRECISION NOT NULL,
+    status VARCHAR(32) NOT NULL, -- 'moving' | 'stopped'
+    stop_id VARCHAR(64),
+    is_school_bus BOOLEAN NOT NULL DEFAULT FALSE,
+    delay_sec INT DEFAULT 0,
+    position_basis VARCHAR(64) NOT NULL DEFAULT 'model_prediction' -- 'model_prediction' | 'vrn_gtfs_rt'
+);
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        PERFORM create_hypertable('bus_positions', 'timestamp', if_not_exists => TRUE);
+    END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_bus_positions_id_time ON bus_positions (vehicle_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_bus_positions_time ON bus_positions (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_bus_positions_line ON bus_positions (line, timestamp DESC);
+
+-- Seed Ried Bus Lines
+INSERT INTO bus_lines (id, line_number, operator, route_name, color, is_school_line)
+VALUES
+    ('vrn-641', '641', 'VRN / Verkehrsgesellschaft Gersprenztal (VGG)', 'Bürstadt Bahnhof – Bobstadt – Lampertheim Bahnhof', '#0284c7', FALSE),
+    ('vrn-642', '642', 'VRN / Busverkehr Rhein-Neckar (BRN)', 'Worms Hbf – Hofheim – Bürstadt EKS', '#0284c7', FALSE),
+    ('vrn-644', '644', 'VRN / BRN', 'Worms Hbf – Biblis Bahnhof', '#0284c7', FALSE),
+    ('vrn-652', '652', 'VRN / Schülerverkehr Kreis Bergstraße', 'Bobstadt – Bürstadt (EKS) – Lampertheim Schulzentrum', '#f59e0b', TRUE)
+ON CONFLICT (id) DO UPDATE SET
+    line_number = EXCLUDED.line_number,
+    operator = EXCLUDED.operator,
+    route_name = EXCLUDED.route_name,
+    color = EXCLUDED.color,
+    is_school_line = EXCLUDED.is_school_line;
+
+-- Seed Ried Bus Stops
+INSERT INTO bus_stops (id, name, municipality, latitude, longitude, lines, is_school_stop, nearby_school_name, is_train_hub)
+VALUES
+    ('stop-bst-bahnhof', 'Bürstadt Bahnhof', 'Bürstadt', 49.6458, 8.4563, ARRAY['641', '642', '643', '652'], FALSE, NULL, TRUE),
+    ('stop-bst-marktplatz', 'Bürstadt Marktplatz / Historisches Rathaus', 'Bürstadt', 49.6425, 8.4542, ARRAY['641', '642', '652'], FALSE, NULL, FALSE),
+    ('stop-bst-eks', 'Bürstadt Erich-Kästner-Schule', 'Bürstadt', 49.6385, 8.4610, ARRAY['642', '652'], TRUE, 'Erich-Kästner-Schule (Integrierte Gesamtschule)', FALSE),
+    ('stop-bst-schillerschule', 'Bürstadt Schillerschule / Rathaus', 'Bürstadt', 49.6438, 8.4568, ARRAY['641', '652'], TRUE, 'Schillerschule Grundschule', FALSE),
+    ('stop-bst-boxheimerhof', 'Bürstadt Boxheimerhof', 'Bürstadt', 49.6520, 8.4550, ARRAY['641', '652'], FALSE, NULL, FALSE),
+    ('stop-bst-sonneneck', 'Bürstadt Sonneneck / Mainstraße Süd', 'Bürstadt', 49.6432, 8.4515, ARRAY['642'], FALSE, NULL, FALSE),
+    ('stop-bob-altes-rathaus', 'Bobstadt Altes Rathaus / St.-Josef', 'Bobstadt', 49.6635, 8.4465, ARRAY['641', '652'], FALSE, NULL, FALSE),
+    ('stop-bob-frankenstr', 'Bobstadt Frankenstraße', 'Bobstadt', 49.6610, 8.4485, ARRAY['641', '652'], FALSE, NULL, FALSE),
+    ('stop-la-bahnhof', 'Lampertheim Bahnhof', 'Lampertheim', 49.5980, 8.4760, ARRAY['641', '644', '652'], FALSE, NULL, TRUE),
+    ('stop-la-domkirche', 'Lampertheim Domkirche / Schillerplatz', 'Lampertheim', 49.5955, 8.4635, ARRAY['641', '652'], FALSE, NULL, FALSE),
+    ('stop-la-lessing-gymnasium', 'Lampertheim Lessing-Gymnasium', 'Lampertheim', 49.5932, 8.4715, ARRAY['641', '652'], TRUE, 'Lessing-Gymnasium Lampertheim', FALSE),
+    ('stop-la-alfred-delp', 'Lampertheim Alfred-Delp-Schule', 'Lampertheim', 49.5975, 8.4830, ARRAY['641', '652'], TRUE, 'Alfred-Delp-Schule (Realschule / Hauptschule)', FALSE),
+    ('stop-hof-bahnhof', 'Hofheim (Ried) Bahnhof', 'Hofheim (Ried)', 49.6588, 8.4115, ARRAY['642'], FALSE, NULL, TRUE),
+    ('stop-hof-schule', 'Hofheim Schule / Sportpark', 'Hofheim (Ried)', 49.6580, 8.4175, ARRAY['642'], TRUE, 'Schule Hofheim Grundschule', FALSE),
+    ('stop-hof-kirche', 'Hofheim Balthasar-Neumann-Kirche', 'Hofheim (Ried)', 49.6590, 8.4125, ARRAY['642'], FALSE, NULL, FALSE),
+    ('stop-bib-bahnhof', 'Biblis Bahnhof', 'Biblis', 49.6886, 8.4485, ARRAY['644'], FALSE, NULL, TRUE),
+    ('stop-bib-rathaus', 'Biblis Rathaus', 'Biblis', 49.6885, 8.4460, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-bib-schule', 'Biblis Schule am Weschnitzdamm', 'Biblis', 49.6835, 8.4445, ARRAY['644'], TRUE, 'Schule am Weschnitzdamm (Grundschule)', FALSE)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    municipality = EXCLUDED.municipality,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    lines = EXCLUDED.lines,
+    is_school_stop = EXCLUDED.is_school_stop,
+    nearby_school_name = EXCLUDED.nearby_school_name,
+    is_train_hub = EXCLUDED.is_train_hub;
+
+

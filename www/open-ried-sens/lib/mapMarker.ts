@@ -371,3 +371,161 @@ export function createWasteTruckMarkerContent(props: WasteTruckMarkerProps): HTM
   return content;
 }
 
+export interface BusMarkerProps {
+  line: string;
+  destination: string;
+  status: "moving" | "stopped";
+  speedKmh: number;
+  currentStopName?: string;
+  dwellTimeRemainingSec?: number;
+  dwellProgress?: number; // 1.0 (just arrived) -> 0.0 (departing)
+  isSchoolBus: boolean;
+  delayMinutes: number;
+  wheelchairAccessible?: boolean;
+}
+
+export function createBusMarkerContent(props: BusMarkerProps): HTMLElement {
+  const isStopped = props.status === "stopped";
+  const isSchool = props.isSchoolBus;
+  const color = isSchool ? "#f59e0b" : "#0284c7";
+
+  const content = document.createElement("div");
+  content.className = `bus-marker ${isStopped ? "bus-marker-stopped" : "bus-marker-moving"}${isSchool ? " bus-marker-school" : ""}`;
+  content.style.setProperty("--bus-color", color);
+
+  // Bus SVG silhouette
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  icon.setAttribute("aria-hidden", "true");
+
+  const busBody = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  busBody.setAttribute("x", "3");
+  busBody.setAttribute("y", "4");
+  busBody.setAttribute("width", "18");
+  busBody.setAttribute("height", "14");
+  busBody.setAttribute("rx", "2");
+
+  const windshield = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  windshield.setAttribute("x", "5");
+  windshield.setAttribute("y", "6");
+  windshield.setAttribute("width", "14");
+  windshield.setAttribute("height", "5");
+  windshield.setAttribute("rx", "1");
+
+  const divider = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  divider.setAttribute("x1", "12");
+  divider.setAttribute("y1", "6");
+  divider.setAttribute("x2", "12");
+  divider.setAttribute("y2", "11");
+
+  const light1 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  light1.setAttribute("cx", "6");
+  light1.setAttribute("cy", "14.5");
+  light1.setAttribute("r", "1");
+
+  const light2 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  light2.setAttribute("cx", "18");
+  light2.setAttribute("cy", "14.5");
+  light2.setAttribute("r", "1");
+
+  icon.append(busBody, windshield, divider, light1, light2);
+  content.append(icon);
+
+  // Line badge
+  const badge = document.createElement("div");
+  badge.className = "bus-marker-badge";
+  badge.textContent = isSchool ? `🎒 ${props.line}` : props.line;
+  content.append(badge);
+
+  // Delay indicator chip if delayed
+  if (props.delayMinutes > 0) {
+    const delayBadge = document.createElement("div");
+    delayBadge.className = "bus-delay-badge";
+    delayBadge.textContent = `+${props.delayMinutes}m`;
+    content.append(delayBadge);
+  }
+
+  // Animated radial departure countdown gauge when stopped at a bus stop
+  if (isStopped && props.dwellTimeRemainingSec !== undefined) {
+    const gaugeWrap = document.createElement("div");
+    gaugeWrap.className = "bus-gauge-container";
+    const gaugeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    gaugeSvg.setAttribute("viewBox", "0 0 36 36");
+    gaugeSvg.setAttribute("class", "bus-gauge-svg");
+
+    const bgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    bgCircle.setAttribute("class", "bus-gauge-track");
+    bgCircle.setAttribute("cx", "18");
+    bgCircle.setAttribute("cy", "18");
+    bgCircle.setAttribute("r", "15.915");
+
+    const progressCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    progressCircle.setAttribute("class", "bus-gauge-progress");
+    progressCircle.setAttribute("cx", "18");
+    progressCircle.setAttribute("cy", "18");
+    progressCircle.setAttribute("r", "15.915");
+    progressCircle.setAttribute("stroke-dasharray", "100, 100");
+
+    const progress = Math.max(0, Math.min(1, props.dwellProgress ?? 1));
+    const offset = 100 - progress * 100;
+    progressCircle.setAttribute("stroke-dashoffset", String(offset));
+
+    gaugeSvg.append(bgCircle, progressCircle);
+
+    const countdownText = document.createElement("span");
+    countdownText.className = "bus-gauge-text";
+    countdownText.textContent = `${props.dwellTimeRemainingSec}s`;
+
+    gaugeWrap.append(gaugeSvg, countdownText);
+    content.append(gaugeWrap);
+
+    // Dwell sublabel
+    const sublabel = document.createElement("span");
+    sublabel.className = "bus-marker-sublabel";
+    sublabel.textContent = `Halt: ${props.currentStopName ?? "Haltestelle"}`;
+    content.append(sublabel);
+  } else {
+    // In transit sublabel
+    const sublabel = document.createElement("span");
+    sublabel.className = "bus-marker-sublabel";
+    sublabel.textContent = `→ ${props.destination}`;
+    content.append(sublabel);
+  }
+
+  return content;
+}
+
+export interface BusStopMarkerProps {
+  name: string;
+  lines: string[];
+  isSchoolStop?: boolean;
+  isTrainHub?: boolean;
+}
+
+export function createBusStopMarkerContent(props: BusStopMarkerProps): HTMLElement {
+  const content = document.createElement("div");
+  content.className = `bus-stop-marker${props.isSchoolStop ? " bus-stop-school" : ""}${props.isTrainHub ? " bus-stop-hub" : ""}`;
+  content.title = `${props.name} (Linien: ${props.lines.join(", ")})`;
+
+  // German Haltestelle sign: bold "H" inside yellow circular disc with green ring
+  const label = document.createElement("span");
+  label.className = "bus-stop-h";
+  label.textContent = "H";
+  content.append(label);
+
+  if (props.isSchoolStop) {
+    const schoolPin = document.createElement("span");
+    schoolPin.className = "bus-stop-school-icon";
+    schoolPin.textContent = "🎒";
+    content.append(schoolPin);
+  }
+
+  return content;
+}
+
+

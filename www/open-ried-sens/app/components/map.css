@@ -215,4 +215,198 @@
   box-shadow: 0 0 10px #10b981;
 }
 
+/* VRN Buses & School Buses */
+.bus-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 2.5px solid var(--bus-color, #0284c7);
+  box-shadow: 0 0 12px var(--bus-color, #0284c7), 0 3px 10px #000a;
+  color: var(--bus-color, #0284c7);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+  cursor: pointer;
+}
+.bus-marker:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 18px #fff, 0 0 20px var(--bus-color, #0284c7);
+}
+.bus-marker svg {
+  width: 20px;
+  height: 20px;
+}
+.bus-marker-moving {
+  border-color: var(--bus-color, #0284c7);
+}
+.bus-marker-stopped {
+  border-color: #f59e0b;
+  box-shadow: 0 0 14px #f59e0b, 0 3px 10px #000a;
+  animation: pulse-dwell 2.5s infinite ease-in-out;
+}
+.bus-marker-school {
+  border-color: #f59e0b;
+  color: #fbbf24;
+  box-shadow: 0 0 14px #f59e0b, 0 3px 10px #000a;
+}
+.bus-marker-badge {
+  position: absolute;
+  top: -10px;
+  right: -8px;
+  background: var(--bus-color, #0284c7);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 5px #0008;
+  white-space: nowrap;
+}
+.bus-marker-school .bus-marker-badge {
+  background: #f59e0b;
+  color: #0f172a;
+  border: 1px solid #fbbf24;
+}
+.bus-delay-badge {
+  position: absolute;
+  top: -10px;
+  left: -8px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 4px #0008;
+}
+.bus-gauge-container {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  top: -6px;
+  left: -6px;
+  pointer-events: none;
+}
+.bus-gauge-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.bus-gauge-track {
+  fill: none;
+  stroke: rgba(245, 158, 11, 0.25);
+  stroke-width: 3;
+}
+.bus-gauge-progress {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 3;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s ease;
+}
+.bus-gauge-text {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #f59e0b;
+  color: #0f172a;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px #0008;
+}
+.bus-marker-sublabel {
+  position: absolute;
+  top: 38px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  background: #0f172af0;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  padding: 2px 6px;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px #0008;
+}
+
+/* German Haltestellenschild (Bus Stop Sign) */
+.bus-stop-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fef08a; /* Standard Yellow Disc */
+  border: 2.5px solid #15803d; /* Green Border */
+  box-shadow: 0 2px 8px #0009;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.bus-stop-marker:hover {
+  transform: scale(1.35);
+  box-shadow: 0 0 12px #fef08a, 0 3px 10px #000c;
+}
+.bus-stop-h {
+  color: #15803d;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
+}
+.bus-stop-school {
+  border-color: #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+.bus-stop-school-icon {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 11px;
+}
+.bus-stop-hub {
+  border-width: 3px;
+}
+
+/* Bus Stop Popup & Departure Table */
+.bus-departure-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-top: 8px;
+}
+.bus-departure-table th {
+  text-align: left;
+  padding: 3px 6px;
+  color: #94a3b8;
+  font-weight: 600;
+  border-bottom: 1px solid #334155;
+}
+.bus-departure-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid #1e293b;
+}
+.bus-line-pill {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 11px;
+  background: #0284c7;
+  color: #fff;
+}
+.bus-line-pill-school {
+  background: #f59e0b;
+  color: #0f172a;
+}
+
+
 
