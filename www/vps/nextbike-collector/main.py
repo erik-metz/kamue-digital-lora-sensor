@@ -116,7 +116,7 @@ async def main_loop():
                     },
                 )
             except Exception as exc:
-                LOG.exception("Error during Nextbike poll cycle: %s", exc)
+                LOG.exception("Error during Nextbike poll cycle")
                 write_health(
                     health_path,
                     "degraded",
