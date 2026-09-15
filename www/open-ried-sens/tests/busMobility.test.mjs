@@ -97,7 +97,7 @@ const mapMarker = markerContext.exports;
 
 test("RIED_BUS_STOPS contains all key Ried municipalities and designated school stops", () => {
   const stops = busMobility.RIED_BUS_STOPS;
-  assert.ok(stops.length >= 10, "Must have at least 10 stops");
+  assert.ok(stops.length >= 40, "Must have at least 40 stops across the Ried");
 
   const municipalities = new Set(stops.map((s) => s.municipality));
   assert.ok(municipalities.has("Bürstadt"), "Bürstadt stops must exist");
@@ -105,6 +105,8 @@ test("RIED_BUS_STOPS contains all key Ried municipalities and designated school 
   assert.ok(municipalities.has("Hofheim (Ried)"), "Hofheim stops must exist");
   assert.ok(municipalities.has("Biblis"), "Biblis stops must exist");
   assert.ok(municipalities.has("Bobstadt"), "Bobstadt stops must exist");
+  assert.ok(municipalities.has("Riedrode"), "Riedrode stops must exist");
+  assert.ok(municipalities.has("Groß-Rohrheim"), "Groß-Rohrheim stops must exist");
 
   const schoolStops = stops.filter((s) => s.isSchoolStop);
   assert.ok(schoolStops.length >= 4, "Must have designated school stops");
@@ -119,7 +121,7 @@ test("RIED_BUS_STOPS contains all key Ried municipalities and designated school 
   // Verify all stops have valid latitude and longitude in the Ried region
   for (const s of stops) {
     assert.ok(s.lat >= 49.55 && s.lat <= 49.75, `Stop ${s.id} lat ${s.lat} should be in Ried bounds`);
-    assert.ok(s.lng >= 8.35 && s.lng <= 8.55, `Stop ${s.id} lng ${s.lng} should be in Ried bounds`);
+    assert.ok(s.lng >= 8.35 && s.lng <= 8.60, `Stop ${s.id} lng ${s.lng} should be in Ried bounds`);
   }
 });
 
