@@ -54,6 +54,7 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
             )
         await self.conn.execute(schema)
         await self.conn.execute(schema)  # Startup migration is repeatable.
+        await self.conn.execute("DELETE FROM sensor_metadata")
         self.item = normalize(dashboard(), "buerstadt", URL, NOW).observations[0]
 
     async def asyncTearDown(self):

@@ -238,19 +238,21 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_train_positions_id_time ON train_positions (train_id, timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_train_positions_time ON train_positions (timestamp DESC);
 
--- 6. Register the 4 Active Bahnübergänge in sensor_metadata for telemetry history
-INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, is_hidden, description)
+-- 6. Seed the 4 Active Bahnübergänge in rail_crossings
+INSERT INTO rail_crossings (id, name, line, latitude, longitude, crossing_type, daily_closure_count_avg, avg_closure_duration_sec)
 VALUES
-    ('bu-buerstadt-mainstr', 'BÜ Mainstraße (Bürstadt)', 49.64600, 8.45398, FALSE, 'Nibelungenbahn km 9.8 · RBÜT Halbschrankenanlage'),
-    ('bu-buerstadt-waldgarten', 'BÜ Waldgartenstraße (Bürstadt)', 49.64574, 8.45819, FALSE, 'Nibelungenbahn km 10.18 · Vollbeschrankter Fußgängerüberweg'),
-    ('bu-biblis-kirchstr', 'BÜ Kirchstraße (Biblis)', 49.68207, 8.44415, FALSE, 'Riedbahn km 27.20 · Modernisierte Schrankenanlage Gemeindesee'),
-    ('bu-hofheim-bibliser-weg', 'BÜ Bibliser Weg (Hofheim)', 49.66258, 8.41341, FALSE, 'Worms–Biblis km 6.09 · RBÜT Halbschranken L3411')
+    ('bu-buerstadt-mainstr', 'BÜ Mainstraße (Bürstadt)', 'Nibelungenbahn', 49.64600, 8.45398, 'road_barrier', 48, 135),
+    ('bu-buerstadt-waldgarten', 'BÜ Waldgartenstraße (Bürstadt)', 'Nibelungenbahn', 49.64574, 8.45819, 'pedestrian_barrier', 48, 110),
+    ('bu-biblis-kirchstr', 'BÜ Kirchstraße (Biblis)', 'Riedbahn', 49.68207, 8.44415, 'road_barrier', 72, 155),
+    ('bu-hofheim-bibliser-weg', 'BÜ Bibliser Weg (Hofheim)', 'Nibelungenbahn', 49.66258, 8.41341, 'road_barrier', 36, 120)
 ON CONFLICT (id) DO UPDATE SET
-    friendly_name = EXCLUDED.friendly_name,
+    name = EXCLUDED.name,
+    line = EXCLUDED.line,
     latitude = EXCLUDED.latitude,
     longitude = EXCLUDED.longitude,
-    description = EXCLUDED.description,
-    is_hidden = FALSE;
+    crossing_type = EXCLUDED.crossing_type,
+    daily_closure_count_avg = EXCLUDED.daily_closure_count_avg,
+    avg_closure_duration_sec = EXCLUDED.avg_closure_duration_sec;
 
 -- 7. ZAKB Waste Collection & Refuse Fleet Telemetry
 CREATE TABLE IF NOT EXISTS waste_facilities (
