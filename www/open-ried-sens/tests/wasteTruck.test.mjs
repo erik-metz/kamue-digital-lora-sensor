@@ -245,13 +245,18 @@ test("GET /api/waste-trucks returns JSON with live trucks, tours, and ZAKB opera
     exports: {},
     require: (id) => {
       if (id === "@/lib/wasteTruckMobility") return wasteTruckMobility;
+      if (id === "@/env") return { env: { BACKEND_API_URL: "https://backend.example" } };
       throw new Error(`Unknown require in route test: ${id}`);
     },
     Response: {
       json: (data, init) => ({ data, init }),
     },
+    URL,
+    fetch: async () => ({ ok: false }),
+    AbortSignal,
     Date,
     Object,
+    Array,
   };
   vm.runInNewContext(
     ts.transpileModule(routeSource, {
