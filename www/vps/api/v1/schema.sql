@@ -586,6 +586,42 @@ CREATE TABLE IF NOT EXISTS nextbike_observations (
     PRIMARY KEY (sensor_id, metric, observed_at)
 );
 
+-- 8. Traffic Jam (Stau) Tracking for Autobahnen (A67, A5, A6) & Bundesstraßen (B47, B44)
+CREATE TABLE IF NOT EXISTS traffic_incidents (
+    id VARCHAR(128) PRIMARY KEY,
+    road_name VARCHAR(32) NOT NULL,
+    direction VARCHAR(128) NOT NULL,
+    location_from VARCHAR(128) NOT NULL,
+    location_to VARCHAR(128) NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    last_seen_at TIMESTAMPTZ NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    delay_seconds INT NOT NULL DEFAULT 0,
+    length_meters INT NOT NULL DEFAULT 0,
+    severity VARCHAR(32) NOT NULL DEFAULT 'moderate',
+    cause_type VARCHAR(64) NOT NULL DEFAULT 'congestion',
+    description TEXT,
+    coordinates JSONB,
+    source VARCHAR(64) NOT NULL DEFAULT 'autobahn_api',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
+CREATE INDEX IF NOT EXISTS idx_traffic_active ON traffic_incidents (is_active, road_name);
+CREATE INDEX IF NOT EXISTS idx_traffic_time_window ON traffic_incidents (start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_traffic_road_active ON traffic_incidents (road_name, is_active);
 
+-- Hypertable for periodic corridor congestion snapshots (enables air quality / noise correlation)
+CREATE TABLE IF NOT EXISTS traffic_corridor_snapshots (
+    timestamp TIMESTAMPTZ NOT NULL,
+    corridor_id VARCHAR(32) NOT NULL,
+    road_name VARCHAR(32) NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    delay_seconds INT NOT NULL DEFAULT 0,
+    active_incidents_count INT NOT NULL DEFAULT 0,
+    max_length_meters INT NOT NULL DEFAULT 0
+);
 
+SELECT create_hypertable('traffic_corridor_snapshots', 'timestamp', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_traffic_corridor_snapshots ON traffic_corridor_snapshots (corridor_id, timestamp DESC);

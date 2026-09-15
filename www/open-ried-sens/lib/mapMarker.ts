@@ -528,4 +528,43 @@ export function createBusStopMarkerContent(props: BusStopMarkerProps): HTMLEleme
   return content;
 }
 
+export interface TrafficIncidentMarkerProps {
+  roadName: string;
+  delayMinutes: number;
+  lengthKm: number;
+  severity: "minor" | "moderate" | "major" | "standstill";
+  causeType: "congestion" | "accident" | "roadwork" | "closure";
+}
 
+export function createTrafficIncidentMarkerContent(props: TrafficIncidentMarkerProps): HTMLElement {
+  const content = document.createElement("div");
+  const isSevere = props.severity === "major" || props.severity === "standstill";
+  const isClosure = props.causeType === "closure" || props.severity === "standstill";
+  const color = isClosure ? "#ef4444" : isSevere ? "#f97316" : "#eab308";
+
+  content.className = `traffic-incident-marker ${isClosure ? "traffic-closure" : isSevere ? "traffic-stau" : "traffic-sluggish"}`;
+  content.style.setProperty("--traffic-color", color);
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "traffic-marker-icon";
+  iconSpan.textContent = isClosure ? "⛔" : props.causeType === "accident" ? "💥" : props.causeType === "roadwork" ? "🚧" : "⚠️";
+  content.append(iconSpan);
+
+  const roadBadge = document.createElement("span");
+  roadBadge.className = "traffic-marker-road";
+  roadBadge.textContent = props.roadName;
+  content.append(roadBadge);
+
+  if (props.delayMinutes > 0) {
+    const delayBadge = document.createElement("span");
+    delayBadge.className = "traffic-marker-delay";
+    delayBadge.textContent = `+${props.delayMinutes}m`;
+    content.append(delayBadge);
+  }
+
+  const pulse = document.createElement("span");
+  pulse.className = "traffic-marker-pulse";
+  content.append(pulse);
+
+  return content;
+}

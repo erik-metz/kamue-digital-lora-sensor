@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./map.css";
 import { metricLabel } from "@/lib/telemetryData";
-import { createClusterContent, createMarkerContent, createTempPinContent, createTrainMarkerContent, createLevelCrossingMarkerContent, createWasteTruckMarkerContent } from "@/lib/mapMarker";
+import { createClusterContent, createMarkerContent, createTempPinContent, createTrainMarkerContent, createLevelCrossingMarkerContent, createWasteTruckMarkerContent, createTrafficIncidentMarkerContent } from "@/lib/mapMarker";
 import { CATEGORIES, markerCategory, observationLabel, parkingSummary, bikeSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer, type TemperaturePoint } from "@/lib/temperatureHeatmap";
 import { RIEDBAHN_TRACK, NIBELUNGENBAHN_TRACK, calculateRiedMobility } from "@/lib/railMobility";
@@ -13,6 +13,7 @@ import { calculateWasteTruckMobility } from "@/lib/wasteTruckMobility";
 import { calculateBusMobility, getBusStopDepartures, RIED_BUS_STOPS, type LiveBus, type BusStop } from "@/lib/busMobility";
 import { createBusMarkerContent, createBusStopMarkerContent } from "@/lib/mapMarker";
 import { BUS_ROUTE_OVERLAYS, WASTE_TRUCK_ROUTE_OVERLAYS } from "@/lib/roadRoutes";
+import { calculateLocalTraffic, type TrafficCorridor, type TrafficIncident } from "@/lib/trafficData";
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
@@ -48,6 +49,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [showWasteTrucks, setShowWasteTrucks] = useState(true);
   const [showBuses, setShowBuses] = useState(true);
   const [showBusStops, setShowBusStops] = useState(true);
+  const [showTraffic, setShowTraffic] = useState(true);
+  const [trafficCorridors, setTrafficCorridors] = useState<TrafficCorridor[]>([]);
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
   const crossingsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -56,12 +59,16 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const busesGroupRef = useRef<L.LayerGroup | null>(null);
   const busRoutesGroupRef = useRef<L.LayerGroup | null>(null);
   const busStopsGroupRef = useRef<L.LayerGroup | null>(null);
+  const trafficRoutesGroupRef = useRef<L.LayerGroup | null>(null);
+  const trafficIncidentsGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
   const wasteDepotMarkers = useRef(new Map<string, L.Marker>());
   const busMarkers = useRef(new Map<string, L.Marker>());
   const busStopMarkers = useRef(new Map<string, L.Marker>());
+  const trafficMarkers = useRef(new Map<string, L.Marker>());
+  const trafficCorridorPolylines = useRef(new Map<string, { bg: L.Polyline; fg: L.Polyline }>());
   useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
 
 
@@ -74,6 +81,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     const currentWasteDepotMarkers = wasteDepotMarkers.current;
     const currentBusMarkers = busMarkers.current;
     const currentBusStopMarkers = busStopMarkers.current;
+    const currentTrafficMarkers = trafficMarkers.current;
+    const currentTrafficCorridorPolylines = trafficCorridorPolylines.current;
     async function initialize() {
       // MarkerCluster extends the global Leaflet instance. Load only in the browser.
       (window as typeof window & { L: typeof L }).L = L;
@@ -138,6 +147,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const wasteTrucksGroup = L.layerGroup();
       const busesGroup = L.layerGroup();
       const busStopsGroup = L.layerGroup();
+      const trafficRoutesGroup = L.layerGroup();
+      const trafficIncidentsGroup = L.layerGroup();
 
       railTracksGroupRef.current = railTracksGroup;
       trainsGroupRef.current = trainsGroup;
@@ -147,6 +158,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       busRoutesGroupRef.current = busRoutesGroup;
       busesGroupRef.current = busesGroup;
       busStopsGroupRef.current = busStopsGroup;
+      trafficRoutesGroupRef.current = trafficRoutesGroup;
+      trafficIncidentsGroupRef.current = trafficIncidentsGroup;
 
       map.addLayer(railTracksGroup);
       map.addLayer(crossingsGroup);
@@ -155,6 +168,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       map.addLayer(wasteTrucksGroup);
       map.addLayer(busRoutesGroup);
       map.addLayer(busesGroup);
+      map.addLayer(trafficRoutesGroup);
+      map.addLayer(trafficIncidentsGroup);
       // Bus stops become visible at zoom >= 13
       if (map.getZoom() >= 13) {
         map.addLayer(busStopsGroup);
@@ -220,12 +235,16 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       busRoutesGroupRef.current = null;
       busesGroupRef.current = null;
       busStopsGroupRef.current = null;
+      trafficRoutesGroupRef.current = null;
+      trafficIncidentsGroupRef.current = null;
       currentTrainMarkers.clear();
       currentCrossingMarkers.clear();
       currentWasteTruckMarkers.clear();
       currentWasteDepotMarkers.clear();
       currentBusMarkers.clear();
       currentBusStopMarkers.clear();
+      currentTrafficMarkers.clear();
+      currentTrafficCorridorPolylines.clear();
       currentMarkers.clear();
     };
   }, []);
@@ -925,10 +944,216 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     return () => clearInterval(interval);
   }, [ready, showBuses]);
 
+  // Toggle traffic layers visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    const routesGroup = trafficRoutesGroupRef.current;
+    const incidentsGroup = trafficIncidentsGroupRef.current;
+    if (!map || !routesGroup || !incidentsGroup) return;
+
+    if (showTraffic) {
+      if (!map.hasLayer(routesGroup)) map.addLayer(routesGroup);
+      if (!map.hasLayer(incidentsGroup)) map.addLayer(incidentsGroup);
+    } else {
+      if (map.hasLayer(routesGroup)) map.removeLayer(routesGroup);
+      if (map.hasLayer(incidentsGroup)) map.removeLayer(incidentsGroup);
+    }
+  }, [showTraffic]);
+
+  // Fetch and update traffic corridors and incidents
+  useEffect(() => {
+    if (!ready) return;
+
+    let cancelled = false;
+
+    async function updateTraffic() {
+      const routesGroup = trafficRoutesGroupRef.current;
+      const incidentsGroup = trafficIncidentsGroupRef.current;
+      if (!routesGroup || !incidentsGroup || cancelled) return;
+
+      let incidents: TrafficIncident[] = [];
+      let corridors: TrafficCorridor[] = [];
+
+      try {
+        const res = await fetch("/api/traffic", { cache: "no-store", signal: AbortSignal.timeout(3000) });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.incidents) && Array.isArray(data.corridors)) {
+            incidents = data.incidents;
+            corridors = data.corridors;
+          }
+        }
+      } catch {
+        // Fallback to local simulation
+      }
+
+      if (incidents.length === 0 && corridors.length === 0) {
+        const fallback = calculateLocalTraffic(Date.now());
+        incidents = fallback.incidents;
+        corridors = fallback.corridors;
+      }
+
+      if (cancelled) return;
+      setTrafficCorridors(corridors);
+
+      // 1. Draw/update corridor tracks
+      for (const c of corridors) {
+        const existing = trafficCorridorPolylines.current.get(c.id);
+        const color = c.status === "closure"
+          ? "#b91c1c"
+          : c.status === "congestion"
+          ? "#ef4444"
+          : c.status === "sluggish"
+          ? "#f59e0b"
+          : "#64748b";
+
+        const weight = c.status === "clear" ? 3 : 5;
+        const opacity = c.status === "clear" ? 0.6 : 0.9;
+        const dashArray = c.status === "congestion" ? "8, 8" : c.status === "closure" ? "4, 6" : undefined;
+
+        if (!existing) {
+          const bg = L.polyline(c.track, {
+            color: "#0f172a",
+            weight: weight + 2,
+            opacity: 0.5,
+          });
+          const fg = L.polyline(c.track, {
+            color,
+            weight,
+            opacity,
+            dashArray,
+          });
+          fg.bindTooltip(`🚗 <strong>${c.roadName}</strong>: ${c.description}`, { sticky: true, className: "route-line-tooltip" });
+          routesGroup.addLayer(bg);
+          routesGroup.addLayer(fg);
+          trafficCorridorPolylines.current.set(c.id, { bg, fg });
+        } else {
+          existing.fg.setStyle({ color, weight, opacity, dashArray });
+          existing.fg.setTooltipContent(`🚗 <strong>${c.roadName}</strong>: ${c.description}`);
+        }
+      }
+
+      // 2. Remove cleared incident markers
+      const currentIds = new Set(incidents.map(i => i.id));
+      for (const [id, marker] of trafficMarkers.current) {
+        if (!currentIds.has(id)) {
+          incidentsGroup.removeLayer(marker);
+          trafficMarkers.current.delete(id);
+        }
+      }
+
+      // 3. Update/create incident markers
+      for (const inc of incidents) {
+        const coords = inc.coordinates && inc.coordinates.length > 0
+          ? inc.coordinates[Math.floor(inc.coordinates.length / 2)]
+          : null;
+        if (!coords) continue;
+
+        const icon = L.divIcon({
+          html: createTrafficIncidentMarkerContent({
+            roadName: inc.roadName,
+            delayMinutes: inc.delayMinutes,
+            lengthKm: inc.lengthKm,
+            severity: inc.severity,
+            causeType: inc.causeType,
+          }),
+          className: "map-traffic-icon",
+          iconSize: [40, 24],
+          iconAnchor: [20, 12],
+          popupAnchor: [0, -14],
+        });
+
+        let marker = trafficMarkers.current.get(inc.id);
+        if (!marker) {
+          marker = L.marker([coords[0], coords[1]], { icon, zIndexOffset: 480 });
+          marker.bindPopup(() => {
+            const container = document.createElement("div");
+            container.className = "traffic-popup-details";
+            const isClosure = inc.causeType === "closure" || inc.severity === "standstill";
+            const isSevere = inc.severity === "major" || inc.delayMinutes >= 10;
+            const statusColor = isClosure ? "#ef4444" : isSevere ? "#f97316" : "#eab308";
+            const delayText = inc.delayMinutes > 0 ? `+${inc.delayMinutes} Min. Verzögerung` : "Geringe Verzögerung";
+            const lengthText = inc.lengthKm > 0 ? ` · ${inc.lengthKm} km Stau` : "";
+            const formattedTime = new Date(inc.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+            container.innerHTML = `
+              <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px; color: ${statusColor};">
+                🚗 ${inc.roadName}: ${inc.direction}
+              </div>
+              <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">
+                Von: <strong>${inc.locationFrom}</strong> ➔ Bis: <strong>${inc.locationTo}</strong>
+              </div>
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: ${statusColor};">
+                ⚠️ ${delayText}${lengthText}
+              </div>
+              ${inc.description ? `
+                <div style="font-size: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; padding: 6px 8px; border-radius: 6px; margin: 6px 0; color: #e2e8f0; line-height: 1.4;">
+                  ${inc.description}
+                </div>
+              ` : ""}
+              <div style="font-size: 11px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; margin-top: 6px; display: flex; justify-content: space-between;">
+                <span>Aktiv seit: ${formattedTime} Uhr</span>
+                <span>Quelle: ${inc.source === "autobahn_api" ? "Autobahn GmbH" : "Ried-Sens Traffic"}</span>
+              </div>
+            `;
+            return container;
+          });
+          incidentsGroup.addLayer(marker);
+          trafficMarkers.current.set(inc.id, marker);
+        } else {
+          marker.setIcon(icon);
+          marker.setLatLng([coords[0], coords[1]]);
+        }
+      }
+    }
+
+    void updateTraffic();
+    const interval = setInterval(updateTraffic, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [ready]);
+
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
     {failed ? <p role="alert" className="absolute inset-0 bg-slate-900 p-8">Die Karte konnte nicht geladen werden. Bitte lade die Seite erneut.</p> : null}
+
+    {/* Commuter Corridor Quick Status Bar */}
+    {trafficCorridors.length > 0 ? (
+      <div className="absolute bottom-3 left-3 z-[400] hidden sm:flex items-center gap-1 pointer-events-auto">
+        <div className="commuter-corridor-bar">
+          <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5 mr-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Ried-Korridore:
+          </span>
+          {trafficCorridors.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`corridor-pill corridor-pill-${c.status}`}
+              title={`${c.name}: ${c.description} – Klick zum Fokussieren`}
+              onClick={() => mapRef.current?.setView(c.center, c.zoom)}
+            >
+              <span className="font-bold">{c.roadName}</span>
+              <span>
+                {c.status === "clear" ? "🟢 Frei" : c.status === "sluggish" ? `🟡 +${c.delayMinutes}m` : `🔴 +${c.delayMinutes}m`}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    ) : null}
+
     <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2">
+      <button
+        type="button"
+        className={`map-control ${showTraffic ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowTraffic(prev => !prev)}
+        title="Verkehrslage und Staus im Ried ein-/ausblenden"
+      >
+        🚗 Verkehr {showTraffic ? "An" : "Aus"}
+      </button>
       <button
         type="button"
         className={`map-control ${showBuses ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}

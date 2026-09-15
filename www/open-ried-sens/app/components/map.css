@@ -419,3 +419,121 @@
   padding: 3px 7px !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
 }
+
+/* Traffic Incident (Stau) Marker Styling */
+.traffic-incident-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #0f172af2;
+  border: 2px solid var(--traffic-color, #eab308);
+  border-radius: 9999px;
+  padding: 2px 8px;
+  color: #f8fafc;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 12px var(--traffic-color, #eab308);
+  cursor: pointer;
+  transform: translate(-50%, -50%);
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+
+.traffic-incident-marker:hover {
+  transform: translate(-50%, -50%) scale(1.1);
+  z-index: 999 !important;
+}
+
+.traffic-marker-road {
+  background: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 10px;
+  color: #38bdf8;
+}
+
+.traffic-marker-delay {
+  color: var(--traffic-color, #f97316);
+  font-weight: 800;
+}
+
+.traffic-marker-pulse {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background-color: var(--traffic-color, #ef4444);
+  box-shadow: 0 0 8px var(--traffic-color, #ef4444);
+  animation: traffic-pulse 1.8s infinite;
+}
+
+@keyframes traffic-pulse {
+  0% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  70% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+}
+
+/* Commuter Corridor Bar Styling */
+.commuter-corridor-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.corridor-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: #1e293b;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.corridor-pill:hover {
+  background: #334155;
+  transform: translateY(-1px);
+}
+
+.corridor-pill-clear {
+  border-color: #059669;
+  color: #34d399;
+}
+
+.corridor-pill-sluggish {
+  border-color: #d97706;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.corridor-pill-congestion {
+  border-color: #dc2626;
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.15);
+  font-weight: 700;
+}
