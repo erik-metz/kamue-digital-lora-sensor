@@ -33,7 +33,7 @@ def write_health(path: Path, status: str, details: dict):
             )
         )
         tmp.replace(path)
-    except Exception as exc:
+    except OSError as exc:
         LOG.warning("Failed to write health file: %s", exc)
 
 
@@ -52,7 +52,7 @@ def check_health(path: Path) -> int:
             print(f"Health status is stale (age={age:.1f}s)", file=sys.stderr)
             return 1
         return 0
-    except Exception as exc:
+    except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
         print(f"Health check failed: {exc}", file=sys.stderr)
         return 1
 
@@ -116,7 +116,7 @@ async def main_loop():
                     },
                 )
             except Exception as exc:
-                LOG.error("Error during Nextbike poll cycle: %s", exc, exc_info=True)
+                LOG.exception("Error during Nextbike poll cycle: %s", exc)
                 write_health(
                     health_path,
                     "degraded",
@@ -131,7 +131,7 @@ async def main_loop():
             sleep_time = backoff if backoff > 1 else settings.poll_seconds
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=sleep_time)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 pass
 
     LOG.info("Nextbike Collector gracefully stopped.")

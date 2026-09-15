@@ -2,7 +2,6 @@
 
 import logging
 from collections import Counter
-from datetime import datetime
 
 from normalize import NextbikeStationData, haversine_meters
 from psycopg.rows import dict_row
@@ -103,9 +102,7 @@ async def ingest_nextbike_data(conn, stations: list[NextbikeStationData]) -> Cou
 
                 # Insert observation if value changed or if > 15 minutes since last recorded sample
                 should_insert = False
-                if not prev_obs:
-                    should_insert = True
-                elif prev_obs["value"] != metric_val:
+                if not prev_obs or prev_obs["value"] != metric_val:
                     should_insert = True
                 else:
                     elapsed = (station.timestamp - prev_obs["observed_at"]).total_seconds()
