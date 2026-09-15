@@ -111,6 +111,17 @@ jobs:
       - run: python -c "from tests.test_normalize import *; test_parse_nextbike_response_all_and_filtered(); test_haversine_distance(); print('Tests passed')"
         working-directory: www/vps/nextbike-collector
 
+  validate-traffic-collector:
+    name: Traffic collector tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r www/vps/traffic-collector/requirements.txt ruff
+      - run: ruff check --config www/vps/pyproject.toml www/vps/traffic-collector
+
   validate-frontend-security:
     name: Frontend security regression tests
     runs-on: ubuntu-latest
@@ -165,6 +176,7 @@ jobs:
       - validate-shake-collector-code
       - validate-smartcity-collector
       - validate-nextbike-collector
+      - validate-traffic-collector
       - validate-archive-worker
       - validate-frontend-security
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -214,6 +226,14 @@ jobs:
           file: ./www/vps/nextbike-collector/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-nextbike-collector:latest
+
+      - name: Build and Push Docker Image Traffic Collector
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/traffic-collector
+          file: ./www/vps/traffic-collector/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-traffic-collector:latest
 
       - name: Build and Push Docker Image Archive Worker
         uses: docker/build-push-action@v6

@@ -184,7 +184,7 @@ async def fetch_road_incidents(
                 parsed = parse_autobahn_item(item, road, settings)
                 if parsed:
                     incidents.append(parsed)
-        except Exception as exc:
+        except (httpx.HTTPError, ValueError, KeyError) as exc:
             LOG.error("Error fetching %s for %s: %s", ep, road, exc)
 
     return incidents

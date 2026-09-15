@@ -52,7 +52,7 @@ def check_health(path: Path) -> int:
             print(f"Health status is stale (age={age:.1f}s)", file=sys.stderr)
             return 1
         return 0
-    except Exception as exc:
+    except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
         print(f"Health check failed: {exc}", file=sys.stderr)
         return 1
 
