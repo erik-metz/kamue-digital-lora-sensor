@@ -15,12 +15,24 @@ vm.runInNewContext(
 );
 const railExports = railContext.exports;
 
+// Transpile and load roadRoutes
+const roadSource = fs.readFileSync(new URL("../lib/roadRoutes.ts", import.meta.url), "utf8");
+const roadContext = { exports: {} };
+vm.runInNewContext(
+  ts.transpileModule(roadSource, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  roadContext
+);
+const roadExports = roadContext.exports;
+
 // 2. Transpile and load busMobility
 const busSource = fs.readFileSync(new URL("../lib/busMobility.ts", import.meta.url), "utf8");
 const busContext = {
   exports: {},
   require: (id) => {
     if (id === "./railMobility") return railExports;
+    if (id === "./roadRoutes") return roadExports;
     throw new Error(`Unknown require in test context: ${id}`);
   },
   Date,
@@ -257,3 +269,56 @@ test("GET /api/buses route handles requests and returns operator and bus fleet",
   assert.ok(routeSource.includes("calculateBusMobility"), "API route must call calculateBusMobility");
   assert.ok(routeSource.includes("Verkehrsverbund Rhein-Neckar"), "API route must mention VRN");
 });
+
+test("bus route tracks use high-density road polylines from OpenStreetMap/OSRM", () => {
+  assert.ok(busMobility.ROUTE_641_TRACK.length > 200, "Route 641 track must have >200 dense road points");
+  assert.ok(busMobility.ROUTE_642_TRACK.length > 200, "Route 642 track must have >200 dense road points");
+  assert.ok(busMobility.ROUTE_644_TRACK.length > 200, "Route 644 track must have >200 dense road points");
+  assert.ok(busMobility.ROUTE_652_TRACK.length > 200, "Route 652 track must have >200 dense road points");
+});
+
+test("bus stop locations strictly match municipal street networks and do not fall into open fields", () => {
+  const stops = busMobility.RIED_BUS_STOPS;
+
+  // 1. Nordheim: All stops must be inside the village grid (Rathausstraße, Steinstraße, Friedhof)
+  const nordheimStops = stops.filter((s) => s.id.startsWith("stop-nor-"));
+  assert.equal(nordheimStops.length, 3, "Must have 3 stops in Nordheim");
+  for (const s of nordheimStops) {
+    assert.ok(
+      s.lat >= 49.6800 && s.lat <= 49.6845,
+      `Nordheim stop ${s.id} lat ${s.lat} must be within village core (not northern fields)`
+    );
+    assert.ok(
+      s.lng >= 8.3840 && s.lng <= 8.3905,
+      `Nordheim stop ${s.id} lng ${s.lng} must be within village core (not eastern fields)`
+    );
+  }
+
+  // 2. Wattenheim: Village stops along Rheinstraße
+  const wattenheimStops = stops.filter((s) => s.id.startsWith("stop-wat-"));
+  assert.equal(wattenheimStops.length, 3, "Must have 3 stops in Wattenheim");
+  for (const s of wattenheimStops) {
+    assert.ok(
+      s.lat >= 49.6830 && s.lat <= 49.6870,
+      `Wattenheim stop ${s.id} lat ${s.lat} must be in Wattenheim`
+    );
+    assert.ok(
+      s.lng >= 8.4050 && s.lng <= 8.4160,
+      `Wattenheim stop ${s.id} lng ${s.lng} must be along Rheinstraße`
+    );
+  }
+
+  // 3. Bürstadt Schools
+  const eks = stops.find((s) => s.id === "stop-bst-eks");
+  assert.ok(eks && Math.abs(eks.lat - 49.6483) < 0.001, "EKS must be at Wolfstraße");
+  const schiller = stops.find((s) => s.id === "stop-bst-schillerschule");
+  assert.ok(schiller && Math.abs(schiller.lat - 49.6496) < 0.001, "Schillerschule must be at Boxheimerhofstr");
+
+  // 4. Lampertheim Schulzentrum
+  const lessing = stops.find((s) => s.id === "stop-la-lessing-gymnasium");
+  assert.ok(lessing && Math.abs(lessing.lat - 49.5988) < 0.001, "Lessing must be at Biedensandstraße");
+  const delp = stops.find((s) => s.id === "stop-la-alfred-delp");
+  assert.ok(delp && Math.abs(delp.lat - 49.5992) < 0.001, "Delp must be at Carl-Lepper-Straße");
+});
+
+

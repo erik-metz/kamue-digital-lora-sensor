@@ -72,6 +72,26 @@ services:
       - backend-api
       - timescaledb
 
+  nextbike-collector:
+    image: ghcr.io/erik-metz/open-ried-sens-nextbike-collector:latest
+    restart: unless-stopped
+    stop_grace_period: 60s
+    environment:
+      NEXTBIKE_BASE_URL: ${NEXTBIKE_BASE_URL:-https://maps.nextbike.net/maps/nextbike-live.json}
+      NEXTBIKE_CITY_IDS: ${NEXTBIKE_CITY_IDS:-559}
+      NEXTBIKE_POLL_SECONDS: ${NEXTBIKE_POLL_SECONDS:-60}
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - nextbike_state:/data
+    depends_on:
+      - backend-api
+      - timescaledb
+
+
   archive-worker:
     image: ghcr.io/erik-metz/open-ried-sens-archive-worker:latest
     profiles: ["archives"]
@@ -119,6 +139,8 @@ services:
 
 volumes:
   smartcity_state:
+  nextbike_state:
   certbot_www:
   certbot_etc:
   timescale_data:
+

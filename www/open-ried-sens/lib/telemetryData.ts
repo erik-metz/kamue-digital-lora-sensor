@@ -10,8 +10,11 @@ const LABELS: Record<string, string> = {
   water_surface_distance: "Abstand zur Wasseroberfläche", water_level_delta: "Abweichung vom Referenz-Wasserstand", water_level: "Wasserstand",
   air_quality_index: "Luftqualitätsindex", NO2: "Stickstoffdioxid (NO₂)", O3: "Ozon (O₃)", PM10: "Feinstaub (PM₁₀)", PM25: "Feinstaub (PM₂,₅)",
   parking_free: "Freie Stellplätze", parking_occupied: "Belegte Stellplätze", parking_capacity: "Stellplätze gesamt",
+  bike_available: "Verfügbare Leihräder", bike_racks_free: "Freie Docks (Rückgabeplätze)",
+  bike_capacity: "Station Kapazität (Docks)", bike_ebikes: "E-Bikes / Pedelecs",
   crossing_state: "Schrankenzustand", closure_duration: "Schließdauer", crossing_closures: "Schließungen gesamt",
 };
+
 export function metricLabel(reading: { metric: string; unit: string }): string {
   const traffic = reading.metric.match(/^traffic_(.+)_(hourly|daily_city|daily)$/);
   if (traffic) {

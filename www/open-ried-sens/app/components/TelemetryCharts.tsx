@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { hasCoordinates, parkingSummary, type StationNode } from "@/lib/mapData";
+import { hasCoordinates, parkingSummary, bikeSummary, type StationNode } from "@/lib/mapData";
 import { seriesKey, metricLabel, unitLabel, mergeReadings, crossingStateLabel } from "@/lib/telemetryData";
 import { Activity } from "lucide-react";
 import { Combobox, ComboboxContent, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
@@ -18,7 +18,7 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
   const [data, setData] = useState<Telemetry | null>(null);
   const [error, setError] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState("");
-  const snapshots = node.categories.some(c => c === "parking" || c === "traffic");
+  const snapshots = node.categories.some(c => c === "parking" || c === "traffic" || c === "bikes");
   useEffect(() => {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
@@ -40,6 +40,7 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
 
   const readings = node.isAggregate ? node.readings : mergeReadings(node.readings, data?.readings ?? []);
   const parking = parkingSummary(readings);
+  const bikes = bikeSummary(readings);
   const active = readings.find(reading => seriesKey(reading) === selectedSeries) ?? readings[0];
   const history = active ? (data?.history ?? []).filter(bucket => seriesKey(bucket) === seriesKey(active) && bucket.avg_value !== null).sort((a, b) => Date.parse(a.bucket) - Date.parse(b.bucket)) : [];
   const values = history.map(bucket => bucket.avg_value!);
@@ -88,6 +89,33 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
         {parking.details.map(detail => <p key={detail} className="mt-1 text-sm text-slate-300">{detail}</p>)}
         <p className="mt-2 text-xs text-slate-400">Zuletzt gemeldeter Zustand; Messzeitpunkte stehen bei den einzelnen Werten.</p>
       </div>}
+      {bikes && <div className="rounded-xl border border-sky-400/40 bg-sky-950/20 p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xl font-bold">{bikes.summary}</span>
+            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+              bikes.isEmpty
+                ? "bg-red-500/20 text-red-400 border border-red-500"
+                : bikes.isFull
+                ? "bg-amber-500/20 text-amber-400 border border-amber-500"
+                : "bg-emerald-500/20 text-emerald-400 border border-emerald-500"
+            }`}>
+              {bikes.isEmpty ? "Keine Räder" : bikes.isFull ? "Station voll (Rückgabe blockiert)" : "Ausleihe & Rückgabe möglich"}
+            </span>
+          </div>
+          <a
+            href="https://www.nextbike.de/de/lampertheim/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
+          >
+            In Nextbike-App öffnen ↗
+          </a>
+        </div>
+        {bikes.details.map(detail => <p key={detail} className="text-sm text-slate-300">{detail}</p>)}
+        <p className="text-xs text-slate-400">Offizielle VRNnextbike Live-Verfügbarkeit · Messzeitpunkte stehen bei den einzelnen Werten.</p>
+      </div>}
+
       {(node.id.startsWith("bu-") || readings.some(r => r.metric.startsWith("crossing_"))) && (() => {
         const currentCrossingState = readings.find(r => r.metric === "crossing_state")?.value ?? 0;
         return (

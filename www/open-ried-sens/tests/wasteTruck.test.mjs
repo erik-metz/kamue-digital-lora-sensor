@@ -15,12 +15,24 @@ vm.runInNewContext(
 );
 const railExports = railContext.exports;
 
+// Transpile and load roadRoutes
+const roadSource = fs.readFileSync(new URL("../lib/roadRoutes.ts", import.meta.url), "utf8");
+const roadContext = { exports: {} };
+vm.runInNewContext(
+  ts.transpileModule(roadSource, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText,
+  roadContext
+);
+const roadExports = roadContext.exports;
+
 // Transpile and load wasteTruckMobility
 const wasteSource = fs.readFileSync(new URL("../lib/wasteTruckMobility.ts", import.meta.url), "utf8");
 const wasteContext = {
   exports: {},
   require: (id) => {
     if (id === "./railMobility") return railExports;
+    if (id === "./roadRoutes") return roadExports;
     throw new Error(`Unknown require in test context: ${id}`);
   },
   Date,
@@ -272,5 +284,13 @@ test("GET /api/waste-trucks returns JSON with live trucks, tours, and ZAKB opera
   assert.ok(Array.isArray(res.data.tours) && res.data.tours.length > 0);
   assert.ok(Array.isArray(res.data.depots) && res.data.depots.length > 0);
   assert.equal(res.init.headers["Cache-Control"], "no-store");
+});
+
+test("waste truck route tracks use high-density road polylines from OpenStreetMap/OSRM", () => {
+  assert.ok(wasteTruckMobility.ROUTE_BUERSTADT.length > 200, "Bürstadt track must have >200 dense road points");
+  assert.ok(wasteTruckMobility.ROUTE_LAMPERTHEIM.length > 200, "Lampertheim track must have >200 dense road points");
+  assert.ok(wasteTruckMobility.ROUTE_HOFHEIM.length > 200, "Hofheim track must have >200 dense road points");
+  assert.ok(wasteTruckMobility.ROUTE_BIBLIS.length > 200, "Biblis track must have >200 dense road points");
+  assert.ok(wasteTruckMobility.ROUTE_UMWELTMOBIL.length > 200, "Umweltmobil track must have >200 dense road points");
 });
 

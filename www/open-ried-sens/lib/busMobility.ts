@@ -7,6 +7,12 @@
  */
 
 import { haversineMeters, interpolatePolyline, ACTIVE_LEVEL_CROSSINGS, calculateRiedMobility } from "./railMobility";
+import {
+  ROUTE_641_ROAD_TRACK,
+  ROUTE_642_ROAD_TRACK,
+  ROUTE_644_ROAD_TRACK,
+  ROUTE_652_ROAD_TRACK,
+} from "./roadRoutes";
 
 export interface BusStop {
   id: string;
@@ -69,8 +75,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bst-bahnhof",
     name: "Bürstadt Bahnhof (ZOB)",
     municipality: "Bürstadt",
-    lat: 49.6458,
-    lng: 8.4563,
+    lat: 49.6459,
+    lng: 8.4578,
     lines: ["641", "642", "643", "652"],
     isTrainHub: true,
     platforms: ["Bussteig 1", "Bussteig 2", "Bussteig 3"],
@@ -79,8 +85,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bst-marktplatz",
     name: "Bürstadt Marktplatz / Historisches Rathaus",
     municipality: "Bürstadt",
-    lat: 49.6425,
-    lng: 8.4542,
+    lat: 49.6414,
+    lng: 8.4546,
     lines: ["641", "642", "652"],
     platforms: ["Steig A", "Steig B"],
   },
@@ -88,8 +94,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bst-eks",
     name: "Bürstadt Erich-Kästner-Schule",
     municipality: "Bürstadt",
-    lat: 49.6385,
-    lng: 8.4610,
+    lat: 49.6483,
+    lng: 8.4614,
     lines: ["642", "652"],
     isSchoolStop: true,
     nearbySchoolName: "Erich-Kästner-Schule (Integrierte Gesamtschule)",
@@ -97,10 +103,10 @@ export const RIED_BUS_STOPS: BusStop[] = [
   },
   {
     id: "stop-bst-schillerschule",
-    name: "Bürstadt Schillerschule / Rathaus",
+    name: "Bürstadt Schillerschule / Boxheimerhofstr.",
     municipality: "Bürstadt",
-    lat: 49.6438,
-    lng: 8.4568,
+    lat: 49.6496,
+    lng: 8.4616,
     lines: ["641", "652"],
     isSchoolStop: true,
     nearbySchoolName: "Schillerschule Grundschule",
@@ -109,8 +115,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bst-boxheimerhof",
     name: "Bürstadt Boxheimerhof",
     municipality: "Bürstadt",
-    lat: 49.6520,
-    lng: 8.4550,
+    lat: 49.6296,
+    lng: 8.4795,
     lines: ["641", "652"],
   },
   {
@@ -133,8 +139,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bst-wilhelminenstr",
     name: "Bürstadt Wilhelminenstraße",
     municipality: "Bürstadt",
-    lat: 49.6480,
-    lng: 8.4565,
+    lat: 49.6440,
+    lng: 8.4555,
     lines: ["641", "652"],
   },
   {
@@ -173,8 +179,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bst-jugendhaus",
     name: "Bürstadt Jugendhaus / Am Balla-Balla",
     municipality: "Bürstadt",
-    lat: 49.6370,
-    lng: 8.4630,
+    lat: 49.6405,
+    lng: 8.4615,
     lines: ["642", "652"],
   },
   {
@@ -285,18 +291,18 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-la-bahnhof",
     name: "Lampertheim Bahnhof (ZOB)",
     municipality: "Lampertheim",
-    lat: 49.5980,
-    lng: 8.4760,
+    lat: 49.5983,
+    lng: 8.4781,
     lines: ["641", "644", "652"],
     isTrainHub: true,
     platforms: ["Bussteig 1", "Bussteig 2", "Bussteig 3"],
   },
   {
     id: "stop-la-domkirche",
-    name: "Lampertheim Domkirche / Schillerplatz",
+    name: "Lampertheim Domkirche / Römerstraße",
     municipality: "Lampertheim",
-    lat: 49.5955,
-    lng: 8.4635,
+    lat: 49.5947,
+    lng: 8.4679,
     lines: ["641", "652"],
     platforms: ["Steig 1", "Steig 2"],
   },
@@ -304,8 +310,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-la-lessing-gymnasium",
     name: "Lampertheim Lessing-Gymnasium",
     municipality: "Lampertheim",
-    lat: 49.5932,
-    lng: 8.4715,
+    lat: 49.5988,
+    lng: 8.4551,
     lines: ["641", "652"],
     isSchoolStop: true,
     nearbySchoolName: "Lessing-Gymnasium Lampertheim",
@@ -314,8 +320,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-la-alfred-delp",
     name: "Lampertheim Alfred-Delp-Schule",
     municipality: "Lampertheim",
-    lat: 49.5975,
-    lng: 8.4830,
+    lat: 49.5992,
+    lng: 8.4568,
     lines: ["641", "652"],
     isSchoolStop: true,
     nearbySchoolName: "Alfred-Delp-Schule (Realschule / Hauptschule)",
@@ -324,8 +330,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-la-altes-rathaus",
     name: "Lampertheim Altes Rathaus / Römerstraße",
     municipality: "Lampertheim",
-    lat: 49.5960,
-    lng: 8.4650,
+    lat: 49.5940,
+    lng: 8.4670,
     lines: ["641"],
   },
   {
@@ -340,8 +346,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-la-hallenbad",
     name: "Lampertheim Biedensand Bäder / Hallenbad",
     municipality: "Lampertheim",
-    lat: 49.5910,
-    lng: 8.4675,
+    lat: 49.5975,
+    lng: 8.4550,
     lines: ["641"],
   },
   {
@@ -356,8 +362,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-la-pestalozzi",
     name: "Lampertheim Pestalozzischule",
     municipality: "Lampertheim",
-    lat: 49.5945,
-    lng: 8.4740,
+    lat: 49.5990,
+    lng: 8.4630,
     lines: ["641", "652"],
     isSchoolStop: true,
     nearbySchoolName: "Pestalozzischule Grundschule",
@@ -406,40 +412,40 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-la-schlossplatz",
     name: "Lampertheim-Neuschloß Schlossplatz",
     municipality: "Lampertheim",
-    lat: 49.5985,
-    lng: 8.4950,
+    lat: 49.6017,
+    lng: 8.5185,
     lines: ["641"],
   },
   {
     id: "stop-la-ulmenweg",
     name: "Lampertheim-Neuschloß Ulmenweg",
     municipality: "Lampertheim",
-    lat: 49.5970,
-    lng: 8.4900,
+    lat: 49.6005,
+    lng: 8.5150,
     lines: ["641"],
   },
   {
     id: "stop-la-lindenweg",
     name: "Lampertheim-Neuschloß Lindenweg",
     municipality: "Lampertheim",
-    lat: 49.5980,
-    lng: 8.4870,
+    lat: 49.6025,
+    lng: 8.5165,
     lines: ["641"],
   },
   {
     id: "stop-la-huettenfeld-buergerhaus",
     name: "Lampertheim-Hüttenfeld Bürgerhaus",
     municipality: "Lampertheim",
-    lat: 49.5962,
-    lng: 8.5838,
+    lat: 49.5980,
+    lng: 8.5830,
     lines: ["644"],
   },
   {
     id: "stop-la-huettenfeld-litauer",
     name: "Lampertheim-Hüttenfeld Litauersiedlung",
     municipality: "Lampertheim",
-    lat: 49.5980,
-    lng: 8.5800,
+    lat: 49.5990,
+    lng: 8.5810,
     lines: ["644"],
   },
 
@@ -448,20 +454,20 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-hof-bahnhof",
     name: "Hofheim (Ried) Bahnhof",
     municipality: "Hofheim (Ried)",
-    lat: 49.6588,
-    lng: 8.4115,
+    lat: 49.6593,
+    lng: 8.4092,
     lines: ["642"],
     isTrainHub: true,
   },
   {
     id: "stop-hof-schule",
-    name: "Hofheim Schule / Sportpark",
+    name: "Hofheim Nibelungenschule",
     municipality: "Hofheim (Ried)",
-    lat: 49.6580,
-    lng: 8.4175,
+    lat: 49.6585,
+    lng: 8.4120,
     lines: ["642"],
     isSchoolStop: true,
-    nearbySchoolName: "Schule Hofheim Grundschule",
+    nearbySchoolName: "Schule Hofheim (Nibelungenschule)",
   },
   {
     id: "stop-hof-kirche",
@@ -473,10 +479,10 @@ export const RIED_BUS_STOPS: BusStop[] = [
   },
   {
     id: "stop-hof-buergerhaus",
-    name: "Hofheim Bürgerhaus / Rathaus",
+    name: "Hofheim Bürgerhaus / Altes Rathaus",
     municipality: "Hofheim (Ried)",
-    lat: 49.6575,
-    lng: 8.4140,
+    lat: 49.6580,
+    lng: 8.4110,
     lines: ["642"],
   },
   {
@@ -491,8 +497,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-hof-backhausstr",
     name: "Hofheim Backhausstraße / Nordend",
     municipality: "Hofheim (Ried)",
-    lat: 49.6630,
-    lng: 8.4160,
+    lat: 49.6625,
+    lng: 8.4145,
     lines: ["642"],
   },
   {
@@ -508,15 +514,15 @@ export const RIED_BUS_STOPS: BusStop[] = [
     name: "Hofheim Friedhof",
     municipality: "Hofheim (Ried)",
     lat: 49.6600,
-    lng: 8.4180,
+    lng: 8.4165,
     lines: ["642"],
   },
   {
     id: "stop-hof-riedstr",
     name: "Hofheim Riedstraße",
     municipality: "Hofheim (Ried)",
-    lat: 49.6480,
-    lng: 8.4320,
+    lat: 49.6510,
+    lng: 8.4230,
     lines: ["642"],
   },
 
@@ -525,8 +531,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bib-bahnhof",
     name: "Biblis Bahnhof (ZOB)",
     municipality: "Biblis",
-    lat: 49.6886,
-    lng: 8.4485,
+    lat: 49.6890,
+    lng: 8.4506,
     lines: ["644"],
     isTrainHub: true,
   },
@@ -534,26 +540,26 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-bib-rathaus",
     name: "Biblis Rathaus / Darmstädter Straße",
     municipality: "Biblis",
-    lat: 49.6885,
-    lng: 8.4460,
+    lat: 49.6872,
+    lng: 8.4452,
     lines: ["644"],
   },
   {
     id: "stop-bib-schule",
-    name: "Biblis Schule am Weschnitzdamm",
+    name: "Biblis Schule in den Weschnitzauen / Riedhalle",
     municipality: "Biblis",
-    lat: 49.6835,
-    lng: 8.4445,
+    lat: 49.6880,
+    lng: 8.4530,
     lines: ["644"],
     isSchoolStop: true,
-    nearbySchoolName: "Schule am Weschnitzdamm (Grundschule)",
+    nearbySchoolName: "Schule in den Weschnitzauen (Grundschule)",
   },
   {
     id: "stop-bib-kirchstr",
-    name: "Biblis Kirchstraße / Seepromenade",
+    name: "Biblis Kirchstraße / St. Bartholomäus",
     municipality: "Biblis",
-    lat: 49.6820,
-    lng: 8.4440,
+    lat: 49.6850,
+    lng: 8.4460,
     lines: ["644"],
   },
   {
@@ -561,7 +567,7 @@ export const RIED_BUS_STOPS: BusStop[] = [
     name: "Biblis Hintergasse",
     municipality: "Biblis",
     lat: 49.6860,
-    lng: 8.4410,
+    lng: 8.4430,
     lines: ["644"],
   },
   {
@@ -569,7 +575,7 @@ export const RIED_BUS_STOPS: BusStop[] = [
     name: "Biblis Bürgerzentrum",
     municipality: "Biblis",
     lat: 49.6875,
-    lng: 8.4430,
+    lng: 8.4435,
     lines: ["644"],
   },
   {
@@ -577,7 +583,7 @@ export const RIED_BUS_STOPS: BusStop[] = [
     name: "Biblis Pfaffenau",
     municipality: "Biblis",
     lat: 49.6895,
-    lng: 8.4500,
+    lng: 8.4540,
     lines: ["644"],
   },
   {
@@ -585,59 +591,59 @@ export const RIED_BUS_STOPS: BusStop[] = [
     name: "Biblis Am Werrtor / Wertstoffhof",
     municipality: "Biblis",
     lat: 49.6912,
-    lng: 8.4420,
+    lng: 8.4450,
     lines: ["644"],
   },
 
   // Wattenheim (Ortsteil Biblis)
   {
-    id: "stop-wat-rheinstr",
-    name: "Wattenheim Rheinstraße",
-    municipality: "Biblis",
-    lat: 49.6940,
-    lng: 8.4280,
-    lines: ["644"],
-  },
-  {
     id: "stop-wat-ortsmitte",
-    name: "Wattenheim Ortsmitte / Kirche",
+    name: "Wattenheim Ort / Kirche",
     municipality: "Biblis",
-    lat: 49.6970,
-    lng: 8.4230,
+    lat: 49.6850,
+    lng: 8.4103,
     lines: ["644"],
   },
   {
-    id: "stop-wat-rheinufer",
-    name: "Wattenheim Rheinuferstraße",
+    id: "stop-wat-rheinstr",
+    name: "Wattenheim Rheinstraße Ost",
     municipality: "Biblis",
-    lat: 49.6950,
-    lng: 8.4200,
+    lat: 49.6855,
+    lng: 8.4140,
+    lines: ["644"],
+  },
+  {
+    id: "stop-wat-steiner-str",
+    name: "Wattenheim Steiner Straße West",
+    municipality: "Biblis",
+    lat: 49.6842,
+    lng: 8.4065,
     lines: ["644"],
   },
 
-  // Nordheim (Ortsteil Biblis)
+  // Nordheim (Ortsteil Biblis) - Exact village street alignment
   {
     id: "stop-nor-rathaus",
-    name: "Nordheim Rathaus / Backhaus",
+    name: "Nordheim Rathaus / Burg-Stein-Museum",
     municipality: "Biblis",
-    lat: 49.6840,
-    lng: 8.3950,
+    lat: 49.6828,
+    lng: 8.3878,
     lines: ["644"],
   },
   {
-    id: "stop-nor-rheinstr",
-    name: "Nordheim Rheinstraße",
+    id: "stop-nor-steinstr",
+    name: "Nordheim Steinstraße / Sudetenstraße",
     municipality: "Biblis",
-    lat: 49.6860,
-    lng: 8.3920,
+    lat: 49.6806,
+    lng: 8.3898,
     lines: ["644"],
   },
   {
-    id: "stop-nor-burg-stein",
-    name: "Nordheim Burg Stein / Steiner Wald",
+    id: "stop-nor-friedhof",
+    name: "Nordheim Friedhof / Zum alten Wasserwerk",
     municipality: "Biblis",
-    lat: 49.6880,
-    lng: 8.3880,
+    lat: 49.6838,
+    lng: 8.3845,
     lines: ["644"],
   },
 
@@ -646,8 +652,8 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-gr-bahnhof",
     name: "Groß-Rohrheim Bahnhof",
     municipality: "Groß-Rohrheim",
-    lat: 49.7150,
-    lng: 8.4780,
+    lat: 49.7155,
+    lng: 8.4782,
     lines: ["644"],
     isTrainHub: true,
   },
@@ -655,16 +661,16 @@ export const RIED_BUS_STOPS: BusStop[] = [
     id: "stop-gr-buergerhalle",
     name: "Groß-Rohrheim Bürgerhalle",
     municipality: "Groß-Rohrheim",
-    lat: 49.7170,
-    lng: 8.4800,
+    lat: 49.7185,
+    lng: 8.4795,
     lines: ["644"],
   },
   {
     id: "stop-gr-rathaus",
     name: "Groß-Rohrheim Rathaus",
     municipality: "Groß-Rohrheim",
-    lat: 49.7190,
-    lng: 8.4820,
+    lat: 49.7175,
+    lng: 8.4785,
     lines: ["644"],
   },
   {
@@ -672,73 +678,23 @@ export const RIED_BUS_STOPS: BusStop[] = [
     name: "Groß-Rohrheim Friedhof",
     municipality: "Groß-Rohrheim",
     lat: 49.7210,
-    lng: 8.4840,
+    lng: 8.4815,
     lines: ["644"],
   },
 ];
 
 // 2. Bus Route Track Polylines
-// Line 641: Bürstadt Bahnhof <-> Bobstadt <-> Lampertheim Bahnhof
-export const ROUTE_641_TRACK: [number, number][] = [
-  [49.6458, 8.4563], // Bürstadt Bhf
-  [49.6440, 8.4548],
-  [49.6425, 8.4542], // Bürstadt Marktplatz
-  [49.6480, 8.4565], // Wilhelminenstr
-  [49.6520, 8.4550], // Boxheimerhof
-  [49.6560, 8.4520],
-  [49.6610, 8.4485], // Bobstadt Frankenstraße
-  [49.6635, 8.4465], // Bobstadt Altes Rathaus
-  [49.6560, 8.4520], // Return south towards Lampertheim
-  [49.6380, 8.4600],
-  [49.6200, 8.4650], // B44 corridor south
-  [49.6050, 8.4700],
-  [49.5980, 8.4760], // Lampertheim Bhf
-  [49.5955, 8.4635], // Domkirche
-  [49.5932, 8.4715], // Lessing-Gymnasium
-  [49.5975, 8.4830], // Alfred-Delp-Schule
-  [49.5980, 8.4760], // End Lampertheim Bhf
-];
+// Line 641: Bürstadt Bahnhof <-> Bobstadt <-> Lampertheim Bahnhof (OSRM Real Road Track)
+export const ROUTE_641_TRACK: [number, number][] = ROUTE_641_ROAD_TRACK;
 
-// Line 642: Worms Hbf <-> Hofheim <-> Bürstadt Bahnhof (crosses BÜ Mainstraße!)
-export const ROUTE_642_TRACK: [number, number][] = [
-  [49.6320, 8.3600], // Worms Hbf (Anfahrt Rheinbrücke)
-  [49.6450, 8.3900], // Rheinbrücke / B47
-  [49.6550, 8.4100], // Hofheim Ortseingang
-  [49.6588, 8.4115], // Hofheim Bahnhof
-  [49.6590, 8.4125], // Balthasar-Neumann-Kirche
-  [49.6580, 8.4175], // Schule Hofheim
-  [49.6500, 8.4350], // B47 Ried-Transit nach Bürstadt
-  [49.6432, 8.4515], // Bürstadt Sonneneck
-  [49.6425, 8.4542], // Bürstadt Marktplatz
-  [49.6460, 8.4540], // Nahe Bahnübergang Mainstraße (km 9.8)
-  [49.6458, 8.4563], // Bürstadt Bahnhof
-  [49.6385, 8.4610], // Bürstadt Erich-Kästner-Schule
-];
+// Line 642: Worms Hbf <-> Hofheim <-> Bürstadt Bahnhof (OSRM Real Road Track via B47 & BÜ Mainstraße)
+export const ROUTE_642_TRACK: [number, number][] = ROUTE_642_ROAD_TRACK;
 
-// Line 644: Worms Hbf <-> Biblis Bahnhof
-export const ROUTE_644_TRACK: [number, number][] = [
-  [49.6320, 8.3600], // Worms
-  [49.6600, 8.4100],
-  [49.6750, 8.4300], // B44 Nord
-  [49.6835, 8.4445], // Schule am Weschnitzdamm
-  [49.6885, 8.4460], // Biblis Rathaus
-  [49.6886, 8.4485], // Biblis Bahnhof
-];
+// Line 644: Worms Hbf <-> Biblis Bahnhof (OSRM Real Road Track via B44 Nord)
+export const ROUTE_644_TRACK: [number, number][] = ROUTE_644_ROAD_TRACK;
 
-// Line 652: Dedizierter Schülerverkehr Bürstadt & Lampertheim (Schulbus EKS & Lessing)
-export const ROUTE_652_TRACK: [number, number][] = [
-  [49.6635, 8.4465], // Bobstadt Altes Rathaus
-  [49.6610, 8.4485], // Bobstadt Frankenstraße
-  [49.6520, 8.4550], // Bürstadt Boxheimerhof
-  [49.6425, 8.4542], // Bürstadt Marktplatz
-  [49.6438, 8.4568], // Bürstadt Schillerschule
-  [49.6458, 8.4563], // Bürstadt Bahnhof
-  [49.6385, 8.4610], // Bürstadt Erich-Kästner-Schule (Hauptschulzentrum)
-  [49.6200, 8.4650], // Zubringer nach Lampertheim Schulen
-  [49.5932, 8.4715], // Lampertheim Lessing-Gymnasium
-  [49.5975, 8.4830], // Lampertheim Alfred-Delp-Schule
-  [49.5980, 8.4760], // Lampertheim Bahnhof
-];
+// Line 652: Dedizierter Schülerverkehr Bürstadt & Lampertheim (OSRM Real Road Track)
+export const ROUTE_652_TRACK: [number, number][] = ROUTE_652_ROAD_TRACK;
 
 export interface BusStopWaypoint {
   stopId: string;
@@ -776,12 +732,12 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     track: ROUTE_641_TRACK,
     waypoints: [
       { stopId: "stop-bst-bahnhof", stopProg: 0.0, dwellSec: 40 },
-      { stopId: "stop-bst-marktplatz", stopProg: 0.12, dwellSec: 30 },
-      { stopId: "stop-bst-boxheimerhof", stopProg: 0.25, dwellSec: 25 },
-      { stopId: "stop-bob-altes-rathaus", stopProg: 0.42, dwellSec: 30 },
-      { stopId: "stop-la-bahnhof", stopProg: 0.72, dwellSec: 45 },
-      { stopId: "stop-la-domkirche", stopProg: 0.82, dwellSec: 30 },
-      { stopId: "stop-la-lessing-gymnasium", stopProg: 0.90, dwellSec: 35 },
+      { stopId: "stop-bst-marktplatz", stopProg: 0.022, dwellSec: 30 },
+      { stopId: "stop-bst-boxheimerhof", stopProg: 0.113, dwellSec: 25 },
+      { stopId: "stop-bob-altes-rathaus", stopProg: 0.231, dwellSec: 30 },
+      { stopId: "stop-la-bahnhof", stopProg: 0.731, dwellSec: 45 },
+      { stopId: "stop-la-domkirche", stopProg: 0.819, dwellSec: 30 },
+      { stopId: "stop-la-lessing-gymnasium", stopProg: 0.851, dwellSec: 35 },
     ],
   },
   {
@@ -796,12 +752,12 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     speedTransitKmh: 42,
     track: [...ROUTE_641_TRACK].reverse(),
     waypoints: [
-      { stopId: "stop-la-bahnhof", stopProg: 0.05, dwellSec: 40 },
-      { stopId: "stop-la-domkirche", stopProg: 0.18, dwellSec: 30 },
-      { stopId: "stop-bob-altes-rathaus", stopProg: 0.55, dwellSec: 30 },
-      { stopId: "stop-bst-boxheimerhof", stopProg: 0.72, dwellSec: 25 },
-      { stopId: "stop-bst-marktplatz", stopProg: 0.85, dwellSec: 30 },
-      { stopId: "stop-bst-bahnhof", stopProg: 0.98, dwellSec: 45 },
+      { stopId: "stop-la-bahnhof", stopProg: 0.0, dwellSec: 40 },
+      { stopId: "stop-la-domkirche", stopProg: 0.181, dwellSec: 30 },
+      { stopId: "stop-bob-altes-rathaus", stopProg: 0.769, dwellSec: 30 },
+      { stopId: "stop-bst-boxheimerhof", stopProg: 0.887, dwellSec: 25 },
+      { stopId: "stop-bst-marktplatz", stopProg: 0.978, dwellSec: 30 },
+      { stopId: "stop-bst-bahnhof", stopProg: 1.0, dwellSec: 45 },
     ],
   },
 
@@ -818,12 +774,12 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     speedTransitKmh: 45,
     track: ROUTE_642_TRACK,
     waypoints: [
-      { stopId: "stop-hof-bahnhof", stopProg: 0.25, dwellSec: 35 },
-      { stopId: "stop-hof-schule", stopProg: 0.38, dwellSec: 30 },
-      { stopId: "stop-bst-sonneneck", stopProg: 0.62, dwellSec: 25 },
-      { stopId: "stop-bst-marktplatz", stopProg: 0.75, dwellSec: 30 },
-      { stopId: "stop-bst-bahnhof", stopProg: 0.88, dwellSec: 45 },
-      { stopId: "stop-bst-eks", stopProg: 0.98, dwellSec: 50 },
+      { stopId: "stop-hof-bahnhof", stopProg: 0.428, dwellSec: 35 },
+      { stopId: "stop-hof-schule", stopProg: 0.453, dwellSec: 30 },
+      { stopId: "stop-bst-sonneneck", stopProg: 0.833, dwellSec: 25 },
+      { stopId: "stop-bst-marktplatz", stopProg: 0.873, dwellSec: 30 },
+      { stopId: "stop-bst-bahnhof", stopProg: 0.945, dwellSec: 45 },
+      { stopId: "stop-bst-eks", stopProg: 1.0, dwellSec: 50 },
     ],
   },
   {
@@ -838,12 +794,12 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     speedTransitKmh: 45,
     track: [...ROUTE_642_TRACK].reverse(),
     waypoints: [
-      { stopId: "stop-bst-eks", stopProg: 0.02, dwellSec: 45 },
-      { stopId: "stop-bst-bahnhof", stopProg: 0.12, dwellSec: 40 },
-      { stopId: "stop-bst-marktplatz", stopProg: 0.25, dwellSec: 30 },
-      { stopId: "stop-bst-sonneneck", stopProg: 0.38, dwellSec: 25 },
-      { stopId: "stop-hof-schule", stopProg: 0.62, dwellSec: 30 },
-      { stopId: "stop-hof-bahnhof", stopProg: 0.75, dwellSec: 35 },
+      { stopId: "stop-bst-eks", stopProg: 0.0, dwellSec: 45 },
+      { stopId: "stop-bst-bahnhof", stopProg: 0.055, dwellSec: 40 },
+      { stopId: "stop-bst-marktplatz", stopProg: 0.127, dwellSec: 30 },
+      { stopId: "stop-bst-sonneneck", stopProg: 0.167, dwellSec: 25 },
+      { stopId: "stop-hof-schule", stopProg: 0.547, dwellSec: 30 },
+      { stopId: "stop-hof-bahnhof", stopProg: 0.572, dwellSec: 35 },
     ],
   },
 
@@ -860,9 +816,11 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     speedTransitKmh: 48,
     track: ROUTE_644_TRACK,
     waypoints: [
-      { stopId: "stop-bib-schule", stopProg: 0.60, dwellSec: 30 },
-      { stopId: "stop-bib-rathaus", stopProg: 0.80, dwellSec: 25 },
-      { stopId: "stop-bib-bahnhof", stopProg: 0.98, dwellSec: 40 },
+      { stopId: "stop-nor-steinstr", stopProg: 0.572, dwellSec: 25 },
+      { stopId: "stop-wat-ortsmitte", stopProg: 0.642, dwellSec: 25 },
+      { stopId: "stop-bib-rathaus", stopProg: 0.956, dwellSec: 25 },
+      { stopId: "stop-bib-schule", stopProg: 0.985, dwellSec: 30 },
+      { stopId: "stop-bib-bahnhof", stopProg: 1.0, dwellSec: 40 },
     ],
   },
 
@@ -880,14 +838,14 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     track: ROUTE_652_TRACK,
     isSchoolLine: true,
     waypoints: [
-      { stopId: "stop-bob-altes-rathaus", stopProg: 0.05, dwellSec: 35 },
-      { stopId: "stop-bst-boxheimerhof", stopProg: 0.20, dwellSec: 30 },
-      { stopId: "stop-bst-marktplatz", stopProg: 0.32, dwellSec: 30 },
-      { stopId: "stop-bst-schillerschule", stopProg: 0.42, dwellSec: 40 },
-      { stopId: "stop-bst-bahnhof", stopProg: 0.50, dwellSec: 45 },
-      { stopId: "stop-bst-eks", stopProg: 0.62, dwellSec: 60 }, // Major school drop-off
-      { stopId: "stop-la-lessing-gymnasium", stopProg: 0.85, dwellSec: 55 },
-      { stopId: "stop-la-alfred-delp", stopProg: 0.95, dwellSec: 50 },
+      { stopId: "stop-bob-altes-rathaus", stopProg: 0.0, dwellSec: 35 },
+      { stopId: "stop-bst-boxheimerhof", stopProg: 0.134, dwellSec: 30 },
+      { stopId: "stop-bst-marktplatz", stopProg: 0.232, dwellSec: 30 },
+      { stopId: "stop-bst-schillerschule", stopProg: 0.263, dwellSec: 40 },
+      { stopId: "stop-bst-bahnhof", stopProg: 0.279, dwellSec: 45 },
+      { stopId: "stop-bst-eks", stopProg: 0.363, dwellSec: 60 }, // Major school drop-off
+      { stopId: "stop-la-lessing-gymnasium", stopProg: 0.789, dwellSec: 55 },
+      { stopId: "stop-la-alfred-delp", stopProg: 0.875, dwellSec: 50 },
     ],
   },
 ];

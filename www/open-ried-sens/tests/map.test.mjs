@@ -116,6 +116,69 @@ test("parking valueLabel formats x/y frei when capacity is available and preserv
   assert.equal(model.valueLabel(withCap[0]), "4 frei");
 });
 
+test("nextbike stations are categorized under bikes and format x/y Räder availability", () => {
+  const stationSensor = sensor(
+    [
+      reading("bike_available", 4, "count"),
+      reading("bike_racks_free", 6, "count"),
+      reading("bike_capacity", 10, "count"),
+      reading("bike_ebikes", 1, "count"),
+    ],
+    {
+      id: "nextbike-10047180",
+      friendly_name: "VRNnextbike Bahnhof Lampertheim",
+      latitude: 49.5988,
+      longitude: 8.4776,
+    }
+  );
+
+  const categories = model.categoriesFor(stationSensor);
+  assert.deepEqual([...categories], ["bikes"]);
+
+  const nodes = model.toMapNodes([stationSensor]);
+  assert.equal(nodes.length, 1);
+  assert.deepEqual([...nodes[0].categories], ["bikes"]);
+
+  const bikeAvail = nodes[0].readings.find(r => r.metric === "bike_available");
+  assert.equal(model.valueLabel(bikeAvail, nodes[0].readings), "4/10 Räder");
+
+  const summary = model.bikeSummary(nodes[0].readings);
+  assert.ok(summary);
+  assert.equal(summary.summary, "4 von 10 Leihrädern verfügbar");
+  assert.ok(summary.details.some(d => d.includes("6 freie Rückgabepositionen")));
+  assert.ok(summary.details.some(d => d.includes("1 E-Bike / Pedelec")));
+});
+
+test("nextbike virtual station with 0 racks displays count and warns when empty or full", () => {
+  const virtualStation = [
+    reading("bike_available", 3, "count"),
+    reading("bike_racks_free", 0, "count"),
+    reading("bike_capacity", 0, "count"),
+  ];
+  assert.equal(model.valueLabel(virtualStation[0], virtualStation), "3 Räder");
+  const summary = model.bikeSummary(virtualStation);
+  assert.equal(summary.summary, "3 Leihräder verfügbar");
+
+  const emptyStation = [
+    reading("bike_available", 0, "count"),
+    reading("bike_racks_free", 10, "count"),
+    reading("bike_capacity", 10, "count"),
+  ];
+  const emptySummary = model.bikeSummary(emptyStation);
+  assert.equal(emptySummary.isEmpty, true);
+  assert.ok(emptySummary.details.some(d => d.includes("Station leer")));
+
+  const fullStation = [
+    reading("bike_available", 10, "count"),
+    reading("bike_racks_free", 0, "count"),
+    reading("bike_capacity", 10, "count"),
+  ];
+  const fullSummary = model.bikeSummary(fullStation);
+  assert.equal(fullSummary.isFull, true);
+  assert.ok(fullSummary.details.some(d => d.includes("Station voll")));
+});
+
+
 test("normalizeParkingName strips spot numbers, letters and prefixes", () => {
   assert.equal(model.normalizeParkingName("Kaiserstraße Nr. 2"), "Kaiserstraße");
   assert.equal(model.normalizeParkingName("Kaiserstraße Nr. 15"), "Kaiserstraße");

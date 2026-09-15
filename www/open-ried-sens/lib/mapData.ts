@@ -4,6 +4,7 @@ export const CATEGORIES = {
   water: { label: "Wasserstände", color: "#38bdf8", path: "M2 7q3-4 6 0t6 0t6 0 M2 12q3-4 6 0t6 0t6 0 M2 17q3-4 6 0t6 0t6 0" },
   air: { label: "Luftqualität", color: "#2dd4bf", path: "M3 8h12a3 3 0 1 0-3-3 M2 12h17a3 3 0 1 1-3 3 M4 16h5a3 3 0 1 1-3 3" },
   parking: { label: "Parken", color: "#a78bfa", path: "M8 20V4h5a5 5 0 0 1 0 10H8" },
+  bikes: { label: "Leihräder", color: "#0284c7", path: "M5.5 17.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M18.5 17.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M12 17.5V14l-3-3 4-3 2 3h2" },
   traffic: { label: "Verkehr", color: "#fb923c", path: "M5 17H3V9l2-5h14l2 5v8h-2 M3 10h18 M7 17h10 M6 13h2 M16 13h2 M5 17v3 M19 17v3" },
   seismic: { label: "Erschütterungen", color: "#f472b6", path: "M2 12h4l3-8 5 16 3-8h5" },
   other: { label: "Weitere Sensoren", color: "#94a3b8", path: "M12 3v3 M12 18v3 M3 12h3 M18 12h3 M8 8h8v8H8Z" },
@@ -41,12 +42,14 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     if (["air_quality_index", "NO2", "PM10", "PM25", "O3"].includes(r.metric)) categories.add("air");
     if (r.metric.startsWith("traffic_") || r.metric.startsWith("crossing_") || r.metric === "closure_duration") categories.add("traffic");
     if (r.metric.startsWith("parking_")) categories.add("parking");
+    if (r.metric.startsWith("bike_")) categories.add("bikes");
     if (["pgv", "rms", "waveform"].includes(r.metric)) categories.add("seismic");
     if (r.metric === "value" && ["°C", "celsius", "CEL"].includes(r.unit)) categories.add(soil ? "soil" : "weather");
   }
   if (!categories.size) {
     if (sensor.id.startsWith("shake-")) categories.add("seismic");
     else if (sensor.id.startsWith("bu-")) categories.add("traffic");
+    else if (sensor.id.startsWith("nextbike-")) categories.add("bikes");
     else if (type === "WeatherObserved") categories.add(soil ? "soil" : "weather");
     else if (["GreenspaceRecord", "SoilMeasurement", "SoilTension"].includes(type ?? "")) categories.add("soil");
     else if (type === "FloodMonitoring") categories.add("water");
@@ -364,7 +367,7 @@ export function readingFreshness(reading: Reading | undefined, now: number): Fre
   if (!reading) return "unknown";
   const age = now - Date.parse(reading.timestamp);
   if (!Number.isFinite(age) || age < -300_000) return "unknown";
-  if (reading.metric.startsWith("parking_") || reading.metric.startsWith("crossing_")) return "state"; // Event-driven, not an online indicator.
+  if (reading.metric.startsWith("parking_") || reading.metric.startsWith("crossing_") || reading.metric.startsWith("bike_")) return "state"; // Event-driven, not an online indicator.
   const threshold = ["pgv", "rms"].includes(reading.metric) ? 120_000 :
     reading.metric.startsWith("soil_") || reading.metric === "water_surface_distance" ? 6 * 3600_000 :
     reading.metric === "air_quality_index" ? 3 * 3600_000 : 2 * 3600_000;
@@ -381,7 +384,9 @@ export function primaryReading(node: StationNode, category: Category, mode: MapM
     soil: ["soil_temperature", "temperature", "water_surface_distance", "soil_moisture"],
     water: ["water_level_delta", "water_level"], air: ["air_quality_index", "PM25", "PM10", "NO2"],
     traffic: ["crossing_state", "traffic_total_hourly", "traffic_cars_hourly", "traffic_cars_daily_city", "closure_duration"],
-    parking: ["parking_free", "parking_occupied", "parking_capacity"], seismic: ["pgv", "rms"], other: [],
+    parking: ["parking_free", "parking_occupied", "parking_capacity"],
+    bikes: ["bike_available", "bike_racks_free", "bike_capacity", "bike_ebikes"],
+    seismic: ["pgv", "rms"], other: [],
   };
   return preferred[category].map(m => node.readings.find(r => r.metric === m)).find(Boolean) ?? node.readings[0];
 }
@@ -407,6 +412,22 @@ export function valueLabel(reading: Reading | undefined, readings?: Reading[]) {
     if (reading.metric.endsWith("_hourly")) return `${value} / h`;
     if (reading.metric.endsWith("_daily") || reading.metric.endsWith("_daily_city")) return `${value} / Tag`;
     return `${value} gezählt`;
+  }
+  if (reading.metric === "bike_available" || reading.metric === "bike_racks_free" || reading.metric === "bike_capacity") {
+    if (readings) {
+      const bikes = bikeSummary(readings);
+      if (bikes) {
+        const available = readings.find(r => r.metric === "bike_available" && Number.isSafeInteger(r.value) && r.value >= 0);
+        const capacity = readings.find(r => r.metric === "bike_capacity" && Number.isSafeInteger(r.value) && r.value > 0);
+        if (available !== undefined && capacity !== undefined) {
+          return `${available.value.toLocaleString("de-DE")}/${capacity.value.toLocaleString("de-DE")} Räder`;
+        }
+        if (available !== undefined) {
+          return `${available.value.toLocaleString("de-DE")} ${available.value === 1 ? "Rad" : "Räder"}`;
+        }
+      }
+    }
+    return reading.metric === "bike_available" ? `${value} ${reading.value === 1 ? "Rad" : "Räder"}` : `${value} Docks`;
   }
   if (reading.metric === "parking_free" || reading.metric === "parking_occupied") {
     if (readings) {
@@ -462,6 +483,57 @@ export function parkingSummary(readings: Reading[]) {
   if (!capacity && simultaneous) details.push("Gesamtzahl aus freien und belegten Plätzen berechnet.");
   return { summary, details, observations: [free, occupied, capacity].filter((r): r is Reading => !!r) };
 }
+
+export function bikeSummary(readings: Reading[]) {
+  const count = (metric: string) => readings.find(r => r.metric === metric &&
+    r.unit === "count" && Number.isSafeInteger(r.value) && r.value >= 0 && Number.isFinite(Date.parse(r.timestamp)));
+  const available = count("bike_available");
+  const freeDocks = count("bike_racks_free");
+  const capacity = count("bike_capacity");
+  const ebikes = count("bike_ebikes");
+  if (!available && !freeDocks && !capacity) return undefined;
+
+  const availVal = available?.value ?? 0;
+  const capVal = capacity?.value;
+  const freeVal = freeDocks?.value;
+  const ebikeVal = ebikes?.value ?? 0;
+
+  const format = (v: number) => v.toLocaleString("de-DE");
+  let summary = "";
+  if (capVal && capVal > 0) {
+    summary = `${format(availVal)} von ${format(capVal)} ${capVal === 1 ? "Leihrad" : "Leihrädern"} verfügbar`;
+  } else {
+    summary = `${format(availVal)} ${availVal === 1 ? "Leihrad" : "Leihräder"} verfügbar`;
+  }
+
+  const details: string[] = [];
+  if (freeVal !== undefined && capVal && capVal > 0) {
+    if (freeVal === 0) {
+      details.push("⚠️ Station voll · Aktuell keine Rückgabe an Docks möglich!");
+    } else {
+      details.push(`${format(freeVal)} freie ${freeVal === 1 ? "Rückgabeposition" : "Rückgabepositionen"} (Docks)`);
+    }
+  }
+  if (availVal === 0) {
+    details.push("⚠️ Station leer · Aktuell kein Rad zur Ausleihe verfügbar.");
+  }
+  if (ebikeVal > 0) {
+    details.push(`Davon ${format(ebikeVal)} ${ebikeVal === 1 ? "E-Bike / Pedelec" : "E-Bikes / Pedelecs"}`);
+  }
+
+  return {
+    summary,
+    details,
+    availableCount: availVal,
+    capacityCount: capVal,
+    freeDocksCount: freeVal,
+    ebikesCount: ebikeVal,
+    isFull: capVal !== undefined && capVal > 0 && freeVal === 0,
+    isEmpty: availVal === 0,
+    observations: [available, freeDocks, capacity, ebikes].filter((r): r is Reading => !!r),
+  };
+}
+
 
 export function parseStoredCategories(raw: string | null): Category[] {
   try {

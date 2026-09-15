@@ -1,4 +1,11 @@
 import { interpolatePolyline } from "./railMobility";
+import {
+  ROUTE_BUERSTADT_ROAD_TRACK,
+  ROUTE_LAMPERTHEIM_ROAD_TRACK,
+  ROUTE_HOFHEIM_ROAD_TRACK,
+  ROUTE_BIBLIS_ROAD_TRACK,
+  ROUTE_UMWELTMOBIL_ROAD_TRACK,
+} from "./roadRoutes";
 
 export type WasteFraction = "restmuell" | "biomuell" | "papier" | "gelber_sack" | "umweltmobil";
 
@@ -128,88 +135,12 @@ export interface WasteTourDefinition {
   waypoints: CollectionWaypoint[];
 }
 
-// 1. Realistic Route Polylines in Kreis Bergstraße (Ried)
-// Bürstadt Tour (Kernstadt & Bobstadt)
-export const ROUTE_BUERSTADT: [number, number][] = [
-  [49.6382, 8.4485], // Start: ZAKB Wertstoffhof Zur Biogasanlage
-  [49.6395, 8.4510],
-  [49.6415, 8.4530], // Nibelungenstraße (B47)
-  [49.6425, 8.4542], // Marktplatz / Historisches Rathaus
-  [49.6440, 8.4548], // Mainstraße Süd
-  [49.6465, 8.4552], // Mainstraße Mitte (nahe BÜ)
-  [49.6480, 8.4565], // Wilhelminenstraße
-  [49.6505, 8.4575], // Gartenstadt
-  [49.6520, 8.4550], // Boxheimerhofstraße
-  [49.6560, 8.4520], // Verbindung nach Bobstadt
-  [49.6610, 8.4485], // Bobstadt Frankenstraße
-  [49.6635, 8.4465], // Bobstadt St.-Josef-Straße / Altes Rathaus
-  [49.6600, 8.4450], // Bobstadt Kurpfalzstraße
-  [49.6530, 8.4490], // Rückfahrt Bürstadt West
-  [49.6440, 8.4510], // Heinrichstraße
-  [49.6382, 8.4485], // Zurück zum Wertstoffhof
-];
-
-// Lampertheim Tour (Kernstadt & Neuschloß)
-export const ROUTE_LAMPERTHEIM: [number, number][] = [
-  [49.6018, 8.4524], // Start: ZAKB Wertstoffhof Klärwerkstraße
-  [49.5985, 8.4580], // Römerstraße
-  [49.5955, 8.4635], // Domkirche / Schillerplatz
-  [49.5940, 8.4670], // Kaiserstraße
-  [49.5952, 8.4720], // Ernst-Ludwig-Straße
-  [49.5968, 8.4770], // Bürstädter Straße
-  [49.5975, 8.4830], // Neuschloßstraße West
-  [49.5985, 8.4950], // Neuschloß Schlossplatz
-  [49.5970, 8.4900], // Ulmenweg / Ahornweg
-  [49.5930, 8.4750], // Wilhelmstraße
-  [49.5915, 8.4660], // Biedensandstraße
-  [49.5960, 8.4590], // Chemiestraße
-  [49.6018, 8.4524], // Rückkehr Klärwerkstraße
-];
-
-// Hofheim (Ried) Tour
-export const ROUTE_HOFHEIM: [number, number][] = [
-  [49.6425, 8.4542], // Bürstadt Anfahrt B47
-  [49.6500, 8.4350], // B47 Ried-Querung
-  [49.6550, 8.4180], // Hofheim Ortseingang Ost
-  [49.6575, 8.4140], // Bahnhofstraße Hofheim
-  [49.6590, 8.4125], // Lindenstraße / Balthasar-Neumann-Kirche
-  [49.6615, 8.4135], // Bibliser Weg (nahe BÜ)
-  [49.6630, 8.4160], // Backhausstraße / Nordend
-  [49.6580, 8.4175], // Friedrich-Ebert-Straße
-  [49.6540, 8.4150], // Wormser Straße Süd
-  [49.6480, 8.4320], // Rückweg via Riedstraße
-  [49.6382, 8.4485], // Endstation Bürstadt Wertstoffhof
-];
-
-// Biblis Tour (Kernort & Wattenheim)
-export const ROUTE_BIBLIS: [number, number][] = [
-  [49.6912, 8.4420], // Start: ZAKB Wertstoffhof Am Werrtor
-  [49.6885, 8.4460], // Darmstädter Straße / Rathaus
-  [49.6850, 8.4475], // Bahnhofstraße Biblis
-  [49.6820, 8.4440], // Kirchstraße (Gemeindesee)
-  [49.6860, 8.4410], // Hintergasse
-  [49.6890, 8.4380], // Verbindung nach Wattenheim
-  [49.6940, 8.4280], // Wattenheim Rheinstraße
-  [49.6970, 8.4230], // Wattenheim Ortsmitte / Kirche
-  [49.6950, 8.4200], // Rheinuferstraße
-  [49.6920, 8.4320], // Rückweg Feldweg Wattenheim-Biblis
-  [49.6912, 8.4420], // Rückkehr Am Werrtor
-];
-
-// ZAKB Schadstoffmobil / Umweltmobil Tour
-export const ROUTE_UMWELTMOBIL: [number, number][] = [
-  [49.5962, 8.5838], // Start: ZAKB Zentrale Hüttenfeld
-  [49.5975, 8.5300], // L3111 Transit
-  [49.6018, 8.4524], // Halt 1: Lampertheim Wertstoffhof Klärwerkstraße
-  [49.6200, 8.4600], // Transit L3110 nach Bürstadt
-  [49.6382, 8.4485], // Halt 2: Bürstadt Wertstoffhof Zur Biogasanlage
-  [49.6500, 8.4350], // Transit Hofheim
-  [49.6580, 8.4120], // Halt 3: Hofheim Sportpark / Parkplatz
-  [49.6700, 8.4300], // Transit nach Biblis
-  [49.6912, 8.4420], // Halt 4: Biblis Wertstoffhof
-  [49.6450, 8.5100], // Rückfahrt B47 / L3111
-  [49.5962, 8.5838], // Rückkehr ZAKB Energiepark Hüttenfeld
-];
+// 1. Realistic Route Polylines in Kreis Bergstraße (Ried) - OSRM Real Road Tracks
+export const ROUTE_BUERSTADT: [number, number][] = ROUTE_BUERSTADT_ROAD_TRACK;
+export const ROUTE_LAMPERTHEIM: [number, number][] = ROUTE_LAMPERTHEIM_ROAD_TRACK;
+export const ROUTE_HOFHEIM: [number, number][] = ROUTE_HOFHEIM_ROAD_TRACK;
+export const ROUTE_BIBLIS: [number, number][] = ROUTE_BIBLIS_ROAD_TRACK;
+export const ROUTE_UMWELTMOBIL: [number, number][] = ROUTE_UMWELTMOBIL_ROAD_TRACK;
 
 export const ZAKB_TOURS: WasteTourDefinition[] = [
   {
@@ -226,11 +157,11 @@ export const ZAKB_TOURS: WasteTourDefinition[] = [
     speedTransitKmh: 48,
     track: ROUTE_BUERSTADT,
     waypoints: [
-      { street: "Nibelungenstraße", lat: 49.6415, lng: 8.4530, stopProg: 0.15, expectedTimeWindow: "07:30 – 08:30 Uhr", dwellSec: 40 },
-      { street: "Mainstraße", lat: 49.6465, lng: 8.4552, stopProg: 0.32, expectedTimeWindow: "08:30 – 09:30 Uhr", dwellSec: 45 },
-      { street: "Wilhelminenstraße / Gartenstadt", lat: 49.6480, lng: 8.4565, stopProg: 0.44, expectedTimeWindow: "09:30 – 10:30 Uhr", dwellSec: 35 },
-      { street: "Bobstadt Frankenstraße", lat: 49.6610, lng: 8.4485, stopProg: 0.68, expectedTimeWindow: "10:30 – 11:30 Uhr", dwellSec: 40 },
-      { street: "Bobstadt Kurpfalzstraße", lat: 49.6600, lng: 8.4450, stopProg: 0.82, expectedTimeWindow: "11:30 – 12:15 Uhr", dwellSec: 35 },
+      { street: "Nibelungenstraße", lat: 49.6415, lng: 8.4530, stopProg: 0.316, expectedTimeWindow: "07:30 – 08:30 Uhr", dwellSec: 40 },
+      { street: "Mainstraße", lat: 49.6465, lng: 8.4552, stopProg: 0.376, expectedTimeWindow: "08:30 – 09:30 Uhr", dwellSec: 45 },
+      { street: "Wilhelminenstraße / Gartenstadt", lat: 49.6480, lng: 8.4565, stopProg: 0.400, expectedTimeWindow: "09:30 – 10:30 Uhr", dwellSec: 35 },
+      { street: "Bobstadt Frankenstraße", lat: 49.6610, lng: 8.4485, stopProg: 0.561, expectedTimeWindow: "10:30 – 11:30 Uhr", dwellSec: 40 },
+      { street: "Bobstadt Kurpfalzstraße", lat: 49.6600, lng: 8.4450, stopProg: 0.640, expectedTimeWindow: "11:30 – 12:15 Uhr", dwellSec: 35 },
     ],
   },
   {
@@ -247,11 +178,11 @@ export const ZAKB_TOURS: WasteTourDefinition[] = [
     speedTransitKmh: 45,
     track: ROUTE_LAMPERTHEIM,
     waypoints: [
-      { street: "Schillerplatz / Domkirche", lat: 49.5955, lng: 8.4635, stopProg: 0.18, expectedTimeWindow: "07:15 – 08:15 Uhr", dwellSec: 35 },
-      { street: "Kaiserstraße / Fußgängerzone", lat: 49.5940, lng: 8.4670, stopProg: 0.30, expectedTimeWindow: "08:15 – 09:15 Uhr", dwellSec: 45 },
-      { street: "Ernst-Ludwig-Straße", lat: 49.5952, lng: 8.4720, stopProg: 0.42, expectedTimeWindow: "09:15 – 10:15 Uhr", dwellSec: 40 },
-      { street: "Neuschloß Schlossplatz", lat: 49.5985, lng: 8.4950, stopProg: 0.62, expectedTimeWindow: "10:15 – 11:15 Uhr", dwellSec: 50 },
-      { street: "Biedensandstraße", lat: 49.5915, lng: 8.4660, stopProg: 0.85, expectedTimeWindow: "11:15 – 12:00 Uhr", dwellSec: 35 },
+      { street: "Schillerplatz / Domkirche", lat: 49.5955, lng: 8.4635, stopProg: 0.099, expectedTimeWindow: "07:15 – 08:15 Uhr", dwellSec: 35 },
+      { street: "Kaiserstraße / Fußgängerzone", lat: 49.5940, lng: 8.4670, stopProg: 0.124, expectedTimeWindow: "08:15 – 09:15 Uhr", dwellSec: 45 },
+      { street: "Ernst-Ludwig-Straße", lat: 49.5952, lng: 8.4720, stopProg: 0.173, expectedTimeWindow: "09:15 – 10:15 Uhr", dwellSec: 40 },
+      { street: "Neuschloß Schlossplatz", lat: 49.5985, lng: 8.4950, stopProg: 0.490, expectedTimeWindow: "10:15 – 11:15 Uhr", dwellSec: 50 },
+      { street: "Biedensandstraße", lat: 49.5915, lng: 8.4660, stopProg: 0.830, expectedTimeWindow: "11:15 – 12:00 Uhr", dwellSec: 35 },
     ],
   },
   {
@@ -268,10 +199,10 @@ export const ZAKB_TOURS: WasteTourDefinition[] = [
     speedTransitKmh: 50,
     track: ROUTE_HOFHEIM,
     waypoints: [
-      { street: "Bahnhofstraße", lat: 49.6575, lng: 8.4140, stopProg: 0.30, expectedTimeWindow: "07:45 – 08:45 Uhr", dwellSec: 40 },
-      { street: "Lindenstraße", lat: 49.6590, lng: 8.4125, stopProg: 0.42, expectedTimeWindow: "08:45 – 09:45 Uhr", dwellSec: 35 },
-      { street: "Bibliser Weg", lat: 49.6615, lng: 8.4135, stopProg: 0.54, expectedTimeWindow: "09:45 – 10:45 Uhr", dwellSec: 45 },
-      { street: "Friedrich-Ebert-Straße", lat: 49.6580, lng: 8.4175, stopProg: 0.72, expectedTimeWindow: "10:45 – 11:30 Uhr", dwellSec: 35 },
+      { street: "Bahnhofstraße", lat: 49.6575, lng: 8.4140, stopProg: 0.517, expectedTimeWindow: "07:45 – 08:45 Uhr", dwellSec: 40 },
+      { street: "Lindenstraße", lat: 49.6590, lng: 8.4125, stopProg: 0.532, expectedTimeWindow: "08:45 – 09:45 Uhr", dwellSec: 35 },
+      { street: "Bibliser Weg", lat: 49.6615, lng: 8.4135, stopProg: 0.546, expectedTimeWindow: "09:45 – 10:45 Uhr", dwellSec: 45 },
+      { street: "Friedrich-Ebert-Straße", lat: 49.6580, lng: 8.4175, stopProg: 0.625, expectedTimeWindow: "10:45 – 11:30 Uhr", dwellSec: 35 },
     ],
   },
   {
@@ -288,10 +219,10 @@ export const ZAKB_TOURS: WasteTourDefinition[] = [
     speedTransitKmh: 52,
     track: ROUTE_BIBLIS,
     waypoints: [
-      { street: "Darmstädter Straße", lat: 49.6885, lng: 8.4460, stopProg: 0.18, expectedTimeWindow: "08:00 – 09:00 Uhr", dwellSec: 45 },
-      { street: "Kirchstraße / Seepromenade", lat: 49.6820, lng: 8.4440, stopProg: 0.35, expectedTimeWindow: "09:00 – 10:00 Uhr", dwellSec: 40 },
-      { street: "Wattenheim Rheinstraße", lat: 49.6940, lng: 8.4280, stopProg: 0.65, expectedTimeWindow: "10:00 – 11:00 Uhr", dwellSec: 45 },
-      { street: "Wattenheim Ortsmitte", lat: 49.6970, lng: 8.4230, stopProg: 0.78, expectedTimeWindow: "11:00 – 11:45 Uhr", dwellSec: 35 },
+      { street: "Darmstädter Straße", lat: 49.6885, lng: 8.4460, stopProg: 0.020, expectedTimeWindow: "08:00 – 09:00 Uhr", dwellSec: 45 },
+      { street: "Kirchstraße / Seepromenade", lat: 49.6820, lng: 8.4440, stopProg: 0.146, expectedTimeWindow: "09:00 – 10:00 Uhr", dwellSec: 40 },
+      { street: "Wattenheim Rheinstraße", lat: 49.6940, lng: 8.4280, stopProg: 0.344, expectedTimeWindow: "10:00 – 11:00 Uhr", dwellSec: 45 },
+      { street: "Wattenheim Ortsmitte", lat: 49.6970, lng: 8.4230, stopProg: 0.365, expectedTimeWindow: "11:00 – 11:45 Uhr", dwellSec: 35 },
     ],
   },
   {
@@ -304,14 +235,14 @@ export const ZAKB_TOURS: WasteTourDefinition[] = [
     vehicleModel: "Sonder-LKW Schadstofferfassung Kreis Bergstraße",
     periodSec: 1500,
     offsetSec: 0,
-    speedCollectingKmh: 0,
+    speedCollectingKmh: 38,
     speedTransitKmh: 55,
     track: ROUTE_UMWELTMOBIL,
     waypoints: [
-      { street: "Halt: Wertstoffhof Lampertheim (Klärwerkstr.)", lat: 49.6018, lng: 8.4524, stopProg: 0.20, expectedTimeWindow: "09:30 – 13:00 Uhr", dwellSec: 75 },
-      { street: "Halt: Wertstoffhof Bürstadt (Zur Biogasanlage)", lat: 49.6382, lng: 8.4485, stopProg: 0.42, expectedTimeWindow: "09:30 – 12:30 Uhr", dwellSec: 70 },
-      { street: "Halt: Hofheim Sportpark", lat: 49.6580, lng: 8.4120, stopProg: 0.60, expectedTimeWindow: "13:30 – 15:30 Uhr", dwellSec: 60 },
-      { street: "Halt: Wertstoffhof Biblis (Am Werrtor)", lat: 49.6912, lng: 8.4420, stopProg: 0.80, expectedTimeWindow: "15:45 – 17:00 Uhr", dwellSec: 65 },
+      { street: "Halt: Wertstoffhof Lampertheim (Klärwerkstr.)", lat: 49.6018, lng: 8.4524, stopProg: 0.183, expectedTimeWindow: "09:30 – 13:00 Uhr", dwellSec: 75 },
+      { street: "Halt: Wertstoffhof Bürstadt (Zur Biogasanlage)", lat: 49.6382, lng: 8.4485, stopProg: 0.282, expectedTimeWindow: "09:30 – 12:30 Uhr", dwellSec: 70 },
+      { street: "Halt: Hofheim Sportpark", lat: 49.6580, lng: 8.4120, stopProg: 0.416, expectedTimeWindow: "13:30 – 15:30 Uhr", dwellSec: 60 },
+      { street: "Halt: Wertstoffhof Biblis (Am Werrtor)", lat: 49.6912, lng: 8.4420, stopProg: 0.662, expectedTimeWindow: "15:45 – 17:00 Uhr", dwellSec: 65 },
     ],
   },
 ];

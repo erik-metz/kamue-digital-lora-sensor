@@ -6,12 +6,13 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./map.css";
 import { metricLabel } from "@/lib/telemetryData";
 import { createClusterContent, createMarkerContent, createTempPinContent, createTrainMarkerContent, createLevelCrossingMarkerContent, createWasteTruckMarkerContent } from "@/lib/mapMarker";
-import { CATEGORIES, markerCategory, observationLabel, parkingSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, observationLabel, parkingSummary, bikeSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer, type TemperaturePoint } from "@/lib/temperatureHeatmap";
 import { RIEDBAHN_TRACK, NIBELUNGENBAHN_TRACK, calculateRiedMobility } from "@/lib/railMobility";
 import { calculateWasteTruckMobility } from "@/lib/wasteTruckMobility";
 import { calculateBusMobility, getBusStopDepartures, RIED_BUS_STOPS, type LiveBus, type BusStop } from "@/lib/busMobility";
 import { createBusMarkerContent, createBusStopMarkerContent } from "@/lib/mapMarker";
+import { BUS_ROUTE_OVERLAYS, WASTE_TRUCK_ROUTE_OVERLAYS } from "@/lib/roadRoutes";
 import { useEffect, useRef, useState } from "react";
 export type { SensorNode } from "@/lib/mapData";
 
@@ -51,7 +52,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
   const crossingsGroupRef = useRef<L.LayerGroup | null>(null);
   const wasteTrucksGroupRef = useRef<L.LayerGroup | null>(null);
+  const wasteRoutesGroupRef = useRef<L.LayerGroup | null>(null);
   const busesGroupRef = useRef<L.LayerGroup | null>(null);
+  const busRoutesGroupRef = useRef<L.LayerGroup | null>(null);
   const busStopsGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
@@ -92,6 +95,44 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       railTracksGroup.addLayer(nibTrackBg);
       railTracksGroup.addLayer(nibTrackDash);
 
+      // Add Bus Road Routes in the Ried
+      const busRoutesGroup = L.layerGroup();
+      for (const overlay of BUS_ROUTE_OVERLAYS) {
+        const bgLine = L.polyline(overlay.track, {
+          color: "#0f172a",
+          weight: overlay.weight + 2,
+          opacity: 0.45,
+        });
+        const fgLine = L.polyline(overlay.track, {
+          color: overlay.color,
+          weight: overlay.weight,
+          opacity: overlay.opacity,
+          dashArray: overlay.dashArray,
+        });
+        fgLine.bindTooltip(`🚌 ${overlay.name}`, { sticky: true, className: "route-line-tooltip" });
+        busRoutesGroup.addLayer(bgLine);
+        busRoutesGroup.addLayer(fgLine);
+      }
+
+      // Add Waste Collection Road Routes in the Ried
+      const wasteRoutesGroup = L.layerGroup();
+      for (const overlay of WASTE_TRUCK_ROUTE_OVERLAYS) {
+        const bgLine = L.polyline(overlay.track, {
+          color: "#0f172a",
+          weight: overlay.weight + 2,
+          opacity: 0.4,
+        });
+        const fgLine = L.polyline(overlay.track, {
+          color: overlay.color,
+          weight: overlay.weight,
+          opacity: overlay.opacity,
+          dashArray: overlay.dashArray,
+        });
+        fgLine.bindTooltip(`🚛 ${overlay.name}`, { sticky: true, className: "route-line-tooltip" });
+        wasteRoutesGroup.addLayer(bgLine);
+        wasteRoutesGroup.addLayer(fgLine);
+      }
+
       const trainsGroup = L.layerGroup();
       const crossingsGroup = L.layerGroup();
       const wasteTrucksGroup = L.layerGroup();
@@ -101,14 +142,18 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       railTracksGroupRef.current = railTracksGroup;
       trainsGroupRef.current = trainsGroup;
       crossingsGroupRef.current = crossingsGroup;
+      wasteRoutesGroupRef.current = wasteRoutesGroup;
       wasteTrucksGroupRef.current = wasteTrucksGroup;
+      busRoutesGroupRef.current = busRoutesGroup;
       busesGroupRef.current = busesGroup;
       busStopsGroupRef.current = busStopsGroup;
 
       map.addLayer(railTracksGroup);
       map.addLayer(crossingsGroup);
       map.addLayer(trainsGroup);
+      map.addLayer(wasteRoutesGroup);
       map.addLayer(wasteTrucksGroup);
+      map.addLayer(busRoutesGroup);
       map.addLayer(busesGroup);
       // Bus stops become visible at zoom >= 13
       if (map.getZoom() >= 13) {
@@ -170,7 +215,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       railTracksGroupRef.current = null;
       trainsGroupRef.current = null;
       crossingsGroupRef.current = null;
+      wasteRoutesGroupRef.current = null;
       wasteTrucksGroupRef.current = null;
+      busRoutesGroupRef.current = null;
       busesGroupRef.current = null;
       busStopsGroupRef.current = null;
       currentTrainMarkers.clear();
@@ -278,13 +325,15 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       value.className = "map-popup-value";
       const time = document.createElement("p"); time.textContent = observationLabel(reading, now);
       const parking = parkingSummary(node.readings);
+      const bikes = bikeSummary(node.readings);
       popup.append(title, tags);
       if (reading?.metric.startsWith("traffic_")) {
         const label = document.createElement("p");
         label.textContent = metricLabel(reading);
         popup.append(label);
       }
-      if (!parking || !reading?.metric.startsWith("parking_")) popup.append(value, time);
+      const isCustomSummary = (parking && reading?.metric.startsWith("parking_")) || (bikes && reading?.metric.startsWith("bike_"));
+      if (!isCustomSummary) popup.append(value, time);
       if (parking) {
         const summary = document.createElement("p");
         summary.className = "map-popup-value";
@@ -304,6 +353,24 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
           popup.append(line);
         }
       }
+      if (bikes) {
+        const summary = document.createElement("p");
+        summary.className = "map-popup-value";
+        summary.textContent = bikes.summary;
+        popup.append(summary);
+        for (const detail of bikes.details) {
+          const line = document.createElement("p");
+          line.textContent = detail;
+          popup.append(line);
+        }
+        const sameTime = new Set(bikes.observations.map(r => Date.parse(r.timestamp))).size === 1;
+        for (const observation of sameTime ? bikes.observations.slice(0, 1) : bikes.observations) {
+          const line = document.createElement("p");
+          line.textContent = observationLabel(observation, now);
+          popup.append(line);
+        }
+      }
+
       if (marker.getPopup()) marker.setPopupContent(popup);
       else marker.bindPopup(popup, { autoPanPaddingTopLeft: L.point(15, 65), autoPanPaddingBottomRight: L.point(15, 15), maxHeight: 300 });
 
@@ -371,10 +438,13 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   useEffect(() => {
     const map = mapRef.current;
     const wasteTrucks = wasteTrucksGroupRef.current;
+    const wasteRoutes = wasteRoutesGroupRef.current;
     if (!ready || !map || !wasteTrucks) return;
     if (showWasteTrucks) {
+      if (wasteRoutes && !map.hasLayer(wasteRoutes)) map.addLayer(wasteRoutes);
       if (!map.hasLayer(wasteTrucks)) map.addLayer(wasteTrucks);
     } else {
+      if (wasteRoutes && map.hasLayer(wasteRoutes)) map.removeLayer(wasteRoutes);
       if (map.hasLayer(wasteTrucks)) map.removeLayer(wasteTrucks);
     }
   }, [showWasteTrucks, ready]);
@@ -383,10 +453,13 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   useEffect(() => {
     const map = mapRef.current;
     const buses = busesGroupRef.current;
+    const busRoutes = busRoutesGroupRef.current;
     if (!ready || !map || !buses) return;
     if (showBuses) {
+      if (busRoutes && !map.hasLayer(busRoutes)) map.addLayer(busRoutes);
       if (!map.hasLayer(buses)) map.addLayer(buses);
     } else {
+      if (busRoutes && map.hasLayer(busRoutes)) map.removeLayer(busRoutes);
       if (map.hasLayer(buses)) map.removeLayer(buses);
     }
   }, [showBuses, ready]);

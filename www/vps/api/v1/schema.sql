@@ -436,19 +436,19 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO bus_stops (id, name, municipality, latitude, longitude, lines, is_school_stop, nearby_school_name, is_train_hub)
 VALUES
     -- Bürstadt
-    ('stop-bst-bahnhof', 'Bürstadt Bahnhof (ZOB)', 'Bürstadt', 49.6458, 8.4563, ARRAY['641', '642', '643', '652'], FALSE, NULL, TRUE),
-    ('stop-bst-marktplatz', 'Bürstadt Marktplatz / Historisches Rathaus', 'Bürstadt', 49.6425, 8.4542, ARRAY['641', '642', '652'], FALSE, NULL, FALSE),
-    ('stop-bst-eks', 'Bürstadt Erich-Kästner-Schule', 'Bürstadt', 49.6385, 8.4610, ARRAY['642', '652'], TRUE, 'Erich-Kästner-Schule (Integrierte Gesamtschule)', FALSE),
-    ('stop-bst-schillerschule', 'Bürstadt Schillerschule / Rathaus', 'Bürstadt', 49.6438, 8.4568, ARRAY['641', '652'], TRUE, 'Schillerschule Grundschule', FALSE),
-    ('stop-bst-boxheimerhof', 'Bürstadt Boxheimerhof', 'Bürstadt', 49.6520, 8.4550, ARRAY['641', '652'], FALSE, NULL, FALSE),
+    ('stop-bst-bahnhof', 'Bürstadt Bahnhof (ZOB)', 'Bürstadt', 49.6459, 8.4578, ARRAY['641', '642', '643', '652'], FALSE, NULL, TRUE),
+    ('stop-bst-marktplatz', 'Bürstadt Marktplatz / Historisches Rathaus', 'Bürstadt', 49.6414, 8.4546, ARRAY['641', '642', '652'], FALSE, NULL, FALSE),
+    ('stop-bst-eks', 'Bürstadt Erich-Kästner-Schule', 'Bürstadt', 49.6483, 8.4614, ARRAY['642', '652'], TRUE, 'Erich-Kästner-Schule (Integrierte Gesamtschule)', FALSE),
+    ('stop-bst-schillerschule', 'Bürstadt Schillerschule / Boxheimerhofstr.', 'Bürstadt', 49.6496, 8.4616, ARRAY['641', '652'], TRUE, 'Schillerschule Grundschule', FALSE),
+    ('stop-bst-boxheimerhof', 'Bürstadt Boxheimerhof', 'Bürstadt', 49.6296, 8.4795, ARRAY['641', '652'], FALSE, NULL, FALSE),
     ('stop-bst-sonneneck', 'Bürstadt Sonneneck / Mainstraße Süd', 'Bürstadt', 49.6432, 8.4515, ARRAY['642'], FALSE, NULL, FALSE),
     ('stop-bst-nibelungenstr', 'Bürstadt Nibelungenstraße (B47)', 'Bürstadt', 49.6415, 8.4530, ARRAY['642', '643'], FALSE, NULL, FALSE),
-    ('stop-bst-wilhelminenstr', 'Bürstadt Wilhelminenstraße', 'Bürstadt', 49.6480, 8.4565, ARRAY['641', '652'], FALSE, NULL, FALSE),
+    ('stop-bst-wilhelminenstr', 'Bürstadt Wilhelminenstraße', 'Bürstadt', 49.6440, 8.4555, ARRAY['641', '652'], FALSE, NULL, FALSE),
     ('stop-bst-wasserwerk', 'Bürstadt Wasserwerk', 'Bürstadt', 49.6390, 8.4590, ARRAY['642'], FALSE, NULL, FALSE),
     ('stop-bst-industriestr', 'Bürstadt Industriestraße / KAMÜ Kulturzentrum', 'Bürstadt', 49.6457, 8.4582, ARRAY['641', '643'], FALSE, NULL, FALSE),
     ('stop-bst-altenheim', 'Bürstadt St. Elisabeth / Seniorenzentrum', 'Bürstadt', 49.6465, 8.4552, ARRAY['641', '642'], FALSE, NULL, FALSE),
     ('stop-bst-beethovenstr', 'Bürstadt Beethovenstraße / Waldgartenstr.', 'Bürstadt', 49.6440, 8.4600, ARRAY['641'], FALSE, NULL, FALSE),
-    ('stop-bst-jugendhaus', 'Bürstadt Jugendhaus / Am Balla-Balla', 'Bürstadt', 49.6370, 8.4630, ARRAY['642', '652'], FALSE, NULL, FALSE),
+    ('stop-bst-jugendhaus', 'Bürstadt Jugendhaus / Am Balla-Balla', 'Bürstadt', 49.6405, 8.4615, ARRAY['642', '652'], FALSE, NULL, FALSE),
     ('stop-bst-lache', 'Bürstadt Sportzentrum Die Lache / VfR', 'Bürstadt', 49.6355, 8.4580, ARRAY['642'], FALSE, NULL, FALSE),
     ('stop-bst-kiesbuckel', 'Bürstadt Am Kiesbuckel', 'Bürstadt', 49.6500, 8.4580, ARRAY['641'], FALSE, NULL, FALSE),
     ('stop-bst-gartenstadt', 'Bürstadt Gartenstadt / Bürstädter Heide', 'Bürstadt', 49.6505, 8.4575, ARRAY['641', '652'], FALSE, NULL, FALSE),
@@ -467,62 +467,62 @@ VALUES
     ('stop-rrd-eichendorff', 'Riedrode Eichendorffstraße', 'Riedrode', 49.6485, 8.4935, ARRAY['643'], FALSE, NULL, FALSE),
 
     -- Lampertheim
-    ('stop-la-bahnhof', 'Lampertheim Bahnhof (ZOB)', 'Lampertheim', 49.5980, 8.4760, ARRAY['641', '644', '652'], FALSE, NULL, TRUE),
-    ('stop-la-domkirche', 'Lampertheim Domkirche / Schillerplatz', 'Lampertheim', 49.5955, 8.4635, ARRAY['641', '652'], FALSE, NULL, FALSE),
-    ('stop-la-lessing-gymnasium', 'Lampertheim Lessing-Gymnasium', 'Lampertheim', 49.5932, 8.4715, ARRAY['641', '652'], TRUE, 'Lessing-Gymnasium Lampertheim', FALSE),
-    ('stop-la-alfred-delp', 'Lampertheim Alfred-Delp-Schule', 'Lampertheim', 49.5975, 8.4830, ARRAY['641', '652'], TRUE, 'Alfred-Delp-Schule (Realschule / Hauptschule)', FALSE),
-    ('stop-la-altes-rathaus', 'Lampertheim Altes Rathaus / Römerstraße', 'Lampertheim', 49.5960, 8.4650, ARRAY['641'], FALSE, NULL, FALSE),
+    ('stop-la-bahnhof', 'Lampertheim Bahnhof (ZOB)', 'Lampertheim', 49.5983, 8.4781, ARRAY['641', '644', '652'], FALSE, NULL, TRUE),
+    ('stop-la-domkirche', 'Lampertheim Domkirche / Römerstraße', 'Lampertheim', 49.5947, 8.4679, ARRAY['641', '652'], FALSE, NULL, FALSE),
+    ('stop-la-lessing-gymnasium', 'Lampertheim Lessing-Gymnasium', 'Lampertheim', 49.5988, 8.4551, ARRAY['641', '652'], TRUE, 'Lessing-Gymnasium Lampertheim', FALSE),
+    ('stop-la-alfred-delp', 'Lampertheim Alfred-Delp-Schule', 'Lampertheim', 49.5992, 8.4568, ARRAY['641', '652'], TRUE, 'Alfred-Delp-Schule (Realschule / Hauptschule)', FALSE),
+    ('stop-la-altes-rathaus', 'Lampertheim Altes Rathaus / Römerstraße', 'Lampertheim', 49.5940, 8.4670, ARRAY['641'], FALSE, NULL, FALSE),
     ('stop-la-sedandamm', 'Lampertheim Sedandamm / Altrhein', 'Lampertheim', 49.5925, 8.4620, ARRAY['641'], FALSE, NULL, FALSE),
-    ('stop-la-hallenbad', 'Lampertheim Biedensand Bäder / Hallenbad', 'Lampertheim', 49.5910, 8.4675, ARRAY['641'], FALSE, NULL, FALSE),
+    ('stop-la-hallenbad', 'Lampertheim Biedensand Bäder / Hallenbad', 'Lampertheim', 49.5975, 8.4550, ARRAY['641'], FALSE, NULL, FALSE),
     ('stop-la-buerstaedter-str', 'Lampertheim Bürstädter Straße', 'Lampertheim', 49.5968, 8.4770, ARRAY['641'], FALSE, NULL, FALSE),
-    ('stop-la-pestalozzi', 'Lampertheim Pestalozzischule', 'Lampertheim', 49.5945, 8.4740, ARRAY['641', '652'], TRUE, 'Pestalozzischule Grundschule', FALSE),
+    ('stop-la-pestalozzi', 'Lampertheim Pestalozzischule', 'Lampertheim', 49.5990, 8.4630, ARRAY['641', '652'], TRUE, 'Pestalozzischule Grundschule', FALSE),
     ('stop-la-europabruecke', 'Lampertheim Europabrücke / B44', 'Lampertheim', 49.5890, 8.4660, ARRAY['644'], FALSE, NULL, FALSE),
     ('stop-la-wilhelmstr', 'Lampertheim Wilhelmstraße', 'Lampertheim', 49.5930, 8.4750, ARRAY['641'], FALSE, NULL, FALSE),
     ('stop-la-chemiestr', 'Lampertheim Chemiestraße', 'Lampertheim', 49.5960, 8.4590, ARRAY['641'], FALSE, NULL, FALSE),
     ('stop-la-falterweg', 'Lampertheim Falterweg', 'Lampertheim', 49.5970, 8.4690, ARRAY['641'], FALSE, NULL, FALSE),
     ('stop-la-worms-str', 'Lampertheim Wormser Straße (Ost)', 'Lampertheim', 49.5940, 8.4670, ARRAY['641'], FALSE, NULL, FALSE),
-    ('stop-la-schlossplatz', 'Lampertheim-Neuschloß Schlossplatz', 'Lampertheim', 49.5985, 8.4950, ARRAY['641'], FALSE, NULL, FALSE),
-    ('stop-la-ulmenweg', 'Lampertheim-Neuschloß Ulmenweg', 'Lampertheim', 49.5970, 8.4900, ARRAY['641'], FALSE, NULL, FALSE),
-    ('stop-la-lindenweg', 'Lampertheim-Neuschloß Lindenweg', 'Lampertheim', 49.5980, 8.4870, ARRAY['641'], FALSE, NULL, FALSE),
-    ('stop-la-huettenfeld-buergerhaus', 'Lampertheim-Hüttenfeld Bürgerhaus', 'Lampertheim', 49.5962, 8.5838, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-la-huettenfeld-litauer', 'Lampertheim-Hüttenfeld Litauersiedlung', 'Lampertheim', 49.5980, 8.5800, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-la-schlossplatz', 'Lampertheim-Neuschloß Schlossplatz', 'Lampertheim', 49.6017, 8.5185, ARRAY['641'], FALSE, NULL, FALSE),
+    ('stop-la-ulmenweg', 'Lampertheim-Neuschloß Ulmenweg', 'Lampertheim', 49.6005, 8.5150, ARRAY['641'], FALSE, NULL, FALSE),
+    ('stop-la-lindenweg', 'Lampertheim-Neuschloß Lindenweg', 'Lampertheim', 49.6025, 8.5165, ARRAY['641'], FALSE, NULL, FALSE),
+    ('stop-la-huettenfeld-buergerhaus', 'Lampertheim-Hüttenfeld Bürgerhaus', 'Lampertheim', 49.5980, 8.5830, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-la-huettenfeld-litauer', 'Lampertheim-Hüttenfeld Litauersiedlung', 'Lampertheim', 49.5990, 8.5810, ARRAY['644'], FALSE, NULL, FALSE),
 
     -- Hofheim (Ried)
-    ('stop-hof-bahnhof', 'Hofheim (Ried) Bahnhof', 'Hofheim (Ried)', 49.6588, 8.4115, ARRAY['642'], FALSE, NULL, TRUE),
-    ('stop-hof-schule', 'Hofheim Schule / Sportpark', 'Hofheim (Ried)', 49.6580, 8.4175, ARRAY['642'], TRUE, 'Schule Hofheim Grundschule', FALSE),
+    ('stop-hof-bahnhof', 'Hofheim (Ried) Bahnhof', 'Hofheim (Ried)', 49.6593, 8.4092, ARRAY['642'], FALSE, NULL, TRUE),
+    ('stop-hof-schule', 'Hofheim Nibelungenschule', 'Hofheim (Ried)', 49.6585, 8.4120, ARRAY['642'], TRUE, 'Schule Hofheim (Nibelungenschule)', FALSE),
     ('stop-hof-kirche', 'Hofheim Balthasar-Neumann-Kirche', 'Hofheim (Ried)', 49.6590, 8.4125, ARRAY['642'], FALSE, NULL, FALSE),
-    ('stop-hof-buergerhaus', 'Hofheim Bürgerhaus / Rathaus', 'Hofheim (Ried)', 49.6575, 8.4140, ARRAY['642'], FALSE, NULL, FALSE),
+    ('stop-hof-buergerhaus', 'Hofheim Bürgerhaus / Altes Rathaus', 'Hofheim (Ried)', 49.6580, 8.4110, ARRAY['642'], FALSE, NULL, FALSE),
     ('stop-hof-bibliser-weg', 'Hofheim Bibliser Weg', 'Hofheim (Ried)', 49.6615, 8.4135, ARRAY['642'], FALSE, NULL, FALSE),
-    ('stop-hof-backhausstr', 'Hofheim Backhausstraße / Nordend', 'Hofheim (Ried)', 49.6630, 8.4160, ARRAY['642'], FALSE, NULL, FALSE),
+    ('stop-hof-backhausstr', 'Hofheim Backhausstraße / Nordend', 'Hofheim (Ried)', 49.6625, 8.4145, ARRAY['642'], FALSE, NULL, FALSE),
     ('stop-hof-wormser-str', 'Hofheim Wormser Straße (Süd)', 'Hofheim (Ried)', 49.6540, 8.4150, ARRAY['642'], FALSE, NULL, FALSE),
-    ('stop-hof-friedhof', 'Hofheim Friedhof', 'Hofheim (Ried)', 49.6600, 8.4180, ARRAY['642'], FALSE, NULL, FALSE),
-    ('stop-hof-riedstr', 'Hofheim Riedstraße', 'Hofheim (Ried)', 49.6480, 8.4320, ARRAY['642'], FALSE, NULL, FALSE),
+    ('stop-hof-friedhof', 'Hofheim Friedhof', 'Hofheim (Ried)', 49.6600, 8.4165, ARRAY['642'], FALSE, NULL, FALSE),
+    ('stop-hof-riedstr', 'Hofheim Riedstraße', 'Hofheim (Ried)', 49.6510, 8.4230, ARRAY['642'], FALSE, NULL, FALSE),
 
     -- Biblis
-    ('stop-bib-bahnhof', 'Biblis Bahnhof (ZOB)', 'Biblis', 49.6886, 8.4485, ARRAY['644'], FALSE, NULL, TRUE),
-    ('stop-bib-rathaus', 'Biblis Rathaus / Darmstädter Straße', 'Biblis', 49.6885, 8.4460, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-bib-schule', 'Biblis Schule am Weschnitzdamm', 'Biblis', 49.6835, 8.4445, ARRAY['644'], TRUE, 'Schule am Weschnitzdamm (Grundschule)', FALSE),
-    ('stop-bib-kirchstr', 'Biblis Kirchstraße / Seepromenade', 'Biblis', 49.6820, 8.4440, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-bib-hintergasse', 'Biblis Hintergasse', 'Biblis', 49.6860, 8.4410, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-bib-buergerzentrum', 'Biblis Bürgerzentrum', 'Biblis', 49.6875, 8.4430, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-bib-pfaffenau', 'Biblis Pfaffenau', 'Biblis', 49.6895, 8.4500, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-bib-wasserwerk', 'Biblis Am Werrtor / Wertstoffhof', 'Biblis', 49.6912, 8.4420, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-bib-bahnhof', 'Biblis Bahnhof (ZOB)', 'Biblis', 49.6890, 8.4506, ARRAY['644'], FALSE, NULL, TRUE),
+    ('stop-bib-rathaus', 'Biblis Rathaus / Darmstädter Straße', 'Biblis', 49.6872, 8.4452, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-bib-schule', 'Biblis Schule in den Weschnitzauen / Riedhalle', 'Biblis', 49.6880, 8.4530, ARRAY['644'], TRUE, 'Schule in den Weschnitzauen (Grundschule)', FALSE),
+    ('stop-bib-kirchstr', 'Biblis Kirchstraße / St. Bartholomäus', 'Biblis', 49.6850, 8.4460, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-bib-hintergasse', 'Biblis Hintergasse', 'Biblis', 49.6860, 8.4430, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-bib-buergerzentrum', 'Biblis Bürgerzentrum', 'Biblis', 49.6875, 8.4435, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-bib-pfaffenau', 'Biblis Pfaffenau', 'Biblis', 49.6895, 8.4540, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-bib-wasserwerk', 'Biblis Am Werrtor / Wertstoffhof', 'Biblis', 49.6912, 8.4450, ARRAY['644'], FALSE, NULL, FALSE),
 
     -- Wattenheim (Ortsteil Biblis)
-    ('stop-wat-rheinstr', 'Wattenheim Rheinstraße', 'Biblis', 49.6940, 8.4280, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-wat-ortsmitte', 'Wattenheim Ortsmitte / Kirche', 'Biblis', 49.6970, 8.4230, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-wat-rheinufer', 'Wattenheim Rheinuferstraße', 'Biblis', 49.6950, 8.4200, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-wat-ortsmitte', 'Wattenheim Ort / Kirche', 'Biblis', 49.6850, 8.4103, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-wat-rheinstr', 'Wattenheim Rheinstraße Ost', 'Biblis', 49.6855, 8.4140, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-wat-steiner-str', 'Wattenheim Steiner Straße West', 'Biblis', 49.6842, 8.4065, ARRAY['644'], FALSE, NULL, FALSE),
 
-    -- Nordheim (Ortsteil Biblis)
-    ('stop-nor-rathaus', 'Nordheim Rathaus / Backhaus', 'Biblis', 49.6840, 8.3950, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-nor-rheinstr', 'Nordheim Rheinstraße', 'Biblis', 49.6860, 8.3920, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-nor-burg-stein', 'Nordheim Burg Stein / Steiner Wald', 'Biblis', 49.6880, 8.3880, ARRAY['644'], FALSE, NULL, FALSE),
+    -- Nordheim (Ortsteil Biblis) - Exact village street alignment
+    ('stop-nor-rathaus', 'Nordheim Rathaus / Burg-Stein-Museum', 'Biblis', 49.6828, 8.3878, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-nor-steinstr', 'Nordheim Steinstraße / Sudetenstraße', 'Biblis', 49.6806, 8.3898, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-nor-friedhof', 'Nordheim Friedhof / Zum alten Wasserwerk', 'Biblis', 49.6838, 8.3845, ARRAY['644'], FALSE, NULL, FALSE),
 
     -- Groß-Rohrheim
-    ('stop-gr-bahnhof', 'Groß-Rohrheim Bahnhof', 'Groß-Rohrheim', 49.7150, 8.4780, ARRAY['644'], FALSE, NULL, TRUE),
-    ('stop-gr-buergerhalle', 'Groß-Rohrheim Bürgerhalle', 'Groß-Rohrheim', 49.7170, 8.4800, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-gr-rathaus', 'Groß-Rohrheim Rathaus', 'Groß-Rohrheim', 49.7190, 8.4820, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-gr-friedhof', 'Groß-Rohrheim Friedhof', 'Groß-Rohrheim', 49.7210, 8.4840, ARRAY['644'], FALSE, NULL, FALSE)
+    ('stop-gr-bahnhof', 'Groß-Rohrheim Bahnhof', 'Groß-Rohrheim', 49.7155, 8.4782, ARRAY['644'], FALSE, NULL, TRUE),
+    ('stop-gr-buergerhalle', 'Groß-Rohrheim Bürgerhalle', 'Groß-Rohrheim', 49.7185, 8.4795, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-gr-rathaus', 'Groß-Rohrheim Rathaus', 'Groß-Rohrheim', 49.7175, 8.4785, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-gr-friedhof', 'Groß-Rohrheim Friedhof', 'Groß-Rohrheim', 49.7210, 8.4815, ARRAY['644'], FALSE, NULL, FALSE)
 ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     municipality = EXCLUDED.municipality,
@@ -532,6 +532,60 @@ ON CONFLICT (id) DO UPDATE SET
     is_school_stop = EXCLUDED.is_school_stop,
     nearby_school_name = EXCLUDED.nearby_school_name,
     is_train_hub = EXCLUDED.is_train_hub;
+
+-- 8. VRNnextbike Sharing Infrastructure, Individual Bike Tracking & Trips
+CREATE TABLE IF NOT EXISTS nextbike_sources (
+    sensor_id VARCHAR(64) PRIMARY KEY REFERENCES sensor_metadata(id) ON DELETE CASCADE,
+    station_uid BIGINT NOT NULL UNIQUE,
+    station_number INTEGER,
+    city_id INTEGER NOT NULL,
+    city_name TEXT NOT NULL,
+    spot BOOLEAN NOT NULL DEFAULT TRUE,
+    terminal_type TEXT,
+    bike_racks INTEGER NOT NULL DEFAULT 0,
+    last_fetched_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS nextbike_bikes (
+    bike_number VARCHAR(32) PRIMARY KEY,
+    current_station_id VARCHAR(64) REFERENCES sensor_metadata(id) ON DELETE SET NULL,
+    current_station_name TEXT,
+    bike_type INTEGER,
+    electric_lock BOOLEAN DEFAULT TRUE,
+    pedelec_battery INTEGER,
+    state TEXT DEFAULT 'ok',
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    last_seen_at TIMESTAMPTZ NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS nextbike_trips (
+    id BIGSERIAL PRIMARY KEY,
+    bike_number VARCHAR(32) NOT NULL,
+    start_station_id VARCHAR(64) REFERENCES sensor_metadata(id) ON DELETE SET NULL,
+    start_station_name TEXT,
+    end_station_id VARCHAR(64) REFERENCES sensor_metadata(id) ON DELETE SET NULL,
+    end_station_name TEXT,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
+    duration_seconds INTEGER,
+    distance_meters DOUBLE PRECISION
+);
+
+CREATE INDEX IF NOT EXISTS idx_nextbike_trips_bike ON nextbike_trips(bike_number, end_time DESC);
+CREATE INDEX IF NOT EXISTS idx_nextbike_trips_end_time ON nextbike_trips(end_time DESC);
+
+CREATE TABLE IF NOT EXISTS nextbike_observations (
+    sensor_id VARCHAR(64) NOT NULL,
+    metric VARCHAR(64) NOT NULL,
+    observed_at TIMESTAMPTZ NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    bike_numbers TEXT[],
+    first_fetched_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (sensor_id, metric, observed_at)
+);
+
 
 
 
