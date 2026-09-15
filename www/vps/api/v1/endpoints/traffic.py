@@ -1,12 +1,12 @@
 """Traffic Jam (Stau) endpoints for Ried highways (A67, A5, A6) and federal roads (B47, B44)."""
 
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Annotated, Any
 
 import psycopg_pool
 from dependencies import get_db_pool, verify_api_key
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/traffic", tags=["Traffic & Stau"])
@@ -133,10 +133,9 @@ async def list_active_incidents(
 
     query += " ORDER BY delay_seconds DESC, start_time DESC"
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     results = []
     for r in rows:
@@ -144,7 +143,7 @@ async def list_active_incidents(
         if isinstance(coords, str):
             try:
                 coords = json.loads(coords)
-            except Exception:
+            except (json.JSONDecodeError, TypeError, ValueError):
                 coords = None
         delay_sec = r["delay_seconds"] or 0
         len_m = r["length_meters"] or 0
@@ -198,10 +197,9 @@ async def list_traffic_history(
     query += " ORDER BY start_time DESC LIMIT %s"
     params.append(limit)
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     results = []
     for r in rows:
@@ -243,10 +241,9 @@ async def get_corridor_statuses(pool: DbPool):
         WHERE is_active = TRUE
         GROUP BY road_name
     """
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query)
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query)
+        rows = await cur.fetchall()
 
     stats_by_road: dict[str, dict[str, Any]] = {}
     for r in rows:
@@ -301,83 +298,82 @@ async def sync_traffic_incidents(payload: SyncTrafficPayload, pool: DbPool):
     now = datetime.now(UTC)
     incoming_ids = [inc.id for inc in payload.incidents]
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            # 1. Upsert incoming active incidents
-            for inc in payload.incidents:
-                coords_json = json.dumps(inc.coordinates) if inc.coordinates is not None else None
-                await cur.execute(
-                    """
-                    INSERT INTO traffic_incidents (
-                        id, road_name, direction, location_from, location_to,
-                        start_time, end_time, last_seen_at, is_active,
-                        delay_seconds, length_meters, severity, cause_type,
-                        description, coordinates, source, updated_at
-                    ) VALUES (
-                        %s, %s, %s, %s, %s,
-                        %s, NULL, %s, TRUE,
-                        %s, %s, %s, %s,
-                        %s, %s, %s, %s
-                    )
-                    ON CONFLICT (id) DO UPDATE SET
-                        direction = EXCLUDED.direction,
-                        location_from = EXCLUDED.location_from,
-                        location_to = EXCLUDED.location_to,
-                        last_seen_at = EXCLUDED.last_seen_at,
-                        is_active = TRUE,
-                        end_time = NULL,
-                        delay_seconds = EXCLUDED.delay_seconds,
-                        length_meters = EXCLUDED.length_meters,
-                        severity = EXCLUDED.severity,
-                        cause_type = EXCLUDED.cause_type,
-                        description = EXCLUDED.description,
-                        coordinates = COALESCE(EXCLUDED.coordinates, traffic_incidents.coordinates),
-                        updated_at = EXCLUDED.updated_at
-                    """,
-                    (
-                        inc.id,
-                        inc.road_name,
-                        inc.direction,
-                        inc.location_from,
-                        inc.location_to,
-                        now,
-                        now,
-                        inc.delay_seconds,
-                        inc.length_meters,
-                        inc.severity,
-                        inc.cause_type,
-                        inc.description,
-                        coords_json,
-                        inc.source,
-                        now,
-                    ),
+    async with pool.connection() as conn, conn.cursor() as cur:
+        # 1. Upsert incoming active incidents
+        for inc in payload.incidents:
+            coords_json = json.dumps(inc.coordinates) if inc.coordinates is not None else None
+            await cur.execute(
+                """
+                INSERT INTO traffic_incidents (
+                    id, road_name, direction, location_from, location_to,
+                    start_time, end_time, last_seen_at, is_active,
+                    delay_seconds, length_meters, severity, cause_type,
+                    description, coordinates, source, updated_at
+                ) VALUES (
+                    %s, %s, %s, %s, %s,
+                    %s, NULL, %s, TRUE,
+                    %s, %s, %s, %s,
+                    %s, %s, %s, %s
                 )
+                ON CONFLICT (id) DO UPDATE SET
+                    direction = EXCLUDED.direction,
+                    location_from = EXCLUDED.location_from,
+                    location_to = EXCLUDED.location_to,
+                    last_seen_at = EXCLUDED.last_seen_at,
+                    is_active = TRUE,
+                    end_time = NULL,
+                    delay_seconds = EXCLUDED.delay_seconds,
+                    length_meters = EXCLUDED.length_meters,
+                    severity = EXCLUDED.severity,
+                    cause_type = EXCLUDED.cause_type,
+                    description = EXCLUDED.description,
+                    coordinates = COALESCE(EXCLUDED.coordinates, traffic_incidents.coordinates),
+                    updated_at = EXCLUDED.updated_at
+                """,
+                (
+                    inc.id,
+                    inc.road_name,
+                    inc.direction,
+                    inc.location_from,
+                    inc.location_to,
+                    now,
+                    now,
+                    inc.delay_seconds,
+                    inc.length_meters,
+                    inc.severity,
+                    inc.cause_type,
+                    inc.description,
+                    coords_json,
+                    inc.source,
+                    now,
+                ),
+            )
 
-            # 2. Mark incidents not present in this cycle as resolved if older than threshold
-            if incoming_ids:
-                await cur.execute(
-                    """
-                    UPDATE traffic_incidents
-                    SET is_active = FALSE,
-                        end_time = %s,
-                        updated_at = %s
-                    WHERE is_active = TRUE
-                      AND id != ALL(%s)
-                      AND last_seen_at < %s - INTERVAL '6 minutes'
-                    """,
-                    (now, now, incoming_ids, now),
-                )
-            else:
-                await cur.execute(
-                    """
-                    UPDATE traffic_incidents
-                    SET is_active = FALSE,
-                        end_time = %s,
-                        updated_at = %s
-                    WHERE is_active = TRUE
-                      AND last_seen_at < %s - INTERVAL '6 minutes'
-                    """,
-                    (now, now, now),
-                )
+        # 2. Mark incidents not present in this cycle as resolved if older than threshold
+        if incoming_ids:
+            await cur.execute(
+                """
+                UPDATE traffic_incidents
+                SET is_active = FALSE,
+                    end_time = %s,
+                    updated_at = %s
+                WHERE is_active = TRUE
+                  AND id != ALL(%s)
+                  AND last_seen_at < %s - INTERVAL '6 minutes'
+                """,
+                (now, now, incoming_ids, now),
+            )
+        else:
+            await cur.execute(
+                """
+                UPDATE traffic_incidents
+                SET is_active = FALSE,
+                    end_time = %s,
+                    updated_at = %s
+                WHERE is_active = TRUE
+                  AND last_seen_at < %s - INTERVAL '6 minutes'
+                """,
+                (now, now, now),
+            )
 
     return {"status": "synced", "count": len(payload.incidents)}
