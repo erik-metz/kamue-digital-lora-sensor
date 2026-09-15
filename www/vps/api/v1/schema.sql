@@ -436,7 +436,7 @@ ON CONFLICT (id) DO UPDATE SET
 INSERT INTO bus_stops (id, name, municipality, latitude, longitude, lines, is_school_stop, nearby_school_name, is_train_hub)
 VALUES
     -- Bürstadt
-    ('stop-bst-bahnhof', 'Bürstadt Bahnhof (ZOB)', 'Bürstadt', 49.6459, 8.4578, ARRAY['641', '642', '643', '652'], FALSE, NULL, TRUE),
+    ('stop-bst-bahnhof', 'Bürstadt Bahnhof (ZOB)', 'Bürstadt', 49.645410, 8.458271, ARRAY['641', '642', '643', '652'], FALSE, NULL, TRUE),
     ('stop-bst-marktplatz', 'Bürstadt Marktplatz / Historisches Rathaus', 'Bürstadt', 49.6414, 8.4546, ARRAY['641', '642', '652'], FALSE, NULL, FALSE),
     ('stop-bst-eks', 'Bürstadt Erich-Kästner-Schule', 'Bürstadt', 49.6483, 8.4614, ARRAY['642', '652'], TRUE, 'Erich-Kästner-Schule (Integrierte Gesamtschule)', FALSE),
     ('stop-bst-schillerschule', 'Bürstadt Schillerschule / Boxheimerhofstr.', 'Bürstadt', 49.6496, 8.4616, ARRAY['641', '652'], TRUE, 'Schillerschule Grundschule', FALSE),
@@ -467,7 +467,7 @@ VALUES
     ('stop-rrd-eichendorff', 'Riedrode Eichendorffstraße', 'Riedrode', 49.6485, 8.4935, ARRAY['643'], FALSE, NULL, FALSE),
 
     -- Lampertheim
-    ('stop-la-bahnhof', 'Lampertheim Bahnhof (ZOB)', 'Lampertheim', 49.5983, 8.4781, ARRAY['641', '644', '652'], FALSE, NULL, TRUE),
+    ('stop-la-bahnhof', 'Lampertheim Bahnhof (ZOB)', 'Lampertheim', 49.598648, 8.477843, ARRAY['641', '644', '652'], FALSE, NULL, TRUE),
     ('stop-la-domkirche', 'Lampertheim Domkirche / Römerstraße', 'Lampertheim', 49.5947, 8.4679, ARRAY['641', '652'], FALSE, NULL, FALSE),
     ('stop-la-lessing-gymnasium', 'Lampertheim Lessing-Gymnasium', 'Lampertheim', 49.5988, 8.4551, ARRAY['641', '652'], TRUE, 'Lessing-Gymnasium Lampertheim', FALSE),
     ('stop-la-alfred-delp', 'Lampertheim Alfred-Delp-Schule', 'Lampertheim', 49.5992, 8.4568, ARRAY['641', '652'], TRUE, 'Alfred-Delp-Schule (Realschule / Hauptschule)', FALSE),
@@ -499,7 +499,7 @@ VALUES
     ('stop-hof-riedstr', 'Hofheim Riedstraße', 'Hofheim (Ried)', 49.6510, 8.4230, ARRAY['642'], FALSE, NULL, FALSE),
 
     -- Biblis
-    ('stop-bib-bahnhof', 'Biblis Bahnhof (ZOB)', 'Biblis', 49.6890, 8.4506, ARRAY['644'], FALSE, NULL, TRUE),
+    ('stop-bib-bahnhof', 'Biblis Bahnhof (ZOB)', 'Biblis', 49.689091, 8.450479, ARRAY['644'], FALSE, NULL, TRUE),
     ('stop-bib-rathaus', 'Biblis Rathaus / Darmstädter Straße', 'Biblis', 49.6872, 8.4452, ARRAY['644'], FALSE, NULL, FALSE),
     ('stop-bib-schule', 'Biblis Schule in den Weschnitzauen / Riedhalle', 'Biblis', 49.6880, 8.4530, ARRAY['644'], TRUE, 'Schule in den Weschnitzauen (Grundschule)', FALSE),
     ('stop-bib-kirchstr', 'Biblis Kirchstraße / St. Bartholomäus', 'Biblis', 49.6850, 8.4460, ARRAY['644'], FALSE, NULL, FALSE),
@@ -509,17 +509,17 @@ VALUES
     ('stop-bib-wasserwerk', 'Biblis Am Werrtor / Wertstoffhof', 'Biblis', 49.6912, 8.4450, ARRAY['644'], FALSE, NULL, FALSE),
 
     -- Wattenheim (Ortsteil Biblis)
-    ('stop-wat-ortsmitte', 'Wattenheim Ort / Kirche', 'Biblis', 49.6850, 8.4103, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-wat-ortsmitte', 'Wattenheim Ort / Kirche', 'Biblis', 49.685450, 8.410423, ARRAY['644'], FALSE, NULL, FALSE),
     ('stop-wat-rheinstr', 'Wattenheim Rheinstraße Ost', 'Biblis', 49.6855, 8.4140, ARRAY['644'], FALSE, NULL, FALSE),
     ('stop-wat-steiner-str', 'Wattenheim Steiner Straße West', 'Biblis', 49.6842, 8.4065, ARRAY['644'], FALSE, NULL, FALSE),
 
-    -- Nordheim (Ortsteil Biblis) - Exact village street alignment
-    ('stop-nor-rathaus', 'Nordheim Rathaus / Burg-Stein-Museum', 'Biblis', 49.6828, 8.3878, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-nor-steinstr', 'Nordheim Steinstraße / Sudetenstraße', 'Biblis', 49.6806, 8.3898, ARRAY['644'], FALSE, NULL, FALSE),
-    ('stop-nor-friedhof', 'Nordheim Friedhof / Zum alten Wasserwerk', 'Biblis', 49.6838, 8.3845, ARRAY['644'], FALSE, NULL, FALSE),
+    -- Nordheim (Ortsteil Biblis) - Exact VRN GTFS Ground Truth
+    ('stop-nor-rathaus', 'Nordheim Rathaus / Burg-Stein-Museum', 'Biblis', 49.683143, 8.388059, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-nor-steinstr', 'Nordheim Steinstraße', 'Biblis', 49.678784, 8.387615, ARRAY['644'], FALSE, NULL, FALSE),
+    ('stop-nor-friedhof', 'Nordheim Friedhof / Zum alten Wasserwerk', 'Biblis', 49.684526, 8.392426, ARRAY['644'], FALSE, NULL, FALSE),
 
     -- Groß-Rohrheim
-    ('stop-gr-bahnhof', 'Groß-Rohrheim Bahnhof', 'Groß-Rohrheim', 49.7155, 8.4782, ARRAY['644'], FALSE, NULL, TRUE),
+    ('stop-gr-bahnhof', 'Groß-Rohrheim Bahnhof', 'Groß-Rohrheim', 49.713393, 8.476673, ARRAY['644'], FALSE, NULL, TRUE),
     ('stop-gr-buergerhalle', 'Groß-Rohrheim Bürgerhalle', 'Groß-Rohrheim', 49.7185, 8.4795, ARRAY['644'], FALSE, NULL, FALSE),
     ('stop-gr-rathaus', 'Groß-Rohrheim Rathaus', 'Groß-Rohrheim', 49.7175, 8.4785, ARRAY['644'], FALSE, NULL, FALSE),
     ('stop-gr-friedhof', 'Groß-Rohrheim Friedhof', 'Groß-Rohrheim', 49.7210, 8.4815, ARRAY['644'], FALSE, NULL, FALSE)

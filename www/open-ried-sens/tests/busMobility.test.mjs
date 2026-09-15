@@ -285,11 +285,11 @@ test("bus stop locations strictly match municipal street networks and do not fal
   assert.equal(nordheimStops.length, 3, "Must have 3 stops in Nordheim");
   for (const s of nordheimStops) {
     assert.ok(
-      s.lat >= 49.6800 && s.lat <= 49.6845,
+      s.lat >= 49.6780 && s.lat <= 49.6850,
       `Nordheim stop ${s.id} lat ${s.lat} must be within village core (not northern fields)`
     );
     assert.ok(
-      s.lng >= 8.3840 && s.lng <= 8.3905,
+      s.lng >= 8.3860 && s.lng <= 8.3935,
       `Nordheim stop ${s.id} lng ${s.lng} must be within village core (not eastern fields)`
     );
   }
