@@ -756,6 +756,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
           html: createBusStopMarkerContent({
             name: stop.name,
             lines: stop.lines,
+            directionLabel: stop.directionLabel,
             isSchoolStop: stop.isSchoolStop,
             isTrainHub: stop.isTrainHub,
           }),
@@ -767,7 +768,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
 
         const marker = L.marker([stop.lat, stop.lng], { icon, zIndexOffset: 200 });
         const tooltip = document.createElement("span");
-        tooltip.textContent = stop.isSchoolStop ? `🎒 ${stop.name} (Schulbushaltestelle)` : `🚏 ${stop.name}`;
+        tooltip.textContent = stop.directionLabel
+          ? `🚏 ${stop.name} (${stop.directionLabel})`
+          : (stop.isSchoolStop ? `🎒 ${stop.name} (Schulbushaltestelle)` : `🚏 ${stop.name}`);
         marker.bindTooltip(tooltip, { direction: "top", offset: [0, -12] });
 
         marker.bindPopup(() => {
@@ -797,7 +800,14 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
               <span style="font-size: 18px;">🚏</span>
               <div>
                 <div style="font-weight: 700; font-size: 14px; color: #f8fafc;">${stop.name}</div>
-                <div style="font-size: 11px; color: #94a3b8;">${stop.municipality} · ${stop.platforms?.join(", ") ?? "Haltestelle"}</div>
+                ${stop.directionLabel ? `
+                  <div style="font-size: 11px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 4px; margin-top: 1px;">
+                    <span>➔</span> <span>${stop.directionLabel}</span>
+                  </div>
+                ` : `
+                  <div style="font-size: 11px; color: #94a3b8;">${stop.platforms?.join(", ") ?? "Haltestelle"}</div>
+                `}
+                <div style="font-size: 11px; color: #94a3b8;">${stop.municipality}</div>
               </div>
             </div>
 

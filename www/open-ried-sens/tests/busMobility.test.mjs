@@ -123,11 +123,11 @@ test("RIED_BUS_STOPS contains all key Ried municipalities and designated school 
   const schoolStops = stops.filter((s) => s.isSchoolStop);
   assert.ok(schoolStops.length >= 4, "Must have designated school stops");
 
-  const eksStop = schoolStops.find((s) => s.id === "stop-bst-eks");
+  const eksStop = schoolStops.find((s) => s.id === "stop-bst-eks" || s.id.startsWith("stop-bst-eks"));
   assert.ok(eksStop, "Erich-Kästner-Schule stop must exist");
   assert.equal(eksStop.nearbySchoolName, "Erich-Kästner-Schule (Integrierte Gesamtschule)");
 
-  const lessingStop = schoolStops.find((s) => s.id === "stop-la-lessing-gymnasium");
+  const lessingStop = schoolStops.find((s) => s.id === "stop-la-lessing-gymnasium" || s.id.startsWith("stop-la-lessing-gymnasium"));
   assert.ok(lessingStop, "Lessing-Gymnasium stop must exist");
 
   // Verify all stops have valid latitude and longitude in the Ried region
@@ -170,7 +170,7 @@ test("isHessenSchoolDay correctly identifies school days vs weekends and vacatio
 });
 
 test("evaluateSchoolBus identifies school bus trips during school time windows", () => {
-  const eksStop = busMobility.RIED_BUS_STOPS.find((s) => s.id === "stop-bst-eks");
+  const eksStop = busMobility.RIED_BUS_STOPS.find((s) => s.id === "stop-bst-eks" || s.id.startsWith("stop-bst-eks"));
 
   // 1. Line 652 is always a dedicated school line
   const res652 = busMobility.evaluateSchoolBus("652", "VRN-652S", true, undefined, undefined);
@@ -277,12 +277,12 @@ test("bus route tracks use high-density road polylines from OpenStreetMap/OSRM",
   assert.ok(busMobility.ROUTE_652_TRACK.length > 200, "Route 652 track must have >200 dense road points");
 });
 
-test("bus stop locations strictly match municipal street networks and do not fall into open fields", () => {
+test("bus stop locations strictly match municipal street networks and provide directional platforms on both sides of the street", () => {
   const stops = busMobility.RIED_BUS_STOPS;
 
-  // 1. Nordheim: All stops must be inside the village grid (Rathausstraße, Steinstraße, Friedhof)
+  // 1. Nordheim: Must have directional platforms for both travel directions (Biblis & Worms)
   const nordheimStops = stops.filter((s) => s.id.startsWith("stop-nor-"));
-  assert.equal(nordheimStops.length, 3, "Must have 3 stops in Nordheim");
+  assert.ok(nordheimStops.length >= 6, "Must have 6 directional platform stops in Nordheim (Rathaus, Steinstraße, Friedhof for both directions)");
   for (const s of nordheimStops) {
     assert.ok(
       s.lat >= 49.6780 && s.lat <= 49.6850,
@@ -292,11 +292,21 @@ test("bus stop locations strictly match municipal street networks and do not fal
       s.lng >= 8.3860 && s.lng <= 8.3935,
       `Nordheim stop ${s.id} lng ${s.lng} must be within village core (not eastern fields)`
     );
+    assert.ok(s.direction === "Biblis" || s.direction === "Worms", "Must specify platform direction");
   }
 
-  // 2. Wattenheim: Village stops along Rheinstraße
+  // Verify exact street side alignment for Nordheim Rathaus matching OpenStreetMap
+  const rathausBiblis = stops.find((s) => s.id === "stop-nor-rathaus-biblis");
+  const rathausWorms = stops.find((s) => s.id === "stop-nor-rathaus-worms");
+  assert.ok(rathausBiblis && rathausWorms, "Both Rathaus platforms must exist");
+  assert.equal(rathausBiblis.lat, 49.683279, "Rathaus Richtung Biblis at east side of Rathausstraße");
+  assert.equal(rathausBiblis.lng, 8.388297);
+  assert.equal(rathausWorms.lat, 49.683006, "Rathaus Richtung Worms at west side of Rathausstraße");
+  assert.equal(rathausWorms.lng, 8.387821);
+
+  // 2. Wattenheim: Village stops along Rheinstraße with directional platforms
   const wattenheimStops = stops.filter((s) => s.id.startsWith("stop-wat-"));
-  assert.equal(wattenheimStops.length, 3, "Must have 3 stops in Wattenheim");
+  assert.ok(wattenheimStops.length >= 6, "Must have 6 directional platform stops in Wattenheim");
   for (const s of wattenheimStops) {
     assert.ok(
       s.lat >= 49.6830 && s.lat <= 49.6870,
@@ -309,16 +319,46 @@ test("bus stop locations strictly match municipal street networks and do not fal
   }
 
   // 3. Bürstadt Schools
-  const eks = stops.find((s) => s.id === "stop-bst-eks");
+  const eks = stops.find((s) => s.id === "stop-bst-eks" || s.id.startsWith("stop-bst-eks"));
   assert.ok(eks && Math.abs(eks.lat - 49.6483) < 0.001, "EKS must be at Wolfstraße");
-  const schiller = stops.find((s) => s.id === "stop-bst-schillerschule");
+  const schiller = stops.find((s) => s.id === "stop-bst-schillerschule" || s.id.startsWith("stop-bst-schillerschule"));
   assert.ok(schiller && Math.abs(schiller.lat - 49.6496) < 0.001, "Schillerschule must be at Boxheimerhofstr");
 
   // 4. Lampertheim Schulzentrum
-  const lessing = stops.find((s) => s.id === "stop-la-lessing-gymnasium");
+  const lessing = stops.find((s) => s.id === "stop-la-lessing-gymnasium" || s.id.startsWith("stop-la-lessing-gymnasium"));
   assert.ok(lessing && Math.abs(lessing.lat - 49.5988) < 0.001, "Lessing must be at Biedensandstraße");
-  const delp = stops.find((s) => s.id === "stop-la-alfred-delp");
+  const delp = stops.find((s) => s.id === "stop-la-alfred-delp" || s.id.startsWith("stop-la-alfred-delp"));
   assert.ok(delp && Math.abs(delp.lat - 49.5992) < 0.001, "Delp must be at Carl-Lepper-Straße");
+});
+
+test("directional bus stops return schedule exclusively for the clicked platform direction", () => {
+  // 1. Nordheim Rathaus Richtung Biblis
+  const depBiblis = busMobility.getBusStopDepartures("stop-nor-rathaus-biblis", Date.now());
+  assert.ok(depBiblis.length > 0, "Must have departures towards Biblis");
+  for (const dep of depBiblis) {
+    assert.equal(dep.destination, "Biblis Bahnhof", "Platform Richtung Biblis must only show Biblis destinations");
+  }
+
+  // 2. Nordheim Rathaus Richtung Worms
+  const depWorms = busMobility.getBusStopDepartures("stop-nor-rathaus-worms", Date.now());
+  assert.ok(depWorms.length > 0, "Must have departures towards Worms");
+  for (const dep of depWorms) {
+    assert.equal(dep.destination, "Worms Hbf", "Platform Richtung Worms must only show Worms destinations");
+  }
+
+  // 3. Bürstadt Marktplatz Ost (Richtung Bürstadt Bahnhof / EKS)
+  const depBst = busMobility.getBusStopDepartures("stop-bst-marktplatz-ost", Date.now());
+  assert.ok(depBst.length > 0, "Must have departures towards Bürstadt");
+  for (const dep of depBst) {
+    assert.ok(dep.destination.includes("Bürstadt"), "Platform Richtung Bürstadt must only show Bürstadt destinations");
+  }
+
+  // 4. Hofheim Bahnhof Steig 2 (Richtung Worms Hbf)
+  const depHofWorms = busMobility.getBusStopDepartures("stop-hof-bahnhof-steig2", Date.now());
+  assert.ok(depHofWorms.length > 0, "Must have departures towards Worms");
+  for (const dep of depHofWorms) {
+    assert.equal(dep.destination, "Worms Hbf", "Platform Richtung Worms must show Worms Hbf");
+  }
 });
 
 

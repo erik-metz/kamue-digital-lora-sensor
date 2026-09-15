@@ -503,6 +503,7 @@ export function createBusMarkerContent(props: BusMarkerProps): HTMLElement {
 export interface BusStopMarkerProps {
   name: string;
   lines: string[];
+  directionLabel?: string;
   isSchoolStop?: boolean;
   isTrainHub?: boolean;
 }
@@ -510,7 +511,7 @@ export interface BusStopMarkerProps {
 export function createBusStopMarkerContent(props: BusStopMarkerProps): HTMLElement {
   const content = document.createElement("div");
   content.className = `bus-stop-marker${props.isSchoolStop ? " bus-stop-school" : ""}${props.isTrainHub ? " bus-stop-hub" : ""}`;
-  content.title = `${props.name} (Linien: ${props.lines.join(", ")})`;
+  content.title = `${props.name}${props.directionLabel ? ` (${props.directionLabel})` : ""} (Linien: ${props.lines.join(", ")})`;
 
   // German Haltestelle sign: bold "H" inside yellow circular disc with green ring
   const label = document.createElement("span");
