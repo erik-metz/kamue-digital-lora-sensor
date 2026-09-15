@@ -623,5 +623,10 @@ CREATE TABLE IF NOT EXISTS traffic_corridor_snapshots (
     max_length_meters INT NOT NULL DEFAULT 0
 );
 
-SELECT create_hypertable('traffic_corridor_snapshots', 'timestamp', if_not_exists => TRUE);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        PERFORM create_hypertable('traffic_corridor_snapshots', 'timestamp', if_not_exists => TRUE);
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_traffic_corridor_snapshots ON traffic_corridor_snapshots (corridor_id, timestamp DESC);
