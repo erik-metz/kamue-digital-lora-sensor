@@ -98,6 +98,19 @@ jobs:
           MAP_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
           MAP_TEST_TIMESCALE: "1"
 
+  validate-nextbike-collector:
+    name: Nextbike collector tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r www/vps/nextbike-collector/requirements.txt ruff
+      - run: ruff check --config www/vps/pyproject.toml www/vps/nextbike-collector
+      - run: python -c "from tests.test_normalize import *; test_parse_nextbike_response_all_and_filtered(); test_haversine_distance(); print('Tests passed')"
+        working-directory: www/vps/nextbike-collector
+
   validate-frontend-security:
     name: Frontend security regression tests
     runs-on: ubuntu-latest
@@ -151,6 +164,7 @@ jobs:
       - validate-api-code
       - validate-shake-collector-code
       - validate-smartcity-collector
+      - validate-nextbike-collector
       - validate-archive-worker
       - validate-frontend-security
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -192,6 +206,14 @@ jobs:
           file: ./www/vps/smartcity-collector/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-smartcity-collector:latest
+
+      - name: Build and Push Docker Image Nextbike Collector
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/nextbike-collector
+          file: ./www/vps/nextbike-collector/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-nextbike-collector:latest
 
       - name: Build and Push Docker Image Archive Worker
         uses: docker/build-push-action@v6

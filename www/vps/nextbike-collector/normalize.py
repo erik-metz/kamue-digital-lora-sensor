@@ -1,7 +1,7 @@
 """Normalize Nextbike live API payloads into clean typed station and bike models."""
 
 import math
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 

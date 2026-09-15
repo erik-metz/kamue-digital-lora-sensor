@@ -73,6 +73,9 @@ services:
       - timescaledb
 
   nextbike-collector:
+    build:
+      context: ./nextbike-collector
+      dockerfile: Dockerfile
     image: ghcr.io/erik-metz/open-ried-sens-nextbike-collector:latest
     restart: unless-stopped
     stop_grace_period: 60s
