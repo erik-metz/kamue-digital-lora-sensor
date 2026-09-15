@@ -94,7 +94,7 @@ async def main_loop(settings: Settings):
                                 {"incidents_tracked": stats.get("active_incidents", 0)},
                             )
                         except Exception as exc:
-                            LOG.exception("Error during poll cycle: %s", exc)
+                            LOG.exception("Error during poll cycle")
                             write_health(settings.health_file, "unhealthy", {"error": str(exc)})
 
                         elapsed = asyncio.get_event_loop().time() - start_time
