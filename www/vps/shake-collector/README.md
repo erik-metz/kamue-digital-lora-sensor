@@ -1,129 +1,19 @@
-# Raspberry Shake Live Telemetry Collector
+# Raspberry Shake collector
 
-Daemon container service that streams real-time seismic waveform telemetry from a Raspberry Shake Earth monitor (e.g. station **`AM.R498E.00.EHZ`** located in Bürstadt / Bobstadt) and pushes windowed vibration intensity metrics into the Open Ried Sens TimescaleDB backend.
+Streams CAPS/MiniSEED records independently for configured stations, discovers their real vertical channels through FDSN, and calculates fixed source-time `pgv` and `rms` windows. Units remain counts; no physical-velocity calibration is implied. Optional decimated waveform readings use the `waveform` metric under the same station ID.
 
----
+The service uses separate source, normalization, storage, durable-buffer and health modules. Pending windows survive restart in the persistent `/data` volume. API and direct database writes use transactionally committed replay receipts.
 
-## Features
+See [collector maintenance](../collectors.md#shake-streaming) for all settings, source-time and late-sample behavior, retry/durability boundaries, and shutdown behavior. Apply the updated API schema before starting this version.
 
-- **Real-Time Streaming**: Directly connects to the gempa **CAPS WebSocket protocol** (`wss://data.raspberryshake.org/caps/`), matching the live behavior of [Raspberry Shake DataView](https://dataview.raspberryshake.org/#/AM/R498E/00/EHZ?streaming=on).
-- **MiniSEED Decoding**: Parses standard MiniSEED seismic records at 100 Hz.
-- **Windowed Metrics**: Computes **Peak Ground Velocity (PGV / Peak Vibration)** and **RMS Tremor Noise Floor** over rolling time windows (default: 5 seconds) to prevent database bloat while maintaining responsive open data dashboards.
-- **Flexible Ingestion**: Supports pushing to `backend-api` (`/api/v1/telemetry/batch`) or direct insertion into `timescaledb`.
-- **Automatic Station Registration**: Automatically registers the sensor metadata (name, coordinates, description) in `sensor_metadata` on startup.
-- **Resilience**: Asynchronous event loop with automatic reconnection and exponential backoff upon network dropouts.
-
----
-
-## Configuration (`.env`)
-
-| Variable                | Default                                                      | Description                                                                 |
-| :---------------------- | :----------------------------------------------------------- | :-------------------------------------------------------------------------- |
-| `SHAKE_STATIONS` | `R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342` | Comma-separated station codes |
-| `SHAKE_NETWORK`         | `AM`                                                         | Raspberry Shake network code                                                |
-| `SHAKE_WS_URL`          | `wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/` | CAPS WebSocket endpoint                                                     |
-| `INGEST_MODE`           | `api`                                                        | Ingestion mode: `api` (via backend-api) or `direct_db` (TimescaleDB direct) |
-| `API_URL`               | `http://backend-api:8080/api/v1`                             | Backend API URL (for Docker internal network)                               |
-| `API_KEY`               | -                                                            | Ingestion bearer token                                                      |
-| `ADMIN_API_KEY`         | -                                                            | Admin token to register/update sensor metadata                              |
-| `SAMPLING_INTERVAL_SEC` | `5.0`                                                        | Window interval in seconds for PGV & RMS calculations                       |
-| `STORE_RAW_WAVEFORM`    | `false`                                                      | When true, downsampled raw waveform samples are also saved                  |
-| `RAW_DECIMATION_FACTOR` | `10`                                                         | Decimation factor for raw waveforms (100 Hz / 10 = 10 Hz)                   |
-
----
-
-## Standalone Execution (Development)
-
-```bash
-# 1. Install dependencies
+```sh
 pip install -r requirements.txt
-
-# 2. Run connectivity test
-python test_connection.py
-
-# 3. Start collector
 python main.py
+python main.py --duration 60
+python main.py --healthcheck
+SHAKE_STATIONS=R498E python main.py --dry-run --input samples.json
 ```
 
-## One station, multiple metrics
+Offline input is an array of `[unix_seconds, counts]` pairs and writes nothing. Use one station for replay. Live capture requires ObsPy; the production image installs it. Run tests using pytest with the collector directory on `PYTHONPATH`, or use the repository's `www/vps/test-collectors.sh` runner.
 
-Each collector worker registers one ID derived from its station code (for example `shake-r498e`).
-Each window submits two readings with that same ID and timestamp:
-
-```json
-{"readings": [
-  {"sensor_id": "shake-r498e", "metric": "pgv", "value": 42.0, "unit": "counts"},
-  {"sensor_id": "shake-r498e", "metric": "rms", "value": 12.5, "unit": "counts"}
-]}
-```
-
-Optional raw samples use `metric: "waveform"`. Units remain `counts`; these
-values are not calibrated physical velocity. Other ingestion clients can omit
-`metric`, which defaults to `value` for backward compatibility.
-
-Use `/api/v1/telemetry/latest/metrics?sensor_id=shake-r498e` to fetch all latest
-measurements. Existing `/telemetry/latest`, `/telemetry/raw`, and
-`/telemetry/aggregates` accept `metric=pgv` or `metric=rms`. Aggregates always
-group by metric and unit so the two measurements are never averaged together.
-The existing latest endpoint retains its single-reading response.
-
-### Updating an existing deployment
-
-Stop the old collector, deploy/restart the updated API first (it applies
-`schema.sql` on startup), then start the updated collector. Direct DB ingestion
-also requires this schema update before the collector starts.
-
-The schema migration merges historical `shake-r498e-rms` readings into
-`shake-r498e` with metric `rms`, then removes the redundant metadata entry.
-Historical main-station readings paired with RMS timestamps become `pgv`;
-unpaired readings keep `value`, since legacy raw samples and peak measurements
-were not explicitly distinguished. The merge is repeatable and preserves readings.
-For customized station IDs, adapt the migration's two station IDs before applying.
-
-## Continuous multi-station collection
-
-The default `SHAKE_STATIONS` list now includes:
-
-```dotenv
-SHAKE_STATIONS=R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342
-```
-
-One container runs an independent streaming worker for each station. Each worker
-registers one sensor (`shake-r82e7`, `shake-r79f9`, etc.) and continuously writes
-`pgv` and `rms` readings in counts, using the configured window interval (5 seconds
-by default). R498E retains its existing ID; all stations discover their coordinates and channels automatically.
-
-All stations resolve their vertical geophone channel and coordinates from
-[Raspberry Shake's FDSN metadata service](https://manual.raspberryshake.org/fdsn.html).
-R5DFB uses SHZ; the other requested stations use EHZ. No acceleration or pressure
-channels are mixed into the geophone metrics. Metadata availability does not
-confirm that a station is currently transmitting live data.
-
-Metadata failures retry every 60 seconds for that station. Streaming connections
-reconnect independently; one unavailable station does not stop the others.
-Missing data is not replaced with synthetic readings. ObsPy must be installed to
-decode waveform data (included in the container requirements).
-
-To collect a different set, override `SHAKE_STATIONS` in the VPS `.env`. To retain
-single-station collection, set `SHAKE_STATIONS=R498E`. An empty list is rejected.
-Restart the container after changing configuration.
-
-After committing/pushing the changes and waiting for the collector image build,
-run in the VPS Compose directory:
-
-```bash
-docker compose pull shake-collector
-docker compose up -d --no-deps --force-recreate shake-collector
-docker compose logs --tail=100 shake-collector
-```
-
-The startup log should list ten stations, followed by metadata registration and
-station-specific `Flushing ...` messages as live samples arrive. No further DB
-migration is required if the earlier `metric` schema update is already deployed.
-The frontend discovers registered stations on its next sensor-list refresh.
-
-The old single-station environment variables (`SHAKE_STATION`, `SHAKE_LOCATION`,
-`SHAKE_CHANNEL`, `SHAKE_SENSOR_ID`, `SHAKE_SENSOR_NAME`, `SHAKE_SENSOR_DESCRIPTION`,
-`SHAKE_LATITUDE`, and `SHAKE_LONGITUDE`) are no longer read and can be removed
-from existing VPS `.env` files. Keep the station list, connection, ingestion, and
-sampling settings. Sensor IDs are generated as `shake-<lowercase station code>`.
+Defaults include the ten configured stations (`R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342`), a five-second window, and direct database ingestion. API mode requires distinct `API_KEY` and `ADMIN_API_KEY`; registration preserves admin metadata.

@@ -7,6 +7,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     volumes:
       - timescale_data:/var/lib/postgresql/data
 
@@ -24,18 +29,27 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       API_KEY: ${API_KEY:?Set a dedicated ingestion key}
       ADMIN_API_KEY: ${ADMIN_API_KEY:?Set a distinct admin key}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
     depends_on:
-      - timescaledb
+      timescaledb:
+        condition: service_healthy
 
   shake-collector:
     image: ghcr.io/erik-metz/open-ried-sens-shake-collector:latest
     container_name: shake_collector
-    restart: always
+    restart: unless-stopped
+    stop_grace_period: 60s
+    volumes:
+      - shake_state:/data
     environment:
       SHAKE_NETWORK: ${SHAKE_NETWORK:-AM}
       SHAKE_STATIONS: ${SHAKE_STATIONS:-R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342}
       SHAKE_WS_URL: ${SHAKE_WS_URL:-wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/}
-      INGEST_MODE: ${SHAKE_INGEST_MODE:-direct_db}
+      SHAKE_INGEST_MODE: ${SHAKE_INGEST_MODE:-direct_db}
       API_URL: http://backend-api:8080/api/v1
       API_KEY: ${API_KEY}
       ADMIN_API_KEY: ${ADMIN_API_KEY:?Set a distinct admin key}
@@ -44,11 +58,13 @@ services:
       DB_NAME: ${POSTGRES_DB}
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
-      SAMPLING_INTERVAL_SEC: ${SHAKE_SAMPLING_INTERVAL_SEC:-5.0}
-      STORE_RAW_WAVEFORM: ${SHAKE_STORE_RAW_WAVEFORM:-false}
+      SHAKE_SAMPLING_INTERVAL_SEC: ${SHAKE_SAMPLING_INTERVAL_SEC:-5.0}
+      SHAKE_STORE_RAW_WAVEFORM: ${SHAKE_STORE_RAW_WAVEFORM:-false}
     depends_on:
-      - backend-api
-      - timescaledb
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
 
   smartcity-collector:
     image: ghcr.io/erik-metz/open-ried-sens-smartcity-collector:latest
@@ -69,8 +85,10 @@ services:
     volumes:
       - smartcity_state:/data
     depends_on:
-      - backend-api
-      - timescaledb
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
 
   nextbike-collector:
     build:
@@ -91,8 +109,10 @@ services:
     volumes:
       - nextbike_state:/data
     depends_on:
-      - backend-api
-      - timescaledb
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
 
   traffic-collector:
     build:
@@ -108,17 +128,22 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       TRAFFIC_POLL_SECONDS: ${TRAFFIC_POLL_SECONDS:-180}
-      TRAFFIC_ROADS: "A67,A5,A6"
+      TRAFFIC_ROADS: ${TRAFFIC_ROADS:-A67,A5,A6}
     volumes:
       - traffic_state:/data
     depends_on:
-      - backend-api
-      - timescaledb
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
 
 
   archive-worker:
     image: ghcr.io/erik-metz/open-ried-sens-archive-worker:latest
     profiles: ["archives"]
+    stop_grace_period: 60s
+    volumes:
+      - archive_state:/data
     restart: unless-stopped
     environment:
       DB_HOST: timescaledb
@@ -129,8 +154,10 @@ services:
       UPLOADTHING_TOKEN: ${UPLOADTHING_TOKEN:-}
       ARCHIVE_PART_MB: ${ARCHIVE_PART_MB:-64}
     depends_on:
-      - timescaledb
-      - backend-api
+      timescaledb:
+        condition: service_healthy
+      backend-api:
+        condition: service_healthy
 
   nginx:
     image: nginx:alpine
@@ -164,6 +191,8 @@ services:
       - WATCHTOWER_HTTP_API_PERIODIC_POLLS=false
 
 volumes:
+  shake_state:
+  archive_state:
   smartcity_state:
   nextbike_state:
   traffic_state:

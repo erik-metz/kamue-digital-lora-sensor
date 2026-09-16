@@ -107,3 +107,7 @@ files and retry interrupted files from their start; ZIPs are not auto-extracted.
 
 The dependency override for `effect` keeps the UploadThing SDK on a patched
 3.x release (GHSA-38f7-945m-qr2g). The SDK upload/delete test covers this combination.
+
+## Collector operational conventions
+
+Watch-mode status, retry scheduling, the persistent cleanup queue and deployment order are documented in [collector maintenance](../collectors.md#archive-worker). Apply the updated API schema before running this version.

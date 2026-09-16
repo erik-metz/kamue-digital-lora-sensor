@@ -9,7 +9,9 @@ import httpx
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import Settings
-from main import fetch, fetch_dashboards, retry_after
+from runtime import retry_after
+from source import fetch_dashboards
+from source import fetch_json as fetch
 
 
 class HttpTests(unittest.IsolatedAsyncioTestCase):
@@ -33,7 +35,7 @@ class HttpTests(unittest.IsolatedAsyncioTestCase):
         transport = httpx.MockTransport(
             lambda request: httpx.Response(200, content=b" " * 100)
         )
-        with patch("main.MAX_BYTES", 10):
+        with patch("source.MAX_BYTES", 10):
             async with httpx.AsyncClient(transport=transport) as client:
                 with self.assertRaises(ValueError):
                     await fetch(client, "https://example.org")

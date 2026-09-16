@@ -1,6 +1,5 @@
-websockets>=12.0
-httpx>=0.27.0
-pydantic-settings>=2.2.0
-psycopg[binary]>=3.2.1
-numpy>=1.26.0
-obspy>=1.4.1
+websockets>=14,<16
+httpx>=0.27,<1
+psycopg[binary]>=3.2,<4
+numpy>=1.26,<3
+obspy>=1.4,<2

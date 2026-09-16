@@ -58,30 +58,37 @@ def parse_nextbike_response(
     current_time = now or datetime.now(UTC)
     results: list[NextbikeStationData] = []
 
-    if not isinstance(data, dict):
-        return results
+    if not isinstance(data, dict) or not isinstance(data.get("countries"), list):
+        raise TypeError("Expected Nextbike countries array")
+    seen_cities = set()
+    seen_stations = set()
+    seen_bikes = set()
 
     for country in data.get("countries", []):
-        if not isinstance(country, dict):
-            continue
+        if not isinstance(country, dict) or not isinstance(country.get("cities"), list):
+            raise TypeError("Invalid Nextbike country")
         for city in country.get("cities", []):
             if not isinstance(city, dict):
-                continue
+                raise TypeError("Invalid Nextbike city")
             city_id = city.get("uid")
-            if not isinstance(city_id, int):
-                continue
+            if type(city_id) is not int:
+                raise ValueError("Invalid Nextbike city ID")
             if allowed_city_ids is not None and city_id not in allowed_city_ids:
                 continue
 
+            if not isinstance(city.get("places"), list):
+                raise TypeError("Expected Nextbike places array")
+            seen_cities.add(city_id)
             city_name = str(city.get("name") or "VRN")
 
             for place in city.get("places", []):
                 if not isinstance(place, dict):
-                    continue
+                    raise TypeError("Invalid Nextbike station")
 
                 uid = place.get("uid")
-                if not isinstance(uid, int):
-                    continue
+                if type(uid) is not int or uid in seen_stations:
+                    raise ValueError("Invalid or duplicate Nextbike station ID")
+                seen_stations.add(uid)
 
                 lat = place.get("lat")
                 lng = place.get("lng")
@@ -91,7 +98,7 @@ def parse_nextbike_response(
                     and -90.0 <= lat <= 90.0
                     and -180.0 <= lng <= 180.0
                 ):
-                    continue
+                    raise ValueError("Invalid Nextbike coordinates")
 
                 raw_name = str(place.get("name") or f"Station {uid}").strip()
                 # Friendly display name
@@ -113,17 +120,26 @@ def parse_nextbike_response(
                 free_racks = int(place.get("free_racks", 0) or 0)
 
                 bike_numbers_raw = place.get("bike_numbers") or []
-                bike_numbers = tuple(str(n).strip() for n in bike_numbers_raw if n)
+                if not isinstance(bike_numbers_raw, list):
+                    raise TypeError("Expected bike_numbers array")
+                bike_numbers = tuple(
+                    dict.fromkeys(str(n).strip() for n in bike_numbers_raw if n)
+                )
 
                 bikes_detail_list: list[NextbikeBikeData] = []
                 ebikes_count = 0
 
+                if not isinstance(place.get("bike_list", []), list):
+                    raise TypeError("Expected bike_list array")
                 for b in place.get("bike_list", []):
                     if not isinstance(b, dict):
-                        continue
+                        raise TypeError("Invalid bike record")
                     num = str(b.get("number") or "").strip()
-                    if not num:
-                        continue
+                    if not num or num in seen_bikes:
+                        raise ValueError(
+                            "Missing or duplicate bike identity in snapshot"
+                        )
+                    seen_bikes.add(num)
                     btype = int(b.get("bike_type") or 0)
                     electric_lock = bool(b.get("electric_lock", True))
                     pedelec_battery = b.get("pedelec_battery")
@@ -166,4 +182,6 @@ def parse_nextbike_response(
                     )
                 )
 
+    if allowed_city_ids and not allowed_city_ids <= seen_cities:
+        raise ValueError("Nextbike snapshot is missing configured cities")
     return results

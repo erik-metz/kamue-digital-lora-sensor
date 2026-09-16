@@ -240,3 +240,7 @@ Default additional dashboards:
 Each request remains bounded to 20 MiB. Requests are sequential and a failed
 source aborts the poll before DB ingestion; last-success health is not advanced.
 The bounded diagnostic snapshot is now a list of up to four default dashboards.
+
+## Common collector structure
+
+Acquisition now lives in `source.py`, polling/CLI in `runtime.py`, and status handling in `health.py`. Source timestamp and revision semantics are unchanged. See [collector maintenance](../collectors.md) for the common status contract, bounded cycle, schema readiness and deployment steps.

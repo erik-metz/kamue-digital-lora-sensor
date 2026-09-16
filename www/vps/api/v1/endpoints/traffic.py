@@ -33,6 +33,9 @@ class TrafficIncidentResponse(BaseModel):
     description: str | None = None
     coordinates: list[list[float]] | None = None
     source: str
+    delay_kind: str = "unknown"
+    source_category: str = "unknown"
+    timestamp_kind: str = "collector_observed"
 
 
 class TrafficHistoryResponse(BaseModel):
@@ -121,7 +124,7 @@ async def list_active_incidents(
         SELECT id, road_name, direction, location_from, location_to,
                start_time, end_time, last_seen_at, is_active,
                delay_seconds, length_meters, severity, cause_type,
-               description, coordinates, source
+               description, coordinates, source, delay_kind, source_category
         FROM traffic_incidents
         WHERE (is_active = TRUE OR (end_time >= NOW() - (%s * INTERVAL '1 hour')))
     """
@@ -167,6 +170,8 @@ async def list_active_incidents(
                 description=r["description"],
                 coordinates=coords,
                 source=r["source"],
+                delay_kind=r.get("delay_kind", "unknown"),
+                source_category=r.get("source_category", "unknown"),
             )
         )
     return results

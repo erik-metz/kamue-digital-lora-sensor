@@ -1,3 +1,5 @@
+import hashlib
+import json
 import math
 from datetime import UTC, datetime, timedelta
 
@@ -105,6 +107,13 @@ async def push_batch_sensor_data(
             detail="Readings array cannot be empty.",
         )
 
+    if payload.batch_id and any(item.timestamp is None or not math.isfinite(item.value) for item in payload.readings):
+        raise HTTPException(400, "Replayable batches require explicit timestamps and finite values")
+    canonical = [{"sensor_id": item.sensor_id, "metric": item.metric, "value": item.value,
+                      "unit": item.unit, "timestamp": item.timestamp.isoformat() if item.timestamp else None}
+                 for item in payload.readings]
+    digest = hashlib.sha256(json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
     now_utc = datetime.now(UTC)
     records = [
         (item.timestamp or now_utc, item.sensor_id, item.value, item.unit, item.metric)
@@ -118,6 +127,17 @@ async def push_batch_sensor_data(
         VALUES (%s, %s, %s, %s, %s);
     """
     async with pool.connection() as conn, conn.transaction(), conn.cursor() as cur:
+        if payload.batch_id:
+            await cur.execute("SET LOCAL statement_timeout = '30s'")
+            await cur.execute("SET LOCAL lock_timeout = '10s'")
+            await cur.execute("""INSERT INTO telemetry_ingest_batches(batch_id,payload_hash)
+                VALUES (%s,%s) ON CONFLICT DO NOTHING RETURNING batch_id""", (payload.batch_id, digest))
+            if await cur.fetchone() is None:
+                await cur.execute("SELECT payload_hash FROM telemetry_ingest_batches WHERE batch_id=%s", (payload.batch_id,))
+                previous = await cur.fetchone()
+                if previous["payload_hash"] != digest:
+                    raise HTTPException(409, "Batch identity reused with different readings")
+                return {"status": "duplicate", "batch_id": payload.batch_id, "inserted_count": 0}
         # Auto-register distinct sensors in the batch
         await cur.executemany(
             """
@@ -129,7 +149,7 @@ async def push_batch_sensor_data(
         )
         await cur.executemany(query, records)
 
-    return {"status": "success", "inserted_count": len(records)}
+    return {"status": "success", "inserted_count": len(records), "batch_id": payload.batch_id}
 
 
 # --- RETRIEVAL ENDPOINTS (Public Open Data) ---

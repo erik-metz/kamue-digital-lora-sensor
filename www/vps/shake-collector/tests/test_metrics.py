@@ -1,55 +1,67 @@
-"""Collector regression tests; run with unittest discovery."""
-import asyncio
-import sys
+import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import main
-
-
-class MetricTests(unittest.IsolatedAsyncioTestCase):
-    async def test_window_uses_one_station_and_distinct_metrics(self):
-        collector = main.ShakeCollector()
-        collector.sample_buffer = [(1000.0, -3), (1001.0, 0), (1002.0, 3)]
-        collector.last_flush_time = asyncio.get_running_loop().time() - 100
-        collector.push_telemetry = AsyncMock()
-        with patch.object(main, 'HAS_NUMPY', False), patch.object(
-            main.settings, 'STORE_RAW_WAVEFORM', True
-        ), patch.object(main.settings, 'RAW_DECIMATION_FACTOR', 1):
-            await collector.flush_window_if_due()
-        readings = collector.push_telemetry.call_args.args[0]
-        self.assertEqual({r['sensor_id'] for r in readings}, {collector.settings.SENSOR_ID})
-        self.assertEqual([r['metric'] for r in readings],
-                         ['pgv', 'rms', 'waveform', 'waveform', 'waveform'])
-        self.assertEqual(readings[0]['value'], 3)
-        self.assertEqual(readings[1]['value'], 2.45)
-        self.assertEqual(readings[0]['timestamp'], readings[1]['timestamp'])
-        self.assertEqual(collector.sample_buffer, [])
-
-    async def test_registers_only_one_station(self):
-        collector = main.ShakeCollector()
-        collector.http_client = AsyncMock()
-        collector.http_client.post.return_value.status_code = 201
-        with patch.object(collector.settings, 'ADMIN_API_KEY', 'test-admin'), patch.object(
-            collector.settings, 'API_KEY', 'test-ingest'
-        ):
-            await collector._register_metadata_api()
-        collector.http_client.post.assert_awaited_once()
-        self.assertEqual(collector.http_client.post.call_args.kwargs['json']['sensor_id'],
-                         collector.settings.SENSOR_ID)
-
-    async def test_registration_never_falls_back_to_ingestion_key(self):
-        collector = main.ShakeCollector()
-        collector.http_client = AsyncMock()
-        for admin_key in ('', 'test-ingest'):
-            with patch.object(collector.settings, 'ADMIN_API_KEY', admin_key), patch.object(
-                collector.settings, 'API_KEY', 'test-ingest'
-            ), self.assertRaises(RuntimeError):
-                await collector._register_metadata_api()
-        collector.http_client.post.assert_not_awaited()
+from buffer import Spool
+from config import Settings, station_settings_list
+from normalize import Windows
 
 
-if __name__ == '__main__':
-    unittest.main()
+def config(**kwargs):
+    with patch.dict("os.environ", {}, clear=True):
+        base = replace(Settings.from_env(), **kwargs)
+    return station_settings_list(base)[0]
+
+
+class WindowTests(unittest.TestCase):
+    def test_source_time_metrics_deduplication_and_late_samples(self):
+        windows = Windows(config(STORE_RAW_WAVEFORM=True, RAW_DECIMATION_FACTOR=1))
+        windows.add([(1000, -3), (1001, 0), (1002, 3), (1002, 3)])
+        self.assertEqual(list(windows.ready(1004)), [])
+        batch = next(iter(windows.ready(1005)))
+        readings = batch["readings"]
+        self.assertEqual(
+            [r["metric"] for r in readings],
+            ["pgv", "rms", "waveform", "waveform", "waveform"],
+        )
+        self.assertEqual([r["value"] for r in readings[:2]], [3, 2.45])
+        self.assertEqual(readings[0]["timestamp"], "1970-01-01T00:16:45+00:00")
+        windows.acknowledge(batch)
+        windows.add([(1002, 3), (1005, 1)])
+        self.assertEqual(windows.skipped, 1)
+        self.assertEqual(len(list(windows.ready(1010))), 1)
+
+    def test_windows_and_stations_are_independent(self):
+        configs = station_settings_list(config().base)
+        batches = []
+        for station in configs[:2]:
+            windows = Windows(station)
+            windows.add([(1000, -1), (1001, 1), (1005, 2)])
+            result = list(windows.ready(1010))
+            self.assertEqual(len(result), 2)
+            batches.append(result[0])
+        self.assertNotEqual(batches[0]["batch_id"], batches[1]["batch_id"])
+
+    def test_durable_queue_retains_exact_batch_and_cursor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "spool.json"
+            spool = Spool(path, 1)
+            windows = Windows(config())
+            windows.add([(1000, 1)])
+            batch = next(iter(windows.ready(1005)))
+            spool.append(batch)
+            with self.assertRaises(BufferError):
+                spool.append(batch)
+            restarted = Spool(path, 1)
+            self.assertEqual(restarted.state["pending"], [batch])
+            self.assertEqual(restarted.state["watermark"], 1005)
+            with (
+                patch.object(Path, "replace", side_effect=OSError("disk")),
+                self.assertRaises(OSError),
+            ):
+                restarted.acknowledge()
+            self.assertEqual(restarted.state["pending"], [batch])
+            restarted.acknowledge()
+            self.assertEqual(Spool(path, 1).state, {"watermark": 1005, "pending": []})

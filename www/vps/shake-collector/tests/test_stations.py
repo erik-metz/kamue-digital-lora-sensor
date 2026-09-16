@@ -1,84 +1,61 @@
-import asyncio
-import copy
-import sys
+import os
 import unittest
-from pathlib import Path
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-import main
+from config import Settings, station_settings_list
+from source import discover_station
+from test_metrics import config
 
 
 class StationTests(unittest.IsolatedAsyncioTestCase):
-    def test_independent_station_configuration(self):
-        configs = main.station_settings_list(main.settings)
+    def test_independent_settings_and_duplicates(self):
+        configs = station_settings_list(config().base)
         self.assertEqual(len(configs), 10)
         self.assertEqual(len({c.SENSOR_ID for c in configs}), 10)
-        self.assertEqual(configs[0].SENSOR_ID, 'shake-r498e')
         self.assertIsNone(configs[1].LATITUDE)
-        self.assertEqual(configs[-1].SENSOR_ID, 'shake-sc342')
-        self.assertIsNone(configs[0].LATITUDE)
+        self.assertEqual(
+            len(
+                station_settings_list(
+                    replace(config().base, SHAKE_STATIONS="R498E,R498E,SC342")
+                )
+            ),
+            2,
+        )
 
-    def test_legacy_station_environment_is_ignored(self):
-        with patch.dict("os.environ", {
-            "SHAKE_STATIONS": "SC342",
-            "SHAKE_STATION": "R498E",
-            "SHAKE_SENSOR_ID": "wrong-id",
-            "SENSOR_ID": "wrong-id",
-            "SHAKE_LATITUDE": "49.65766",
-            "LATITUDE": "49.65766",
-        }):
-            config = main.station_settings_list(type(main.settings)())[0]
-        self.assertEqual(config.SENSOR_ID, "shake-sc342")
-        self.assertIsNone(config.LATITUDE)
+    def test_invalid_settings_and_prefixed_names(self):
+        for variables in (
+            {"SHAKE_INGEST_MODE": "oops"},
+            {"SHAKE_SAMPLING_INTERVAL_SEC": "0"},
+            {"SHAKE_STATIONS": "bad"},
+        ):
+            with (
+                patch.dict(os.environ, variables, clear=True),
+                self.assertRaises(ValueError),
+            ):
+                Settings.from_env()
+        with patch.dict(
+            os.environ,
+            {"SHAKE_INGEST_MODE": "api", "INGEST_MODE": "direct_db"},
+            clear=True,
+        ):
+            self.assertEqual(Settings.from_env().INGEST_MODE, "api")
 
-    async def test_windows_do_not_mix_stations(self):
-        configs = main.station_settings_list(main.settings)
-        collectors = [main.ShakeCollector(config) for config in configs[:2]]
-        for index, collector in enumerate(collectors):
-            collector.sample_buffer = [(1000, -(index + 1)), (1001, index + 1)]
-            collector.last_flush_time = asyncio.get_running_loop().time() - 100
-            collector.push_telemetry = AsyncMock()
-        await asyncio.gather(*(collector.flush_window_if_due() for collector in collectors))
-        for index, collector in enumerate(collectors):
-            readings = collector.push_telemetry.call_args.args[0]
-            self.assertEqual({r['sensor_id'] for r in readings}, {configs[index].SENSOR_ID})
-            self.assertEqual({r['metric'] for r in readings}, {'pgv', 'rms'})
-            self.assertEqual(readings[0]['value'], index + 1)
-
-    async def test_discovers_shz_and_actual_coordinates(self):
-        config = main.StationSettings(main.settings, 'R5DFB')
+    async def test_discovers_actual_vertical_channel(self):
+        station = config()
         client = AsyncMock()
         client.__aenter__.return_value = client
         client.get.return_value = SimpleNamespace(
-            text='#Network|Station\nAM|R5DFB|00|SHZ|50.09|8.29|190',
-            raise_for_status=lambda: None,
+            text="AM|R498E|00|SHZ|50.09|8.29|190", raise_for_status=lambda: None
         )
-        httpx = SimpleNamespace(AsyncClient=lambda **kwargs: client)
-        with patch.object(main, 'httpx', httpx):
-            await main.discover_station(config)
-        self.assertEqual(config.channel_identifier, 'AM.R5DFB.00.SHZ')
-        self.assertEqual((config.LATITUDE, config.LONGITUDE), (50.09, 8.29))
-
-    async def test_missing_channel_is_not_fabricated(self):
-        client = AsyncMock()
-        client.__aenter__.return_value = client
-        client.get.return_value = SimpleNamespace(text='', raise_for_status=lambda: None)
-        with patch.object(main, 'httpx', SimpleNamespace(AsyncClient=lambda **kwargs: client)), self.assertRaises(ValueError):
-            await main.discover_station(main.StationSettings(main.settings, 'R498E'))
-
-    def test_duplicate_station_codes_are_collected_once(self):
-        config = copy.copy(main.settings)
-        config.SHAKE_STATIONS = 'R498E,R498E,SC342'
-        self.assertEqual(len(main.station_settings_list(config)), 2)
-
-    async def test_rejects_other_station_trace(self):
-        collector = main.ShakeCollector()
-        with patch.object(main, 'HAS_OBSPY', True), patch.object(
-            main, 'obspy_read', return_value=[SimpleNamespace(id='AM.R82E7.00.EHZ')], create=True
+        with patch("source.httpx.AsyncClient", return_value=client):
+            await discover_station(station)
+        self.assertEqual(station.channel_identifier, "AM.R498E.00.SHZ")
+        self.assertEqual((station.LATITUDE, station.LONGITUDE), (50.09, 8.29))
+        client.get.return_value.text = ""
+        with (
+            patch("source.httpx.AsyncClient", return_value=client),
+            self.assertRaises(ValueError),
         ):
-            collector.process_mseed_payload(b'packet')
-        self.assertEqual(collector.sample_buffer, [])
-        with patch.object(main, 'HAS_OBSPY', False), self.assertRaises(RuntimeError):
-            collector.process_mseed_payload(b'packet')
+            await discover_station(station)

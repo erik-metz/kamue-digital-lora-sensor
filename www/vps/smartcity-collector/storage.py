@@ -12,10 +12,27 @@ async def ingest(conn, observations):
     async with conn.transaction(), conn.cursor(row_factory=dict_row) as cur:
         await cur.execute("SET LOCAL statement_timeout = '30s'")
         await cur.execute("SET LOCAL lock_timeout = '10s'")
+        await cur.execute(
+            "SELECT version FROM collector_schema_versions WHERE version=20260916"
+        )
+        if await cur.fetchone() is None:
+            raise RuntimeError(
+                "Apply API schema migration 20260916 before starting collectors"
+            )
         # Serialize this collector's transactions, including concurrent initial
         # inserts. The lock is released on commit/rollback, not process lifetime.
         await cur.execute("SELECT pg_advisory_xact_lock(734219, 1)")
+        sources = {}
+        positions = {}
         for item in observations:
+            if item.latitude is not None and item.longitude is not None:
+                positions[item.sensor_id] = (item.latitude, item.longitude)
+            if (
+                item.sensor_id not in sources
+                or item.fetched_at > sources[item.sensor_id].fetched_at
+            ):
+                sources[item.sensor_id] = item
+        for item in sources.values():
             sid = item.sensor_id
             await cur.execute(
                 """INSERT INTO sensor_metadata
@@ -34,11 +51,11 @@ async def ingest(conn, observations):
                 ),
             )
             # Repair previously missing source positions, but preserve existing admin values.
-            if item.latitude is not None and item.longitude is not None:
+            if sid in positions:
                 await cur.execute(
                     """UPDATE sensor_metadata SET latitude=%s, longitude=%s
                        WHERE id=%s AND latitude IS NULL AND longitude IS NULL""",
-                    (item.latitude, item.longitude, sid),
+                    (*positions[sid], sid),
                 )
             # Never reset visibility or overwrite names/coordinates edited by admins.
             await cur.execute(
@@ -59,6 +76,8 @@ async def ingest(conn, observations):
                     item.fetched_at,
                 ),
             )
+        for item in observations:
+            sid = item.sensor_id
             await cur.execute(
                 """INSERT INTO smartcity_metrics (sensor_id,metric,attribute,unit)
                    VALUES (%s,%s,%s,%s) ON CONFLICT (sensor_id,metric) DO NOTHING""",

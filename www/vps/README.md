@@ -1,5 +1,7 @@
 # VPS Telemetry Backend & TimescaleDB Infrastructure
 
+Collector structure, CLI, reliability contracts, migration order and testing are documented in [collectors.md](collectors.md).
+
 This directory contains the cloud backend service and container configuration deployed on an **AWS EC2** instance to ingest, store, and serve LoRaWAN GPS tracker and sensor telemetry.
 
 ---

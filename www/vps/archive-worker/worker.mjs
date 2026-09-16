@@ -1,6 +1,6 @@
 import pg from 'pg';
 import QueryStream from 'pg-query-stream';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -8,7 +8,24 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { buildArchives, monthRange } from './archive.mjs';
 import { uploadThingStorage } from './storage.mjs';
 
-export async function runArchives({ storage, dbConfig, requestedMonth = null, refresh = false, partBytes = 64 * 1024 * 1024 }) {
+export async function drainCleanup(client, storage) {
+  const pending = (await client.query('SELECT key FROM archive_cleanup ORDER BY queued_at LIMIT 1000')).rows;
+  for (const { key } of pending) {
+    try {
+      await storage.remove([key]);
+      await client.query('DELETE FROM archive_cleanup WHERE key=$1', [key]);
+    } catch {
+      console.warn('Archive cleanup deferred; remaining keys stay in retry queue');
+      break;
+    }
+  }
+}
+
+async function queueCleanup(client, keys) {
+  if (keys.length) await client.query('INSERT INTO archive_cleanup(key) SELECT unnest($1::text[]) ON CONFLICT DO NOTHING', [keys]);
+}
+
+export async function runArchives({ storage, dbConfig, requestedMonth = null, refresh = false, partBytes = 64 * 1024 * 1024, signal = null }) {
   const client = new pg.Client(dbConfig);
   await client.connect();
   try {
@@ -16,6 +33,7 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
     if (!lock.rows[0].locked) { console.log('Another archive export is running'); return; }
     // The API migration creates the catalogue. Fail clearly if not deployed yet.
     await client.query('SELECT month FROM data_archives LIMIT 0');
+    await drainCleanup(client, storage);
     // Withdraw snapshots when any included station is now hidden or deleted.
     const stale = await client.query(`SELECT month, files FROM data_archives a WHERE EXISTS (
       SELECT 1 FROM unnest(a.station_ids) AS included(station_id) WHERE NOT EXISTS
@@ -30,6 +48,7 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
         date_trunc('month', now() AT TIME ZONE 'UTC') - interval '1 month', interval '1 month') AS months(month_start)
       WHERE NOT EXISTS (SELECT 1 FROM data_archives a WHERE a.month = to_char(months.month_start, 'YYYY-MM') AND a.is_complete) ORDER BY month`)).rows.map(row => row.month);
     for (const month of months) {
+      if (signal?.aborted) break;
       const { start, end } = monthRange(month);
       if (start > new Date()) throw new Error('Cannot export a future month');
       const previous = (await client.query('SELECT * FROM data_archives WHERE month=$1', [month])).rows[0];
@@ -65,13 +84,17 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
           generated_at=EXCLUDED.generated_at, is_complete=EXCLUDED.is_complete, reading_count=EXCLUDED.reading_count,
           size_bytes=EXCLUDED.size_bytes, station_ids=EXCLUDED.station_ids, files=EXCLUDED.files`,
           [month, generatedAt, end <= new Date(generatedAt), archive.reading_count, uploaded.reduce((sum, file) => sum + file.size_bytes, 0), ids, JSON.stringify(uploaded)]);
+        if (previous) await queueCleanup(client, previous.files.map(file => file.key));
         await client.query('COMMIT');
         published = true;
-        if (previous) await storage.remove(previous.files.map(file => file.key));
+        await drainCleanup(client, storage);
         console.log(`Published ${month}: ${archive.reading_count} readings in ${uploaded.length} parts`);
       } catch (error) {
         await client.query('ROLLBACK');
-        if (!published) await storage.remove(uploaded.map(file => file.key));
+        if (!published) {
+          await queueCleanup(client, uploaded.map(file => file.key));
+          await drainCleanup(client, storage);
+        }
         throw error;
       } finally {
         await rm(directory, { recursive: true, force: true });
@@ -91,15 +114,39 @@ async function main() {
   if (!Number.isFinite(partBytes) || partBytes < 1024 * 1024 || partBytes > 256 * 1024 * 1024) throw new Error('ARCHIVE_PART_MB must be between 1 and 256');
   const storage = uploadThingStorage(process.env.UPLOADTHING_TOKEN);
   const dbConfig = { host: process.env.DB_HOST || 'timescaledb', port: Number(process.env.DB_PORT || 5432), database: process.env.DB_NAME, user: process.env.DB_USER, password: process.env.DB_PASSWORD };
-  do {
-    try { await runArchives({ storage, dbConfig, requestedMonth, refresh, partBytes }); }
-    catch (error) {
-      // Do not log connection strings or raw SDK errors.
-      console.error('Archive export failed:', error.code || error.name || 'Error');
-      if (!args.includes('--watch')) { process.exitCode = 1; break; }
-    }
-    if (args.includes('--watch')) await delay(24 * 60 * 60 * 1000);
-  } while (args.includes('--watch'));
+  const controller = new AbortController();
+  const stop = () => controller.abort();
+  process.on('SIGTERM', stop);
+  process.on('SIGINT', stop);
+  const statusPath = path.join(process.env.ARCHIVE_STATE_DIR || '/data', 'status.json');
+  let status = {};
+  try { status = JSON.parse(await readFile(statusPath, 'utf8')); } catch { /* first run */ }
+  try {
+    do {
+      let waitMs = 24 * 60 * 60 * 1000;
+      status.last_attempt = new Date().toISOString();
+      try {
+        await runArchives({ storage, dbConfig, requestedMonth, refresh, partBytes, signal: controller.signal });
+        if (!controller.signal.aborted) status = { ...status, status: 'healthy', last_success: new Date().toISOString(), consecutive_failures: 0, error_category: null };
+      } catch (error) {
+        console.error('Archive export failed:', error.code || error.name || 'Error');
+        status = { ...status, status: 'degraded', consecutive_failures: (status.consecutive_failures || 0) + 1, error_category: error.code || error.name };
+        waitMs = Math.min(3600000, 60000 * 2 ** Math.min(status.consecutive_failures, 6));
+        if (!args.includes('--watch')) process.exitCode = 1;
+      }
+      try {
+        await mkdir(path.dirname(statusPath), { recursive: true });
+        await writeFile(`${statusPath}.tmp`, JSON.stringify(status));
+        await rename(`${statusPath}.tmp`, statusPath);
+      } catch { console.warn('Archive status write failed; publication outcome unchanged'); }
+      if (!args.includes('--watch') || controller.signal.aborted) break;
+      try { await delay(waitMs, null, { signal: controller.signal }); }
+      catch (error) { if (error.name !== 'AbortError') throw error; }
+    } while (!controller.signal.aborted);
+  } finally {
+    process.off('SIGTERM', stop);
+    process.off('SIGINT', stop);
+  }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

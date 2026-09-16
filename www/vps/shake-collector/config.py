@@ -1,81 +1,110 @@
-"""Configuration settings for the Raspberry Shake Telemetry Collector."""
+"""Validated settings; legacy Compose aliases remain supported."""
 
+import math
 import os
-
-try:
-    from pydantic_settings import BaseSettings, SettingsConfigDict
-
-    class Settings(BaseSettings):
-        # Raspberry Shake station settings
-        SHAKE_NETWORK: str = "AM"
-        SHAKE_STATIONS: str = "R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342"
-        SHAKE_WS_URL: str = "wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/"
-        SHAKE_FDSN_URL: str = "https://data.raspberryshake.org/fdsnws"
+import re
+from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 
-        # Ingestion destination: "api" (recommended) or "direct_db"
-        INGEST_MODE: str = "api"
-        API_URL: str = "http://backend-api:8080/api/v1"
-        API_KEY: str = ""
-        ADMIN_API_KEY: str = ""
+def env(name, default, legacy=None):
+    return os.getenv(name, os.getenv(legacy, default) if legacy else default)
 
-        # Direct TimescaleDB settings (used if INGEST_MODE=direct_db)
-        DB_HOST: str = "timescaledb"
-        DB_PORT: int = 5432
-        DB_NAME: str = "mydatabase"
-        DB_USER: str = "postgres"
-        DB_PASSWORD: str = ""
 
-        # Metric & windowing settings
-        SAMPLING_INTERVAL_SEC: float = 5.0
-        STORE_RAW_WAVEFORM: bool = False
-        RAW_DECIMATION_FACTOR: int = 10  # e.g., if 100 Hz, 10 decimation = 10 Hz
+def boolean(value):
+    if value.lower() not in ("true", "false", "1", "0", "yes", "no"):
+        raise ValueError("Expected a boolean setting")
+    return value.lower() in ("true", "1", "yes")
 
-        # Connection retry settings
-        RECONNECT_DELAY_SEC: float = 5.0
-        MAX_RECONNECT_DELAY_SEC: float = 60.0
 
-        model_config = SettingsConfigDict(
-            env_file=".env",
-            extra="ignore",
+@dataclass(frozen=True)
+class Settings:
+    SHAKE_STATIONS: str
+    SHAKE_NETWORK: str
+    SHAKE_WS_URL: str
+    SHAKE_FDSN_URL: str
+    INGEST_MODE: str
+    API_URL: str
+    API_KEY: str
+    ADMIN_API_KEY: str
+    db: dict
+    SAMPLING_INTERVAL_SEC: float
+    STORE_RAW_WAVEFORM: bool
+    RAW_DECIMATION_FACTOR: int
+    RECONNECT_DELAY_SEC: float
+    MAX_RECONNECT_DELAY_SEC: float
+    state_dir: str
+    queue_batches: int
+    shutdown_seconds: int
+    lateness_seconds: float
+
+    @classmethod
+    def from_env(cls):
+        settings = cls(
+            env(
+                "SHAKE_STATIONS",
+                "R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342",
+            ),
+            env("SHAKE_NETWORK", "AM"),
+            env(
+                "SHAKE_WS_URL",
+                "wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/",
+            ),
+            env("SHAKE_FDSN_URL", "https://data.raspberryshake.org/fdsnws"),
+            env("SHAKE_INGEST_MODE", "direct_db", "INGEST_MODE"),
+            env("SHAKE_API_URL", "http://backend-api:8080/api/v1", "API_URL"),
+            env("API_KEY", ""),
+            env("ADMIN_API_KEY", ""),
+            {
+                "host": env("DB_HOST", "timescaledb"),
+                "port": int(env("DB_PORT", "5432")),
+                "dbname": env("DB_NAME", "mydatabase"),
+                "user": env("DB_USER", "postgres"),
+                "password": env("DB_PASSWORD", ""),
+                "connect_timeout": 10,
+            },
+            float(env("SHAKE_SAMPLING_INTERVAL_SEC", "5", "SAMPLING_INTERVAL_SEC")),
+            boolean(env("SHAKE_STORE_RAW_WAVEFORM", "false", "STORE_RAW_WAVEFORM")),
+            int(env("SHAKE_RAW_DECIMATION_FACTOR", "10", "RAW_DECIMATION_FACTOR")),
+            float(env("SHAKE_RECONNECT_DELAY_SEC", "5", "RECONNECT_DELAY_SEC")),
+            float(
+                env("SHAKE_MAX_RECONNECT_DELAY_SEC", "60", "MAX_RECONNECT_DELAY_SEC")
+            ),
+            env("SHAKE_STATE_DIR", "/data"),
+            int(env("SHAKE_QUEUE_BATCHES", "120")),
+            int(env("SHAKE_SHUTDOWN_SECONDS", "20")),
+            float(env("SHAKE_LATENESS_SECONDS", "2")),
         )
-
-
-except ImportError:
-    class Settings:  # type: ignore[no-redef]
-        def __init__(self, **kwargs):
-            self.SHAKE_STATIONS = kwargs.get("SHAKE_STATIONS", os.getenv("SHAKE_STATIONS", "R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342"))
-            self.SHAKE_NETWORK = kwargs.get("SHAKE_NETWORK", os.getenv("SHAKE_NETWORK", "AM"))
-            self.SHAKE_WS_URL = kwargs.get("SHAKE_WS_URL", os.getenv("SHAKE_WS_URL", "wss://swarm:ujHsN9qbYiTAx69H@data.raspberryshake.org/caps/"))
-            self.SHAKE_FDSN_URL = kwargs.get("SHAKE_FDSN_URL", os.getenv("SHAKE_FDSN_URL", "https://data.raspberryshake.org/fdsnws"))
-
-
-            self.INGEST_MODE = kwargs.get("INGEST_MODE", os.getenv("SHAKE_INGEST_MODE", "api"))
-            self.API_URL = kwargs.get("API_URL", os.getenv("API_URL", "http://backend-api:8080/api/v1"))
-            self.API_KEY = kwargs.get("API_KEY", os.getenv("API_KEY", ""))
-            self.ADMIN_API_KEY = kwargs.get("ADMIN_API_KEY", os.getenv("ADMIN_API_KEY", ""))
-
-            self.DB_HOST = kwargs.get("DB_HOST", os.getenv("DB_HOST", "timescaledb"))
-            self.DB_PORT = int(kwargs.get("DB_PORT", os.getenv("DB_PORT", "5432")))
-            self.DB_NAME = kwargs.get("DB_NAME", os.getenv("DB_NAME", "mydatabase"))
-            self.DB_USER = kwargs.get("DB_USER", os.getenv("DB_USER", "postgres"))
-            self.DB_PASSWORD = kwargs.get("DB_PASSWORD", os.getenv("DB_PASSWORD", ""))
-
-            self.SAMPLING_INTERVAL_SEC = float(kwargs.get("SAMPLING_INTERVAL_SEC", os.getenv("SHAKE_SAMPLING_INTERVAL_SEC", "5.0")))
-            self.STORE_RAW_WAVEFORM = kwargs.get("STORE_RAW_WAVEFORM", os.getenv("SHAKE_STORE_RAW_WAVEFORM", "false")).lower() in ("true", "1", "yes")
-            self.RAW_DECIMATION_FACTOR = int(kwargs.get("RAW_DECIMATION_FACTOR", os.getenv("SHAKE_RAW_DECIMATION_FACTOR", "10")))
-
-            self.RECONNECT_DELAY_SEC = float(kwargs.get("RECONNECT_DELAY_SEC", "5.0"))
-            self.MAX_RECONNECT_DELAY_SEC = float(kwargs.get("MAX_RECONNECT_DELAY_SEC", "60.0"))
-
-
-
-settings = Settings()
+        if settings.INGEST_MODE not in ("api", "direct_db"):
+            raise ValueError("SHAKE_INGEST_MODE must be api or direct_db")
+        if (
+            not 1 <= settings.SAMPLING_INTERVAL_SEC <= 60
+            or settings.RAW_DECIMATION_FACTOR < 1
+        ):
+            raise ValueError("Invalid Shake window or decimation")
+        if (
+            not 1 <= settings.queue_batches <= 1000
+            or not 1 <= settings.shutdown_seconds <= 45
+        ):
+            raise ValueError("Invalid Shake queue/shutdown bounds")
+        if not 0 <= settings.lateness_seconds <= 30:
+            raise ValueError("Invalid Shake lateness")
+        if not (
+            math.isfinite(settings.RECONNECT_DELAY_SEC)
+            and math.isfinite(settings.MAX_RECONNECT_DELAY_SEC)
+            and 0
+            < settings.RECONNECT_DELAY_SEC
+            <= settings.MAX_RECONNECT_DELAY_SEC
+            <= 3600
+        ):
+            raise ValueError("Invalid Shake retry bounds")
+        if urlsplit(settings.SHAKE_WS_URL).scheme != "wss":
+            raise ValueError("SHAKE_WS_URL must use wss")
+        station_settings_list(settings)
+        return settings
 
 
 class StationSettings:
-    """Runtime station metadata, resolved from FDSN rather than environment fields."""
-
     def __init__(self, base, code):
         self.base = base
         self.SHAKE_STATION = code
@@ -93,3 +122,16 @@ class StationSettings:
     @property
     def channel_identifier(self):
         return f"{self.SHAKE_NETWORK}.{self.SHAKE_STATION}.{self.SHAKE_LOCATION}.{self.SHAKE_CHANNEL}"
+
+
+def station_settings_list(base):
+    codes = list(
+        dict.fromkeys(
+            code.strip().upper()
+            for code in base.SHAKE_STATIONS.split(",")
+            if code.strip()
+        )
+    )
+    if not codes or any(not re.fullmatch(r"[A-Z0-9]{5}", code) for code in codes):
+        raise ValueError("SHAKE_STATIONS requires five-character station codes")
+    return [StationSettings(base, code) for code in codes]

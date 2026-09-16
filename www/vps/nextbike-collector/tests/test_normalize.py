@@ -113,7 +113,9 @@ def test_parse_nextbike_response_all_and_filtered():
     assert st2.free_racks == 0
 
     # Without filter: includes Mannheim
-    all_stations = parse_nextbike_response(SAMPLE_PAYLOAD, allowed_city_ids=None, now=now)
+    all_stations = parse_nextbike_response(
+        SAMPLE_PAYLOAD, allowed_city_ids=None, now=now
+    )
     assert len(all_stations) == 3
 
 

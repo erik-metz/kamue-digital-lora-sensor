@@ -7,12 +7,12 @@ from urllib.parse import urlsplit
 
 def parse_city_ids(raw: str) -> set[int]:
     """Parse comma-separated city IDs into a set of integers."""
-    ids = set()
-    for part in raw.split(","):
-        s = part.strip()
-        if s.isdigit():
-            ids.add(int(s))
-    return ids
+    if raw.strip().lower() == "all":
+        return set()
+    values = raw.split(",")
+    if any(not value.strip().isdigit() or int(value) <= 0 for value in values):
+        raise ValueError("NEXTBIKE_CITY_IDS requires positive IDs, or explicit 'all'")
+    return {int(value) for value in values}
 
 
 @dataclass(frozen=True)
@@ -41,7 +41,13 @@ class Settings:
             "NEXTBIKE_BASE_URL", "https://maps.nextbike.net/maps/nextbike-live.json"
         ).strip()
         parsed = urlsplit(base_url)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        if (
+            parsed.scheme != "https"
+            or not parsed.netloc
+            or parsed.username
+            or parsed.query
+            or parsed.fragment
+        ):
             raise ValueError("NEXTBIKE_BASE_URL must be a valid HTTP/HTTPS URL")
 
         raw_cities = os.getenv("NEXTBIKE_CITY_IDS", "559")  # 559 is Lampertheim
@@ -59,6 +65,7 @@ class Settings:
             "dbname": os.getenv("DB_NAME", "mydatabase"),
             "user": os.getenv("DB_USER", "postgres"),
             "password": os.getenv("DB_PASSWORD", ""),
+            "connect_timeout": 10,
         }
 
         return cls(

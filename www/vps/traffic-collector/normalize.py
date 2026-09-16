@@ -1,14 +1,11 @@
-"""Fetcher and parser for Autobahn GmbH and regional traffic feeds."""
+"""Pure normalization and validation of complete traffic snapshots."""
 
-import logging
+import math
 import re
 from dataclasses import dataclass
 from typing import Any
 
-import httpx
 from config import Settings
-
-LOG = logging.getLogger("traffic-collector.fetcher")
 
 
 @dataclass
@@ -25,6 +22,8 @@ class ParsedIncident:
     description: str
     coordinates: list[list[float]] | None
     source: str
+    delay_kind: str = "unknown"
+    category: str = "warning"
 
 
 def _extract_number(pattern: str, text: str) -> float | None:
@@ -44,10 +43,12 @@ def _is_in_bounds(lat: float, lon: float, settings: Settings) -> bool:
     )
 
 
-def parse_autobahn_item(item: dict[str, Any], road_name: str, settings: Settings) -> ParsedIncident | None:
+def parse_autobahn_item(
+    item: dict[str, Any], road_name: str, settings: Settings, category: str = "warning"
+) -> ParsedIncident | None:
     ident = item.get("identifier") or item.get("id")
     if not ident:
-        return None
+        raise ValueError("Traffic incident missing identity")
 
     title = item.get("title") or ""
     subtitle = item.get("subtitle") or ""
@@ -63,16 +64,32 @@ def parse_autobahn_item(item: dict[str, Any], road_name: str, settings: Settings
     try:
         lat = float(coord.get("lat", 0))
         lon = float(coord.get("long", 0))
-    except (TypeError, ValueError):
-        lat, lon = 0.0, 0.0
+    except (TypeError, ValueError) as error:
+        raise ValueError("Invalid traffic coordinate") from error
+    if (
+        not math.isfinite(lat)
+        or not math.isfinite(lon)
+        or not -90 <= lat <= 90
+        or not -180 <= lon <= 180
+    ):
+        raise ValueError("Traffic coordinate outside valid range")
 
     # Line geometry if available
     coords_poly: list[list[float]] = []
     geom = item.get("geometry") or {}
     if geom.get("type") == "LineString" and isinstance(geom.get("coordinates"), list):
         for pt in geom["coordinates"]:
-            if len(pt) >= 2:
-                coords_poly.append([float(pt[1]), float(pt[0])])  # GeoJSON is [lon, lat]
+            if not isinstance(pt, list) or len(pt) < 2:
+                raise ValueError("Invalid traffic geometry point")
+            point_lat, point_lon = float(pt[1]), float(pt[0])
+            if (
+                not math.isfinite(point_lat)
+                or not math.isfinite(point_lon)
+                or not -90 <= point_lat <= 90
+                or not -180 <= point_lon <= 180
+            ):
+                raise ValueError("Traffic geometry outside valid range")
+            coords_poly.append([point_lat, point_lon])
 
     # Geofilter: must have at least one point in Ried bounding box
     has_coord_in_ried = False
@@ -86,9 +103,19 @@ def parse_autobahn_item(item: dict[str, Any], road_name: str, settings: Settings
 
     # Text-based keyword filter if coordinates are missing/rough
     ried_keywords = [
-        "lorsch", "bensheim", "viernheim", "heppenheim", "darmstadt",
-        "pfungstadt", "gernsheim", "sandhofen", "mannheim", "worms",
-        "bürstadt", "lampertheim", "biblis"
+        "lorsch",
+        "bensheim",
+        "viernheim",
+        "heppenheim",
+        "darmstadt",
+        "pfungstadt",
+        "gernsheim",
+        "sandhofen",
+        "mannheim",
+        "worms",
+        "bürstadt",
+        "lampertheim",
+        "biblis",
     ]
     has_keyword = any(kw in full_text.lower() for kw in ried_keywords)
 
@@ -97,9 +124,11 @@ def parse_autobahn_item(item: dict[str, Any], road_name: str, settings: Settings
 
     # Determine location from -> to from subtitle / title
     # Pattern: "Zwischen <From> und <To>" or "<From> - <To>"
-    location_from = "AS Lorsch"
-    location_to = "AD Viernheim"
-    loc_match = re.search(r"zwischen\s+([^,]+?)\s+und\s+([^,]+?)(?:,|\.|$)", full_text, re.IGNORECASE)
+    location_from = ""
+    location_to = ""
+    loc_match = re.search(
+        r"zwischen\s+([^,]+?)\s+und\s+([^,]+?)(?:,|\.|$)", full_text, re.IGNORECASE
+    )
     if loc_match:
         location_from = loc_match.group(1).strip()
         location_to = loc_match.group(2).strip()
@@ -110,28 +139,37 @@ def parse_autobahn_item(item: dict[str, Any], road_name: str, settings: Settings
             location_to = parts[1].strip()
 
     # Direction
-    direction = f"{location_from} ➔ {location_to}"
+    direction = (
+        f"{location_from} ➔ {location_to}" if location_from and location_to else ""
+    )
 
     # Extract delay & length
     length_km = _extract_number(r"(\d+(?:[.,]\d+)?)\s*km\s*stau", full_text)
     length_m = int(length_km * 1000) if length_km else 0
 
-    delay_min = _extract_number(r"(\d+)\s*min(?:uten)?\s*(?:zeitverlust|verzögerung)", full_text)
-    if not delay_min and length_km:
+    delay_min = _extract_number(
+        r"(\d+)\s*min(?:uten)?\s*(?:zeitverlust|verzögerung)", full_text
+    )
+    delay_kind = "reported" if delay_min is not None else "unknown"
+    if delay_min is None and length_km:
+        delay_kind = "estimated"
         # Estimate ~3 min per km of stau
         delay_min = round(length_km * 3)
     delay_sec = int((delay_min or 0) * 60)
 
     # Cause type & Severity
     lower_text = full_text.lower()
-    if "gesperrt" in lower_text or "vollsperrung" in lower_text:
+    if (
+        category == "closure"
+        or "gesperrt" in lower_text
+        or "vollsperrung" in lower_text
+    ):
         severity = "standstill"
         cause_type = "closure"
-        delay_sec = max(delay_sec, 1800)
     elif "unfall" in lower_text:
         severity = "major" if (delay_min or 0) >= 15 else "moderate"
         cause_type = "accident"
-    elif "baustelle" in lower_text:
+    elif category == "roadworks" or "baustelle" in lower_text:
         severity = "moderate" if (delay_min or 0) >= 10 else "minor"
         cause_type = "roadwork"
     elif "stau" in lower_text or "stockend" in lower_text or "zähflüssig" in lower_text:
@@ -141,7 +179,9 @@ def parse_autobahn_item(item: dict[str, Any], road_name: str, settings: Settings
         severity = "minor"
         cause_type = "congestion"
 
-    final_coords = coords_poly if coords_poly else ([[lat, lon]] if lat and lon else None)
+    final_coords = (
+        coords_poly if coords_poly else ([[lat, lon]] if lat and lon else None)
+    )
 
     return ParsedIncident(
         id=f"autobahn-{road_name.lower()}-{ident}",
@@ -156,35 +196,39 @@ def parse_autobahn_item(item: dict[str, Any], road_name: str, settings: Settings
         description=full_text,
         coordinates=final_coords,
         source="autobahn_api",
+        delay_kind=delay_kind,
+        category=category,
     )
 
 
-async def fetch_road_incidents(
-    client: httpx.AsyncClient, road: str, settings: Settings
-) -> list[ParsedIncident]:
-    """Fetch warnings, roadworks, and closures for a specific autobahn."""
-    incidents: list[ParsedIncident] = []
-    endpoints = ["services/warning", "services/roadworks", "services/closure"]
-
-    for ep in endpoints:
-        url = f"{settings.autobahn_api_base}/autobahn/{road}/{ep}"
-        try:
-            res = await client.get(url, timeout=15.0)
-            if res.status_code != 200:
-                LOG.warning("Failed to fetch %s: HTTP %s", url, res.status_code)
-                continue
-            data = res.json()
-            # Items might be in warning, roadworks, or closure array
-            items = []
-            for k in ["warning", "roadworks", "closure", "items"]:
-                if k in data and isinstance(data[k], list):
-                    items.extend(data[k])
-
-            for item in items:
-                parsed = parse_autobahn_item(item, road, settings)
+def normalize(payload, settings):
+    """Only a structurally complete snapshot may reconcile missing incidents."""
+    if not isinstance(payload, dict) or set(payload) != set(settings.roads):
+        raise TypeError("Expected every configured road in traffic snapshot")
+    incidents = {}
+    skipped = 0
+    for road in settings.roads:
+        endpoints = payload[road]
+        if not isinstance(endpoints, dict) or set(endpoints) != {
+            "warning",
+            "roadworks",
+            "closure",
+        }:
+            raise TypeError("Incomplete traffic endpoint coverage")
+        for category in ("warning", "roadworks", "closure"):
+            data = endpoints[category]
+            if not isinstance(data, dict) or not isinstance(data.get(category), list):
+                raise TypeError(f"Invalid {road}/{category} envelope")
+            for item in data[category]:
+                if not isinstance(item, dict):
+                    raise TypeError("Invalid traffic incident")
+                try:
+                    parsed = parse_autobahn_item(item, road, settings, category)
+                except (TypeError, AttributeError, IndexError, OverflowError) as error:
+                    raise ValueError("Malformed traffic incident") from error
                 if parsed:
-                    incidents.append(parsed)
-        except (httpx.HTTPError, ValueError, KeyError) as exc:
-            LOG.error("Error fetching %s for %s: %s", ep, road, exc)
-
-    return incidents
+                    # A closure takes precedence over a duplicate warning.
+                    incidents[parsed.id] = parsed
+                else:
+                    skipped += 1
+    return list(incidents.values()), {"outside_region": skipped}

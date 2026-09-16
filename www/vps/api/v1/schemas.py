@@ -1,7 +1,10 @@
 from datetime import datetime
+
 from pydantic import BaseModel, Field
 
+
 class SensorMetadataCreate(BaseModel):
+    preserve_existing: bool = Field(default=False, description="Register source metadata without overwriting admin edits")
     sensor_id: str | None = Field(default=None, min_length=1, max_length=64)
     friendly_name: str = Field(..., min_length=1, max_length=255, json_schema_extra={"example": "Station 1: Bürstadt Mitte"})
     latitude: float | None = Field(None, ge=-90.0, le=90.0, json_schema_extra={"example": 49.6425})
@@ -38,6 +41,7 @@ class SensorReading(BaseModel):
 
 class BatchSensorReadings(BaseModel):
     readings: list[SensorReading]
+    batch_id: str | None = Field(default=None, min_length=1, max_length=128)
 
 class SensorAggregateResponse(BaseModel):
     metric: str = "value"

@@ -7,7 +7,7 @@ from urllib.parse import quote_plus
 import psycopg
 import psycopg_pool
 from dependencies import validate_api_keys
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from psycopg.rows import dict_row
 from router import api_router as v1_router
@@ -27,6 +27,7 @@ async def init_db(pool: psycopg_pool.AsyncConnectionPool) -> None:
             logger.info("Database schema initialized successfully.")
         except (psycopg.Error, OSError) as e:
             logger.error("Failed to initialize database schema: %s", e)
+            raise
 
 
 @asynccontextmanager
@@ -50,11 +51,11 @@ async def lifespan(app: FastAPI):
     )
     await app.state.pool.open()
 
-    await init_db(app.state.pool)
-
-    yield
-
-    await app.state.pool.close()
+    try:
+        await init_db(app.state.pool)
+        yield
+    finally:
+        await app.state.pool.close()
 
 
 app = FastAPI(
@@ -78,4 +79,8 @@ app.include_router(v1_router, prefix="/api/v1")
 
 @app.get("/health")
 async def health_check():
+    async with app.state.pool.connection() as conn:
+        cursor = await conn.execute("SELECT 1 FROM collector_schema_versions WHERE version=20260916")
+        if await cursor.fetchone() is None:
+            raise HTTPException(503, "Collector schema migration is not ready")
     return {"status": "healthy"}

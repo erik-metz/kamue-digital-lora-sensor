@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 
 import psycopg
 from config import Settings
-from fetcher import ParsedIncident
+from normalize import ParsedIncident
 
 LOG = logging.getLogger("traffic-collector.storage")
 
@@ -15,26 +15,39 @@ async def persist_traffic_incidents(
     conn: psycopg.AsyncConnection,
     incidents: list[ParsedIncident],
     settings: Settings,
+    now: datetime | None = None,
 ) -> dict:
-    now = datetime.now(UTC)
+    now = now or datetime.now(UTC)
     incoming_ids = [inc.id for inc in incidents]
 
-    async with conn.cursor() as cur:
+    async with conn.transaction(), conn.cursor() as cur:
+        await cur.execute("SET LOCAL statement_timeout = '30s'")
+        await cur.execute("SET LOCAL lock_timeout = '10s'")
+        await cur.execute(
+            "SELECT version FROM collector_schema_versions WHERE version=20260916"
+        )
+        if await cur.fetchone() is None:
+            raise RuntimeError(
+                "Apply API schema migration 20260916 before starting collectors"
+            )
+        await cur.execute("SELECT pg_advisory_xact_lock(734221, 1)")
         # 1. Upsert active incidents
         for inc in incidents:
-            coords_json = json.dumps(inc.coordinates) if inc.coordinates is not None else None
+            coords_json = (
+                json.dumps(inc.coordinates) if inc.coordinates is not None else None
+            )
             await cur.execute(
                 """
                 INSERT INTO traffic_incidents (
                     id, road_name, direction, location_from, location_to,
                     start_time, end_time, last_seen_at, is_active,
                     delay_seconds, length_meters, severity, cause_type,
-                    description, coordinates, source, updated_at
+                    description, coordinates, source, updated_at, delay_kind, source_category
                 ) VALUES (
                     %s, %s, %s, %s, %s,
                     %s, NULL, %s, TRUE,
                     %s, %s, %s, %s,
-                    %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s
                 )
                 ON CONFLICT (id) DO UPDATE SET
                     direction = EXCLUDED.direction,
@@ -49,7 +62,9 @@ async def persist_traffic_incidents(
                     cause_type = EXCLUDED.cause_type,
                     description = EXCLUDED.description,
                     coordinates = COALESCE(EXCLUDED.coordinates, traffic_incidents.coordinates),
-                    updated_at = EXCLUDED.updated_at
+                    updated_at = EXCLUDED.updated_at,
+                    delay_kind = EXCLUDED.delay_kind,
+                    source_category = EXCLUDED.source_category
                 """,
                 (
                     inc.id,
@@ -67,46 +82,34 @@ async def persist_traffic_incidents(
                     coords_json,
                     inc.source,
                     now,
+                    inc.delay_kind,
+                    inc.category,
                 ),
             )
 
         # 2. Mark incidents that are no longer reported as resolved (is_active=False, end_time=now)
-        if incoming_ids:
-            await cur.execute(
-                """
-                UPDATE traffic_incidents
-                SET is_active = FALSE,
-                    end_time = %s,
-                    updated_at = %s
-                WHERE is_active = TRUE
-                  AND id != ALL(%s)
-                  AND last_seen_at < %s - INTERVAL '6 minutes'
-                """,
-                (now, now, incoming_ids, now),
-            )
-        else:
-            await cur.execute(
-                """
-                UPDATE traffic_incidents
-                SET is_active = FALSE,
-                    end_time = %s,
-                    updated_at = %s
-                WHERE is_active = TRUE
-                  AND last_seen_at < %s - INTERVAL '6 minutes'
-                """,
-                (now, now, now),
-            )
+        await cur.execute(
+            """UPDATE traffic_incidents SET is_active=FALSE, end_time=%s, updated_at=%s
+               WHERE is_active=TRUE AND source='autobahn_api' AND road_name=ANY(%s)
+                 AND id != ALL(%s::varchar[]) AND last_seen_at < %s - INTERVAL '6 minutes'""",
+            (now, now, list(settings.roads), incoming_ids, now),
+        )
 
         # 3. Record periodic snapshot for environmental correlation in hypertable
         for road in settings.roads:
-            active_on_road = [inc for inc in incidents if inc.road_name.upper() == road.upper()]
+            active_on_road = [
+                inc for inc in incidents if inc.road_name.upper() == road.upper()
+            ]
             count = len(active_on_road)
             max_delay = max((inc.delay_seconds for inc in active_on_road), default=0)
             max_len = max((inc.length_meters for inc in active_on_road), default=0)
 
             status_val = "clear"
             if count > 0:
-                if max_delay >= 900:
+                if (
+                    any(inc.cause_type == "closure" for inc in active_on_road)
+                    or max_delay >= 900
+                ):
                     status_val = "congestion"
                 elif max_delay >= 300:
                     status_val = "sluggish"
@@ -131,6 +134,5 @@ async def persist_traffic_incidents(
                 ),
             )
 
-    await conn.commit()
     LOG.info("Persisted %d active traffic incidents to database", len(incidents))
     return {"active_incidents": len(incidents)}

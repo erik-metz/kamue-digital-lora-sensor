@@ -193,7 +193,7 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
                 directory,
                 {"conninfo": DSN, "options": f"-c search_path={self.schema},public"},
             )
-            with patch("main.fetch", AsyncMock(return_value=dashboard())):
+            with patch("source.fetch_json", AsyncMock(return_value=dashboard())):
                 await run(settings, once=True)
                 await run(settings, once=True)
             status_file = Path(directory) / "status.json"
@@ -201,7 +201,10 @@ class StorageTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(status["ingestion"]["duplicate"], 1)
             self.assertEqual(await self.scalar("SELECT count(*) FROM sensor_data"), 1)
             with (
-                patch("main.fetch", AsyncMock(side_effect=ValueError("bad response"))),
+                patch(
+                    "source.fetch_json",
+                    AsyncMock(side_effect=ValueError("bad response")),
+                ),
                 self.assertRaises(ValueError),
             ):
                 await run(settings, once=True)

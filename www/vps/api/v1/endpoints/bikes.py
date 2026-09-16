@@ -28,6 +28,7 @@ class BikeResponse(BaseModel):
 
 
 class BikeTripResponse(BaseModel):
+    evidence: str = "inferred_station_change"
     id: int
     bike_number: str
     start_station_id: str | None
@@ -61,7 +62,7 @@ async def list_bikes(
                electric_lock, pedelec_battery, state, latitude, longitude,
                last_seen_at, is_active
         FROM nextbike_bikes
-        WHERE is_active = TRUE
+        WHERE is_active = TRUE AND COALESCE(fresh_until, last_seen_at + INTERVAL '15 minutes') >= NOW()
     """
     params: list = []
     if station_id:
@@ -101,7 +102,7 @@ async def list_trips(
     query = """
         SELECT id, bike_number, start_station_id, start_station_name,
                end_station_id, end_station_name, start_time, end_time,
-               duration_seconds, distance_meters
+               duration_seconds, distance_meters, evidence
         FROM nextbike_trips
     """
     params: list = []
@@ -126,6 +127,7 @@ async def list_trips(
                 end_time=row["end_time"],
                 duration_seconds=row["duration_seconds"],
                 distance_meters=row["distance_meters"],
+                evidence=row.get("evidence", "inferred_station_change"),
             )
             for row in rows
         ]
@@ -136,7 +138,7 @@ async def get_bike_stats(pool: DbPool):
     """Aggregate statistics for bike sharing network, commuter trips, and CO2 reduction."""
     since = datetime.now(UTC) - timedelta(hours=24)
     async with pool.connection() as conn, conn.cursor() as cur:
-        await cur.execute("SELECT COUNT(*) AS total FROM nextbike_bikes WHERE is_active = TRUE")
+        await cur.execute("SELECT COUNT(*) AS total FROM nextbike_bikes WHERE is_active = TRUE AND COALESCE(fresh_until, last_seen_at + INTERVAL '15 minutes') >= NOW()")
         row_bikes = await cur.fetchone()
         total_bikes = row_bikes["total"] if row_bikes else 0
 

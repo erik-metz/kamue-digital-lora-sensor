@@ -692,3 +692,27 @@ BEGIN
     END IF;
 END $$;
 CREATE INDEX IF NOT EXISTS idx_traffic_corridor_snapshots ON traffic_corridor_snapshots (corridor_id, timestamp DESC);
+
+
+ALTER TABLE nextbike_bikes ADD COLUMN IF NOT EXISTS fresh_until TIMESTAMPTZ;
+
+-- Collector migration 20260916: replay receipts and explicit source provenance.
+CREATE TABLE IF NOT EXISTS telemetry_ingest_batches (
+    batch_id VARCHAR(128) PRIMARY KEY,
+    payload_hash VARCHAR(64) NOT NULL,
+    committed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS delay_kind TEXT NOT NULL DEFAULT 'unknown';
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS source_category TEXT NOT NULL DEFAULT 'unknown';
+ALTER TABLE nextbike_trips ADD COLUMN IF NOT EXISTS evidence TEXT NOT NULL DEFAULT 'inferred_station_change';
+
+-- Old artifact keys are queued in the same transaction that replaces the catalogue.
+CREATE TABLE IF NOT EXISTS archive_cleanup (
+    key TEXT PRIMARY KEY,
+    queued_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS collector_schema_versions (
+    version INTEGER PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+INSERT INTO collector_schema_versions(version) VALUES (20260916) ON CONFLICT DO NOTHING;

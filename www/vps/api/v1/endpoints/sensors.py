@@ -1,10 +1,9 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 import psycopg_pool
-
 from dependencies import get_db_pool, verify_admin_key
+from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
 from schemas import (
     SensorMetadataCreate,
     SensorMetadataResponse,
@@ -104,16 +103,20 @@ async def admin_list_sensors(pool: DbPool):
 )
 async def admin_create_sensor(sensor: SensorMetadataCreate, pool: DbPool):
     """Admin endpoint: registers a sensor with an optional stable ID."""
-    now = datetime.now(timezone.utc)
-    query = """
+    now = datetime.now(UTC)
+    # Only static SQL fragments are selected here; sensor values stay parameterized.
+    updates = (
+        """latitude = COALESCE(sensor_metadata.latitude, EXCLUDED.latitude),
+           longitude = COALESCE(sensor_metadata.longitude, EXCLUDED.longitude)"""
+        if sensor.preserve_existing else
+        """friendly_name = EXCLUDED.friendly_name,
+           latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,
+           description = EXCLUDED.description, updated_at = EXCLUDED.updated_at"""
+    )
+    query = f"""
         INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, is_hidden, description, updated_at)
         VALUES (COALESCE(%s, gen_random_uuid()::text), %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (id) DO UPDATE SET
-            friendly_name = EXCLUDED.friendly_name,
-            latitude = EXCLUDED.latitude,
-            longitude = EXCLUDED.longitude,
-            description = EXCLUDED.description,
-            updated_at = EXCLUDED.updated_at
+        ON CONFLICT (id) DO UPDATE SET {updates}
         RETURNING id, friendly_name, latitude, longitude, is_hidden, description, created_at, updated_at;
     """
     async with pool.connection() as conn:
@@ -185,7 +188,7 @@ async def admin_update_sensor(
             if update_data.description is not None
             else existing["description"]
         )
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         update_query = """
             UPDATE sensor_metadata
@@ -220,7 +223,7 @@ async def admin_toggle_visibility(
     pool: DbPool,
 ):
     """Admin endpoint: quickly hides or reveals a sensor on the public portal."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     query = """
         UPDATE sensor_metadata
         SET is_hidden = %s,
@@ -284,7 +287,7 @@ async def admin_delete_sensor(
             # Soft delete: set hidden
             await conn.execute(
                 "UPDATE sensor_metadata SET is_hidden = TRUE, updated_at = %s WHERE id = %s;",
-                (datetime.now(timezone.utc), id),
+                (datetime.now(UTC), id),
             )
             return {
                 "status": "hidden",

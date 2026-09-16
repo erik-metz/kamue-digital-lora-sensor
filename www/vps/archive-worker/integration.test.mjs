@@ -45,6 +45,16 @@ test('database export, publication, retry, replacement and visibility', { skip: 
     assert.equal(sequence, beforeSkip);
     await run({ refresh: true });
     assert.ok(previousKeys.every(key => removed.includes(key)));
+    // Failed cleanup must neither invalidate publication nor lose old keys.
+    const remove = storage.remove;
+    storage.remove = async () => { throw new Error('temporary cleanup failure'); };
+    await run({ refresh: true });
+    assert.ok((await client.query('SELECT * FROM archive_cleanup')).rowCount > 0);
+    const afterRefresh = sequence;
+    storage.remove = remove;
+    await run();
+    assert.equal(sequence, afterRefresh);
+    assert.equal((await client.query('SELECT * FROM archive_cleanup')).rowCount, 0);
     // Automatic discovery: SQL must backfill February and skip existing January.
     await run({ requestedMonth: null });
     row = (await client.query("SELECT * FROM data_archives WHERE month='2025-02'")).rows[0];
