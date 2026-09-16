@@ -85,13 +85,16 @@ test("ZAKB depots include Hüttenfeld headquarters and Ried Wertstoffhöfe with 
 
 test("ZAKB tours cover Bürstadt, Lampertheim, Hofheim (Ried), and Biblis", () => {
   const tours = wasteTruckMobility.ZAKB_TOURS;
-  assert.ok(tours.length >= 5, "Must have tours for each fraction and area");
+  assert.ok(tours.length >= 8, "Must have tours for each fraction and area");
 
   const municipalities = new Set(tours.map((t) => t.municipality));
   assert.ok(municipalities.has("Bürstadt"), "Bürstadt must have a collection tour");
   assert.ok(municipalities.has("Lampertheim"), "Lampertheim must have a collection tour");
   assert.ok(municipalities.has("Hofheim (Ried)"), "Hofheim (Ried) must have a collection tour");
   assert.ok(municipalities.has("Biblis"), "Biblis must have a collection tour");
+  assert.ok(municipalities.has("Rosengarten"), "Rosengarten must have a collection tour");
+  assert.ok(municipalities.has("Nordheim"), "Nordheim must have a collection tour");
+  assert.ok(municipalities.has("Groß-Rohrheim"), "Groß-Rohrheim must have a collection tour");
 
   for (const tour of tours) {
     // License plate must be Kreis Bergstraße (HP-)
@@ -110,8 +113,8 @@ test("calculateWasteTruckMobility generates valid live trucks within Ried bounds
 
   for (const truck of trucks) {
     // Geofence check
-    assert.ok(truck.lat >= 49.56 && truck.lat <= 49.72, `Truck ${truck.id} lat ${truck.lat} outside Ried boundary`);
-    assert.ok(truck.lng >= 8.40 && truck.lng <= 8.60, `Truck ${truck.id} lng ${truck.lng} outside Ried boundary`);
+    assert.ok(truck.lat >= 49.56 && truck.lat <= 49.73, `Truck ${truck.id} lat ${truck.lat} outside Ried boundary`);
+    assert.ok(truck.lng >= 8.35 && truck.lng <= 8.60, `Truck ${truck.id} lng ${truck.lng} outside Ried boundary`);
 
     // Valid statuses
     assert.ok(

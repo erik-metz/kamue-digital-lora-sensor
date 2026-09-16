@@ -25,6 +25,8 @@ export const ROUTE_644_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.bu
 
 export const ROUTE_652_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.buses.route_652.track)};
 
+export const ROUTE_644_GR_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.buses.route_644_gr.track)};
+
 // 2. Waste Truck Route Tracks (ZAKB)
 export const ROUTE_BUERSTADT_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.wasteTrucks.route_buerstadt.track)};
 
@@ -33,6 +35,12 @@ export const ROUTE_LAMPERTHEIM_ROAD_TRACK: [number, number][] = ${JSON.stringify
 export const ROUTE_HOFHEIM_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.wasteTrucks.route_hofheim.track)};
 
 export const ROUTE_BIBLIS_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.wasteTrucks.route_biblis.track)};
+
+export const ROUTE_ROSENGARTEN_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.wasteTrucks.route_rosengarten.track)};
+
+export const ROUTE_NORDHEIM_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.wasteTrucks.route_nordheim.track)};
+
+export const ROUTE_GROSS_ROHRHEIM_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.wasteTrucks.route_gross_rohrheim.track)};
 
 export const ROUTE_UMWELTMOBIL_ROAD_TRACK: [number, number][] = ${JSON.stringify(data.wasteTrucks.route_umweltmobil.track)};
 
@@ -75,6 +83,15 @@ export const BUS_ROUTE_OVERLAYS: RouteOverlayDefinition[] = [
     weight: 3.5,
     opacity: 0.65,
     track: ROUTE_644_ROAD_TRACK,
+  },
+  {
+    id: "route-overlay-bus-644-gr",
+    name: "VRN Linie 644: Biblis ↔ Groß-Rohrheim",
+    category: "bus",
+    color: "#0284c7",
+    weight: 3.5,
+    opacity: 0.65,
+    track: ROUTE_644_GR_ROAD_TRACK,
   },
   {
     id: "route-overlay-bus-652",
@@ -128,6 +145,36 @@ export const WASTE_TRUCK_ROUTE_OVERLAYS: RouteOverlayDefinition[] = [
     opacity: 0.6,
     dashArray: "4, 6",
     track: ROUTE_BIBLIS_ROAD_TRACK,
+  },
+  {
+    id: "route-overlay-truck-ros",
+    name: "ZAKB Tour RO1: Rosengarten (Biomüll)",
+    category: "waste",
+    color: "#16a34a",
+    weight: 3,
+    opacity: 0.6,
+    dashArray: "4, 6",
+    track: ROUTE_ROSENGARTEN_ROAD_TRACK,
+  },
+  {
+    id: "route-overlay-truck-nor",
+    name: "ZAKB Tour NO1: Nordheim (Restmüll)",
+    category: "waste",
+    color: "#64748b",
+    weight: 3,
+    opacity: 0.6,
+    dashArray: "4, 6",
+    track: ROUTE_NORDHEIM_ROAD_TRACK,
+  },
+  {
+    id: "route-overlay-truck-gr",
+    name: "ZAKB Tour GR1: Groß-Rohrheim (Gelber Sack)",
+    category: "waste",
+    color: "#eab308",
+    weight: 3,
+    opacity: 0.6,
+    dashArray: "4, 6",
+    track: ROUTE_GROSS_ROHRHEIM_ROAD_TRACK,
   },
   {
     id: "route-overlay-truck-umw",

@@ -119,6 +119,7 @@ test("RIED_BUS_STOPS contains all key Ried municipalities and designated school 
   assert.ok(municipalities.has("Bobstadt"), "Bobstadt stops must exist");
   assert.ok(municipalities.has("Riedrode"), "Riedrode stops must exist");
   assert.ok(municipalities.has("Groß-Rohrheim"), "Groß-Rohrheim stops must exist");
+  assert.ok(municipalities.has("Rosengarten"), "Rosengarten stops must exist");
 
   const schoolStops = stops.filter((s) => s.isSchoolStop);
   assert.ok(schoolStops.length >= 4, "Must have designated school stops");
@@ -358,6 +359,20 @@ test("directional bus stops return schedule exclusively for the clicked platform
   assert.ok(depHofWorms.length > 0, "Must have departures towards Worms");
   for (const dep of depHofWorms) {
     assert.equal(dep.destination, "Worms Hbf", "Platform Richtung Worms must show Worms Hbf");
+  }
+
+  // 5. Rosengarten Nibelungenstraße (Richtung Worms Hbf)
+  const depRosWorms = busMobility.getBusStopDepartures("stop-ros-nibelungenstr-worms", Date.now());
+  assert.ok(depRosWorms.length > 0, "Must have departures towards Worms");
+  for (const dep of depRosWorms) {
+    assert.equal(dep.destination, "Worms Hbf", "Rosengarten platform Richtung Worms must show Worms Hbf");
+  }
+
+  // 6. Groß-Rohrheim Bahnhof Steig 1 (Richtung Biblis Bahnhof / Worms)
+  const depGrBiblis = busMobility.getBusStopDepartures("stop-gr-bahnhof-steig1", Date.now());
+  assert.ok(depGrBiblis.length > 0, "Must have departures towards Biblis");
+  for (const dep of depGrBiblis) {
+    assert.equal(dep.destination, "Biblis Bahnhof", "Groß-Rohrheim platform Richtung Biblis must show Biblis Bahnhof");
   }
 });
 

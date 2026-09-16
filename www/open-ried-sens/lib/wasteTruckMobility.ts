@@ -4,6 +4,9 @@ import {
   ROUTE_LAMPERTHEIM_ROAD_TRACK,
   ROUTE_HOFHEIM_ROAD_TRACK,
   ROUTE_BIBLIS_ROAD_TRACK,
+  ROUTE_ROSENGARTEN_ROAD_TRACK,
+  ROUTE_NORDHEIM_ROAD_TRACK,
+  ROUTE_GROSS_ROHRHEIM_ROAD_TRACK,
   ROUTE_UMWELTMOBIL_ROAD_TRACK,
 } from "./roadRoutes";
 
@@ -123,7 +126,7 @@ export interface WasteTourDefinition {
   id: string;
   tourCode: string; // e.g. "BST-R01"
   name: string;
-  municipality: "Bürstadt" | "Lampertheim" | "Hofheim (Ried)" | "Biblis";
+  municipality: "Bürstadt" | "Lampertheim" | "Hofheim (Ried)" | "Biblis" | "Groß-Rohrheim" | "Rosengarten" | "Nordheim" | string;
   fraction: WasteFraction;
   licensePlate: string; // e.g. "HP-ZK 102"
   vehicleModel: string;
@@ -140,6 +143,9 @@ export const ROUTE_BUERSTADT: [number, number][] = ROUTE_BUERSTADT_ROAD_TRACK;
 export const ROUTE_LAMPERTHEIM: [number, number][] = ROUTE_LAMPERTHEIM_ROAD_TRACK;
 export const ROUTE_HOFHEIM: [number, number][] = ROUTE_HOFHEIM_ROAD_TRACK;
 export const ROUTE_BIBLIS: [number, number][] = ROUTE_BIBLIS_ROAD_TRACK;
+export const ROUTE_ROSENGARTEN: [number, number][] = ROUTE_ROSENGARTEN_ROAD_TRACK;
+export const ROUTE_NORDHEIM: [number, number][] = ROUTE_NORDHEIM_ROAD_TRACK;
+export const ROUTE_GROSS_ROHRHEIM: [number, number][] = ROUTE_GROSS_ROHRHEIM_ROAD_TRACK;
 export const ROUTE_UMWELTMOBIL: [number, number][] = ROUTE_UMWELTMOBIL_ROAD_TRACK;
 
 export const ZAKB_TOURS: WasteTourDefinition[] = [
@@ -245,6 +251,65 @@ export const ZAKB_TOURS: WasteTourDefinition[] = [
       { street: "Halt: Wertstoffhof Biblis (Am Werrtor)", lat: 49.6912, lng: 8.4420, stopProg: 0.662, expectedTimeWindow: "15:45 – 17:00 Uhr", dwellSec: 65 },
     ],
   },
+  {
+    id: "tour-ros-biomuell",
+    tourCode: "ROS-B01",
+    name: "Tour RO1: Rosengarten & Wehrzollhaus",
+    municipality: "Rosengarten",
+    fraction: "biomuell",
+    licensePlate: "HP-ZK 218",
+    vehicleModel: "MAN TGM 26.320 (Zöller Medium X4)",
+    periodSec: 1020,
+    offsetSec: 220,
+    speedCollectingKmh: 14,
+    speedTransitKmh: 48,
+    track: ROUTE_ROSENGARTEN,
+    waypoints: [
+      { street: "Nibelungenstraße (B47)", lat: 49.6322, lng: 8.3861, stopProg: 0.455, expectedTimeWindow: "07:30 – 08:30 Uhr", dwellSec: 40 },
+      { street: "Rheingoldstraße", lat: 49.6318, lng: 8.3835, stopProg: 0.469, expectedTimeWindow: "08:30 – 09:30 Uhr", dwellSec: 35 },
+      { street: "Wehrzollhaus / Rheinbrücke", lat: 49.6315, lng: 8.3824, stopProg: 0.475, expectedTimeWindow: "09:30 – 10:15 Uhr", dwellSec: 40 },
+      { street: "Rheingewann / In den Binden", lat: 49.6295, lng: 8.3768, stopProg: 0.508, expectedTimeWindow: "10:15 – 11:00 Uhr", dwellSec: 35 },
+    ],
+  },
+  {
+    id: "tour-nor-restmuell",
+    tourCode: "NOR-R01",
+    name: "Tour NO1: Nordheim & Burg Stein",
+    municipality: "Nordheim",
+    fraction: "restmuell",
+    licensePlate: "HP-ZK 415",
+    vehicleModel: "Mercedes-Benz Econic 2630 (Faun Rotopress)",
+    periodSec: 1080,
+    offsetSec: 400,
+    speedCollectingKmh: 14,
+    speedTransitKmh: 48,
+    track: ROUTE_NORDHEIM,
+    waypoints: [
+      { street: "Friedhof / Zum alten Wasserwerk", lat: 49.6845, lng: 8.3925, stopProg: 0.408, expectedTimeWindow: "07:45 – 08:45 Uhr", dwellSec: 40 },
+      { street: "Rathausstraße / Burg Stein", lat: 49.6830, lng: 8.3880, stopProg: 0.443, expectedTimeWindow: "08:45 – 09:45 Uhr", dwellSec: 35 },
+      { street: "Steinstraße / Ortskern", lat: 49.6788, lng: 8.3876, stopProg: 0.504, expectedTimeWindow: "09:45 – 10:45 Uhr", dwellSec: 40 },
+    ],
+  },
+  {
+    id: "tour-gr-gelbersack",
+    tourCode: "GR-G01",
+    name: "Tour GR1: Groß-Rohrheim Wertstoffe",
+    municipality: "Groß-Rohrheim",
+    fraction: "gelber_sack",
+    licensePlate: "HP-ZK 502",
+    vehicleModel: "Scania L280 (Variopress 524)",
+    periodSec: 1140,
+    offsetSec: 150,
+    speedCollectingKmh: 15,
+    speedTransitKmh: 50,
+    track: ROUTE_GROSS_ROHRHEIM,
+    waypoints: [
+      { street: "Bahnhofstraße", lat: 49.7134, lng: 8.4767, stopProg: 0.380, expectedTimeWindow: "07:30 – 08:30 Uhr", dwellSec: 40 },
+      { street: "Rathaus / Kirchstraße", lat: 49.7174, lng: 8.4784, stopProg: 0.428, expectedTimeWindow: "08:30 – 09:30 Uhr", dwellSec: 35 },
+      { street: "Bürgerhalle", lat: 49.7184, lng: 8.4794, stopProg: 0.442, expectedTimeWindow: "09:30 – 10:30 Uhr", dwellSec: 45 },
+      { street: "Friedhof / Kornstraße", lat: 49.7209, lng: 8.4814, stopProg: 0.475, expectedTimeWindow: "10:30 – 11:30 Uhr", dwellSec: 40 },
+    ],
+  },
 ];
 
 export interface LiveWasteTruck {
@@ -300,7 +365,7 @@ export function calculateWasteTruckMobility(timestampMs: number = Date.now()): {
         isDwelling = true;
         currentWaypoint = wp;
         const dwellProgFraction = (totalProg - startProg) / dwellWindowProg;
-        dwellProgress = 1.0 - dwellProgFraction;
+        dwellProgress = Math.max(0, Math.min(1, 1.0 - dwellProgFraction));
         dwellRemainingSec = Math.round(dwellProgress * wp.dwellSec);
         nextWaypoint = tour.waypoints[(i + 1) % tour.waypoints.length];
         break;

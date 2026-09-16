@@ -12,12 +12,13 @@ import {
   ROUTE_642_ROAD_TRACK,
   ROUTE_644_ROAD_TRACK,
   ROUTE_652_ROAD_TRACK,
+  ROUTE_644_GR_ROAD_TRACK,
 } from "./roadRoutes";
 
 export interface BusStop {
   id: string;
   name: string;
-  municipality: "Bürstadt" | "Bobstadt" | "Riedrode" | "Lampertheim" | "Hofheim (Ried)" | "Biblis" | "Groß-Rohrheim" | string;
+  municipality: "Bürstadt" | "Bobstadt" | "Riedrode" | "Lampertheim" | "Hofheim (Ried)" | "Biblis" | "Groß-Rohrheim" | "Rosengarten" | string;
   lat: number;
   lng: number;
   lines: string[];
@@ -1689,6 +1690,50 @@ export const RIED_BUS_STOPS: BusStop[] = [
     directionLabel: "Richtung Schücostraße",
     platforms: ["Steig 2 (Richtung Schücostr.)"],
   },
+  {
+    id: "stop-ros-nibelungenstr-worms",
+    name: "Rosengarten Nibelungenstraße",
+    municipality: "Rosengarten",
+    lat: 49.6322,
+    lng: 8.386,
+    lines: ["642", "644"],
+    direction: "Worms",
+    directionLabel: "Richtung Worms Hbf",
+    platforms: ["Steig 2 (Richtung Worms)"],
+  },
+  {
+    id: "stop-ros-nibelungenstr-hofheim",
+    name: "Rosengarten Nibelungenstraße",
+    municipality: "Rosengarten",
+    lat: 49.6323,
+    lng: 8.3863,
+    lines: ["642", "644"],
+    direction: "Bürstadt",
+    directionLabel: "Richtung Hofheim / Bürstadt",
+    platforms: ["Steig 1 (Richtung Hofheim / Bürstadt)"],
+  },
+  {
+    id: "stop-ros-wehrzollhaus-worms",
+    name: "Rosengarten Wehrzollhaus",
+    municipality: "Rosengarten",
+    lat: 49.6315,
+    lng: 8.3824,
+    lines: ["642", "644"],
+    direction: "Worms",
+    directionLabel: "Richtung Worms Hbf",
+    platforms: ["Steig 2 (Richtung Worms)"],
+  },
+  {
+    id: "stop-ros-wehrzollhaus-ost",
+    name: "Rosengarten Wehrzollhaus",
+    municipality: "Rosengarten",
+    lat: 49.6316,
+    lng: 8.3826,
+    lines: ["642", "644"],
+    direction: "Bürstadt",
+    directionLabel: "Richtung Hofheim / Bürstadt",
+    platforms: ["Steig 1 (Richtung Hofheim / Bürstadt)"],
+  },
 ];
 
 // 2. Bus Route Track Polylines
@@ -1700,6 +1745,9 @@ export const ROUTE_642_TRACK: [number, number][] = ROUTE_642_ROAD_TRACK;
 
 // Line 644: Worms Hbf <-> Biblis Bahnhof (OSRM Real Road Track via B44 Nord)
 export const ROUTE_644_TRACK: [number, number][] = ROUTE_644_ROAD_TRACK;
+
+// Line 644 Extension: Biblis Bahnhof <-> Groß-Rohrheim Bahnhof
+export const ROUTE_644_GR_TRACK: [number, number][] = ROUTE_644_GR_ROAD_TRACK;
 
 // Line 652: Dedizierter Schülerverkehr Bürstadt & Lampertheim (OSRM Real Road Track)
 export const ROUTE_652_TRACK: [number, number][] = ROUTE_652_ROAD_TRACK;
@@ -1782,6 +1830,8 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     speedTransitKmh: 45,
     track: ROUTE_642_TRACK,
     waypoints: [
+      { stopId: "stop-ros-wehrzollhaus-ost", stopProg: 0.192, dwellSec: 25 },
+      { stopId: "stop-ros-nibelungenstr-hofheim", stopProg: 0.208, dwellSec: 25 },
       { stopId: "stop-hof-bahnhof-steig1", stopProg: 0.428, dwellSec: 35 },
       { stopId: "stop-hof-schule-nord", stopProg: 0.453, dwellSec: 30 },
       { stopId: "stop-bst-sonneneck-nord", stopProg: 0.833, dwellSec: 25 },
@@ -1808,6 +1858,8 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
       { stopId: "stop-bst-sonneneck-sued", stopProg: 0.167, dwellSec: 25 },
       { stopId: "stop-hof-schule-sued", stopProg: 0.547, dwellSec: 30 },
       { stopId: "stop-hof-bahnhof-steig2", stopProg: 0.572, dwellSec: 35 },
+      { stopId: "stop-ros-nibelungenstr-worms", stopProg: 0.792, dwellSec: 25 },
+      { stopId: "stop-ros-wehrzollhaus-worms", stopProg: 0.808, dwellSec: 25 },
     ],
   },
 
@@ -1855,7 +1907,49 @@ export const VRN_BUS_TOURS: BusTourDefinition[] = [
     ],
   },
 
-  // 4. Linie 652: Dedizierter Schülerbus Bürstadt / Lampertheim (Schulbus EKS & Lessing)
+  // 4. Linie 644: Biblis Bahnhof <-> Groß-Rohrheim Bahnhof
+  {
+    id: "tour-bus-644-gr-north",
+    line: "644",
+    lineCode: "VRN-644",
+    operator: "VRN / BRN",
+    origin: "Biblis Bahnhof",
+    destination: "Groß-Rohrheim Bahnhof",
+    periodSec: 1800,
+    offsetSec: 400,
+    speedTransitKmh: 45,
+    track: ROUTE_644_GR_TRACK,
+    waypoints: [
+      { stopId: "stop-bib-bahnhof-steig2", stopProg: 0.0, dwellSec: 40 },
+      { stopId: "stop-bib-pfaffenau-nord", stopProg: 0.062, dwellSec: 25 },
+      { stopId: "stop-gr-bahnhof-steig2", stopProg: 0.781, dwellSec: 35 },
+      { stopId: "stop-gr-rathaus-nord", stopProg: 0.891, dwellSec: 25 },
+      { stopId: "stop-gr-buergerhalle-nord", stopProg: 0.922, dwellSec: 25 },
+      { stopId: "stop-gr-friedhof-nord", stopProg: 1.0, dwellSec: 40 },
+    ],
+  },
+  {
+    id: "tour-bus-644-gr-south",
+    line: "644",
+    lineCode: "VRN-644",
+    operator: "VRN / BRN",
+    origin: "Groß-Rohrheim Bahnhof",
+    destination: "Biblis Bahnhof",
+    periodSec: 1800,
+    offsetSec: 1300,
+    speedTransitKmh: 45,
+    track: [...ROUTE_644_GR_TRACK].reverse(),
+    waypoints: [
+      { stopId: "stop-gr-friedhof-biblis", stopProg: 0.0, dwellSec: 35 },
+      { stopId: "stop-gr-buergerhalle-biblis", stopProg: 0.078, dwellSec: 25 },
+      { stopId: "stop-gr-rathaus-biblis", stopProg: 0.109, dwellSec: 25 },
+      { stopId: "stop-gr-bahnhof-steig1", stopProg: 0.219, dwellSec: 35 },
+      { stopId: "stop-bib-pfaffenau-sued", stopProg: 0.938, dwellSec: 25 },
+      { stopId: "stop-bib-bahnhof-steig1", stopProg: 1.0, dwellSec: 45 },
+    ],
+  },
+
+  // 5. Linie 652: Dedizierter Schülerbus Bürstadt / Lampertheim (Schulbus EKS & Lessing)
   {
     id: "tour-bus-652-school",
     line: "652",
@@ -2234,6 +2328,9 @@ export function getBusStopDepartures(stopId: string, timestampMs: number = Date.
     } else if (stop.direction === "Neuschloß") {
       dest = "Lampertheim-Neuschloß Schlossplatz";
       orig = "Lampertheim Bahnhof";
+    } else if (stop.direction === "Rosengarten") {
+      dest = "Rosengarten Nibelungenstraße";
+      orig = "Worms Hbf";
     } else {
       // Fallback for general hubs or non-directional stops
       if (line === "641") {
