@@ -88,7 +88,7 @@ jobs:
           python-version: "3.11"
       - run: pip install -r www/vps/smartcity-collector/requirements.txt ruff
       - run: ruff check --config www/vps/pyproject.toml www/vps/smartcity-collector
-      - run: python -m unittest discover -s www/vps/smartcity-collector/tests
+      - run: PYTHONPATH=www/vps/smartcity-collector python -m unittest discover -s www/vps/smartcity-collector/tests
         env:
           SMARTCITY_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
           SMARTCITY_TEST_TIMESCALE: "1"

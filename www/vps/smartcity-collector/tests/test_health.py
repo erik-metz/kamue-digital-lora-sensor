@@ -1,3 +1,4 @@
+import sys
 import tempfile
 import unittest
 from datetime import UTC, datetime, timedelta
@@ -5,6 +6,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import httpx
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from health import check_health, record_status, write_json
 from runtime import retry_delay
 
