@@ -2,12 +2,12 @@
 Covers Bürstadt, Lampertheim, Biblis, Groß-Rohrheim, Hofheim (Ried).
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Annotated, Any
 
 import psycopg_pool
 from dependencies import get_db_pool, verify_admin_key
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/demographics", tags=["People & Demographics"])

@@ -8,9 +8,9 @@ if "psycopg_pool" not in sys.modules:
 if "psycopg" not in sys.modules:
     sys.modules["psycopg"] = MagicMock()
 
-try:
-    import fastapi
-except ImportError:
+from importlib.util import find_spec
+
+if "fastapi" not in sys.modules and find_spec("fastapi") is None:
     class MockRouter:
         def get(self, *args, **kwargs):
             return lambda fn: fn
@@ -30,9 +30,7 @@ except ImportError:
     mock_fastapi.status = MagicMock()
     sys.modules["fastapi"] = mock_fastapi
 
-try:
-    import pydantic
-except ImportError:
+if "pydantic" not in sys.modules and find_spec("pydantic") is None:
     class MockBaseModel:
         def __init__(self, **kwargs):
             for k, v in kwargs.items():
@@ -52,13 +50,8 @@ if "dependencies" not in sys.modules:
     sys.modules["dependencies"] = mock_dep
 
 from endpoints.demographics import (
-    CommuterFlowResponse,
-    DemographicSnapshotResponse,
-    DemographicSummaryItem,
-    EducationalFacilityResponse,
     IngestFacilityPayload,
     IngestSnapshotPayload,
-    MunicipalityResponse,
     get_demographic_summary,
     get_municipality_commuters,
     get_municipality_timeseries,

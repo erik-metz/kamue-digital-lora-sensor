@@ -1,13 +1,13 @@
 """VRN GTFS-RT Bus tracking and bus stops endpoints."""
 
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+from fastapi import APIRouter, Depends, Query, Security, status
 import psycopg_pool
 from pydantic import BaseModel, Field
 
-from dependencies import get_db_pool, verify_admin_key, verify_ingestion_key
+from dependencies import get_db_pool, verify_ingestion_key
 
 router = APIRouter(prefix="/buses", tags=["VRN Bus Mobility"])
 
