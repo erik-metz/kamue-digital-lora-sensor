@@ -14,7 +14,15 @@ import { calculateBusMobility, getBusStopDepartures, RIED_BUS_STOPS, type LiveBu
 import { createBusMarkerContent, createBusStopMarkerContent } from "@/lib/mapMarker";
 import { BUS_ROUTE_OVERLAYS, WASTE_TRUCK_ROUTE_OVERLAYS } from "@/lib/roadRoutes";
 import { calculateLocalTraffic, type TrafficCorridor, type TrafficIncident } from "@/lib/trafficData";
+import {
+  type StreetClosure,
+  formatClosureDateRange,
+  getClosureColor,
+  isClosureActive,
+  VERIFIED_RIED_STREET_CLOSURES,
+} from "@/lib/streetClosures";
 import { useEffect, useRef, useState } from "react";
+
 export type { SensorNode } from "@/lib/mapData";
 
 type ColoredMarker = L.Marker & {
@@ -51,6 +59,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [showBusStops, setShowBusStops] = useState(true);
   const [showTraffic, setShowTraffic] = useState(true);
   const [trafficCorridors, setTrafficCorridors] = useState<TrafficCorridor[]>([]);
+  const [showClosures, setShowClosures] = useState(true);
+  const [streetClosures, setStreetClosures] = useState<StreetClosure[]>([]);
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
   const crossingsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -61,6 +71,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const busStopsGroupRef = useRef<L.LayerGroup | null>(null);
   const trafficRoutesGroupRef = useRef<L.LayerGroup | null>(null);
   const trafficIncidentsGroupRef = useRef<L.LayerGroup | null>(null);
+  const closuresGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
@@ -69,7 +80,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const busStopMarkers = useRef(new Map<string, L.Marker>());
   const trafficMarkers = useRef(new Map<string, L.Marker>());
   const trafficCorridorPolylines = useRef(new Map<string, { bg: L.Polyline; fg: L.Polyline }>());
+  const closureLayers = useRef(new Map<string, { marker: L.Marker; polyline?: L.Polyline }>());
   useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
+
 
 
   useEffect(() => {
@@ -149,6 +162,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const busStopsGroup = L.layerGroup();
       const trafficRoutesGroup = L.layerGroup();
       const trafficIncidentsGroup = L.layerGroup();
+      const closuresGroup = L.layerGroup();
 
       railTracksGroupRef.current = railTracksGroup;
       trainsGroupRef.current = trainsGroup;
@@ -160,6 +174,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       busStopsGroupRef.current = busStopsGroup;
       trafficRoutesGroupRef.current = trafficRoutesGroup;
       trafficIncidentsGroupRef.current = trafficIncidentsGroup;
+      closuresGroupRef.current = closuresGroup;
 
       map.addLayer(railTracksGroup);
       map.addLayer(crossingsGroup);
@@ -170,6 +185,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       map.addLayer(busesGroup);
       map.addLayer(trafficRoutesGroup);
       map.addLayer(trafficIncidentsGroup);
+      map.addLayer(closuresGroup);
+
       // Bus stops become visible at zoom >= 13
       if (map.getZoom() >= 13) {
         map.addLayer(busStopsGroup);
@@ -237,6 +254,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       busStopsGroupRef.current = null;
       trafficRoutesGroupRef.current = null;
       trafficIncidentsGroupRef.current = null;
+      closuresGroupRef.current = null;
       currentTrainMarkers.clear();
       currentCrossingMarkers.clear();
       currentWasteTruckMarkers.clear();
@@ -245,7 +263,9 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       currentBusStopMarkers.clear();
       currentTrafficMarkers.clear();
       currentTrafficCorridorPolylines.clear();
+      closureLayers.current.clear();
       currentMarkers.clear();
+
     };
   }, []);
 
@@ -1125,6 +1145,186 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     };
   }, [ready]);
 
+  // Toggle street closures visibility
+  useEffect(() => {
+    const map = mapRef.current;
+    const closuresGroup = closuresGroupRef.current;
+    if (!map || !closuresGroup) return;
+
+    if (showClosures) {
+      if (!map.hasLayer(closuresGroup)) map.addLayer(closuresGroup);
+    } else {
+      if (map.hasLayer(closuresGroup)) map.removeLayer(closuresGroup);
+    }
+  }, [showClosures]);
+
+  // Fetch and update street closures and baustellen
+  useEffect(() => {
+    if (!ready) return;
+    let cancelled = false;
+
+    async function updateClosures() {
+      const closuresGroup = closuresGroupRef.current;
+      if (!closuresGroup || cancelled) return;
+
+      let items: StreetClosure[] = [];
+      try {
+        const res = await fetch("/api/street-closures", {
+          cache: "no-store",
+          signal: AbortSignal.timeout(3000),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.closures)) {
+            items = data.closures;
+          }
+        }
+      } catch {
+        // Graceful fallback
+      }
+
+      if (items.length === 0) {
+        items = VERIFIED_RIED_STREET_CLOSURES;
+      }
+
+      if (cancelled) return;
+      setStreetClosures(items);
+
+      const nowMs = Date.now();
+      const currentIds = new Set(items.map((c) => c.id));
+
+      // 1. Remove deleted or expired closure layers
+      for (const [id, entry] of closureLayers.current) {
+        if (!currentIds.has(id)) {
+          closuresGroup.removeLayer(entry.marker);
+          if (entry.polyline) closuresGroup.removeLayer(entry.polyline);
+          closureLayers.current.delete(id);
+        }
+      }
+
+      // 2. Add or update closure markers & polylines
+      for (const c of items) {
+        const currentlyActive = isClosureActive(c, nowMs);
+        const color = getClosureColor(c, nowMs);
+        const iconChar = currentlyActive
+          ? c.closureType === "full"
+            ? "⛔"
+            : "⚠️"
+          : "🕒";
+        const iconClass = currentlyActive
+          ? c.closureType === "full"
+            ? "active-full"
+            : "active-partial"
+          : "scheduled";
+
+        const markerHtml = `
+          <div class="street-closure-marker ${iconClass}">
+            <span>${iconChar}</span>
+            ${currentlyActive ? `<div class="street-closure-pulse"></div>` : ""}
+          </div>
+        `;
+
+        const icon = L.divIcon({
+          html: markerHtml,
+          className: "map-closure-icon-wrapper",
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16],
+        });
+
+        const popupContent = () => {
+          const div = document.createElement("div");
+          div.className = "closure-popup-details";
+          const statusBadge = currentlyActive
+            ? c.closureType === "full"
+              ? "🔴 Vollsperrung aktiv"
+              : "🟡 Halbseitige Sperrung"
+            : "🕒 Geplante Sperrung";
+          const badgeClass = currentlyActive
+            ? c.closureType === "full"
+              ? "full"
+              : "partial"
+            : "scheduled";
+
+          const dateRangeText = formatClosureDateRange(c.startTime, c.endTime);
+
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+              <span class="closure-header-badge ${badgeClass}">${statusBadge}</span>
+              <span style="font-size: 10px; color: #94a3b8;">${c.municipality} · ${c.district}</span>
+            </div>
+            <div style="font-weight: 700; font-size: 14px; margin-bottom: 3px; color: ${color};">
+              🚧 ${c.streetName}
+            </div>
+            ${c.locationFrom || c.locationTo ? `
+              <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 5px;">
+                Bereich: <strong>${c.locationFrom}</strong> ➔ <strong>${c.locationTo}</strong>
+              </div>
+            ` : ""}
+            <div class="closure-time-box">
+              <span style="color: #94a3b8; font-size: 10px; display: block; text-transform: uppercase;">Zeitraum:</span>
+              <strong style="color: #f8fafc;">${dateRangeText}</strong>
+            </div>
+            <div style="font-size: 12px; margin: 6px 0; color: #e2e8f0; line-height: 1.4;">
+              ${c.description || c.reason}
+            </div>
+            ${c.detour ? `
+              <div class="closure-detour-box">
+                <strong>Umleitung:</strong> ${c.detour}
+              </div>
+            ` : ""}
+            <div style="font-size: 10px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 4px; margin-top: 6px; display: flex; justify-content: space-between;">
+              <span>Quelle: ${c.source}</span>
+              ${c.sourceUrl ? `<a href="${c.sourceUrl}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;">Details</a>` : ""}
+            </div>
+          `;
+          return div;
+        };
+
+        const existing = closureLayers.current.get(c.id);
+        if (!existing) {
+          const marker = L.marker([c.coordinates[0], c.coordinates[1]], {
+            icon,
+            zIndexOffset: 490,
+          });
+          marker.bindPopup(popupContent);
+          closuresGroup.addLayer(marker);
+
+          let polyline: L.Polyline | undefined = undefined;
+          if (c.segmentGeometry && c.segmentGeometry.length >= 2) {
+            polyline = L.polyline(c.segmentGeometry, {
+              color,
+              weight: 5,
+              opacity: 0.85,
+              dashArray: "6, 8",
+            });
+            polyline.bindTooltip(`⛔ <strong>${c.streetName}</strong> (${c.reason})`, {
+              sticky: true,
+              className: "route-line-tooltip",
+            });
+            closuresGroup.addLayer(polyline);
+          }
+
+          closureLayers.current.set(c.id, { marker, polyline });
+        } else {
+          existing.marker.setIcon(icon);
+          existing.marker.setLatLng([c.coordinates[0], c.coordinates[1]]);
+          if (existing.polyline && c.segmentGeometry) {
+            existing.polyline.setStyle({ color });
+          }
+        }
+      }
+    }
+
+    void updateClosures();
+    const interval = setInterval(updateClosures, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [ready]);
+
+
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
     {failed ? <p role="alert" className="absolute inset-0 bg-slate-900 p-8">Die Karte konnte nicht geladen werden. Bitte lade die Seite erneut.</p> : null}
@@ -1158,12 +1358,21 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2">
       <button
         type="button"
+        className={`map-control ${showClosures ? "border-red-500 text-red-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowClosures((prev) => !prev)}
+        title="Straßensperrungen und Baustellen im Ried ein-/ausblenden"
+      >
+        ⛔ Sperrungen ({streetClosures.filter((c) => isClosureActive(c, now)).length}) {showClosures ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
         className={`map-control ${showTraffic ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
         onClick={() => setShowTraffic(prev => !prev)}
         title="Verkehrslage und Staus im Ried ein-/ausblenden"
       >
         🚗 Verkehr {showTraffic ? "An" : "Aus"}
       </button>
+
       <button
         type="button"
         className={`map-control ${showBuses ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}

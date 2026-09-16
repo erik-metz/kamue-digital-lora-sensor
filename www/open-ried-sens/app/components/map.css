@@ -537,3 +537,128 @@
   background: rgba(239, 68, 68, 0.15);
   font-weight: 700;
 }
+
+/* ==========================================================================
+   Street Closures (Straßensperrungen & Baustellen) Styling
+   ========================================================================== */
+
+.street-closure-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 2px solid var(--closure-color, #ef4444);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), 0 0 10px var(--closure-color, #ef4444);
+  font-size: 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.15s ease;
+  position: relative;
+}
+
+.street-closure-marker:hover {
+  transform: scale(1.15);
+  z-index: 1000 !important;
+}
+
+.street-closure-marker.active-full {
+  --closure-color: #ef4444;
+}
+
+.street-closure-marker.active-partial {
+  --closure-color: #f97316;
+}
+
+.street-closure-marker.scheduled {
+  --closure-color: #f59e0b;
+  border-style: dashed;
+}
+
+.street-closure-pulse {
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--closure-color, #ef4444);
+  animation: closure-pulse 2s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes closure-pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.closure-popup-details {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #e2e8f0;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 4px 2px;
+}
+
+.closure-header-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
+
+.closure-header-badge.full {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.closure-header-badge.partial {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+  border: 1px solid rgba(249, 115, 22, 0.4);
+}
+
+.closure-header-badge.scheduled {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.closure-time-box {
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  margin: 6px 0;
+}
+
+.closure-detour-box {
+  background: rgba(15, 23, 42, 0.7);
+  border-left: 3px solid #38bdf8;
+  border-radius: 0 4px 4px 0;
+  padding: 5px 8px;
+  font-size: 11px;
+  color: #bae6fd;
+  margin: 6px 0;
+  line-height: 1.35;
+}
+

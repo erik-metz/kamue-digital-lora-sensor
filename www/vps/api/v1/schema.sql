@@ -716,3 +716,33 @@ CREATE TABLE IF NOT EXISTS collector_schema_versions (
     applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 INSERT INTO collector_schema_versions(version) VALUES (20260916) ON CONFLICT DO NOTHING;
+
+-- 9. Road Closures (Straßensperrungen) for the Ried Area (Lampertheim, Bürstadt, Biblis, Groß-Rohrheim, etc.)
+CREATE TABLE IF NOT EXISTS street_closures (
+    id VARCHAR(128) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    street_name VARCHAR(128) NOT NULL,
+    location_from VARCHAR(128),
+    location_to VARCHAR(128),
+    closure_type VARCHAR(32) NOT NULL DEFAULT 'full',
+    status VARCHAR(32) NOT NULL DEFAULT 'active',
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    reason VARCHAR(255),
+    description TEXT,
+    detour TEXT,
+    coordinates JSONB,
+    source VARCHAR(64) NOT NULL DEFAULT 'hessen_mobil',
+    source_url TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_closures_active_status ON street_closures (is_active, status);
+CREATE INDEX IF NOT EXISTS idx_closures_time_window ON street_closures (start_time, end_time);
+CREATE INDEX IF NOT EXISTS idx_closures_municipality ON street_closures (municipality, district);
+
+INSERT INTO collector_schema_versions(version) VALUES (20260917) ON CONFLICT DO NOTHING;
+

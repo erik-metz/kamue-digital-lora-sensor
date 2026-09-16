@@ -1,4 +1,15 @@
-from endpoints import archives, bikes, buses, map_sensors, mobility, sensors, telemetry, traffic, waste_trucks
+from endpoints import (
+    archives,
+    bikes,
+    buses,
+    map_sensors,
+    mobility,
+    sensors,
+    street_closures,
+    telemetry,
+    traffic,
+    waste_trucks,
+)
 from fastapi import APIRouter
 
 api_router = APIRouter()
@@ -11,6 +22,8 @@ api_router.include_router(waste_trucks.router)
 api_router.include_router(buses.router)
 api_router.include_router(bikes.router)
 api_router.include_router(traffic.router)
+api_router.include_router(street_closures.router)
+
 
 
 
