@@ -7,6 +7,7 @@ export const CATEGORIES = {
   bikes: { label: "Leihräder", color: "#0284c7", path: "M5.5 17.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M18.5 17.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2z M12 17.5V14l-3-3 4-3 2 3h2" },
   traffic: { label: "Verkehr", color: "#fb923c", path: "M5 17H3V9l2-5h14l2 5v8h-2 M3 10h18 M7 17h10 M6 13h2 M16 13h2 M5 17v3 M19 17v3" },
   seismic: { label: "Erschütterungen", color: "#f472b6", path: "M2 12h4l3-8 5 16 3-8h5" },
+  education: { label: "Schulen & Kitas", color: "#38bdf8", path: "M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c3 3 9 3 12 0v-5" },
   other: { label: "Weitere Sensoren", color: "#94a3b8", path: "M12 3v3 M12 18v3 M3 12h3 M18 12h3 M8 8h8v8H8Z" },
 } as const;
 export type Category = keyof typeof CATEGORIES;
@@ -302,6 +303,295 @@ export function mergeDefaultCrossings(nodes: StationNode[]): StationNode[] {
   return missing.length > 0 ? [...nodes, ...missing] : nodes;
 }
 
+export const DEFAULT_EDUCATIONAL_NODES: StationNode[] = [
+  {
+    id: "sch-bst-eks",
+    name: "Erich-Kästner-Schule (IGS Bürstadt)",
+    locationName: "Erich-Kästner-Schule (Integrierte Gesamtschule)",
+    address: "Wolfstraße 23, 68642 Bürstadt · Träger: Kreis Bergstraße",
+    lat: 49.6483,
+    lng: 8.4615,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 980, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 940, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 96, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-bst-schillerschule",
+    name: "Schillerschule Bürstadt (Grundschule)",
+    locationName: "Schillerschule Grundschule Bürstadt",
+    address: "Boxheimerhofstraße 22, 68642 Bürstadt · Träger: Kreis Bergstraße",
+    lat: 49.6496,
+    lng: 8.4618,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 380, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 365, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 96, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-bst-astrid-lindgren",
+    name: "Astrid-Lindgren-Schule Bobstadt",
+    locationName: "Astrid-Lindgren-Schule Grundschule",
+    address: "Wolfsfahrtweg 2, 68642 Bürstadt-Bobstadt",
+    lat: 49.6642,
+    lng: 8.4478,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 140, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 128, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 91, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-bst-wichtelburg",
+    name: "Kita Wichtelburg Bürstadt",
+    locationName: "Städtische Kindertagesstätte Wichtelburg",
+    address: "Rathausstraße 2, 68642 Bürstadt · Träger: Stadt Bürstadt (U3/Ü3)",
+    lat: 49.6420,
+    lng: 8.4558,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 110, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 105, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 95, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-bst-sonnenschein",
+    name: "Kita Sonnenschein Bürstadt",
+    locationName: "Städtische Kindertagesstätte Sonnenschein",
+    address: "Gartenstraße 14, 68642 Bürstadt · Träger: Stadt Bürstadt",
+    lat: 49.6448,
+    lng: 8.4632,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 125, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 120, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 96, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-bst-st-peter",
+    name: "Katholische Kita St. Peter",
+    locationName: "Kath. Kindertagesstätte St. Peter Bürstadt",
+    address: "Wolfstraße 2, 68642 Bürstadt · Träger: Pfarrgemeinde St. Michael",
+    lat: 49.6438,
+    lng: 8.4525,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 95, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 92, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 97, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-bst-regenbogen",
+    name: "Kita Regenbogen Bobstadt",
+    locationName: "Städtische Kindertagesstätte Regenbogen",
+    address: "Sankt-Josef-Straße 10, 68642 Bürstadt-Bobstadt",
+    lat: 49.6628,
+    lng: 8.4468,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 85, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 82, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 96, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-bst-riedrode",
+    name: "Waldkindergarten Riedrode",
+    locationName: "Kita & Waldkindergarten Riedrode",
+    address: "Bahnhofstraße 34, 68642 Bürstadt-Riedrode",
+    lat: 49.6472,
+    lng: 8.4905,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 65, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 60, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 92, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-la-lessing-gymnasium",
+    name: "Lessing-Gymnasium Lampertheim",
+    locationName: "Lessing-Gymnasium (Gymnasium mit Oberstufe)",
+    address: "Biedensandstraße 55, 68623 Lampertheim · Träger: Kreis Bergstraße",
+    lat: 49.5989,
+    lng: 8.4552,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 1150, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 1110, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 97, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-la-alfred-delp",
+    name: "Alfred-Delp-Schule Lampertheim",
+    locationName: "Alfred-Delp-Schule (Haupt- & Realschule)",
+    address: "Carl-Lepper-Straße 7, 68623 Lampertheim · Träger: Kreis Bergstraße",
+    lat: 49.5992,
+    lng: 8.4568,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 720, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 680, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 94, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-la-pestalozzi",
+    name: "Pestalozzischule Lampertheim",
+    locationName: "Pestalozzischule Grundschule",
+    address: "Wilhelmstraße 61, 68623 Lampertheim",
+    lat: 49.5991,
+    lng: 8.4631,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 340, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 325, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 96, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-la-schiller-hofheim",
+    name: "Nibelungenschule Hofheim",
+    locationName: "Nibelungenschule Grundschule Hofheim (Ried)",
+    address: "Schulstraße 4, 68623 Lampertheim-Hofheim · Träger: Stadt Worms",
+    lat: 49.6586,
+    lng: 8.4121,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 130, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 120, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 92, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-la-falterweg",
+    name: "Städtische Kita Falterweg Lampertheim",
+    locationName: "Kita Falterweg (Kinderbetreuung & Ganztag)",
+    address: "Falterweg 24, 68623 Lampertheim · Träger: Stadt Lampertheim",
+    lat: 49.5971,
+    lng: 8.4691,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 130, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 124, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 95, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-la-neuschloss",
+    name: "Kita Neuschloß",
+    locationName: "Kindertagesstätte Neuschloß",
+    address: "Ahornweg 12, 68623 Lampertheim-Neuschloß",
+    lat: 49.6012,
+    lng: 8.5165,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 75, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 72, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 96, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-la-huettenfeld",
+    name: "Kita Hüttenfeld",
+    locationName: "Kindertagesstätte Hüttenfeld (Bürgerhaus)",
+    address: "Alfred-Delp-Straße 50, 68623 Lampertheim-Hüttenfeld",
+    lat: 49.5982,
+    lng: 8.5829,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 80, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 78, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 98, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-bib-weschnitzauen",
+    name: "Schule in den Weschnitzauen Biblis",
+    locationName: "Schule in den Weschnitzauen Grundschule",
+    address: "Pfaffenau 4, 68647 Biblis · Träger: Kreis Bergstraße",
+    lat: 49.6881,
+    lng: 8.4531,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 320, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 305, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 95, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-bib-sonnenschein",
+    name: "Kita Sonnenschein Biblis",
+    locationName: "Kommunale Kindertagesstätte Sonnenschein",
+    address: "Kirchstraße 28, 68647 Biblis · Träger: Gemeinde Biblis",
+    lat: 49.6851,
+    lng: 8.4462,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 115, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 110, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 96, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-bib-pusteblume-wattenheim",
+    name: "Kita Pusteblume Wattenheim",
+    locationName: "Kindertagesstätte Pusteblume Wattenheim",
+    address: "Rheinstraße 15, 68647 Biblis-Wattenheim",
+    lat: 49.6854,
+    lng: 8.4128,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 65, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 62, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 95, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "sch-gr-lindenhof",
+    name: "Lindenhofschule Groß-Rohrheim",
+    locationName: "Lindenhofschule Grundschule",
+    address: "Kornstraße 38, 68649 Groß-Rohrheim",
+    lat: 49.7182,
+    lng: 8.4791,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 150, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 142, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 95, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+  {
+    id: "kita-gr-abenteuerland",
+    name: "Kita Abenteuerland Groß-Rohrheim",
+    locationName: "Kindertagesstätte Abenteuerland",
+    address: "Speyerer Straße 12, 68649 Groß-Rohrheim",
+    lat: 49.7168,
+    lng: 8.4755,
+    categories: ["education"],
+    readings: [
+      { metric: "edu_capacity", value: 95, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_enrollment", value: 90, unit: "count", timestamp: new Date().toISOString() },
+      { metric: "edu_utilization", value: 95, unit: "%", timestamp: new Date().toISOString() },
+    ],
+  },
+];
+
+export function mergeDefaultEducation(nodes: StationNode[]): StationNode[] {
+  const existingIds = new Set(nodes.map(s => s.id));
+  const missing = DEFAULT_EDUCATIONAL_NODES.filter(e => !existingIds.has(e.id));
+  return missing.length > 0 ? [...nodes, ...missing] : nodes;
+}
+
 export function offsetTrafficCoordinates(nodes: StationNode[]): void {
   const trafficNodes = nodes.filter(n => n.categories.includes("traffic") && n.lat != null && n.lng != null);
 
@@ -386,7 +676,9 @@ export function primaryReading(node: StationNode, category: Category, mode: MapM
     traffic: ["crossing_state", "traffic_total_hourly", "traffic_cars_hourly", "traffic_cars_daily_city", "closure_duration"],
     parking: ["parking_free", "parking_occupied", "parking_capacity"],
     bikes: ["bike_available", "bike_racks_free", "bike_capacity", "bike_ebikes"],
-    seismic: ["pgv", "rms"], other: [],
+    seismic: ["pgv", "rms"],
+    education: ["edu_utilization", "edu_enrollment", "edu_capacity"],
+    other: [],
   };
   return preferred[category].map(m => node.readings.find(r => r.metric === m)).find(Boolean) ?? node.readings[0];
 }
@@ -402,6 +694,12 @@ export function temperatureColor(value: number) {
 export function valueLabel(reading: Reading | undefined, readings?: Reading[]) {
   if (!reading) return "";
   const value = reading.value.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+  if (reading.metric === "edu_utilization") {
+    return `${Math.round(reading.value)}% belegt`;
+  }
+  if (reading.metric === "edu_enrollment" || reading.metric === "edu_capacity") {
+    return `${value} Plätze`;
+  }
   if (reading.metric === "crossing_state") {
     return reading.value >= 2 ? "Geschlossen" : reading.value >= 1 ? "Schließt bald" : "Offen (Frei)";
   }
@@ -534,6 +832,27 @@ export function bikeSummary(readings: Reading[]) {
   };
 }
 
+
+export function educationSummary(readings: Reading[]) {
+  const cap = readings.find(r => r.metric === "edu_capacity")?.value;
+  const enr = readings.find(r => r.metric === "edu_enrollment")?.value;
+  const rate = readings.find(r => r.metric === "edu_utilization")?.value;
+  if (cap === undefined && enr === undefined) return undefined;
+  const format = (v: number) => v.toLocaleString("de-DE");
+  const summary = cap !== undefined && enr !== undefined
+    ? `${format(enr)} von ${format(cap)} Plätzen belegt (${rate ?? Math.round((enr / cap) * 100)}% Auslastung)`
+    : enr !== undefined
+    ? `${format(enr)} angemeldete Kinder / Schüler`
+    : `${format(cap!)} Plätze Kapazität`;
+  const details: string[] = [];
+  if (cap !== undefined && enr !== undefined) {
+    const free = cap - enr;
+    if (free > 0) details.push(`${format(free)} freie Plätze verfügbar`);
+    else if (free === 0) details.push("Voll ausgelastet (keine freien Plätze)");
+    else details.push(`Überbelegung: +${format(Math.abs(free))} Plätze`);
+  }
+  return { summary, details };
+}
 
 export function parseStoredCategories(raw: string | null): Category[] {
   try {

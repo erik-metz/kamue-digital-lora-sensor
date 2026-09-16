@@ -75,6 +75,12 @@ export default async function Home() {
               LoRaWAN TTN
             </a> */}
             <Link
+              href="/demografie"
+              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
+            >
+              Demografie & Bildung
+            </Link>
+            <Link
               href="/daten"
               className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
             >
@@ -543,6 +549,13 @@ export default async function Home() {
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-xs">
+            <Link
+              href="/demografie"
+              className="text-slate-400 hover:text-emerald-400 transition-colors"
+            >
+              Demografie
+            </Link>
+            <span>•</span>
             <Link
               href="/daten"
               className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"

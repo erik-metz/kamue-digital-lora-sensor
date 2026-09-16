@@ -8,6 +8,7 @@ import {
   Globe,
   Radio,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import HeaderLogo from "../components/HeaderLogo";
@@ -43,14 +44,21 @@ export default async function DataDocsPage() {
               className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Zurück zum Dashboard</span>
+              <span className="hidden sm:inline">Sensor-Karte</span>
+            </Link>
+            <Link
+              href="/demografie"
+              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
+            >
+              <Users className="w-4 h-4 text-teal-400" />
+              <span className="hidden sm:inline">Demografie</span>
             </Link>
             <Link
               href="/admin"
               className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 transition-colors"
             >
               <ShieldCheck className="w-4 h-4" />
-              <span className="hidden sm:inline">Admin-Login</span>
+              <span className="hidden sm:inline">Admin</span>
             </Link>
           </div>
         </div>
@@ -163,6 +171,45 @@ export default async function DataDocsPage() {
             Die Datei wird beim Download aus der aktuellen API-Definition erzeugt.
             Bei API-Änderungen erneut herunterladen und importieren.
           </p>
+        </section>
+
+        {/* DEMOGRAPHICS & SOCIAL DATA SECTION */}
+        <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Users className="w-5 h-5 text-teal-400" />
+                Demografie, Pendlerströme & Bildungsdaten (HSL / BA)
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">
+                Offene sozio-ökonomische Daten und Geokoordinaten für Bürstadt, Lampertheim, Biblis, Groß-Rohrheim und Hofheim.
+              </p>
+            </div>
+            <Link
+              href="/demografie"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors shrink-0"
+            >
+              Visualisierter Sozialatlas <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Gemeinde-Scorecards</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/demographics/summary</p>
+              <p className="text-slate-400 font-sans text-xs">Einwohnerzahlen, Dichte, Alterskohorten, Ausländeranteile und Wanderungssalden.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Pendleratlas</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/demographics/&#123;id&#125;/commuters</p>
+              <p className="text-slate-400 font-sans text-xs">Ein- und Auspendler nach Arbeitsorten (Mannheim, Worms, BASF, Frankfurt, etc.).</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Schulen & Kitas</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/demographics/facilities</p>
+              <p className="text-slate-400 font-sans text-xs">Standorte, Kapazitäten, aktuelle Schülerzahlen, Träger und Betreuungsquoten.</p>
+            </div>
+          </div>
         </section>
 
         {/* SENSOR PARAMETERS GLOSSARY */}

@@ -746,3 +746,296 @@ CREATE INDEX IF NOT EXISTS idx_closures_municipality ON street_closures (municip
 
 INSERT INTO collector_schema_versions(version) VALUES (20260917) ON CONFLICT DO NOTHING;
 
+-- 10. People, Demographics, Commuters & Educational Infrastructure
+CREATE TABLE IF NOT EXISTS municipalities (
+    id VARCHAR(64) PRIMARY KEY,
+    ags VARCHAR(8) NOT NULL UNIQUE,
+    name VARCHAR(128) NOT NULL,
+    county VARCHAR(128) NOT NULL DEFAULT 'Kreis Bergstraße',
+    state VARCHAR(64) NOT NULL DEFAULT 'Hessen',
+    area_sqkm DOUBLE PRECISION NOT NULL,
+    center_lat DOUBLE PRECISION NOT NULL,
+    center_lng DOUBLE PRECISION NOT NULL,
+    boundary_geojson JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS demographic_snapshots (
+    id BIGSERIAL PRIMARY KEY,
+    municipality_id VARCHAR(64) NOT NULL REFERENCES municipalities(id) ON DELETE CASCADE,
+    year INT NOT NULL,
+    category VARCHAR(64) NOT NULL,
+    metric VARCHAR(64) NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    unit VARCHAR(32) NOT NULL DEFAULT 'count',
+    dimension VARCHAR(64) NOT NULL DEFAULT 'total',
+    source VARCHAR(128) NOT NULL DEFAULT 'hessisches_statistisches_landesamt',
+    source_url TEXT,
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_demographic_snapshot UNIQUE (municipality_id, year, category, metric, dimension)
+);
+
+CREATE INDEX IF NOT EXISTS idx_demographics_lookup ON demographic_snapshots (municipality_id, year, category);
+CREATE INDEX IF NOT EXISTS idx_demographics_metric ON demographic_snapshots (metric, year);
+
+CREATE TABLE IF NOT EXISTS commuter_flows (
+    id BIGSERIAL PRIMARY KEY,
+    year INT NOT NULL,
+    home_municipality_id VARCHAR(64) NOT NULL REFERENCES municipalities(id) ON DELETE CASCADE,
+    partner_ags VARCHAR(8) NOT NULL,
+    partner_name VARCHAR(128) NOT NULL,
+    direction VARCHAR(16) NOT NULL, -- 'outbound' (Auspendler) | 'inbound' (Einpendler)
+    commuter_count INT NOT NULL,
+    source VARCHAR(128) NOT NULL DEFAULT 'bundesagentur_fuer_arbeit_pendleratlas',
+    recorded_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_commuter_flow UNIQUE (year, home_municipality_id, partner_ags, direction)
+);
+
+CREATE INDEX IF NOT EXISTS idx_commuter_flows_query ON commuter_flows (home_municipality_id, year, direction);
+
+CREATE TABLE IF NOT EXISTS educational_facilities (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    facility_type VARCHAR(64) NOT NULL, -- 'kita', 'krippe', 'grundschule', 'gesamtschule', 'gymnasium', 'foerderschule'
+    municipality_id VARCHAR(64) NOT NULL REFERENCES municipalities(id) ON DELETE CASCADE,
+    district VARCHAR(64),
+    address VARCHAR(255) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    operator VARCHAR(128) NOT NULL, -- 'stadt_buerstadt', 'stadt_lampertheim', 'kreis_bergstrasse', 'kirche', 'freier_traeger'
+    operator_name VARCHAR(255),
+    capacity INT,
+    current_enrollment INT,
+    min_age_years INT,
+    max_age_years INT,
+    opening_hours VARCHAR(255),
+    website_url TEXT,
+    reporting_year INT NOT NULL DEFAULT 2025,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_edu_municipality ON educational_facilities (municipality_id, facility_type);
+
+-- Seed Ried Municipalities
+INSERT INTO municipalities (id, ags, name, county, state, area_sqkm, center_lat, center_lng)
+VALUES
+    ('buerstadt', '06431005', 'Bürstadt', 'Kreis Bergstraße', 'Hessen', 34.46, 49.6425, 8.4552),
+    ('lampertheim', '06431013', 'Lampertheim', 'Kreis Bergstraße', 'Hessen', 72.27, 49.5958, 8.4688),
+    ('biblis', '06431003', 'Biblis', 'Kreis Bergstraße', 'Hessen', 40.44, 49.6872, 8.4452),
+    ('gross-rohrheim', '06431010', 'Groß-Rohrheim', 'Kreis Bergstraße', 'Hessen', 19.56, 49.7175, 8.4785),
+    ('hofheim', '07319000', 'Hofheim (Ried)', 'Stadt Worms / Ried', 'Rheinland-Pfalz', 15.20, 49.6588, 8.4124)
+ON CONFLICT (id) DO UPDATE SET
+    ags = EXCLUDED.ags,
+    name = EXCLUDED.name,
+    county = EXCLUDED.county,
+    state = EXCLUDED.state,
+    area_sqkm = EXCLUDED.area_sqkm,
+    center_lat = EXCLUDED.center_lat,
+    center_lng = EXCLUDED.center_lng;
+
+-- Seed Baseline Demographic Snapshots (Hessisches Statistisches Landesamt / HSL)
+INSERT INTO demographic_snapshots (municipality_id, year, category, metric, value, unit, dimension, source)
+VALUES
+    -- Bürstadt 2024
+    ('buerstadt', 2024, 'population', 'total_population', 16980, 'count', 'total', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'population', 'male_population', 8390, 'count', 'male', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'population', 'female_population', 8590, 'count', 'female', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'population', 'population_density', 492.7, 'per_sqkm', 'total', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'age_structure', 'pop_under_6', 915, 'count', 'age_0_5', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'age_structure', 'pop_6_to_18', 2110, 'count', 'age_6_18', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'age_structure', 'pop_19_to_29', 1845, 'count', 'age_19_29', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'age_structure', 'pop_30_to_49', 4290, 'count', 'age_30_49', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'age_structure', 'pop_50_to_64', 4070, 'count', 'age_50_64', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'age_structure', 'pop_65_plus', 3750, 'count', 'age_65_plus', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'migration', 'births', 142, 'count', 'natural_in', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'migration', 'deaths', 188, 'count', 'natural_out', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'migration', 'inflow', 985, 'count', 'migration_in', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'migration', 'outflow', 860, 'count', 'migration_out', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'migration', 'net_migration', 125, 'count', 'net_balance', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'citizenship', 'foreign_residents', 2680, 'count', 'total', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'citizenship', 'foreign_share_pct', 15.8, 'percent', 'total', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'household', 'avg_household_size', 2.14, 'persons_per_household', 'total', 'hsl_statistik_hessen'),
+    ('buerstadt', 2024, 'household', 'total_households', 7935, 'count', 'total', 'hsl_statistik_hessen'),
+
+    -- Lampertheim 2024
+    ('lampertheim', 2024, 'population', 'total_population', 33150, 'count', 'total', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'population', 'male_population', 16340, 'count', 'male', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'population', 'female_population', 16810, 'count', 'female', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'population', 'population_density', 458.7, 'per_sqkm', 'total', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'age_structure', 'pop_under_6', 1780, 'count', 'age_0_5', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'age_structure', 'pop_6_to_18', 4120, 'count', 'age_6_18', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'age_structure', 'pop_19_to_29', 3620, 'count', 'age_19_29', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'age_structure', 'pop_30_to_49', 8310, 'count', 'age_30_49', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'age_structure', 'pop_50_to_64', 7940, 'count', 'age_50_64', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'age_structure', 'pop_65_plus', 7380, 'count', 'age_65_plus', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'migration', 'births', 278, 'count', 'natural_in', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'migration', 'deaths', 392, 'count', 'natural_out', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'migration', 'inflow', 1890, 'count', 'migration_in', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'migration', 'outflow', 1675, 'count', 'migration_out', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'migration', 'net_migration', 215, 'count', 'net_balance', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'citizenship', 'foreign_residents', 5810, 'count', 'total', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'citizenship', 'foreign_share_pct', 17.5, 'percent', 'total', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'household', 'avg_household_size', 2.11, 'persons_per_household', 'total', 'hsl_statistik_hessen'),
+    ('lampertheim', 2024, 'household', 'total_households', 15710, 'count', 'total', 'hsl_statistik_hessen'),
+
+    -- Biblis 2024
+    ('biblis', 2024, 'population', 'total_population', 9210, 'count', 'total', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'population', 'male_population', 4570, 'count', 'male', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'population', 'female_population', 4640, 'count', 'female', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'population', 'population_density', 227.7, 'per_sqkm', 'total', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'age_structure', 'pop_under_6', 485, 'count', 'age_0_5', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'age_structure', 'pop_6_to_18', 1130, 'count', 'age_6_18', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'age_structure', 'pop_19_to_29', 970, 'count', 'age_19_29', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'age_structure', 'pop_30_to_49', 2340, 'count', 'age_30_49', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'age_structure', 'pop_50_to_64', 2285, 'count', 'age_50_64', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'age_structure', 'pop_65_plus', 2000, 'count', 'age_65_plus', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'migration', 'births', 76, 'count', 'natural_in', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'migration', 'deaths', 112, 'count', 'natural_out', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'migration', 'inflow', 540, 'count', 'migration_in', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'migration', 'outflow', 480, 'count', 'migration_out', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'migration', 'net_migration', 60, 'count', 'net_balance', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'citizenship', 'foreign_residents', 1280, 'count', 'total', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'citizenship', 'foreign_share_pct', 13.9, 'percent', 'total', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'household', 'avg_household_size', 2.22, 'persons_per_household', 'total', 'hsl_statistik_hessen'),
+    ('biblis', 2024, 'household', 'total_households', 4145, 'count', 'total', 'hsl_statistik_hessen'),
+
+    -- Groß-Rohrheim 2024
+    ('gross-rohrheim', 2024, 'population', 'total_population', 3820, 'count', 'total', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'population', 'male_population', 1900, 'count', 'male', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'population', 'female_population', 1920, 'count', 'female', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'population', 'population_density', 195.3, 'per_sqkm', 'total', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'age_structure', 'pop_under_6', 205, 'count', 'age_0_5', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'age_structure', 'pop_6_to_18', 470, 'count', 'age_6_18', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'age_structure', 'pop_19_to_29', 410, 'count', 'age_19_29', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'age_structure', 'pop_30_to_49', 975, 'count', 'age_30_49', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'age_structure', 'pop_50_to_64', 940, 'count', 'age_50_64', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'age_structure', 'pop_65_plus', 820, 'count', 'age_65_plus', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'citizenship', 'foreign_residents', 460, 'count', 'total', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'citizenship', 'foreign_share_pct', 12.0, 'percent', 'total', 'hsl_statistik_hessen'),
+    ('gross-rohrheim', 2024, 'household', 'avg_household_size', 2.26, 'persons_per_household', 'total', 'hsl_statistik_hessen'),
+
+    -- Hofheim (Ried) 2024
+    ('hofheim', 2024, 'population', 'total_population', 3350, 'count', 'total', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'population', 'population_density', 220.4, 'per_sqkm', 'total', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'age_structure', 'pop_under_6', 175, 'count', 'age_0_5', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'age_structure', 'pop_6_to_18', 415, 'count', 'age_6_18', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'age_structure', 'pop_19_to_29', 360, 'count', 'age_19_29', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'age_structure', 'pop_30_to_49', 850, 'count', 'age_30_49', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'age_structure', 'pop_50_to_64', 830, 'count', 'age_50_64', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'age_structure', 'pop_65_plus', 720, 'count', 'age_65_plus', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'citizenship', 'foreign_residents', 410, 'count', 'total', 'stadt_worms_statistik'),
+    ('hofheim', 2024, 'citizenship', 'foreign_share_pct', 12.2, 'percent', 'total', 'stadt_worms_statistik')
+ON CONFLICT (municipality_id, year, category, metric, dimension) DO UPDATE SET
+    value = EXCLUDED.value,
+    unit = EXCLUDED.unit,
+    source = EXCLUDED.source,
+    recorded_at = NOW();
+
+-- Seed Key Commuter Patterns (Bundesagentur für Arbeit - Pendleratlas)
+INSERT INTO commuter_flows (year, home_municipality_id, partner_ags, partner_name, direction, commuter_count)
+VALUES
+    -- Bürstadt Outbound (Auspendler - Where Bürstädter work)
+    (2024, 'buerstadt', '08222000', 'Mannheim', 'outbound', 1650),
+    (2024, 'buerstadt', '07319000', 'Worms', 'outbound', 1280),
+    (2024, 'buerstadt', '06431013', 'Lampertheim', 'outbound', 890),
+    (2024, 'buerstadt', '07314000', 'Ludwigshafen am Rhein', 'outbound', 720),
+    (2024, 'buerstadt', '06412000', 'Frankfurt am Main', 'outbound', 510),
+    (2024, 'buerstadt', '06411000', 'Darmstadt', 'outbound', 480),
+    (2024, 'buerstadt', '06431002', 'Bensheim', 'outbound', 440),
+    (2024, 'buerstadt', '06431011', 'Heppenheim (Bergstraße)', 'outbound', 320),
+
+    -- Bürstadt Inbound (Einpendler - Who comes to Bürstadt to work)
+    (2024, 'buerstadt', '06431013', 'Lampertheim', 'inbound', 680),
+    (2024, 'buerstadt', '07319000', 'Worms', 'inbound', 640),
+    (2024, 'buerstadt', '06431003', 'Biblis', 'inbound', 390),
+    (2024, 'buerstadt', '08222000', 'Mannheim', 'inbound', 310),
+    (2024, 'buerstadt', '06431002', 'Bensheim', 'inbound', 260),
+    (2024, 'buerstadt', '06431010', 'Groß-Rohrheim', 'inbound', 190),
+
+    -- Lampertheim Outbound (Auspendler)
+    (2024, 'lampertheim', '08222000', 'Mannheim', 'outbound', 4650),
+    (2024, 'lampertheim', '07314000', 'Ludwigshafen am Rhein (BASF)', 'outbound', 2180),
+    (2024, 'lampertheim', '07319000', 'Worms', 'outbound', 1820),
+    (2024, 'lampertheim', '06412000', 'Frankfurt am Main', 'outbound', 950),
+    (2024, 'lampertheim', '06431005', 'Bürstadt', 'outbound', 680),
+    (2024, 'lampertheim', '08226101', 'Viernheim', 'outbound', 620),
+
+    -- Lampertheim Inbound (Einpendler)
+    (2024, 'lampertheim', '08222000', 'Mannheim', 'inbound', 1420),
+    (2024, 'lampertheim', '07319000', 'Worms', 'inbound', 1250),
+    (2024, 'lampertheim', '06431005', 'Bürstadt', 'inbound', 890),
+    (2024, 'lampertheim', '08226101', 'Viernheim', 'inbound', 540),
+
+    -- Biblis Outbound & Inbound
+    (2024, 'biblis', '07319000', 'Worms', 'outbound', 860),
+    (2024, 'biblis', '08222000', 'Mannheim', 'outbound', 640),
+    (2024, 'biblis', '06411000', 'Darmstadt', 'outbound', 410),
+    (2024, 'biblis', '06431005', 'Bürstadt', 'outbound', 390),
+    (2024, 'biblis', '06412000', 'Frankfurt am Main', 'outbound', 330),
+    (2024, 'biblis', '07319000', 'Worms', 'inbound', 320),
+    (2024, 'biblis', '06431005', 'Bürstadt', 'inbound', 240)
+ON CONFLICT (year, home_municipality_id, partner_ags, direction) DO UPDATE SET
+    commuter_count = EXCLUDED.commuter_count,
+    recorded_at = NOW();
+
+-- Seed Educational & Childcare Infrastructure (Schools & Kindergartens)
+INSERT INTO educational_facilities (
+    id, name, facility_type, municipality_id, district, address, latitude, longitude,
+    operator, operator_name, capacity, current_enrollment, min_age_years, max_age_years,
+    opening_hours, website_url, reporting_year
+)
+VALUES
+    -- Bürstadt Schools
+    ('sch-bst-eks', 'Erich-Kästner-Schule (IGS)', 'gesamtschule', 'buerstadt', 'Bürstadt', 'Wolfstraße 23, 68642 Bürstadt', 49.6483, 8.4615, 'kreis_bergstrasse', 'Kreis Bergstraße Schulamt', 980, 940, 10, 17, 'Mo-Fr 07:30–16:00', 'https://eks-buerstadt.de', 2025),
+    ('sch-bst-schillerschule', 'Schillerschule Bürstadt', 'grundschule', 'buerstadt', 'Bürstadt', 'Boxheimerhofstraße 22, 68642 Bürstadt', 49.6496, 8.4618, 'kreis_bergstrasse', 'Kreis Bergstraße', 380, 365, 6, 10, 'Mo-Fr 07:45–14:30', 'https://schillerschule-buerstadt.de', 2025),
+    ('sch-bst-astrid-lindgren', 'Astrid-Lindgren-Schule Bobstadt', 'grundschule', 'buerstadt', 'Bobstadt', 'Wolfsfahrtweg 2, 68642 Bürstadt-Bobstadt', 49.6642, 8.4478, 'kreis_bergstrasse', 'Kreis Bergstraße', 140, 128, 6, 10, 'Mo-Fr 07:45–13:30', 'https://als-bobstadt.de', 2025),
+
+    -- Bürstadt Kindergartens / Kitas
+    ('kita-bst-wichtelburg', 'Kita Wichtelburg', 'kita', 'buerstadt', 'Bürstadt', 'Rathausstraße 2, 68642 Bürstadt', 49.6420, 8.4558, 'stadt_buerstadt', 'Stadt Bürstadt', 110, 105, 1, 6, 'Mo-Fr 07:00–16:30', 'https://buerstadt.de', 2025),
+    ('kita-bst-sonnenschein', 'Kita Sonnenschein', 'kita', 'buerstadt', 'Bürstadt', 'Gartenstraße 14, 68642 Bürstadt', 49.6448, 8.4632, 'stadt_buerstadt', 'Stadt Bürstadt', 125, 120, 1, 6, 'Mo-Fr 07:00–17:00', 'https://buerstadt.de', 2025),
+    ('kita-bst-st-peter', 'Katholische Kita St. Peter', 'kita', 'buerstadt', 'Bürstadt', 'Wolfstraße 2, 68642 Bürstadt', 49.6438, 8.4525, 'kirche', 'Kath. Pfarrgemeinde St. Michael', 95, 92, 2, 6, 'Mo-Fr 07:30–16:30', NULL, 2025),
+    ('kita-bst-regenbogen', 'Kita Regenbogen Bobstadt', 'kita', 'buerstadt', 'Bobstadt', 'Sankt-Josef-Straße 10, 68642 Bürstadt-Bobstadt', 49.6628, 8.4468, 'stadt_buerstadt', 'Stadt Bürstadt', 85, 82, 1, 6, 'Mo-Fr 07:00–16:30', 'https://buerstadt.de', 2025),
+    ('kita-bst-riedrode', 'Waldkindergarten / Kita Riedrode', 'kita', 'buerstadt', 'Riedrode', 'Bahnhofstraße 34, 68642 Bürstadt-Riedrode', 49.6472, 8.4905, 'stadt_buerstadt', 'Stadt Bürstadt', 65, 60, 2, 6, 'Mo-Fr 07:30–15:00', 'https://buerstadt.de', 2025),
+
+    -- Lampertheim Schools
+    ('sch-la-lessing-gymnasium', 'Lessing-Gymnasium Lampertheim', 'gymnasium', 'lampertheim', 'Lampertheim', 'Biedensandstraße 55, 68623 Lampertheim', 49.5989, 8.4552, 'kreis_bergstrasse', 'Kreis Bergstraße', 1150, 1110, 10, 19, 'Mo-Fr 07:45–16:30', 'https://lgl.de', 2025),
+    ('sch-la-alfred-delp', 'Alfred-Delp-Schule (Haupt- & Realschule)', 'gesamtschule', 'lampertheim', 'Lampertheim', 'Carl-Lepper-Straße 7, 68623 Lampertheim', 49.5992, 8.4568, 'kreis_bergstrasse', 'Kreis Bergstraße', 720, 680, 10, 16, 'Mo-Fr 07:45–15:30', 'https://ads-lampertheim.de', 2025),
+    ('sch-la-pestalozzi', 'Pestalozzischule Lampertheim', 'grundschule', 'lampertheim', 'Lampertheim', 'Wilhelmstraße 61, 68623 Lampertheim', 49.5991, 8.4631, 'kreis_bergstrasse', 'Kreis Bergstraße', 340, 325, 6, 10, 'Mo-Fr 07:45–14:00', NULL, 2025),
+    ('sch-la-schiller-hofheim', 'Nibelungenschule Hofheim', 'grundschule', 'hofheim', 'Hofheim', 'Schulstraße 4, 68623 Lampertheim-Hofheim', 49.6586, 8.4121, 'stadt_worms', 'Stadt Worms Schulverwaltung', 130, 120, 6, 10, 'Mo-Fr 07:45–13:30', NULL, 2025),
+
+    -- Lampertheim Kindergartens / Kitas
+    ('kita-la-falterweg', 'Städtische Kita Falterweg', 'kita', 'lampertheim', 'Lampertheim', 'Falterweg 24, 68623 Lampertheim', 49.5971, 8.4691, 'stadt_lampertheim', 'Stadt Lampertheim', 130, 124, 1, 6, 'Mo-Fr 07:00–17:00', 'https://lampertheim.de', 2025),
+    ('kita-la-neuschloss', 'Kita Neuschloß', 'kita', 'lampertheim', 'Neuschloß', 'Ahornweg 12, 68623 Lampertheim-Neuschloß', 49.6012, 8.5165, 'stadt_lampertheim', 'Stadt Lampertheim', 75, 72, 2, 6, 'Mo-Fr 07:00–16:30', 'https://lampertheim.de', 2025),
+    ('kita-la-huettenfeld', 'Kita Hüttenfeld (Bürgerhaus)', 'kita', 'lampertheim', 'Hüttenfeld', 'Alfred-Delp-Straße 50, 68623 Lampertheim-Hüttenfeld', 49.5982, 8.5829, 'stadt_lampertheim', 'Stadt Lampertheim', 80, 78, 1, 6, 'Mo-Fr 07:00–16:30', 'https://lampertheim.de', 2025),
+
+    -- Biblis Schools & Kitas
+    ('sch-bib-weschnitzauen', 'Schule in den Weschnitzauen', 'grundschule', 'biblis', 'Biblis', 'Pfaffenau 4, 68647 Biblis', 49.6881, 8.4531, 'kreis_bergstrasse', 'Kreis Bergstraße', 320, 305, 6, 10, 'Mo-Fr 07:45–14:00', 'https://schule-biblis.de', 2025),
+    ('kita-bib-sonnenschein', 'Kommunale Kita Sonnenschein', 'kita', 'biblis', 'Biblis', 'Kirchstraße 28, 68647 Biblis', 49.6851, 8.4462, 'gemeinde_biblis', 'Gemeinde Biblis', 115, 110, 1, 6, 'Mo-Fr 07:00–16:30', 'https://biblis.de', 2025),
+    ('kita-bib-pusteblume-wattenheim', 'Kita Pusteblume Wattenheim', 'kita', 'biblis', 'Wattenheim', 'Rheinstraße 15, 68647 Biblis-Wattenheim', 49.6854, 8.4128, 'gemeinde_biblis', 'Gemeinde Biblis', 65, 62, 2, 6, 'Mo-Fr 07:30–16:00', 'https://biblis.de', 2025),
+
+    -- Groß-Rohrheim
+    ('sch-gr-lindenhof', 'Lindenhofschule Groß-Rohrheim', 'grundschule', 'gross-rohrheim', 'Groß-Rohrheim', 'Kornstraße 38, 68649 Groß-Rohrheim', 49.7182, 8.4791, 'kreis_bergstrasse', 'Kreis Bergstraße', 150, 142, 6, 10, 'Mo-Fr 07:45–13:30', NULL, 2025),
+    ('kita-gr-abenteuerland', 'Kita Abenteuerland Groß-Rohrheim', 'kita', 'gross-rohrheim', 'Groß-Rohrheim', 'Speyerer Straße 12, 68649 Groß-Rohrheim', 49.7168, 8.4755, 'gemeinde_gross_rohrheim', 'Gemeinde Groß-Rohrheim', 95, 90, 1, 6, 'Mo-Fr 07:00–16:30', NULL, 2025)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    facility_type = EXCLUDED.facility_type,
+    municipality_id = EXCLUDED.municipality_id,
+    district = EXCLUDED.district,
+    address = EXCLUDED.address,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    operator = EXCLUDED.operator,
+    operator_name = EXCLUDED.operator_name,
+    capacity = EXCLUDED.capacity,
+    current_enrollment = EXCLUDED.current_enrollment,
+    min_age_years = EXCLUDED.min_age_years,
+    max_age_years = EXCLUDED.max_age_years,
+    opening_hours = EXCLUDED.opening_hours,
+    website_url = EXCLUDED.website_url,
+    reporting_year = EXCLUDED.reporting_year;
+
+INSERT INTO collector_schema_versions(version) VALUES (20260918) ON CONFLICT DO NOTHING;
+

@@ -6,7 +6,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "./map.css";
 import { metricLabel } from "@/lib/telemetryData";
 import { createClusterContent, createMarkerContent, createTempPinContent, createTrainMarkerContent, createLevelCrossingMarkerContent, createWasteTruckMarkerContent, createTrafficIncidentMarkerContent } from "@/lib/mapMarker";
-import { CATEGORIES, markerCategory, observationLabel, parkingSummary, bikeSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, observationLabel, parkingSummary, bikeSummary, educationSummary, primaryReading, readingFreshness, temperatureColor, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer, type TemperaturePoint } from "@/lib/temperatureHeatmap";
 import { RIEDBAHN_TRACK, NIBELUNGENBAHN_TRACK, calculateRiedMobility } from "@/lib/railMobility";
 import { calculateWasteTruckMobility } from "@/lib/wasteTruckMobility";
@@ -365,14 +365,34 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const time = document.createElement("p"); time.textContent = observationLabel(reading, now);
       const parking = parkingSummary(node.readings);
       const bikes = bikeSummary(node.readings);
+      const education = educationSummary(node.readings);
       popup.append(title, tags);
+      if (node.address) {
+        const addr = document.createElement("p");
+        addr.className = "text-xs text-slate-400";
+        addr.textContent = node.address;
+        popup.append(addr);
+      }
       if (reading?.metric.startsWith("traffic_")) {
         const label = document.createElement("p");
         label.textContent = metricLabel(reading);
         popup.append(label);
       }
-      const isCustomSummary = (parking && reading?.metric.startsWith("parking_")) || (bikes && reading?.metric.startsWith("bike_"));
+      const isCustomSummary = (parking && reading?.metric.startsWith("parking_")) ||
+        (bikes && reading?.metric.startsWith("bike_")) ||
+        (education && node.categories.includes("education"));
       if (!isCustomSummary) popup.append(value, time);
+      if (education && node.categories.includes("education")) {
+        const summary = document.createElement("p");
+        summary.className = "map-popup-value";
+        summary.textContent = education.summary;
+        popup.append(summary);
+        for (const detail of education.details) {
+          const line = document.createElement("p");
+          line.textContent = detail;
+          popup.append(line);
+        }
+      }
       if (parking) {
         const summary = document.createElement("p");
         summary.className = "map-popup-value";
