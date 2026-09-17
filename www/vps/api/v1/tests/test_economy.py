@@ -1,8 +1,8 @@
 import sys
 import unittest
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, MagicMock
 from importlib.util import find_spec
+from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules and find_spec("psycopg_pool") is None:
     sys.modules["psycopg_pool"] = MagicMock()
@@ -73,10 +73,10 @@ class EconomyTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_get_economy_overview(self):
         self.cursor.fetchone.side_effect = [
-            (2640, 2380, 260), # registrations
-            (82500,),          # employees
-            (15,),             # companies count
-            (392.5, 380, 420), # tax stats
+            (2640, 2380, 260),  # registrations
+            (82500,),           # employees
+            (15,),              # companies count
+            (392.5, 380, 420),  # tax stats
         ]
         self.cursor.fetchall.return_value = [
             ("buerstadt", "Bürstadt", 380, 480, 9450000, 1085.50, 184, 26),
@@ -169,6 +169,24 @@ class EconomyTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(startups), 1)
         self.assertEqual(startups[0].id, "init-wfb")
         self.assertEqual(startups[0].organizer, "WFB Bergstraße")
+
+    async def test_upsert_company(self):
+        now = datetime.now(UTC)
+        self.cursor.fetchone.return_value = (now, now)
+        payload = IngestCompanyPayload(
+            id="comp-new",
+            name="New Tech GmbH",
+            municipality_id="buerstadt",
+            street_address="Teststr. 1",
+            postal_code="68642",
+            latitude=49.64,
+            longitude=8.45,
+            industry_sector="Software",
+            employee_range="10-49",
+        )
+        res = await upsert_company(payload, self.pool)
+        self.assertEqual(res.id, "comp-new")
+        self.assertEqual(res.name, "New Tech GmbH")
 
 
 if __name__ == "__main__":

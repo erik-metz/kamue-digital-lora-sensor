@@ -7,8 +7,8 @@ from typing import Annotated, Any
 
 import psycopg_pool
 from dependencies import get_db_pool, verify_api_key
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/economy", tags=["Economy & Companies"])
 
@@ -132,82 +132,81 @@ class IngestCompanyPayload(BaseModel):
 @router.get("/overview", response_model=EconomyOverviewResponse)
 async def get_economy_overview(pool: DbPool, year: int = Query(default=2024)):
     """Retrieve top-level macroeconomic KPIs for Kreis Bergstraße & key Ried municipalities."""
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            # County business registration summary
-            await cur.execute(
-                """
-                SELECT registrations_total, deregistrations_total, net_balance
-                FROM business_registrations
-                WHERE region_code = 'kreis-bergstrasse' AND year = %s
-                LIMIT 1
-                """,
-                (year,),
-            )
-            reg_row = await cur.fetchone()
-            reg_tot = reg_row[0] if reg_row else 2640
-            dereg_tot = reg_row[1] if reg_row else 2380
-            net_bal = reg_row[2] if reg_row else (reg_tot - dereg_tot)
+    async with pool.connection() as conn, conn.cursor() as cur:
+        # County business registration summary
+        await cur.execute(
+            """
+            SELECT registrations_total, deregistrations_total, net_balance
+            FROM business_registrations
+            WHERE region_code = 'kreis-bergstrasse' AND year = %s
+            LIMIT 1
+            """,
+            (year,),
+        )
+        reg_row = await cur.fetchone()
+        reg_tot = reg_row[0] if reg_row else 2640
+        dereg_tot = reg_row[1] if reg_row else 2380
+        net_bal = reg_row[2] if reg_row else (reg_tot - dereg_tot)
 
-            # County total SVB employees
-            await cur.execute(
-                """
-                SELECT COALESCE(SUM(employees_count), 82500)
-                FROM industry_employment
-                WHERE region_code = 'kreis-bergstrasse' AND year = %s
-                """,
-                (year,),
-            )
-            emp_row = await cur.fetchone()
-            total_emp = int(emp_row[0]) if emp_row and emp_row[0] else 82500
+        # County total SVB employees
+        await cur.execute(
+            """
+            SELECT COALESCE(SUM(employees_count), 82500)
+            FROM industry_employment
+            WHERE region_code = 'kreis-bergstrasse' AND year = %s
+            """,
+            (year,),
+        )
+        emp_row = await cur.fetchone()
+        total_emp = int(emp_row[0]) if emp_row and emp_row[0] else 82500
 
-            # Companies cataloged count
-            await cur.execute("SELECT COUNT(*) FROM companies")
-            comp_count_row = await cur.fetchone()
-            comp_count = comp_count_row[0] if comp_count_row else 0
+        # Companies cataloged count
+        await cur.execute("SELECT COUNT(*) FROM companies")
+        comp_count_row = await cur.fetchone()
+        comp_count = comp_count_row[0] if comp_count_row else 0
 
-            # Hebesatz statistics for the county
-            await cur.execute(
-                """
-                SELECT AVG(hebesatz_gewerbesteuer), MIN(hebesatz_gewerbesteuer), MAX(hebesatz_gewerbesteuer)
-                FROM municipality_tax_rates
-                WHERE year = %s
-                """,
-                (year,),
-            )
-            tax_stats = await cur.fetchone()
-            avg_hebesatz = round(float(tax_stats[0]), 1) if tax_stats and tax_stats[0] else 390.5
-            min_hebesatz = int(tax_stats[1]) if tax_stats and tax_stats[1] else 380
-            max_hebesatz = int(tax_stats[2]) if tax_stats and tax_stats[2] else 420
+        # Hebesatz statistics for the county
+        await cur.execute(
+            """
+            SELECT AVG(hebesatz_gewerbesteuer), MIN(hebesatz_gewerbesteuer), MAX(hebesatz_gewerbesteuer)
+            FROM municipality_tax_rates
+            WHERE year = %s
+            """,
+            (year,),
+        )
+        tax_stats = await cur.fetchone()
+        avg_hebesatz = round(float(tax_stats[0]), 1) if tax_stats and tax_stats[0] else 390.5
+        min_hebesatz = int(tax_stats[1]) if tax_stats and tax_stats[1] else 380
+        max_hebesatz = int(tax_stats[2]) if tax_stats and tax_stats[2] else 420
 
-            # Key municipalities highlights (Bürstadt, Lampertheim, Biblis, Bensheim, Lorsch, Viernheim)
-            await cur.execute(
-                """
-                SELECT m.id, m.name, t.hebesatz_gewerbesteuer, t.hebesatz_grundsteuer_b,
-                       t.revenue_gewerbesteuer_eur, t.tax_revenue_per_capita_eur,
-                       COALESCE(b.registrations_total, 0), COALESCE(b.net_balance, 0)
-                FROM municipalities m
-                LEFT JOIN municipality_tax_rates t ON m.id = t.municipality_id AND t.year = %s
-                LEFT JOIN business_registrations b ON m.id = b.region_code AND b.year = %s
-                WHERE m.id IN ('buerstadt', 'lampertheim', 'biblis', 'gross-rohrheim', 'bensheim', 'heppenheim', 'lorsch', 'viernheim')
-                ORDER BY t.revenue_gewerbesteuer_eur DESC NULLS LAST
-                """,
-                (year, year),
-            )
-            key_rows = await cur.fetchall()
-            key_munis = [
-                {
-                    "municipality_id": r[0],
-                    "name": r[1],
-                    "hebesatz_gewerbesteuer": r[2],
-                    "hebesatz_grundsteuer_b": r[3],
-                    "revenue_gewerbesteuer_eur": r[4],
-                    "tax_revenue_per_capita_eur": r[5],
-                    "registrations_total": r[6],
-                    "net_balance": r[7],
-                }
-                for r in key_rows
-            ]
+        # Key municipalities highlights (Bürstadt, Lampertheim, Biblis, Bensheim, Lorsch, Viernheim)
+        await cur.execute(
+            """
+            SELECT m.id, m.name, t.hebesatz_gewerbesteuer, t.hebesatz_grundsteuer_b,
+                   t.revenue_gewerbesteuer_eur, t.tax_revenue_per_capita_eur,
+                   COALESCE(b.registrations_total, 0), COALESCE(b.net_balance, 0)
+            FROM municipalities m
+            LEFT JOIN municipality_tax_rates t ON m.id = t.municipality_id AND t.year = %s
+            LEFT JOIN business_registrations b ON m.id = b.region_code AND b.year = %s
+            WHERE m.id IN ('buerstadt', 'lampertheim', 'biblis', 'gross-rohrheim', 'bensheim', 'heppenheim', 'lorsch', 'viernheim')
+            ORDER BY t.revenue_gewerbesteuer_eur DESC NULLS LAST
+            """,
+            (year, year),
+        )
+        key_rows = await cur.fetchall()
+        key_munis = [
+            {
+                "municipality_id": r[0],
+                "name": r[1],
+                "hebesatz_gewerbesteuer": r[2],
+                "hebesatz_grundsteuer_b": r[3],
+                "revenue_gewerbesteuer_eur": r[4],
+                "tax_revenue_per_capita_eur": r[5],
+                "registrations_total": r[6],
+                "net_balance": r[7],
+            }
+            for r in key_rows
+        ]
 
     return EconomyOverviewResponse(
         year=year,
@@ -255,10 +254,9 @@ async def list_companies(
 
     query += " ORDER BY c.is_headquarters DESC, c.name ASC"
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, tuple(params))
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, tuple(params))
+        rows = await cur.fetchall()
 
     return [
         CompanyResponse(
@@ -315,10 +313,9 @@ async def list_tax_rates(
 
     query += " ORDER BY t.year DESC, t.hebesatz_gewerbesteuer ASC, m.name ASC"
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, tuple(params))
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, tuple(params))
+        rows = await cur.fetchall()
 
     return [
         MunicipalityTaxRateResponse(
@@ -366,10 +363,9 @@ async def list_business_registrations(
 
     query += " ORDER BY year DESC, region_code ASC"
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, tuple(params))
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, tuple(params))
+        rows = await cur.fetchall()
 
     return [
         BusinessRegistrationResponse(
@@ -398,18 +394,17 @@ async def list_industry_structure(
     year: int = Query(default=2024, description="Reporting year"),
 ):
     """Retrieve employment structure by economic sector (WZ 2008 / NACE Rev. 2)."""
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                SELECT id, region_code, year, sector_code, sector_name, employees_count, share_percent, source
-                FROM industry_employment
-                WHERE region_code = %s AND year = %s
-                ORDER BY employees_count DESC
-                """,
-                (region_code.lower().strip(), year),
-            )
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            SELECT id, region_code, year, sector_code, sector_name, employees_count, share_percent, source
+            FROM industry_employment
+            WHERE region_code = %s AND year = %s
+            ORDER BY employees_count DESC
+            """,
+            (region_code.lower().strip(), year),
+        )
+        rows = await cur.fetchall()
 
     return [
         IndustryEmploymentResponse(
@@ -429,16 +424,15 @@ async def list_industry_structure(
 @router.get("/startups", response_model=list[StartupInitiativeResponse])
 async def list_startup_initiatives(pool: DbPool):
     """Retrieve regional startup support initiatives, grants, and incubators."""
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                SELECT id, name, category, organizer, description, url, funding_bracket, target_group, created_at
-                FROM startup_initiatives
-                ORDER BY name ASC
-                """
-            )
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            SELECT id, name, category, organizer, description, url, funding_bracket, target_group, created_at
+            FROM startup_initiatives
+            ORDER BY name ASC
+            """
+        )
+        rows = await cur.fetchall()
 
     return [
         StartupInitiativeResponse(
@@ -460,62 +454,61 @@ async def list_startup_initiatives(pool: DbPool):
 async def upsert_company(payload: IngestCompanyPayload, pool: DbPool):
     """Insert or update a major employer company record (Requires API Secret Key)."""
     now = datetime.now(UTC)
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                INSERT INTO companies (
-                    id, name, legal_form, municipality_id, district, street_address, postal_code,
-                    latitude, longitude, industry_sector, wz_code, employee_range, turnover_estimated_range,
-                    description, website, is_headquarters, source, source_url, updated_at
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (id) DO UPDATE SET
-                    name = EXCLUDED.name,
-                    legal_form = EXCLUDED.legal_form,
-                    municipality_id = EXCLUDED.municipality_id,
-                    district = EXCLUDED.district,
-                    street_address = EXCLUDED.street_address,
-                    postal_code = EXCLUDED.postal_code,
-                    latitude = EXCLUDED.latitude,
-                    longitude = EXCLUDED.longitude,
-                    industry_sector = EXCLUDED.industry_sector,
-                    wz_code = EXCLUDED.wz_code,
-                    employee_range = EXCLUDED.employee_range,
-                    turnover_estimated_range = EXCLUDED.turnover_estimated_range,
-                    description = EXCLUDED.description,
-                    website = EXCLUDED.website,
-                    is_headquarters = EXCLUDED.is_headquarters,
-                    source = EXCLUDED.source,
-                    source_url = EXCLUDED.source_url,
-                    updated_at = EXCLUDED.updated_at
-                RETURNING created_at, updated_at
-                """,
-                (
-                    payload.id,
-                    payload.name,
-                    payload.legal_form,
-                    payload.municipality_id,
-                    payload.district,
-                    payload.street_address,
-                    payload.postal_code,
-                    payload.latitude,
-                    payload.longitude,
-                    payload.industry_sector,
-                    payload.wz_code,
-                    payload.employee_range,
-                    payload.turnover_estimated_range,
-                    payload.description,
-                    payload.website,
-                    payload.is_headquarters,
-                    payload.source,
-                    payload.source_url,
-                    now,
-                ),
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            INSERT INTO companies (
+                id, name, legal_form, municipality_id, district, street_address, postal_code,
+                latitude, longitude, industry_sector, wz_code, employee_range, turnover_estimated_range,
+                description, website, is_headquarters, source, source_url, updated_at
             )
-            row = await cur.fetchone()
-            created_at = row[0] if row else now
-            updated_at = row[1] if row else now
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name,
+                legal_form = EXCLUDED.legal_form,
+                municipality_id = EXCLUDED.municipality_id,
+                district = EXCLUDED.district,
+                street_address = EXCLUDED.street_address,
+                postal_code = EXCLUDED.postal_code,
+                latitude = EXCLUDED.latitude,
+                longitude = EXCLUDED.longitude,
+                industry_sector = EXCLUDED.industry_sector,
+                wz_code = EXCLUDED.wz_code,
+                employee_range = EXCLUDED.employee_range,
+                turnover_estimated_range = EXCLUDED.turnover_estimated_range,
+                description = EXCLUDED.description,
+                website = EXCLUDED.website,
+                is_headquarters = EXCLUDED.is_headquarters,
+                source = EXCLUDED.source,
+                source_url = EXCLUDED.source_url,
+                updated_at = EXCLUDED.updated_at
+            RETURNING created_at, updated_at
+            """,
+            (
+                payload.id,
+                payload.name,
+                payload.legal_form,
+                payload.municipality_id,
+                payload.district,
+                payload.street_address,
+                payload.postal_code,
+                payload.latitude,
+                payload.longitude,
+                payload.industry_sector,
+                payload.wz_code,
+                payload.employee_range,
+                payload.turnover_estimated_range,
+                payload.description,
+                payload.website,
+                payload.is_headquarters,
+                payload.source,
+                payload.source_url,
+                now,
+            ),
+        )
+        row = await cur.fetchone()
+        created_at = row[0] if row else now
+        updated_at = row[1] if row else now
 
     return CompanyResponse(
         id=payload.id,
