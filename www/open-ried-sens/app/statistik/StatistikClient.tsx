@@ -8,14 +8,19 @@ import {
   Calendar,
   CheckCircle2,
   ChevronRight,
+  Clock,
   Compass,
+  Download,
   ExternalLink,
   HeartPulse,
+  History,
   Info,
   Landmark,
   MapPin,
   Pill,
+  PlusCircle,
   Recycle,
+  Search,
   Sparkles,
   Stethoscope,
   Trash2,
@@ -23,6 +28,7 @@ import {
   TrendingUp,
   Trophy,
   Users,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -31,12 +37,14 @@ import {
   type RegionalFacility,
   type SocialKpiSummary,
   type ZakbWasteStat,
+  generateIcsCalendar,
 } from "@/lib/regionalStats";
 import {
   parseSubpageParams,
   serializeSubpageParams,
   updateUrlDebounced,
 } from "@/lib/urlState";
+import EventCalendarWidget from "./EventCalendarWidget";
 
 interface Props {
   summaries: SocialKpiSummary[];
@@ -154,14 +162,104 @@ export default function StatistikClient({
     });
   }, [facilities, selectedMuni, facilityCategoryFilter]);
 
+  const [eventSearch, setEventSearch] = useState<string>("");
+  const [eventCategoryFilter, setEventCategoryFilter] = useState<string>("all");
+  const [eventMuniFilter, setEventMuniFilter] = useState<string>("all");
+  const [eventTimeHorizon, setEventTimeHorizon] = useState<
+    "upcoming" | "weekend" | "month" | "archive"
+  >("upcoming");
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
+  const [eventViewMode, setEventViewMode] = useState<"cards" | "calendar">("cards");
+  const [showSubmitModal, setShowSubmitModal] = useState<boolean>(false);
+  const [submitSuccess, setSubmitSuccess] = useState<boolean>(false);
+
+  const handleDownloadIcs = (evt: CulturalEvent) => {
+    try {
+      const icsData = generateIcsCalendar(evt);
+      const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${evt.id}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      // Fallback
+    }
+  };
+
   const filteredEvents = useMemo(() => {
-    return events.filter(
-      (e) =>
-        selectedMuni === "Kreis Bergstraße" ||
-        selectedMuni === "Hessen" ||
-        e.municipality.toLowerCase() === selectedMuni.toLowerCase()
-    );
-  }, [events, selectedMuni]);
+    return events.filter((e) => {
+      // 1. Municipality filter
+      if (eventMuniFilter !== "all") {
+        if (e.municipality.toLowerCase() !== eventMuniFilter.toLowerCase()) return false;
+      } else if (selectedMuni !== "Kreis Bergstraße" && selectedMuni !== "Hessen") {
+        if (e.municipality.toLowerCase() !== selectedMuni.toLowerCase()) return false;
+      }
+
+      // 2. Category filter
+      if (eventCategoryFilter !== "all" && e.category !== eventCategoryFilter) {
+        return false;
+      }
+
+      // 3. Search query
+      if (eventSearch.trim()) {
+        const q = eventSearch.toLowerCase().trim();
+        const matchTitle = e.title.toLowerCase().includes(q);
+        const matchDesc = (e.description || "").toLowerCase().includes(q);
+        const matchOrg = e.organizer.toLowerCase().includes(q);
+        const matchVenue = e.venue_name.toLowerCase().includes(q);
+        const matchStreet = (e.street_address || "").toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc && !matchOrg && !matchVenue && !matchStreet) {
+          return false;
+        }
+      }
+
+      // 4. Calendar Day filter
+      if (selectedCalendarDate) {
+        const startDay = e.start_time.split("T")[0];
+        const endDay = e.end_time ? e.end_time.split("T")[0] : startDay;
+        if (selectedCalendarDate < startDay || selectedCalendarDate > endDay) {
+          return false;
+        }
+      }
+
+      // 5. Time horizon
+      const nowMs = new Date("2026-09-17T00:00:00Z").getTime();
+      const startMs = new Date(e.start_time).getTime();
+      const endMs = e.end_time ? new Date(e.end_time).getTime() : startMs;
+
+      if (eventTimeHorizon === "archive") {
+        return e.status === "past" || endMs < nowMs;
+      } else {
+        if (e.status === "past" && endMs < nowMs) return false;
+
+        if (eventTimeHorizon === "weekend") {
+          const dayOfWeek = new Date(startMs).getDay(); // 0 Sun, 5 Fri, 6 Sat
+          const diffDays = (startMs - nowMs) / (1000 * 60 * 60 * 24);
+          const isWeekendDay = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
+          return diffDays >= -0.5 && diffDays <= 7 && isWeekendDay;
+        }
+
+        if (eventTimeHorizon === "month") {
+          const diffDays = (startMs - nowMs) / (1000 * 60 * 60 * 24);
+          return diffDays >= -0.5 && diffDays <= 35;
+        }
+      }
+
+      return true;
+    });
+  }, [
+    events,
+    selectedMuni,
+    eventMuniFilter,
+    eventCategoryFilter,
+    eventSearch,
+    selectedCalendarDate,
+    eventTimeHorizon,
+  ]);
 
   return (
     <div className="space-y-12">
@@ -632,72 +730,543 @@ export default function StatistikClient({
         </div>
       </section>
 
-      {/* 6. Section: Kultur- & Veranstaltungskalender (KAMÜ Spotlight) */}
-      <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+      {/* 6. Section: Kultur- & Veranstaltungskalender (KAMÜ Spotlight & Ried Events) */}
+      <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl relative overflow-hidden">
+        {/* Background glow decoration */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/5 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Section Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-800 pb-5">
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 text-xs font-semibold text-purple-400 uppercase tracking-wider">
               <Calendar className="w-4 h-4" /> Was ist los im Ried?
             </div>
-            <h3 className="text-xl font-bold text-slate-100">
-              Kultur- & Eventkalender (inkl. KAMÜ Kulturzentrum)
+            <h3 className="text-xl sm:text-2xl font-bold text-slate-100">
+              Ried-Veranstaltungskalender & Kultur
             </h3>
+            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
+              Geprüfte Termine aus Bürstadt, Lampertheim, Biblis & Groß-Rohrheim.
+              Echtdaten aus Rathäusern, Vereinen, Reservix, TIP Südhessen & historischem Archiv.
+            </p>
           </div>
-          <a
-            href="https://kamue.me"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 font-semibold"
-          >
-            KAMÜ Programm & Tickets
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => {
+                setShowSubmitModal(true);
+                setSubmitSuccess(false);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/40 text-purple-200 hover:text-white text-xs font-semibold transition-colors shadow-sm"
+            >
+              <PlusCircle className="w-3.5 h-3.5 text-purple-400" />
+              Event melden
+            </button>
+            <a
+              href="https://kamue.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-purple-300 hover:text-purple-200 text-xs font-semibold transition-colors shadow-sm"
+            >
+              KAMÜ Tickets
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredEvents.map((evt) => (
-            <div
-              key={evt.id}
-              className="p-5 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-col justify-between space-y-3 hover:border-slate-700 transition-colors"
+        {/* Search & Filter Control Bar */}
+        <div className="space-y-3 bg-slate-950/60 p-4 sm:p-5 rounded-2xl border border-slate-800/80">
+          {/* Top row: Live Search & View Mode Switch */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={eventSearch}
+                onChange={(e) => setEventSearch(e.target.value)}
+                placeholder="Veranstaltung, Verein oder Ort suchen (z. B. Kerwe, Spargel, CHAKO, Repair)..."
+                className="w-full bg-slate-900 border border-slate-750 focus:border-purple-500 rounded-xl pl-9 pr-9 py-2 text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-purple-500 transition-colors"
+              />
+              {eventSearch && (
+                <button
+                  type="button"
+                  onClick={() => setEventSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  title="Suche leeren"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 shrink-0 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => setEventViewMode("cards")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  eventViewMode === "cards"
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                ⊞ Kacheln
+              </button>
+              <button
+                type="button"
+                onClick={() => setEventViewMode("calendar")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  eventViewMode === "calendar"
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                📅 Kalender
+              </button>
+            </div>
+          </div>
+
+          {/* Second row: Time Horizon Tabs */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-800/60">
+            <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-purple-400" /> Zeitraum:
+            </span>
+            {[
+              { id: "upcoming", label: "Alle Zukünftigen" },
+              { id: "weekend", label: "Dieses Wochenende" },
+              { id: "month", label: "Nächste 30 Tage" },
+              { id: "archive", label: "📁 Historisches Archiv" },
+            ].map((th) => (
+              <button
+                key={th.id}
+                type="button"
+                onClick={() => {
+                  setEventTimeHorizon(th.id as any);
+                  setSelectedCalendarDate(null);
+                }}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  eventTimeHorizon === th.id
+                    ? "bg-purple-950 text-purple-200 border border-purple-600 font-bold"
+                    : "bg-slate-900 text-slate-400 hover:text-slate-200 hover:bg-slate-850 border border-slate-800"
+                }`}
+              >
+                {th.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Third row: Municipality & Category Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/60">
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[11px] font-semibold text-slate-400 mr-1 flex items-center gap-1">
+                <MapPin className="w-3 h-3 text-emerald-400" /> Ort:
+              </span>
+              {[
+                { id: "all", label: "Alle Orte" },
+                { id: "Bürstadt", label: "Bürstadt" },
+                { id: "Lampertheim", label: "Lampertheim" },
+                { id: "Biblis", label: "Biblis" },
+                { id: "Groß-Rohrheim", label: "Groß-Rohrheim" },
+              ].map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setEventMuniFilter(m.id)}
+                  className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                    eventMuniFilter === m.id
+                      ? "bg-emerald-950 text-emerald-200 border border-emerald-600 font-bold"
+                      : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-4 w-[1px] bg-slate-800 hidden md:block" />
+
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="text-[11px] font-semibold text-slate-400 mr-1">Rubrik:</span>
+              {[
+                { id: "all", label: "Alle Rubriken" },
+                { id: "festival", label: "Feste & Kerwe" },
+                { id: "concert", label: "Konzerte" },
+                { id: "theater", label: "Theater & Comedy" },
+                { id: "market", label: "Märkte" },
+                { id: "sports", label: "Sport & Vereine" },
+                { id: "civic", label: "Civic & ZAKB" },
+                { id: "workshop", label: "Workshops & KAMÜ" },
+              ].map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setEventCategoryFilter(c.id)}
+                  className={`px-2 py-0.5 rounded-lg text-[11px] transition-colors ${
+                    eventCategoryFilter === c.id
+                      ? "bg-slate-200 text-slate-950 font-bold shadow-sm"
+                      : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Optional Calendar Widget View */}
+        {eventViewMode === "calendar" && (
+          <div className="animate-in fade-in duration-200">
+            <EventCalendarWidget
+              events={events}
+              selectedDate={selectedCalendarDate}
+              onSelectDate={(d) => setSelectedCalendarDate(d)}
+            />
+          </div>
+        )}
+
+        {/* Filter Summary & Hits Count */}
+        <div className="flex items-center justify-between text-xs text-slate-400 px-1">
+          <div>
+            Gefunden: <strong className="text-slate-200">{filteredEvents.length}</strong>{" "}
+            {filteredEvents.length === 1 ? "Veranstaltung" : "Veranstaltungen"}
+            {selectedCalendarDate && (
+              <span className="ml-2 px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 text-[11px]">
+                am {selectedCalendarDate}
+              </span>
+            )}
+            {eventTimeHorizon === "archive" && (
+              <span className="ml-2 px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700 text-[11px]">
+                Historisches Archiv
+              </span>
+            )}
+          </div>
+
+          {(eventSearch ||
+            eventCategoryFilter !== "all" ||
+            eventMuniFilter !== "all" ||
+            selectedCalendarDate ||
+            eventTimeHorizon !== "upcoming") && (
+            <button
+              type="button"
+              onClick={() => {
+                setEventSearch("");
+                setEventCategoryFilter("all");
+                setEventMuniFilter("all");
+                setEventTimeHorizon("upcoming");
+                setSelectedCalendarDate(null);
+              }}
+              className="text-purple-400 hover:text-purple-300 font-medium inline-flex items-center gap-1"
             >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                    {evt.category}
-                  </span>
-                  {evt.is_free && (
-                    <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                      Eintritt frei
-                    </span>
-                  )}
+              <X className="w-3.5 h-3.5" /> Filter zurücksetzen
+            </button>
+          )}
+        </div>
+
+        {/* Event Cards Grid */}
+        {filteredEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredEvents.map((evt) => {
+              const startDate = new Date(evt.start_time);
+              const dayStr = String(startDate.getDate()).padStart(2, "0");
+              const monthStr = new Intl.DateTimeFormat("de-DE", { month: "short" })
+                .format(startDate)
+                .toUpperCase();
+              const timeStr = new Intl.DateTimeFormat("de-DE", {
+                hour: "2-digit",
+                minute: "2-digit",
+              }).format(startDate);
+              const isPast = evt.status === "past" || new Date(evt.start_time).getTime() < new Date("2026-09-17T00:00:00Z").getTime();
+
+              return (
+                <div
+                  key={evt.id}
+                  className={`p-5 rounded-2xl border flex flex-col justify-between space-y-4 transition-all hover:border-slate-700 ${
+                    isPast
+                      ? "bg-slate-950/50 border-slate-850 opacity-80"
+                      : "bg-slate-950/80 border-slate-800 shadow-md"
+                  }`}
+                >
+                  <div className="space-y-3">
+                    {/* Top Row: Date Pill + Category & Badges */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-12 h-12 rounded-xl bg-purple-950/70 border border-purple-800/60 flex flex-col items-center justify-center shrink-0 shadow-inner">
+                          <span className="text-[10px] uppercase font-bold text-purple-300 leading-none">
+                            {monthStr}
+                          </span>
+                          <span className="text-base font-extrabold text-white leading-none mt-0.5">
+                            {dayStr}
+                          </span>
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1 text-xs text-slate-300 font-semibold">
+                            <Clock className="w-3 h-3 text-purple-400" />
+                            {timeStr} Uhr
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-medium">
+                            {evt.municipality}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-end gap-1.5">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 capitalize">
+                          {evt.category}
+                        </span>
+                        {evt.is_free && (
+                          <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                            Eintritt frei
+                          </span>
+                        )}
+                        {isPast && (
+                          <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">
+                            Archiv
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Title & Description */}
+                    <div>
+                      <h4 className="text-base font-bold text-slate-100 leading-snug">
+                        {evt.title}
+                      </h4>
+                      {evt.description && (
+                        <p className="text-xs text-slate-300 leading-relaxed mt-1.5 line-clamp-3">
+                          {evt.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bottom: Location, Organizer & Action Buttons */}
+                  <div className="pt-3 border-t border-slate-800/80 flex flex-col gap-3">
+                    <div className="flex flex-col text-xs text-slate-400 space-y-0.5">
+                      <div className="text-slate-200 font-medium flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{evt.venue_name}</span>
+                        {evt.street_address && (
+                          <span className="text-slate-400 text-[11px]">
+                            ({evt.street_address})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-slate-400 text-[11px] pl-5">
+                        Veranstalter: {evt.organizer}
+                        {evt.source && (
+                          <span className="ml-1.5 text-slate-500 font-mono text-[10px]">
+                            · {evt.source.replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      {/* .ICS Calendar Download Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadIcs(evt)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-white text-xs font-medium transition-colors"
+                        title="Termin in Apple-, Google- oder Outlook-Kalender speichern (.ics)"
+                      >
+                        <Download className="w-3 h-3 text-purple-400" />
+                        In Kalender (.ics)
+                      </button>
+
+                      {/* External details link (if verified) */}
+                      {(evt.ticket_url || evt.event_url) && (
+                        <a
+                          href={evt.ticket_url || evt.event_url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-800/70 text-purple-200 hover:text-white text-xs font-semibold transition-colors shrink-0"
+                        >
+                          {evt.is_free ? "Details & Ort" : "Tickets & Info"}
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <h4 className="text-base font-bold text-slate-100">{evt.title}</h4>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  {evt.description}
+              );
+            })}
+          </div>
+        ) : (
+          <div className="p-8 text-center bg-slate-950/40 border border-slate-800 rounded-2xl space-y-3">
+            <Calendar className="w-8 h-8 text-purple-400/60 mx-auto" />
+            <h4 className="text-base font-bold text-slate-200">
+              Keine Termine für diesen Filter gefunden
+            </h4>
+            <p className="text-xs text-slate-400 max-w-md mx-auto">
+              Versuchen Sie, den Suchbegriff anzupassen oder schalten Sie auf{" "}
+              <strong className="text-purple-300">„Historisches Archiv“</strong> bzw.{" "}
+              <strong className="text-purple-300">„Alle Zukünftigen“</strong> um.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setEventSearch("");
+                setEventCategoryFilter("all");
+                setEventMuniFilter("all");
+                setEventTimeHorizon("upcoming");
+                setSelectedCalendarDate(null);
+              }}
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600/20 text-purple-300 hover:bg-purple-600/30 text-xs font-semibold transition-colors"
+            >
+              Filter zurücksetzen
+            </button>
+          </div>
+        )}
+
+        {/* Modal: Veranstaltung melden / vorschlagen */}
+        {showSubmitModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+            <div className="bg-slate-900 border border-slate-750 w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4 relative">
+              <button
+                type="button"
+                onClick={() => setShowSubmitModal(false)}
+                className="absolute right-5 top-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-purple-400 uppercase tracking-wider">
+                  <PlusCircle className="w-4 h-4" /> Ried-Community
+                </div>
+                <h3 className="text-lg font-bold text-slate-100">
+                  Veranstaltung einreichen
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Ihr Verein, Ihre Initiative oder Gemeinde plant ein Event im Ried?
+                  Reichen Sie Ihren Termin hier zur Prüfung in unserer Datenbank ein.
                 </p>
               </div>
 
-              <div className="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400">
-                <div className="space-y-0.5">
-                  <div className="text-slate-200 font-medium">{evt.venue_name}</div>
-                  <div className="text-slate-500">Veranstalter: {evt.organizer}</div>
-                </div>
-
-                {evt.ticket_url && (
-                  <a
-                    href={evt.ticket_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-purple-300 hover:bg-slate-850 hover:text-white transition-colors shrink-0"
+              {submitSuccess ? (
+                <div className="p-4 rounded-2xl bg-emerald-950/60 border border-emerald-800 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                  <h4 className="text-sm font-bold text-emerald-200">
+                    Vielen Dank für Ihre Einreichung!
+                  </h4>
+                  <p className="text-xs text-slate-300">
+                    Ihr Termin wird geprüft und bei nächster Synchronisation im regionalen
+                    Kalender eingepflegt.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowSubmitModal(false)}
+                    className="mt-2 px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold text-xs"
                   >
-                    Details & Anmeldung
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
+                    Schließen
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    setSubmitSuccess(true);
+                  }}
+                  className="space-y-3 text-xs"
+                >
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Titel der Veranstaltung *</label>
+                    <input
+                      required
+                      type="text"
+                      placeholder="z. B. TV Bürstadt Sommerfest"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-medium">Kommune *</label>
+                      <select
+                        required
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
+                      >
+                        <option value="Bürstadt">Bürstadt</option>
+                        <option value="Lampertheim">Lampertheim</option>
+                        <option value="Biblis">Biblis</option>
+                        <option value="Groß-Rohrheim">Groß-Rohrheim</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-medium">Datum *</label>
+                      <input
+                        required
+                        type="date"
+                        defaultValue="2026-10-15"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-medium">Veranstalter / Verein *</label>
+                      <input
+                        required
+                        type="text"
+                        placeholder="z. B. Turnverein 1891 Bürstadt"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-slate-300 font-medium">Kategorie</label>
+                      <select className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500">
+                        <option value="festival">Feste & Kerwe</option>
+                        <option value="concert">Konzert & Musik</option>
+                        <option value="theater">Theater & Comedy</option>
+                        <option value="sports">Sport</option>
+                        <option value="market">Markt</option>
+                        <option value="civic">Verein & Soziales</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Website / Info-Link (optional)</label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-medium">Kurze Beschreibung</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Worum geht es bei der Veranstaltung? Eintritt frei?"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowSubmitModal(false)}
+                      className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 text-xs font-semibold"
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md"
+                    >
+                      Termin vorschlagen
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </section>
 
       {/* 7. Bottom Navigation Link to Map */}

@@ -96,7 +96,14 @@ class CulturalEventResponse(BaseModel):
     category: str
     description: str | None = None
     ticket_url: str | None = None
+    event_url: str | None = None
+    image_url: str | None = None
+    street_address: str | None = None
+    postal_code: str | None = None
+    status: str = "scheduled"
     is_free: bool = False
+    is_archived: bool = False
+    source: str = "kamue_events"
 
 
 # --- Endpoints ---
@@ -265,12 +272,19 @@ async def get_regional_facilities(
 async def get_cultural_events(
     pool: DbPool,
     municipality: str | None = Query(default=None, description="Filter by municipality"),
-    category: str | None = Query(default=None, description="Filter by category (concert, workshop, sports, etc.)"),
+    category: str | None = Query(default=None, description="Filter by category (concert, workshop, sports, festival, etc.)"),
+    search: str | None = Query(default=None, description="Search term in title, description, organizer, or venue"),
+    include_past: bool = Query(default=False, description="Whether to include historical/past events"),
+    from_date: datetime | None = Query(default=None, description="Earliest start date/time"),
+    to_date: datetime | None = Query(default=None, description="Latest start date/time"),
+    limit: int = Query(default=100, ge=1, le=500, description="Max events to return"),
 ):
-    """Retrieve upcoming community and cultural events (including Kulturzentrum KAMÜ)."""
+    """Retrieve upcoming and historical community/cultural events in the Ried area."""
     query = """
         SELECT id, title, organizer, venue_id, venue_name, municipality,
-               start_time, end_time, category, description, ticket_url, is_free
+               start_time, end_time, category, description, ticket_url,
+               COALESCE(event_url, ticket_url) as event_url, image_url,
+               street_address, postal_code, status, is_free, is_archived, source
         FROM cultural_events
         WHERE 1=1
     """
@@ -281,8 +295,22 @@ async def get_cultural_events(
     if category:
         query += " AND category = %s"
         params.append(category)
+    if search:
+        query += " AND (title ILIKE %s OR description ILIKE %s OR organizer ILIKE %s OR venue_name ILIKE %s)"
+        s_pat = f"%{search}%"
+        params.extend([s_pat, s_pat, s_pat, s_pat])
+    if from_date:
+        query += " AND start_time >= %s"
+        params.append(from_date)
+    elif not include_past:
+        # Default: show upcoming events or events from the last 24h
+        query += " AND (end_time >= NOW() - INTERVAL '1 day' OR (end_time IS NULL AND start_time >= NOW() - INTERVAL '1 day'))"
+    if to_date:
+        query += " AND start_time <= %s"
+        params.append(to_date)
 
-    query += " ORDER BY start_time ASC"
+    query += " ORDER BY start_time ASC LIMIT %s"
+    params.append(limit)
 
     async with pool.connection() as conn, conn.cursor() as cur:
         await cur.execute(query, params)

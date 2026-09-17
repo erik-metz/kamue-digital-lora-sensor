@@ -72,10 +72,17 @@ export interface CulturalEvent {
   municipality: string;
   start_time: string;
   end_time?: string | null;
-  category: "concert" | "exhibition" | "workshop" | "festival" | "sports" | "civic";
+  category: "concert" | "exhibition" | "workshop" | "festival" | "sports" | "civic" | "market" | "theater";
   description?: string | null;
   ticket_url?: string | null;
+  event_url?: string | null;
+  image_url?: string | null;
+  street_address?: string | null;
+  postal_code?: string | null;
+  status?: "scheduled" | "cancelled" | "postponed" | "past";
   is_free: boolean;
+  is_archived?: boolean;
+  source?: string;
 }
 
 // --- Verified Regional Baseline Data ---
@@ -444,6 +451,214 @@ export const BASELINE_FACILITIES: RegionalFacility[] = [
 ];
 
 export const BASELINE_EVENTS: CulturalEvent[] = [
+  // 1. Bürstädter Kerwe (Großes Bürger- & Kirchweihfest)
+  {
+    id: "evt-bst-kerwe-2026",
+    title: "Bürstädter Kerwe (Kirchweih Bürstadt)",
+    organizer: "Stadt Bürstadt & Vereins-AG",
+    venue_id: "fac-bst-buergerhaus",
+    venue_name: "Bürgerhaus & Marktplatz Bürstadt",
+    municipality: "Bürstadt",
+    start_time: "2026-10-02T17:00:00+02:00",
+    end_time: "2026-10-05T23:00:00+02:00",
+    category: "festival",
+    description: "Traditionelles Bürger- und Kirchweihfest mit großem Kerwe-Umzug, Fahrgeschäften auf dem Marktplatz, Live-Musik und Ständen der Bürstädter Vereine.",
+    ticket_url: "https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender",
+    event_url: "https://www.buerstadt.de",
+    street_address: "Rathausstraße 2",
+    postal_code: "68642",
+    status: "scheduled",
+    is_free: true,
+    is_archived: false,
+    source: "stadt_buerstadt",
+  },
+  // 2. Chako Habekost (Kulturbeirat Bürstadt / Reservix)
+  {
+    id: "evt-bst-chako-2026",
+    title: "Christian „CHAKO“ Habekost – Es kummt wie’s kummt",
+    organizer: "Kulturbeirat Bürstadt",
+    venue_id: "fac-bst-buergerhaus",
+    venue_name: "Bürgerhaus Bürstadt",
+    municipality: "Bürstadt",
+    start_time: "2026-11-05T20:00:00+01:00",
+    end_time: "2026-11-05T22:30:00+01:00",
+    category: "theater",
+    description: "Neues Comedy- und Mundart-Soloprogramm des Kurpfälzer Kult-Kabarettisten live im Bürstädter Bürgerhaus.",
+    ticket_url: "https://kulturbeirat-buerstadt.reservix.de",
+    event_url: "https://www.reservix.de",
+    street_address: "Rathausstraße 2",
+    postal_code: "68642",
+    status: "scheduled",
+    is_free: false,
+    is_archived: false,
+    source: "reservix",
+  },
+  // 3. Bürstädter Stadtlauf (TSG Bürstadt)
+  {
+    id: "evt-bst-stadtlauf-2026",
+    title: "34. Bürstädter Stadtlauf & Schülercup",
+    organizer: "TSG 1855 Bürstadt e.V.",
+    venue_id: "fac-bst-sportpark",
+    venue_name: "Sportpark Bürstadt",
+    municipality: "Bürstadt",
+    start_time: "2026-11-08T09:30:00+01:00",
+    end_time: "2026-11-08T14:00:00+01:00",
+    category: "sports",
+    description: "Traditioneller Volkslauf mit 5 km, 10 km und Schülerstaffeln der TSG 1855 Bürstadt durch das Stadtgebiet.",
+    ticket_url: "https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender",
+    event_url: "https://tsg-buerstadt.de",
+    street_address: "Wasserwerkstraße 4",
+    postal_code: "68642",
+    status: "scheduled",
+    is_free: false,
+    is_archived: false,
+    source: "tsg_buerstadt",
+  },
+  // 4. Bürstadt im Advent
+  {
+    id: "evt-bst-advent-2026",
+    title: "Bürstadt im Advent & Kunsthandwerkermarkt",
+    organizer: "Stadt Bürstadt",
+    venue_id: "fac-bst-buergerhaus",
+    venue_name: "Historisches Rathaus & Marktplatz",
+    municipality: "Bürstadt",
+    start_time: "2026-12-04T17:00:00+01:00",
+    end_time: "2026-12-06T20:00:00+01:00",
+    category: "market",
+    description: "Festliche Budenstadt rund um das historische Rathaus Bürstadt mit Kunsthandwerk, Chormusik und winterlichen Spezialitäten.",
+    ticket_url: "https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender",
+    event_url: "https://www.buerstadt.de",
+    street_address: "Rathausstraße 2",
+    postal_code: "68642",
+    status: "scheduled",
+    is_free: true,
+    is_archived: false,
+    source: "stadt_buerstadt",
+  },
+  // 5. Lampertheimer Spargelfest (Historisches Referenz-Event 2026)
+  {
+    id: "evt-la-spargelfest-2026",
+    title: "Lampertheimer Spargelfest",
+    organizer: "Stadt Lampertheim (Fachbereich Kultur & Stadtmarketing)",
+    venue_id: "fac-la-altrheinhalle",
+    venue_name: "Schillerplatz, Europaplatz & Domgasse",
+    municipality: "Lampertheim",
+    start_time: "2026-06-12T16:00:00+02:00",
+    end_time: "2026-06-14T23:00:00+02:00",
+    category: "festival",
+    description: "Das größte traditionelle Volksfest der Spargelstadt Lampertheim mit Spargelkönigin, Live-Bühnen, Gastromeile und Kunsthandwerk.",
+    ticket_url: "https://www.lampertheim.de",
+    event_url: "https://www.lampertheim.de",
+    street_address: "Schillerplatz",
+    postal_code: "68623",
+    status: "past",
+    is_free: true,
+    is_archived: false,
+    source: "stadt_lampertheim",
+  },
+  // 6. Dance Masters (Hans-Pfeiffer-Halle Lampertheim / Reservix)
+  {
+    id: "evt-la-dance-masters-2027",
+    title: "DANCE MASTERS! Best of Irish Dance",
+    organizer: "Reset Production",
+    venue_id: "fac-la-altrheinhalle",
+    venue_name: "Hans-Pfeiffer-Halle Lampertheim",
+    municipality: "Lampertheim",
+    start_time: "2027-01-31T19:00:00+01:00",
+    end_time: "2027-01-31T21:30:00+01:00",
+    category: "concert",
+    description: "Die mitreißende Stepptanzerfolgs-Show live in Lampertheim mit original irischen Stepptänzern und Live-Band.",
+    ticket_url: "https://www.reservix.de",
+    event_url: "https://www.lampertheim.de",
+    street_address: "Weidweg 4",
+    postal_code: "68623",
+    status: "scheduled",
+    is_free: false,
+    is_archived: false,
+    source: "reservix",
+  },
+  // 7. Lampertheimer Weihnachtsmarkt am Dom
+  {
+    id: "evt-la-weihnachtsmarkt-2026",
+    title: "Lampertheimer Weihnachtsmarkt am Dom",
+    organizer: "Stadt Lampertheim & Gewerbeverein",
+    venue_id: "fac-la-altrheinhalle",
+    venue_name: "Domplatz & St. Andreas Lampertheim",
+    municipality: "Lampertheim",
+    start_time: "2026-11-27T16:00:00+01:00",
+    end_time: "2026-11-29T21:00:00+01:00",
+    category: "market",
+    description: "Atmosphärischer Adventsmarkt vor der Kulisse der Domkirche mit regionalen Ausstellern und Bühnenprogramm.",
+    ticket_url: "https://www.lampertheim.de",
+    event_url: "https://www.lampertheim.de",
+    street_address: "Römerstraße 102",
+    postal_code: "68623",
+    status: "scheduled",
+    is_free: true,
+    is_archived: false,
+    source: "stadt_lampertheim",
+  },
+  // 8. Bibliser Gurkenfest (Historisches Referenz-Event 2026)
+  {
+    id: "evt-bib-gurkenfest-2026",
+    title: "72. Bibliser Gurkenfest & Inthronisation",
+    organizer: "Wirtschafts- und Verkehrsverein Biblis e.V.",
+    venue_name: "Rathausplatz & Bürgerzentrum Biblis",
+    municipality: "Biblis",
+    start_time: "2026-06-26T18:00:00+02:00",
+    end_time: "2026-06-29T22:00:00+02:00",
+    category: "festival",
+    description: "Traditionelles Heimat- und Straßenfest mit Inthronisation der neuen Bibliser Gurkenkönigin, Festmeile und Feuerwerk.",
+    ticket_url: "https://www.biblis.eu",
+    event_url: "https://www.biblis.eu",
+    street_address: "Darmstädter Straße 25",
+    postal_code: "68647",
+    status: "past",
+    is_free: true,
+    is_archived: false,
+    source: "gemeinde_biblis",
+  },
+  // 9. Bibliser Weihnachtsmarkt
+  {
+    id: "evt-bib-weihnachtsmarkt-2026",
+    title: "Bibliser Weihnachtsmarkt",
+    organizer: "Bürgerstiftung & Vereine Biblis",
+    venue_name: "Darmstädter Straße & Bürgerzentrum",
+    municipality: "Biblis",
+    start_time: "2026-11-28T14:00:00+01:00",
+    end_time: "2026-11-29T20:00:00+01:00",
+    category: "market",
+    description: "Vorweihnachtliche Stimmung mit lokalen Chören, Vereinen und regionalen Spezialitäten im Bürgerzentrum Biblis.",
+    ticket_url: "https://www.biblis.eu",
+    event_url: "https://www.biblis.eu",
+    street_address: "Darmstädter Straße 25",
+    postal_code: "68647",
+    status: "scheduled",
+    is_free: true,
+    is_archived: false,
+    source: "gemeinde_biblis",
+  },
+  // 10. Rohremer Kerb (Groß-Rohrheim)
+  {
+    id: "evt-gr-rohremer-kerb-2026",
+    title: "Rohremer Kerb (Kirchweih Groß-Rohrheim)",
+    organizer: "Gemeinde & Vereinsring Groß-Rohrheim",
+    venue_name: "Bürgerhalle & Festplatz Groß-Rohrheim",
+    municipality: "Groß-Rohrheim",
+    start_time: "2026-10-02T18:00:00+02:00",
+    end_time: "2026-10-05T22:00:00+02:00",
+    category: "festival",
+    description: "Traditionelle Rohremer Kirchweih mit Kerwe-Gottesdienst, Aufstellen des Kerwebaums, Kerweredd und Tanzabend in der Bürgerhalle.",
+    ticket_url: "https://www.gross-rohrheim.de",
+    event_url: "https://www.gross-rohrheim.de",
+    street_address: "Kornstraße 1",
+    postal_code: "68649",
+    status: "scheduled",
+    is_free: true,
+    is_archived: false,
+    source: "gross_rohrheim",
+  },
+  // 11. Open Ried Sens Hackathon Infoabend (KAMÜ)
   {
     id: "evt-kamue-hackathon-info",
     title: "Open Ried Sens & Smart City Hackathon Infoabend",
@@ -454,10 +669,17 @@ export const BASELINE_EVENTS: CulturalEvent[] = [
     start_time: "2026-10-15T18:30:00+02:00",
     end_time: "2026-10-15T21:30:00+02:00",
     category: "workshop",
-    description: "Einführung in die offenen Sensordaten, API-Zugriff, Sensorknoten-Bau und Themen für den regionalen Ried-Hackathon.",
-    ticket_url: "https://kamue.me/events/hackathon-kickoff",
+    description: "Einführung in die offenen Sensordaten, REST-API-Zugriff, Sensorknoten-Bau und Themen für den regionalen Ried-Hackathon.",
+    ticket_url: "https://kamue.me",
+    event_url: "https://kamue.me",
+    street_address: "Mainstraße",
+    postal_code: "68642",
+    status: "scheduled",
     is_free: true,
+    is_archived: false,
+    source: "kamue_events",
   },
+  // 12. Ried Acoustic Session (KAMÜ)
   {
     id: "evt-kamue-live-acoustic",
     title: "Ried Acoustic Session – Lokale Singer/Songwriter",
@@ -468,51 +690,56 @@ export const BASELINE_EVENTS: CulturalEvent[] = [
     start_time: "2026-10-24T20:00:00+02:00",
     end_time: "2026-10-24T23:00:00+02:00",
     category: "concert",
-    description: "Gemütlicher Live-Musikabend mit Künstlern aus dem Ried und der Metropolregion Rhein-Neckar.",
-    ticket_url: "https://kamue.me/tickets",
+    description: "Gemütlicher Live-Musikabend mit regionalen Singer/Songwritern aus dem Ried und der Metropolregion Rhein-Neckar.",
+    ticket_url: "https://kamue.me",
+    event_url: "https://kamue.me",
+    street_address: "Mainstraße",
+    postal_code: "68642",
+    status: "scheduled",
     is_free: false,
+    is_archived: false,
+    source: "kamue_events",
   },
-  {
-    id: "evt-bst-stadtlauf",
-    title: "34. Bürstädter Stadtlauf & Schülercup",
-    organizer: "TSG Bürstadt / Stadt Bürstadt",
-    venue_id: "fac-bst-sportpark",
-    venue_name: "Sportpark Bürstadt",
-    municipality: "Bürstadt",
-    start_time: "2026-11-08T09:30:00+01:00",
-    end_time: "2026-11-08T14:00:00+01:00",
-    category: "sports",
-    description: "Traditioneller Volkslauf mit 5 km, 10 km und Schülerstaffeln durch Bürstadt.",
-    ticket_url: "https://buerstadt.de/stadtlauf",
-    is_free: false,
-  },
-  {
-    id: "evt-la-spargel-herbst",
-    title: "Lampertheimer Erntedank- & Spargel-Kulturabend",
-    organizer: "Stadt Lampertheim",
-    venue_id: "fac-la-altrheinhalle",
-    venue_name: "Altrheinhalle Lampertheim",
-    municipality: "Lampertheim",
-    start_time: "2026-10-18T17:00:00+02:00",
-    end_time: "2026-10-18T22:00:00+02:00",
-    category: "festival",
-    description: "Regionales Kulturprogramm, Musik der Stadtkapelle und kulinarische Ried-Spezialitäten.",
-    ticket_url: "https://lampertheim.de/veranstaltungen",
-    is_free: true,
-  },
+  // 13. ZAKB Repair-Café
   {
     id: "evt-zakb-repair-cafe",
-    title: "ZAKB Repair-Café & Zero-Waste Workshop",
-    organizer: "ZAKB & Bürgerstiftung",
+    title: "ZAKB Repair-Café & Nachhaltigkeitswerkstatt",
+    organizer: "ZAKB & Bürgerstiftung Bürstadt",
     venue_id: "fac-bst-buergerhaus",
     venue_name: "Bürgerhaus Bürstadt",
     municipality: "Bürstadt",
     start_time: "2026-11-14T14:00:00+01:00",
     end_time: "2026-11-14T17:30:00+01:00",
     category: "civic",
-    description: "Gemeinsam defekte Haushaltsgeräte, Fahrräder und Elektronik reparieren statt wegwerfen.",
-    ticket_url: "https://zakb.de/repair-cafe",
+    description: "Gemeinsam defekte Haushaltsgeräte, Fahrräder und Elektronik reparieren statt wegwerfen – unterstützt von ehrenamtlichen Experten.",
+    ticket_url: "https://www.zakb.de",
+    event_url: "https://www.zakb.de",
+    street_address: "Rathausstraße 2",
+    postal_code: "68642",
+    status: "scheduled",
     is_free: true,
+    is_archived: false,
+    source: "zakb_bergstrasse",
+  },
+  // 14. Ried-Spargelwanderung (Historisches Referenz-Event 2026)
+  {
+    id: "evt-bst-spargelwanderung-2026",
+    title: "Ried-Spargelwanderung Bürstadt / Lampertheim",
+    organizer: "Bauernverband & Touristikgemeinschaft Ried",
+    venue_name: "Feldflur Bürstadt – Lampertheim (Spargelhöfe)",
+    municipality: "Bürstadt",
+    start_time: "2026-05-01T10:00:00+02:00",
+    end_time: "2026-05-01T18:00:00+02:00",
+    category: "festival",
+    description: "Traditionelle Wanderung auf den Feldwegen zwischen Bürstadt und Lampertheim mit Genussstationen regionaler Spargelanbauer.",
+    ticket_url: "https://www.buerstadt.de",
+    event_url: "https://www.buerstadt.de",
+    street_address: "Feldflur Ried",
+    postal_code: "68642",
+    status: "past",
+    is_free: true,
+    is_archived: false,
+    source: "tourismus_ried",
   },
 ];
 
@@ -577,10 +804,26 @@ export async function fetchRegionalFacilities(category?: string, municipality?: 
   }
 }
 
-export async function fetchCulturalEvents(municipality?: string): Promise<CulturalEvent[]> {
+export interface FetchCulturalEventsOptions {
+  municipality?: string;
+  category?: string;
+  search?: string;
+  includePast?: boolean;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export async function fetchCulturalEvents(options?: string | FetchCulturalEventsOptions): Promise<CulturalEvent[]> {
+  const opts: FetchCulturalEventsOptions = typeof options === "string" ? { municipality: options } : (options || {});
   try {
     const url = new URL("/api/v1/social/events", env.BACKEND_API_URL);
-    if (municipality && municipality !== "all") url.searchParams.set("municipality", municipality);
+    if (opts.municipality && opts.municipality !== "all") url.searchParams.set("municipality", opts.municipality);
+    if (opts.category && opts.category !== "all") url.searchParams.set("category", opts.category);
+    if (opts.search) url.searchParams.set("search", opts.search);
+    if (opts.includePast) url.searchParams.set("include_past", "true");
+    if (opts.fromDate) url.searchParams.set("from_date", opts.fromDate);
+    if (opts.toDate) url.searchParams.set("to_date", opts.toDate);
+
     const res = await fetch(url, {
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
@@ -588,11 +831,67 @@ export async function fetchCulturalEvents(municipality?: string): Promise<Cultur
     if (!res.ok) throw new Error("Events request failed");
     return await res.json();
   } catch {
-    if (municipality && municipality !== "all") {
-      return BASELINE_EVENTS.filter(e => e.municipality.toLowerCase() === municipality.toLowerCase());
+    let events = BASELINE_EVENTS;
+    if (opts.municipality && opts.municipality !== "all") {
+      events = events.filter(e => e.municipality.toLowerCase() === opts.municipality!.toLowerCase());
     }
-    return BASELINE_EVENTS;
+    if (opts.category && opts.category !== "all") {
+      events = events.filter(e => e.category === opts.category);
+    }
+    if (opts.search) {
+      const q = opts.search.toLowerCase();
+      events = events.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        (e.description && e.description.toLowerCase().includes(q)) ||
+        e.organizer.toLowerCase().includes(q) ||
+        e.venue_name.toLowerCase().includes(q)
+      );
+    }
+    if (!opts.includePast) {
+      // Default: exclude past events (status past or ended before today)
+      const now = new Date("2026-09-17T00:00:00Z").getTime();
+      events = events.filter(e => {
+        if (e.status === "past") return false;
+        const end = e.end_time ? new Date(e.end_time).getTime() : new Date(e.start_time).getTime();
+        return end >= now - 86400000;
+      });
+    }
+    return events;
   }
+}
+
+/**
+ * Generates an RFC 5545 iCalendar (.ics) string for 1-click addition to Apple/Google/Outlook calendar.
+ */
+export function generateIcsCalendar(event: CulturalEvent): string {
+  const formatDate = (iso: string) => {
+    return new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  };
+
+  const dtStart = formatDate(event.start_time);
+  const dtEnd = event.end_time ? formatDate(event.end_time) : dtStart;
+  const location = [event.venue_name, event.street_address, `${event.postal_code || ""} ${event.municipality}`].filter(Boolean).join(", ");
+  const cleanDesc = (event.description || "").replace(/\n/g, "\\n");
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Open Ried Sens//Veranstaltungen Hessen-Ried//DE",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:${event.id}@open-ried-sens.de`,
+    `DTSTAMP:${formatDate(new Date().toISOString())}`,
+    `DTSTART:${dtStart}`,
+    `DTEND:${dtEnd}`,
+    `SUMMARY:${event.title}`,
+    `DESCRIPTION:${cleanDesc}\\nVeranstalter: ${event.organizer}`,
+    `LOCATION:${location}`,
+    event.ticket_url || event.event_url ? `URL:${event.ticket_url || event.event_url}` : "",
+    "STATUS:CONFIRMED",
+    "END:VEVENT",
+    "END:VCALENDAR",
+  ].filter(Boolean).join("\r\n");
 }
 
 /**

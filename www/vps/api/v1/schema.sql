@@ -1546,15 +1546,24 @@ CREATE TABLE IF NOT EXISTS cultural_events (
     municipality VARCHAR(64) NOT NULL,
     start_time TIMESTAMPTZ NOT NULL,
     end_time TIMESTAMPTZ,
-    category VARCHAR(64) NOT NULL,     -- 'concert', 'exhibition', 'workshop', 'festival', 'sports', 'civic'
+    category VARCHAR(64) NOT NULL,     -- 'concert', 'exhibition', 'workshop', 'festival', 'sports', 'civic', 'market', 'theater'
     description TEXT,
     ticket_url TEXT,
+    event_url TEXT,
+    image_url TEXT,
+    street_address TEXT,
+    postal_code VARCHAR(16),
+    status VARCHAR(32) DEFAULT 'scheduled', -- 'scheduled', 'cancelled', 'postponed', 'past'
     is_free BOOLEAN DEFAULT FALSE,
+    is_archived BOOLEAN DEFAULT FALSE,
     source VARCHAR(64) DEFAULT 'kamue_events',
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_events_time ON cultural_events (start_time ASC);
+CREATE INDEX IF NOT EXISTS idx_events_muni_start ON cultural_events (municipality, start_time DESC);
+CREATE INDEX IF NOT EXISTS idx_events_source ON cultural_events (source);
 
 -- Seed Municipal Social Statistics (Unemployment, SGB II, Healthcare Density, Associations, Tourism)
 INSERT INTO municipal_statistics (
@@ -1717,21 +1726,65 @@ ON CONFLICT (id) DO UPDATE SET
     extra_attributes = EXCLUDED.extra_attributes,
     updated_at = NOW();
 
--- Seed Cultural & Community Events (Featuring KAMÜ Kulturzentrum)
+-- Seed Cultural & Community Events (Authentic Ried Events & KAMÜ Spotlight)
 INSERT INTO cultural_events (
-    id, title, organizer, venue_id, venue_name, municipality, start_time, end_time, category, description, ticket_url, is_free
+    id, title, organizer, venue_id, venue_name, municipality, start_time, end_time, category, description, ticket_url, event_url, street_address, postal_code, status, is_free, is_archived, source
 )
 VALUES
-    ('evt-kamue-hackathon-info', 'Open Ried Sens & Smart City Hackathon Infoabend', 'KAMÜ Kulturzentrum', 'fac-kamue-kulturzentrum', 'KAMÜ Kulturzentrum Bürstadt', 'Bürstadt', '2026-10-15 18:30:00+02', '2026-10-15 21:30:00+02', 'workshop', 'Einführung in die offenen Sensordaten, API-Zugriff, Sensorknoten-Bau und Themen für den regionalen Ried-Hackathon.', 'https://kamue.me/events/hackathon-kickoff', TRUE),
-    ('evt-kamue-live-acoustic', 'Ried Acoustic Session – Lokale Singer/Songwriter', 'KAMÜ Kulturzentrum', 'fac-kamue-kulturzentrum', 'KAMÜ Kulturzentrum Bürstadt', 'Bürstadt', '2026-10-24 20:00:00+02', '2026-10-24 23:00:00+02', 'concert', 'Gemütlicher Live-Musikabend mit Künstlern aus dem Ried und der Metropolregion Rhein-Neckar.', 'https://kamue.me/tickets', FALSE),
-    ('evt-bst-stadtlauf', '34. Bürstädter Stadtlauf & Schülercup', 'TSG Bürstadt / Stadt Bürstadt', 'fac-bst-sportpark', 'Sportpark Bürstadt & Bürgerhaus', 'Bürstadt', '2026-11-08 09:30:00+01', '2026-11-08 14:00:00+01', 'sports', 'Traditioneller Volkslauf mit 5 km, 10 km und Schülerstaffeln durch Bürstadt.', 'https://buerstadt.de/stadtlauf', FALSE),
-    ('evt-la-spargel-herbst', 'Lampertheimer Erntedank- & Spargel-Kulturabend', 'Stadt Lampertheim', 'fac-la-altrheinhalle', 'Altrheinhalle Lampertheim', 'Lampertheim', '2026-10-18 17:00:00+02', '2026-10-18 22:00:00+02', 'festival', 'Regionales Kulturprogramm, Musik der Stadtkapelle und kulinarische Ried-Spezialitäten.', 'https://lampertheim.de/veranstaltungen', TRUE),
-    ('evt-zakb-repair-cafe', 'ZAKB Repair-Café & Zero-Waste Workshop', 'ZAKB & Bürgerstiftung', 'fac-bst-buergerhaus', 'Bürgerhaus Bürstadt', 'Bürstadt', '2026-11-14 14:00:00+01', '2026-11-14 17:30:00+01', 'civic', 'Gemeinsam defekte Haushaltsgeräte, Fahrräder und Elektronik reparieren statt wegwerfen.', 'https://zakb.de/repair-cafe', TRUE)
+    -- 1. Bürstädter Kerwe (Traditionelles Kirchweihfest)
+    ('evt-bst-kerwe-2026', 'Bürstädter Kerwe (Kirchweih Bürstadt)', 'Stadt Bürstadt & Vereins-AG', 'fac-bst-buergerhaus', 'Bürgerhaus & Marktplatz Bürstadt', 'Bürstadt', '2026-10-02 17:00:00+02', '2026-10-05 23:00:00+02', 'festival', 'Traditionelles Bürger- und Kirchweihfest mit Kerwe-Umzug, Fahrgeschäften auf dem Marktplatz, Live-Musik und Ständen der Bürstädter Vereine.', 'https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender', 'https://www.buerstadt.de', 'Rathausstraße 2', '68642', 'scheduled', TRUE, FALSE, 'stadt_buerstadt'),
+
+    -- 2. Chako Habekost (Kulturbeirat Bürstadt / Reservix)
+    ('evt-bst-chako-2026', 'Christian „CHAKO“ Habekost – Es kummt wie’s kummt', 'Kulturbeirat Bürstadt', 'fac-bst-buergerhaus', 'Bürgerhaus Bürstadt', 'Bürstadt', '2026-11-05 20:00:00+01', '2026-11-05 22:30:00+01', 'theater', 'Neues Comedy- und Mundart-Soloprogramm des Kurpfälzer Kult-Kabarettisten im Bürstädter Bürgerhaus.', 'https://kulturbeirat-buerstadt.reservix.de', 'https://www.reservix.de', 'Rathausstraße 2', '68642', 'scheduled', FALSE, FALSE, 'reservix'),
+
+    -- 3. Bürstädter Stadtlauf (TSG Bürstadt)
+    ('evt-bst-stadtlauf-2026', '34. Bürstädter Stadtlauf & Schülercup', 'TSG 1855 Bürstadt e.V.', 'fac-bst-sportpark', 'Sportpark Bürstadt & Bürgerhaus', 'Bürstadt', '2026-11-08 09:30:00+01', '2026-11-08 14:00:00+01', 'sports', 'Traditioneller Volkslauf mit 5 km, 10 km und Schülerstaffeln der TSG 1855 Bürstadt durch das Stadtgebiet.', 'https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender', 'https://tsg-buerstadt.de', 'Wasserwerkstraße 4', '68642', 'scheduled', FALSE, FALSE, 'tsg_buerstadt'),
+
+    -- 4. Bürstadt im Advent
+    ('evt-bst-advent-2026', 'Bürstadt im Advent & Kunsthandwerkermarkt', 'Stadt Bürstadt', 'fac-bst-buergerhaus', 'Historisches Rathaus & Marktplatz', 'Bürstadt', '2026-12-04 17:00:00+01', '2026-12-06 20:00:00+01', 'market', 'Festliche Budenstadt rund um das historische Rathaus Bürstadt mit Kunsthandwerk, Chormusik und Glühwein.', 'https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender', 'https://www.buerstadt.de', 'Rathausstraße 2', '68642', 'scheduled', TRUE, FALSE, 'stadt_buerstadt'),
+
+    -- 5. Lampertheimer Spargelfest (Historisches Referenz-Event 2026)
+    ('evt-la-spargelfest-2026', 'Lampertheimer Spargelfest', 'Stadt Lampertheim (Fachbereich Kultur & Stadtmarketing)', 'fac-la-altrheinhalle', 'Schillerplatz, Europaplatz & Domgasse', 'Lampertheim', '2026-06-12 16:00:00+02', '2026-06-14 23:00:00+02', 'festival', 'Das größte Volksfest der Spargelstadt Lampertheim mit Spargelkönigin, Live-Bühnen, Gastronomie und Kunsthandwerk.', 'https://www.lampertheim.de', 'https://www.lampertheim.de', 'Schillerplatz', '68623', 'past', TRUE, FALSE, 'stadt_lampertheim'),
+
+    -- 6. Dance Masters (Hans-Pfeiffer-Halle Lampertheim / Reservix)
+    ('evt-la-dance-masters-2027', 'DANCE MASTERS! Best of Irish Dance', 'Reset Production', 'fac-la-altrheinhalle', 'Hans-Pfeiffer-Halle Lampertheim', 'Lampertheim', '2027-01-31 19:00:00+01', '2027-01-31 21:30:00+01', 'concert', 'Die mitreißende Stepptanzerfolgs-Show live in Lampertheim mit original irischen Stepptänzern und Live-Band.', 'https://www.reservix.de', 'https://www.lampertheim.de', 'Weidweg 4', '68623', 'scheduled', FALSE, FALSE, 'reservix'),
+
+    -- 7. Lampertheimer Weihnachtsmarkt
+    ('evt-la-weihnachtsmarkt-2026', 'Lampertheimer Weihnachtsmarkt am Dom', 'Stadt Lampertheim & Gewerbeverein', 'fac-la-altrheinhalle', 'Domplatz & St. Andreas Lampertheim', 'Lampertheim', '2026-11-27 16:00:00+01', '2026-11-29 21:00:00+01', 'market', 'Atmosphärischer Adventsmarkt vor der Kulisse der Domkirche mit regionalen Ausstellern und Bühnenprogramm.', 'https://www.lampertheim.de', 'https://www.lampertheim.de', 'Römerstraße 102', '68623', 'scheduled', TRUE, FALSE, 'stadt_lampertheim'),
+
+    -- 8. Bibliser Gurkenfest (Historisches Referenz-Event 2026)
+    ('evt-bib-gurkenfest-2026', '72. Bibliser Gurkenfest & Inthronisation', 'Wirtschafts- und Verkehrsverein Biblis e.V.', NULL, 'Rathausplatz & Bürgerzentrum Biblis', 'Biblis', '2026-06-26 18:00:00+02', '2026-06-29 22:00:00+02', 'festival', 'Traditionelles Heimat- und Straßenfest mit Inthronisation der neuen Bibliser Gurkenkönigin, Festmeile und Feuerwerk.', 'https://www.biblis.eu', 'https://www.biblis.eu', 'Darmstädter Straße 25', '68647', 'past', TRUE, FALSE, 'gemeinde_biblis'),
+
+    -- 9. Bibliser Weihnachtsmarkt
+    ('evt-bib-weihnachtsmarkt-2026', 'Bibliser Weihnachtsmarkt', 'Bürgerstiftung & Vereine Biblis', NULL, 'Darmstädter Straße & Bürgerzentrum', 'Biblis', '2026-11-28 14:00:00+01', '2026-11-29 20:00:00+01', 'market', 'Vorweihnachtliche Stimmung mit lokalen Chören, Vereinen und regionalen Spezialitäten im Bürgerzentrum Biblis.', 'https://www.biblis.eu', 'https://www.biblis.eu', 'Darmstädter Straße 25', '68647', 'scheduled', TRUE, FALSE, 'gemeinde_biblis'),
+
+    -- 10. Rohremer Kerb (Groß-Rohrheim)
+    ('evt-gr-rohremer-kerb-2026', 'Rohremer Kerb (Kirchweih Groß-Rohrheim)', 'Gemeinde & Vereinsring Groß-Rohrheim', NULL, 'Bürgerhalle & Festplatz Groß-Rohrheim', 'Groß-Rohrheim', '2026-10-02 18:00:00+02', '2026-10-05 22:00:00+02', 'festival', 'Traditionelle Rohremer Kirchweih mit Kerwe-Gottesdienst, Aufstellen des Kerwebaums, Kerweredd und Tanzabend in der Bürgerhalle.', 'https://www.gross-rohrheim.de', 'https://www.gross-rohrheim.de', 'Kornstraße 1', '68649', 'scheduled', TRUE, FALSE, 'gross_rohrheim'),
+
+    -- 11. KAMÜ Kulturzentrum Hackathon Infoabend
+    ('evt-kamue-hackathon-info', 'Open Ried Sens & Smart City Hackathon Infoabend', 'KAMÜ Kulturzentrum', 'fac-kamue-kulturzentrum', 'KAMÜ Kulturzentrum Bürstadt', 'Bürstadt', '2026-10-15 18:30:00+02', '2026-10-15 21:30:00+02', 'workshop', 'Einführung in die offenen Sensordaten, REST-API-Zugriff, Sensorknoten-Bau und Themen für den regionalen Ried-Hackathon.', 'https://kamue.me', 'https://kamue.me', 'Bürstadt', '68642', 'scheduled', TRUE, FALSE, 'kamue_events'),
+
+    -- 12. KAMÜ Kulturzentrum Acoustic Night
+    ('evt-kamue-live-acoustic', 'Ried Acoustic Session – Lokale Singer/Songwriter', 'KAMÜ Kulturzentrum', 'fac-kamue-kulturzentrum', 'KAMÜ Kulturzentrum Bürstadt', 'Bürstadt', '2026-10-24 20:00:00+02', '2026-10-24 23:00:00+02', 'concert', 'Gemütlicher Live-Musikabend mit Nachwuchskünstlern aus dem Ried und der Metropolregion Rhein-Neckar.', 'https://kamue.me', 'https://kamue.me', 'Bürstadt', '68642', 'scheduled', FALSE, FALSE, 'kamue_events'),
+
+    -- 13. ZAKB Repair-Café
+    ('evt-zakb-repair-cafe', 'ZAKB Repair-Café & Nachhaltigkeitswerkstatt', 'ZAKB & Bürgerstiftung Bürstadt', 'fac-bst-buergerhaus', 'Bürgerhaus Bürstadt', 'Bürstadt', '2026-11-14 14:00:00+01', '2026-11-14 17:30:00+01', 'civic', 'Gemeinsam defekte Haushaltsgeräte, Fahrräder und Elektronik reparieren statt wegwerfen – unterstützt von ehrenamtlichen Reparateuren.', 'https://www.zakb.de', 'https://www.zakb.de', 'Rathausstraße 2', '68642', 'scheduled', TRUE, FALSE, 'zakb_bergstrasse'),
+
+    -- 14. Ried-Spargelwanderung (Historisches Referenz-Event 2026)
+    ('evt-bst-spargelwanderung-2026', 'Ried-Spargelwanderung Bürstadt / Lampertheim', 'Bauernverband & Touristikgemeinschaft Ried', NULL, 'Feldflur Bürstadt – Lampertheim (Spargelhöfe)', 'Bürstadt', '2026-05-01 10:00:00+02', '2026-05-01 18:00:00+02', 'festival', 'Traditionelle Wanderung auf den Feldwegen zwischen Bürstadt und Lampertheim mit Genussstationen regionaler Spargelanbauer.', 'https://www.buerstadt.de', 'https://www.buerstadt.de', 'Feldflur Ried', '68642', 'past', TRUE, FALSE, 'tourismus_ried')
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
     start_time = EXCLUDED.start_time,
     end_time = EXCLUDED.end_time,
-    description = EXCLUDED.description;
+    category = EXCLUDED.category,
+    description = EXCLUDED.description,
+    ticket_url = EXCLUDED.ticket_url,
+    event_url = EXCLUDED.event_url,
+    street_address = EXCLUDED.street_address,
+    postal_code = EXCLUDED.postal_code,
+    status = EXCLUDED.status,
+    is_free = EXCLUDED.is_free,
+    updated_at = NOW();
 
 INSERT INTO collector_schema_versions(version) VALUES (20260921) ON CONFLICT DO NOTHING;
 

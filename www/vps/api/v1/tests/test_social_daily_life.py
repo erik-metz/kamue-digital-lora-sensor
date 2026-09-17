@@ -177,7 +177,14 @@ class TestSocialDailyLife(unittest.IsolatedAsyncioTestCase):
                 "category": "workshop",
                 "description": "Ried Hackathon Kickoff",
                 "ticket_url": "https://kamue.me",
+                "event_url": "https://kamue.me",
+                "image_url": None,
+                "street_address": "Mainstraße 1",
+                "postal_code": "68642",
+                "status": "scheduled",
                 "is_free": True,
+                "is_archived": False,
+                "source": "kamue_events",
             }
         ]
         pool, _ = mock_pool_with_rows([sample_rows])
@@ -185,6 +192,40 @@ class TestSocialDailyLife(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0].title, "Open Ried Sens Hackathon Infoabend")
         self.assertTrue(res[0].is_free)
+        self.assertEqual(res[0].status, "scheduled")
+        self.assertEqual(res[0].street_address, "Mainstraße 1")
+
+    async def test_get_cultural_events_search_and_past(self):
+        sample_rows = [
+            {
+                "id": "evt-bst-kerwe-2026",
+                "title": "Bürstädter Kerwe",
+                "organizer": "Stadt Bürstadt",
+                "venue_id": None,
+                "venue_name": "Marktplatz",
+                "municipality": "Bürstadt",
+                "start_time": datetime(2026, 10, 2, 17, 0, tzinfo=UTC),
+                "end_time": datetime(2026, 10, 5, 23, 0, tzinfo=UTC),
+                "category": "festival",
+                "description": "Traditionelle Kerwe",
+                "ticket_url": "https://www.buerstadt.de",
+                "event_url": "https://www.buerstadt.de",
+                "image_url": None,
+                "street_address": "Rathausstraße 2",
+                "postal_code": "68642",
+                "status": "scheduled",
+                "is_free": True,
+                "is_archived": False,
+                "source": "stadt_buerstadt",
+            }
+        ]
+        pool, cur = mock_pool_with_rows([sample_rows])
+        res = await get_cultural_events(pool, search="Kerwe", include_past=True)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0].category, "festival")
+        # Ensure query contains search parameters
+        executed_query = cur.execute.call_args[0][0]
+        self.assertIn("title ILIKE %s", executed_query)
 
 
 if __name__ == "__main__":
