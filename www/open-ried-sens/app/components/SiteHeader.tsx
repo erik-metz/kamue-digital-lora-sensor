@@ -13,6 +13,8 @@ interface SiteHeaderProps {
 }
 
 const NAV_LINKS = [
+  { href: "/demografie", label: "Demografie & Bildung", highlight: false },
+  { href: "/statistik", label: "Regionalstatistik & Leben", highlight: false },
   { href: "/daten", label: "Offene Daten & API", highlight: true },
 ];
 

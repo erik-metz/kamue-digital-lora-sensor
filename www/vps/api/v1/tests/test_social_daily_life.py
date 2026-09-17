@@ -1,0 +1,196 @@
+import sys
+import unittest
+from datetime import date, datetime, timezone
+from unittest.mock import AsyncMock, MagicMock
+
+if "psycopg_pool" not in sys.modules:
+    sys.modules["psycopg_pool"] = MagicMock()
+if "psycopg" not in sys.modules:
+    sys.modules["psycopg"] = MagicMock()
+
+from importlib.util import find_spec
+
+if "fastapi" not in sys.modules and find_spec("fastapi") is None:
+    class MockRouter:
+        def get(self, *args, **kwargs):
+            return lambda fn: fn
+        def post(self, *args, **kwargs):
+            return lambda fn: fn
+        def patch(self, *args, **kwargs):
+            return lambda fn: fn
+        def put(self, *args, **kwargs):
+            return lambda fn: fn
+        def delete(self, *args, **kwargs):
+            return lambda fn: fn
+    mock_fastapi = MagicMock()
+    mock_fastapi.APIRouter = lambda *args, **kwargs: MockRouter()
+    mock_fastapi.Depends = lambda x: x
+    mock_fastapi.Query = lambda default=None, **kwargs: default
+    mock_fastapi.HTTPException = Exception
+    mock_fastapi.status = MagicMock()
+    sys.modules["fastapi"] = mock_fastapi
+
+if "pydantic" not in sys.modules and find_spec("pydantic") is None:
+    class MockBaseModel:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+        def __getattr__(self, name):
+            return None
+    mock_pydantic = MagicMock()
+    mock_pydantic.BaseModel = MockBaseModel
+    mock_pydantic.Field = lambda *args, **kwargs: kwargs.get("default", None)
+    sys.modules["pydantic"] = mock_pydantic
+
+if "dependencies" not in sys.modules:
+    mock_dep = MagicMock()
+    mock_dep.get_db_pool = MagicMock()
+    mock_dep.verify_admin_key = MagicMock()
+    mock_dep.verify_api_key = MagicMock()
+    sys.modules["dependencies"] = mock_dep
+
+from endpoints.social_daily_life import (
+    CulturalEventResponse,
+    MunicipalIndicatorResponse,
+    RegionalFacilityResponse,
+    SocialKpiSummary,
+    ZakbWasteStatResponse,
+    get_cultural_events,
+    get_regional_facilities,
+    get_social_indicators,
+    get_social_summary,
+    get_waste_statistics,
+)
+
+
+def mock_pool_with_rows(rows_sequence):
+    pool = MagicMock()
+    conn = AsyncMock()
+    cur = AsyncMock()
+
+    cur.fetchall = AsyncMock(side_effect=rows_sequence)
+    cur.execute = AsyncMock()
+
+    conn.cursor = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=cur), __aexit__=AsyncMock()))
+    pool.connection = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=conn), __aexit__=AsyncMock()))
+    return pool, cur
+
+
+class TestSocialDailyLife(unittest.IsolatedAsyncioTestCase):
+
+    async def test_get_social_indicators(self):
+        sample_rows = [
+            {
+                "id": 1,
+                "municipality": "Bürstadt",
+                "category": "employment",
+                "metric_key": "unemployment_rate",
+                "period": "2025",
+                "period_date": date(2025, 12, 31),
+                "value": 3.8,
+                "unit": "%",
+                "benchmark_value": 5.2,
+                "dimension": "total",
+                "source": "Bundesagentur für Arbeit",
+                "source_url": None,
+            }
+        ]
+        pool, cur = mock_pool_with_rows([sample_rows])
+        res = await get_social_indicators(pool, municipality="Bürstadt", category="employment")
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0].municipality, "Bürstadt")
+        self.assertEqual(res[0].value, 3.8)
+
+    async def test_get_social_summary(self):
+        stats_rows = [
+            {"municipality": "Bürstadt", "metric_key": "unemployment_rate", "value": 3.7},
+            {"municipality": "Bürstadt", "metric_key": "gp_doctors_per_10k", "value": 6.5},
+            {"municipality": "Bürstadt", "metric_key": "total_clubs", "value": 72},
+            {"municipality": "Lampertheim", "metric_key": "unemployment_rate", "value": 4.5},
+            {"municipality": "Lampertheim", "metric_key": "gp_doctors_per_10k", "value": 6.9},
+        ]
+        waste_rows = [
+            {"municipality": "Bürstadt", "recycling_rate_percent": 68.4, "kg_per_capita": 373.9},
+            {"municipality": "Lampertheim", "recycling_rate_percent": 67.9, "kg_per_capita": 383.5},
+        ]
+        pool, _ = mock_pool_with_rows([stats_rows, waste_rows])
+        res = await get_social_summary(pool)
+        self.assertGreater(len(res), 0)
+        buerstadt = next(r for r in res if r.municipality == "Bürstadt")
+        self.assertEqual(buerstadt.unemployment_rate, 3.7)
+        self.assertEqual(buerstadt.gp_doctors_per_10k, 6.5)
+        self.assertEqual(buerstadt.total_clubs_count, 72)
+        self.assertEqual(buerstadt.recycling_rate_percent, 68.4)
+
+    async def test_get_waste_statistics(self):
+        sample_rows = [
+            {
+                "id": 10,
+                "municipality": "Bürstadt",
+                "year": 2025,
+                "fraction": "biomuell",
+                "weight_tons": 2280.0,
+                "kg_per_capita": 134.3,
+                "recycling_rate_percent": 99.0,
+                "source": "ZAKB",
+            }
+        ]
+        pool, _ = mock_pool_with_rows([sample_rows])
+        res = await get_waste_statistics(pool, municipality="Bürstadt", year=2025)
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0].fraction, "biomuell")
+        self.assertEqual(res[0].kg_per_capita, 134.3)
+
+    async def test_get_regional_facilities(self):
+        sample_rows = [
+            {
+                "id": "fac-kamue-kulturzentrum",
+                "name": "KAMÜ Kulturzentrum Bürstadt",
+                "category": "culture_sports",
+                "facility_type": "culture_center",
+                "municipality": "Bürstadt",
+                "district": "Kernstadt",
+                "street_address": "Industriestraße 11",
+                "postal_code": "68642",
+                "latitude": 49.6457,
+                "longitude": 8.4582,
+                "phone": "06206 157980",
+                "website": "https://kamue.me",
+                "description": "Kulturzentrum Bürstadt",
+                "opening_hours": {"Di-So": "16:00-22:00"},
+                "extra_attributes": {"is_kamue_hub": True},
+                "is_active": True,
+            }
+        ]
+        pool, _ = mock_pool_with_rows([sample_rows])
+        res = await get_regional_facilities(pool, category="culture_sports")
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0].id, "fac-kamue-kulturzentrum")
+        self.assertEqual(res[0].category, "culture_sports")
+
+    async def test_get_cultural_events(self):
+        sample_rows = [
+            {
+                "id": "evt-kamue-hackathon-info",
+                "title": "Open Ried Sens Hackathon Infoabend",
+                "organizer": "KAMÜ Kulturzentrum",
+                "venue_id": "fac-kamue-kulturzentrum",
+                "venue_name": "KAMÜ Kulturzentrum Bürstadt",
+                "municipality": "Bürstadt",
+                "start_time": datetime(2026, 10, 15, 18, 30, tzinfo=timezone.utc),
+                "end_time": datetime(2026, 10, 15, 21, 30, tzinfo=timezone.utc),
+                "category": "workshop",
+                "description": "Ried Hackathon Kickoff",
+                "ticket_url": "https://kamue.me",
+                "is_free": True,
+            }
+        ]
+        pool, _ = mock_pool_with_rows([sample_rows])
+        res = await get_cultural_events(pool, municipality="Bürstadt")
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res[0].title, "Open Ried Sens Hackathon Infoabend")
+        self.assertTrue(res[0].is_free)
+
+
+if __name__ == "__main__":
+    unittest.main()

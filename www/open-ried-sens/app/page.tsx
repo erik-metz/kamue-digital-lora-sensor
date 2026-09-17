@@ -84,6 +84,12 @@ export default async function Home() {
               Demografie & Bildung
             </Link>
             <Link
+              href="/statistik"
+              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
+            >
+              Regionalstatistik & Leben
+            </Link>
+            <Link
               href="/daten"
               className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
             >

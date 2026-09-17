@@ -8,6 +8,9 @@ export const CATEGORIES = {
   traffic: { label: "Verkehr", color: "#fb923c", path: "M5 17H3V9l2-5h14l2 5v8h-2 M3 10h18 M7 17h10 M6 13h2 M16 13h2 M5 17v3 M19 17v3" },
   seismic: { label: "Erschütterungen", color: "#f472b6", path: "M2 12h4l3-8 5 16 3-8h5" },
   education: { label: "Schulen & Kitas", color: "#38bdf8", path: "M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c3 3 9 3 12 0v-5" },
+  healthcare: { label: "Gesundheit & Notdienst", color: "#10b981", path: "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z M12 6v6 M9 9h6" },
+  culture: { label: "Kultur & Sport", color: "#ec4899", path: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
+  tourism: { label: "Freizeit & Tourismus", color: "#eab308", path: "M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zm0 7v-7" },
   other: { label: "Weitere Sensoren", color: "#94a3b8", path: "M12 3v3 M12 18v3 M3 12h3 M18 12h3 M8 8h8v8H8Z" },
 } as const;
 export type Category = keyof typeof CATEGORIES;
@@ -52,6 +55,9 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     else if (sensor.id.startsWith("gw-") || sensor.id.startsWith("pegel-")) categories.add("water");
     else if (sensor.id.startsWith("bu-")) categories.add("traffic");
     else if (sensor.id.startsWith("nextbike-")) categories.add("bikes");
+    else if (sensor.id.startsWith("fac-apo-") || sensor.id.startsWith("fac-doc-")) categories.add("healthcare");
+    else if (sensor.id.startsWith("fac-kamue-") || sensor.id.startsWith("fac-bst-sport") || sensor.id.startsWith("fac-la-alt") || sensor.id.startsWith("fac-la-kanu") || sensor.id.startsWith("fac-bst-buerger") || sensor.id.startsWith("fac-bst-vfr")) categories.add("culture");
+    else if (sensor.id.startsWith("fac-tour-")) categories.add("tourism");
     else if (type === "WeatherObserved") categories.add(soil ? "soil" : "weather");
     else if (["GreenspaceRecord", "SoilMeasurement", "SoilTension"].includes(type ?? "")) categories.add("soil");
     else if (type === "FloodMonitoring") categories.add("water");
@@ -593,6 +599,149 @@ export function mergeDefaultEducation(nodes: StationNode[]): StationNode[] {
   return missing.length > 0 ? [...nodes, ...missing] : nodes;
 }
 
+export const DEFAULT_FACILITIES_NODES: StationNode[] = [
+  // Healthcare: Pharmacies & Doctors
+  {
+    id: "fac-apo-bst-sonnen",
+    name: "Sonnen-Apotheke Bürstadt",
+    locationName: "Apotheke · Bürstadt",
+    address: "Mainstraße 12, 68642 Bürstadt · Tel. 06206 6358",
+    lat: 49.6425,
+    lng: 8.4528,
+    categories: ["healthcare"],
+    readings: [{ metric: "emergency_duty", value: 0, unit: "state", timestamp: new Date().toISOString() }],
+  },
+  {
+    id: "fac-apo-bst-nibelungen",
+    name: "Nibelungen-Apotheke Bürstadt (Notdienst)",
+    locationName: "Notdienst-Apotheke · Bürstadt",
+    address: "Wilhelminenstraße 10, 68642 Bürstadt · Tel. 06206 963131",
+    lat: 49.6441,
+    lng: 8.4560,
+    categories: ["healthcare"],
+    readings: [{ metric: "emergency_duty", value: 1, unit: "state", timestamp: new Date().toISOString() }],
+  },
+  {
+    id: "fac-apo-la-andreas",
+    name: "Andreas-Apotheke Lampertheim (Notdienst)",
+    locationName: "Notdienst-Apotheke · Lampertheim",
+    address: "Kaiserstraße 18, 68623 Lampertheim · Tel. 06206 2445",
+    lat: 49.5938,
+    lng: 8.4682,
+    categories: ["healthcare"],
+    readings: [{ metric: "emergency_duty", value: 1, unit: "state", timestamp: new Date().toISOString() }],
+  },
+  {
+    id: "fac-doc-bst-hausarzt",
+    name: "Hausarztzentrum & Allgemeinmedizin Bürstadt",
+    locationName: "Hausarztpraxis · Bürstadt",
+    address: "Nibelungenstraße 42, 68642 Bürstadt · Tel. 06206 70010",
+    lat: 49.6416,
+    lng: 8.4532,
+    categories: ["healthcare"],
+    readings: [],
+  },
+  {
+    id: "fac-doc-la-mvz",
+    name: "Medizinisches Versorgungszentrum (MVZ) Lampertheim",
+    locationName: "Facharztzentrum · Lampertheim",
+    address: "Neue Schulstraße 28, 68623 Lampertheim · Tel. 06206 9450",
+    lat: 49.5962,
+    lng: 8.4715,
+    categories: ["healthcare"],
+    readings: [],
+  },
+  // Culture & Sports
+  {
+    id: "fac-kamue-kulturzentrum",
+    name: "KAMÜ Kulturzentrum Bürstadt",
+    locationName: "Kulturzentrum & Hackathon Hub · Bürstadt",
+    address: "Industriestraße 11, 68642 Bürstadt · Kulturinitiative Open Ried Sens",
+    lat: 49.6457,
+    lng: 8.4582,
+    categories: ["culture"],
+    readings: [],
+  },
+  {
+    id: "fac-bst-sportpark",
+    name: "Sportpark Bürstadt & alla hopp!",
+    locationName: "Bürgersportpark · Bürstadt",
+    address: "Wasserwerkstraße 4, 68642 Bürstadt",
+    lat: 49.6385,
+    lng: 8.4595,
+    categories: ["culture"],
+    readings: [],
+  },
+  {
+    id: "fac-la-altrheinhalle",
+    name: "Altrheinhalle & Sportzentrum Lampertheim",
+    locationName: "Sport- & Kulturzentrum · Lampertheim",
+    address: "Biedensandstraße 57, 68623 Lampertheim · Tel. 06206 9350",
+    lat: 49.5982,
+    lng: 8.4542,
+    categories: ["culture"],
+    readings: [],
+  },
+  {
+    id: "fac-la-kanuclub",
+    name: "Kanu-Club Lampertheim 1929",
+    locationName: "Wassersportzentrum · Lampertheim",
+    address: "Römerstraße 108 / Altrhein, 68623 Lampertheim",
+    lat: 49.5915,
+    lng: 8.4610,
+    categories: ["culture"],
+    readings: [],
+  },
+  // Tourism & Attractions
+  {
+    id: "fac-tour-kloster-lorsch",
+    name: "UNESCO Welterbe Kloster Lorsch & Lauresham",
+    locationName: "UNESCO Welterbe · Lorsch",
+    address: "Im Klosterbezirk 1, 64653 Lorsch · Tel. 06251 869200",
+    lat: 49.6538,
+    lng: 8.5695,
+    categories: ["tourism"],
+    readings: [],
+  },
+  {
+    id: "fac-tour-biedensand",
+    name: "Naturschutzgebiet Lampertheimer Altrhein (Biedensand)",
+    locationName: "Naturschutz & Auenlandschaft · Lampertheim",
+    address: "Biedensandstraße, 68623 Lampertheim",
+    lat: 49.5960,
+    lng: 8.4480,
+    categories: ["tourism"],
+    readings: [],
+  },
+  {
+    id: "fac-tour-biedensand-baeder",
+    name: "Biedensand Bäder Lampertheim (Hallen- & Freibad)",
+    locationName: "Erlebnisbad · Lampertheim",
+    address: "Weidweg 40, 68623 Lampertheim · Tel. 06206 94460",
+    lat: 49.5975,
+    lng: 8.4548,
+    categories: ["tourism"],
+    readings: [],
+  },
+  {
+    id: "fac-tour-boxheimerhof",
+    name: "Historischer Boxheimerhof Bürstadt",
+    locationName: "Historisches Denkmal · Bürstadt",
+    address: "Boxheimerhof 1, 68642 Bürstadt",
+    lat: 49.6290,
+    lng: 8.4800,
+    categories: ["tourism"],
+    readings: [],
+  },
+];
+
+export function mergeDefaultFacilities(nodes: StationNode[]): StationNode[] {
+  const existingIds = new Set(nodes.map(s => s.id));
+  const missing = DEFAULT_FACILITIES_NODES.filter(f => !existingIds.has(f.id));
+  return missing.length > 0 ? [...nodes, ...missing] : nodes;
+}
+
+
 export function offsetTrafficCoordinates(nodes: StationNode[]): void {
   const trafficNodes = nodes.filter(n => n.categories.includes("traffic") && n.lat != null && n.lng != null);
 
@@ -679,6 +828,9 @@ export function primaryReading(node: StationNode, category: Category, mode: MapM
     bikes: ["bike_available", "bike_racks_free", "bike_capacity", "bike_ebikes"],
     seismic: ["pgv", "rms"],
     education: ["edu_utilization", "edu_enrollment", "edu_capacity"],
+    healthcare: ["emergency_duty"],
+    culture: [],
+    tourism: [],
     other: [],
   };
   return preferred[category].map(m => node.readings.find(r => r.metric === m)).find(Boolean) ?? node.readings[0];
@@ -695,6 +847,9 @@ export function temperatureColor(value: number) {
 export function valueLabel(reading: Reading | undefined, readings?: Reading[]) {
   if (!reading) return "";
   const value = reading.value.toLocaleString("de-DE", { maximumFractionDigits: 1 });
+  if (reading.metric === "emergency_duty") {
+    return reading.value > 0 ? "Notdienst" : "Geöffnet";
+  }
   if (reading.metric === "edu_utilization") {
     return `${Math.round(reading.value)}% belegt`;
   }

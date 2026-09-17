@@ -55,6 +55,13 @@ export default async function DataDocsPage() {
               <span className="hidden sm:inline">Demografie</span>
             </Link>
             <Link
+              href="/statistik"
+              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
+            >
+              <Activity className="w-4 h-4 text-violet-400" />
+              <span className="hidden sm:inline">Statistik</span>
+            </Link>
+            <Link
               href="/admin"
               className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 transition-colors"
             >
@@ -209,6 +216,50 @@ export default async function DataDocsPage() {
               <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Schulen & Kitas</span>
               <p className="text-emerald-400 font-bold">GET /api/v1/demographics/facilities</p>
               <p className="text-slate-400 font-sans text-xs">Standorte, Kapazitäten, aktuelle Schülerzahlen, Träger und Betreuungsquoten.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* SOCIAL, HEALTHCARE & WASTE SECTION */}
+        <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Activity className="w-5 h-5 text-violet-400" />
+                Soziales, Gesundheit, Vereine &amp; Abfallbilanz (BA, ZAKB &amp; HSL)
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">
+                Arbeitsmarktdaten (SGB II / XII), Ärzte- &amp; Apothekendichte, ZAKB Wertstoff- und Recyclingquoten, Vereine sowie Kulturveranstaltungen.
+              </p>
+            </div>
+            <Link
+              href="/statistik"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-400 text-sm font-semibold hover:bg-violet-500/20 transition-colors shrink-0"
+            >
+              Statistik-Dashboard <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Arbeitsmarkt &amp; Soziales</span>
+              <p className="text-violet-400 font-bold">GET /api/v1/social/indicators</p>
+              <p className="text-slate-400 font-sans text-xs">Arbeitslosenquoten, SGB-II/XII-Leistungsbezieher, Ärztedichte &amp; Vereinszahlen im Zeitverlauf.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Kreislaufwirtschaft</span>
+              <p className="text-violet-400 font-bold">GET /api/v1/social/waste-statistics</p>
+              <p className="text-slate-400 font-sans text-xs">ZAKB-Abfallfraktionen, Restmüll, Bioabfall, Wertstoffe (kg/Kopf) und Recyclingquoten.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Gesundheit &amp; Kultur POIs</span>
+              <p className="text-violet-400 font-bold">GET /api/v1/social/facilities</p>
+              <p className="text-slate-400 font-sans text-xs">Apotheken (inkl. Notdienst), Ärzte, Sportanlagen, Kulturstätten und Tourismus-Ziele.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Kultur &amp; Events</span>
+              <p className="text-violet-400 font-bold">GET /api/v1/social/events</p>
+              <p className="text-slate-400 font-sans text-xs">Veranstaltungskalender inkl. KAMÜ Kulturzentrum Bürstadt und regionaler Termine.</p>
             </div>
           </div>
         </section>

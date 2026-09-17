@@ -1472,4 +1472,263 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO collector_schema_versions(version) VALUES (20260920) ON CONFLICT DO NOTHING;
 
+-- 14. Social & Daily Life for the Hessisches Ried
+-- Covers Unemployment & SGB II, Healthcare Density & Facilities, Cultural & Sports Associations, ZAKB Waste & Recycling, and Tourism.
 
+CREATE TABLE IF NOT EXISTS municipal_statistics (
+    id BIGSERIAL PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL, -- 'Bürstadt', 'Lampertheim', 'Biblis', 'Groß-Rohrheim', 'Kreis Bergstraße', 'Hessen'
+    category VARCHAR(64) NOT NULL,     -- 'employment', 'social', 'healthcare_density', 'associations', 'tourism'
+    metric_key VARCHAR(64) NOT NULL,   -- 'unemployment_rate', 'sgb2_recipients', 'doctors_per_10k', 'total_clubs', 'tourist_overnights'
+    period VARCHAR(32) NOT NULL,       -- '2024', '2025', '2026-Q2', etc.
+    period_date DATE NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    unit VARCHAR(32) NOT NULL,         -- '%', 'count', 'per_10k', 'days'
+    benchmark_value DOUBLE PRECISION,  -- Reference value (e.g. Hessen average)
+    dimension VARCHAR(64) NOT NULL DEFAULT 'total',
+    source VARCHAR(128) NOT NULL,      -- 'Bundesagentur für Arbeit', 'Hessisches Statistisches Landesamt', etc.
+    source_url TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_municipal_metric_period UNIQUE (municipality, metric_key, period, dimension)
+);
+
+CREATE INDEX IF NOT EXISTS idx_muni_stats_lookup ON municipal_statistics (municipality, category, period_date DESC);
+CREATE INDEX IF NOT EXISTS idx_muni_stats_category ON municipal_statistics (category, period_date DESC);
+
+CREATE TABLE IF NOT EXISTS zakb_waste_statistics (
+    id BIGSERIAL PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL, -- 'Bürstadt', 'Lampertheim', 'Kreis Bergstraße'
+    year INT NOT NULL,
+    fraction VARCHAR(32) NOT NULL,     -- 'restmuell', 'biomuell', 'papier', 'wertstoffe', 'sperrmuell', 'schadstoffe', 'total'
+    weight_tons DOUBLE PRECISION NOT NULL,
+    kg_per_capita DOUBLE PRECISION NOT NULL,
+    recycling_rate_percent DOUBLE PRECISION,
+    source VARCHAR(128) DEFAULT 'ZAKB Jahresbericht & HLNUG',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_zakb_waste_stat UNIQUE (municipality, year, fraction)
+);
+
+CREATE INDEX IF NOT EXISTS idx_zakb_waste_stats_lookup ON zakb_waste_statistics (municipality, year DESC);
+
+CREATE TABLE IF NOT EXISTS regional_facilities (
+    id VARCHAR(128) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(64) NOT NULL,      -- 'healthcare', 'culture_sports', 'tourism'
+    facility_type VARCHAR(64) NOT NULL, -- 'pharmacy', 'doctor_gp', 'doctor_specialist', 'sports_complex', 'culture_center', 'attraction'
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    street_address VARCHAR(255) NOT NULL,
+    postal_code VARCHAR(16) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    phone VARCHAR(64),
+    website TEXT,
+    description TEXT,
+    opening_hours JSONB,
+    extra_attributes JSONB,             -- e.g. {"specialty": "Allgemeinmedizin", "emergency_duty": false}
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_facilities_category ON regional_facilities (category, facility_type);
+CREATE INDEX IF NOT EXISTS idx_facilities_muni ON regional_facilities (municipality);
+
+CREATE TABLE IF NOT EXISTS cultural_events (
+    id VARCHAR(128) PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    organizer VARCHAR(255) NOT NULL,
+    venue_id VARCHAR(128) REFERENCES regional_facilities(id) ON DELETE SET NULL,
+    venue_name VARCHAR(255) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ,
+    category VARCHAR(64) NOT NULL,     -- 'concert', 'exhibition', 'workshop', 'festival', 'sports', 'civic'
+    description TEXT,
+    ticket_url TEXT,
+    is_free BOOLEAN DEFAULT FALSE,
+    source VARCHAR(64) DEFAULT 'kamue_events',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_events_time ON cultural_events (start_time ASC);
+
+-- Seed Municipal Social Statistics (Unemployment, SGB II, Healthcare Density, Associations, Tourism)
+INSERT INTO municipal_statistics (
+    municipality, category, metric_key, period, period_date, value, unit, benchmark_value, dimension, source
+)
+VALUES
+    -- 1. Unemployment Rate (Arbeitslosenquote in %) - Bundesagentur für Arbeit (2024–2026)
+    ('Bürstadt', 'employment', 'unemployment_rate', '2024', '2024-12-31', 3.9, '%', 5.3, 'total', 'Bundesagentur für Arbeit'),
+    ('Bürstadt', 'employment', 'unemployment_rate', '2025', '2025-12-31', 3.8, '%', 5.2, 'total', 'Bundesagentur für Arbeit'),
+    ('Bürstadt', 'employment', 'unemployment_rate', '2026-Q2', '2026-06-30', 3.7, '%', 5.1, 'total', 'Bundesagentur für Arbeit'),
+    ('Bürstadt', 'employment', 'unemployed_count', '2026-Q2', '2026-06-30', 345, 'count', NULL, 'total', 'Bundesagentur für Arbeit'),
+    ('Bürstadt', 'social', 'sgb2_recipients', '2025', '2025-12-31', 680, 'count', NULL, 'total', 'Bundesagentur für Arbeit / Jobcenter'),
+    ('Bürstadt', 'social', 'sgb2_quota_pct', '2025', '2025-12-31', 4.0, '%', 6.2, 'total', 'Bundesagentur für Arbeit / Jobcenter'),
+
+    ('Lampertheim', 'employment', 'unemployment_rate', '2024', '2024-12-31', 4.8, '%', 5.3, 'total', 'Bundesagentur für Arbeit'),
+    ('Lampertheim', 'employment', 'unemployment_rate', '2025', '2025-12-31', 4.6, '%', 5.2, 'total', 'Bundesagentur für Arbeit'),
+    ('Lampertheim', 'employment', 'unemployment_rate', '2026-Q2', '2026-06-30', 4.5, '%', 5.1, 'total', 'Bundesagentur für Arbeit'),
+    ('Lampertheim', 'employment', 'unemployed_count', '2026-Q2', '2026-06-30', 820, 'count', NULL, 'total', 'Bundesagentur für Arbeit'),
+    ('Lampertheim', 'social', 'sgb2_recipients', '2025', '2025-12-31', 1650, 'count', NULL, 'total', 'Bundesagentur für Arbeit / Jobcenter'),
+    ('Lampertheim', 'social', 'sgb2_quota_pct', '2025', '2025-12-31', 5.0, '%', 6.2, 'total', 'Bundesagentur für Arbeit / Jobcenter'),
+
+    ('Biblis', 'employment', 'unemployment_rate', '2025', '2025-12-31', 3.5, '%', 5.2, 'total', 'Bundesagentur für Arbeit'),
+    ('Biblis', 'employment', 'unemployed_count', '2025', '2025-12-31', 175, 'count', NULL, 'total', 'Bundesagentur für Arbeit'),
+    ('Biblis', 'social', 'sgb2_recipients', '2025', '2025-12-31', 310, 'count', NULL, 'total', 'Bundesagentur für Arbeit / Jobcenter'),
+
+    ('Groß-Rohrheim', 'employment', 'unemployment_rate', '2025', '2025-12-31', 3.2, '%', 5.2, 'total', 'Bundesagentur für Arbeit'),
+    ('Groß-Rohrheim', 'employment', 'unemployed_count', '2025', '2025-12-31', 68, 'count', NULL, 'total', 'Bundesagentur für Arbeit'),
+
+    ('Kreis Bergstraße', 'employment', 'unemployment_rate', '2025', '2025-12-31', 4.3, '%', 5.2, 'total', 'Bundesagentur für Arbeit'),
+    ('Hessen', 'employment', 'unemployment_rate', '2025', '2025-12-31', 5.2, '%', 5.7, 'total', 'Bundesagentur für Arbeit'),
+
+    -- 2. Healthcare Supply Density (Ärztedichte & Versorgungsgrad) - KV Hessen & HSL
+    ('Bürstadt', 'healthcare_density', 'gp_doctors_per_10k', '2025', '2025-12-31', 6.5, 'per_10k', 6.2, 'total', 'Kassenärztliche Vereinigung Hessen'),
+    ('Bürstadt', 'healthcare_density', 'specialists_per_10k', '2025', '2025-12-31', 4.7, 'per_10k', 7.8, 'total', 'Kassenärztliche Vereinigung Hessen'),
+    ('Bürstadt', 'healthcare_density', 'pharmacies_count', '2025', '2025-12-31', 3.0, 'count', NULL, 'total', 'Landesapothekerkammer Hessen'),
+    ('Bürstadt', 'healthcare_density', 'pharmacies_per_10k', '2025', '2025-12-31', 1.77, 'per_10k', 1.85, 'total', 'Landesapothekerkammer Hessen'),
+    ('Bürstadt', 'healthcare_density', 'versorgungsgrad_pct', '2025', '2025-12-31', 104.2, '%', 100.0, 'total', 'KV Hessen Bedarfsplanung'),
+
+    ('Lampertheim', 'healthcare_density', 'gp_doctors_per_10k', '2025', '2025-12-31', 6.9, 'per_10k', 6.2, 'total', 'Kassenärztliche Vereinigung Hessen'),
+    ('Lampertheim', 'healthcare_density', 'specialists_per_10k', '2025', '2025-12-31', 6.3, 'per_10k', 7.8, 'total', 'Kassenärztliche Vereinigung Hessen'),
+    ('Lampertheim', 'healthcare_density', 'pharmacies_count', '2025', '2025-12-31', 7.0, 'count', NULL, 'total', 'Landesapothekerkammer Hessen'),
+    ('Lampertheim', 'healthcare_density', 'pharmacies_per_10k', '2025', '2025-12-31', 2.11, 'per_10k', 1.85, 'total', 'Landesapothekerkammer Hessen'),
+    ('Lampertheim', 'healthcare_density', 'versorgungsgrad_pct', '2025', '2025-12-31', 101.8, '%', 100.0, 'total', 'KV Hessen Bedarfsplanung'),
+
+    ('Biblis', 'healthcare_density', 'gp_doctors_per_10k', '2025', '2025-12-31', 5.4, 'per_10k', 6.2, 'total', 'Kassenärztliche Vereinigung Hessen'),
+    ('Biblis', 'healthcare_density', 'pharmacies_count', '2025', '2025-12-31', 2.0, 'count', NULL, 'total', 'Landesapothekerkammer Hessen'),
+
+    -- 3. Associations & Sports Clubs (Vereinslandschaft) - Vereinsregister Bürstadt & Lampertheim
+    ('Bürstadt', 'associations', 'total_clubs', '2025', '2025-12-31', 72, 'count', NULL, 'total', 'Stadt Bürstadt Vereinsregister'),
+    ('Bürstadt', 'associations', 'sports_clubs', '2025', '2025-12-31', 24, 'count', NULL, 'sports', 'Stadt Bürstadt Vereinsregister'),
+    ('Bürstadt', 'associations', 'cultural_music_clubs', '2025', '2025-12-31', 18, 'count', NULL, 'culture_music', 'Stadt Bürstadt Vereinsregister'),
+    ('Bürstadt', 'associations', 'civic_social_clubs', '2025', '2025-12-31', 19, 'count', NULL, 'civic_social', 'Stadt Bürstadt Vereinsregister'),
+    ('Bürstadt', 'associations', 'fire_rescue_clubs', '2025', '2025-12-31', 11, 'count', NULL, 'fire_rescue', 'Stadt Bürstadt Vereinsregister'),
+
+    ('Lampertheim', 'associations', 'total_clubs', '2025', '2025-12-31', 118, 'count', NULL, 'total', 'Stadt Lampertheim Vereinsregister'),
+    ('Lampertheim', 'associations', 'sports_clubs', '2025', '2025-12-31', 41, 'count', NULL, 'sports', 'Stadt Lampertheim Vereinsregister'),
+    ('Lampertheim', 'associations', 'cultural_music_clubs', '2025', '2025-12-31', 28, 'count', NULL, 'culture_music', 'Stadt Lampertheim Vereinsregister'),
+    ('Lampertheim', 'associations', 'civic_social_clubs', '2025', '2025-12-31', 33, 'count', NULL, 'civic_social', 'Stadt Lampertheim Vereinsregister'),
+    ('Lampertheim', 'associations', 'fire_rescue_clubs', '2025', '2025-12-31', 16, 'count', NULL, 'fire_rescue', 'Stadt Lampertheim Vereinsregister'),
+
+    ('Biblis', 'associations', 'total_clubs', '2025', '2025-12-31', 38, 'count', NULL, 'total', 'Gemeinde Biblis'),
+
+    -- 4. Tourism Metrics (Übernachtungen & Gästeankünfte) - HSL / Tourismus Bergstraße-Odenwald
+    ('Kreis Bergstraße', 'tourism', 'tourist_arrivals', '2024', '2024-12-31', 312500, 'count', NULL, 'total', 'Hessisches Statistisches Landesamt'),
+    ('Kreis Bergstraße', 'tourism', 'tourist_arrivals', '2025', '2025-12-31', 328400, 'count', NULL, 'total', 'Hessisches Statistisches Landesamt'),
+    ('Kreis Bergstraße', 'tourism', 'tourist_overnights', '2024', '2024-12-31', 684200, 'count', NULL, 'total', 'Hessisches Statistisches Landesamt'),
+    ('Kreis Bergstraße', 'tourism', 'tourist_overnights', '2025', '2025-12-31', 712000, 'count', NULL, 'total', 'Hessisches Statistisches Landesamt'),
+    ('Kreis Bergstraße', 'tourism', 'avg_length_of_stay_days', '2025', '2025-12-31', 2.17, 'days', 2.10, 'total', 'Hessisches Statistisches Landesamt'),
+    ('Lampertheim', 'tourism', 'tourist_overnights', '2025', '2025-12-31', 48500, 'count', NULL, 'total', 'HSL / Tourismus Lampertheim'),
+    ('Lampertheim', 'tourism', 'avg_length_of_stay_days', '2025', '2025-12-31', 2.35, 'days', 2.10, 'total', 'HSL / Tourismus Lampertheim')
+ON CONFLICT (municipality, metric_key, period, dimension) DO UPDATE SET
+    value = EXCLUDED.value,
+    benchmark_value = EXCLUDED.benchmark_value,
+    source = EXCLUDED.source,
+    updated_at = NOW();
+
+-- Seed ZAKB Waste Volumes & Recycling Rates (Zweckverband Abfallwirtschaft Kreis Bergstraße)
+INSERT INTO zakb_waste_statistics (
+    municipality, year, fraction, weight_tons, kg_per_capita, recycling_rate_percent
+)
+VALUES
+    -- Bürstadt 2024
+    ('Bürstadt', 2024, 'restmuell', 2040.0, 120.1, 0.0),
+    ('Bürstadt', 2024, 'biomuell', 2210.0, 130.2, 98.5),
+    ('Bürstadt', 2024, 'papier', 1140.0, 67.1, 99.2),
+    ('Bürstadt', 2024, 'wertstoffe', 595.0, 35.0, 88.0),
+    ('Bürstadt', 2024, 'sperrmuell', 374.0, 22.0, 62.0),
+    ('Bürstadt', 2024, 'total', 6359.0, 374.4, 67.8),
+
+    -- Bürstadt 2025
+    ('Bürstadt', 2025, 'restmuell', 1995.0, 117.5, 0.0),
+    ('Bürstadt', 2025, 'biomuell', 2280.0, 134.3, 99.0),
+    ('Bürstadt', 2025, 'papier', 1120.0, 66.0, 99.4),
+    ('Bürstadt', 2025, 'wertstoffe', 615.0, 36.2, 89.5),
+    ('Bürstadt', 2025, 'sperrmuell', 355.0, 20.9, 64.0),
+    ('Bürstadt', 2025, 'total', 6365.0, 373.9, 68.4),
+
+    -- Lampertheim 2025
+    ('Lampertheim', 2025, 'restmuell', 4045.0, 122.0, 0.0),
+    ('Lampertheim', 2025, 'biomuell', 4410.0, 133.0, 98.8),
+    ('Lampertheim', 2025, 'papier', 2290.0, 69.1, 99.1),
+    ('Lampertheim', 2025, 'wertstoffe', 1210.0, 36.5, 89.0),
+    ('Lampertheim', 2025, 'sperrmuell', 760.0, 22.9, 63.5),
+    ('Lampertheim', 2025, 'total', 12715.0, 383.5, 67.9),
+
+    -- Kreis Bergstraße 2025 (Regional Benchmark)
+    ('Kreis Bergstraße', 2025, 'restmuell', 33800.0, 124.5, 0.0),
+    ('Kreis Bergstraße', 2025, 'biomuell', 35600.0, 131.1, 98.4),
+    ('Kreis Bergstraße', 2025, 'papier', 18700.0, 68.9, 99.0),
+    ('Kreis Bergstraße', 2025, 'wertstoffe', 9800.0, 36.1, 88.5),
+    ('Kreis Bergstraße', 2025, 'sperrmuell', 6100.0, 22.5, 61.8),
+    ('Kreis Bergstraße', 2025, 'total', 104000.0, 383.1, 67.2)
+ON CONFLICT (municipality, year, fraction) DO UPDATE SET
+    weight_tons = EXCLUDED.weight_tons,
+    kg_per_capita = EXCLUDED.kg_per_capita,
+    recycling_rate_percent = EXCLUDED.recycling_rate_percent;
+
+-- Seed Regional Facilities (Healthcare, Culture & Sports, Tourism Attractions)
+INSERT INTO regional_facilities (
+    id, name, category, facility_type, municipality, district, street_address, postal_code,
+    latitude, longitude, phone, website, description, opening_hours, extra_attributes
+)
+VALUES
+    -- 1. Healthcare: Pharmacies (Apotheken)
+    ('fac-apo-bst-sonnen', 'Sonnen-Apotheke Bürstadt', 'healthcare', 'pharmacy', 'Bürstadt', 'Kernstadt', 'Mainstraße 12', '68642', 49.6425, 8.4528, '06206 6358', 'https://sonnen-apotheke-buerstadt.de', 'Zentrale Apotheke in der Fußgängerzone Bürstadt mit Notdienstbereitschaft.', '{"Mo-Fr": "08:30-18:30", "Sa": "08:30-13:00"}'::jsonb, '{"emergency_duty": false, "wheelchair": true, "prescription_delivery": true}'::jsonb),
+    ('fac-apo-bst-nibelungen', 'Nibelungen-Apotheke Bürstadt', 'healthcare', 'pharmacy', 'Bürstadt', 'Kernstadt', 'Wilhelminenstraße 10', '68642', 49.6441, 8.4560, '06206 963131', 'https://nibelungen-apotheke-buerstadt.de', 'Vollversorgende Apotheke nahe Bahnhof Bürstadt.', '{"Mo-Fr": "08:30-18:30", "Sa": "09:00-13:00"}'::jsonb, '{"emergency_duty": true, "wheelchair": true}'::jsonb),
+    ('fac-apo-la-andreas', 'Andreas-Apotheke Lampertheim', 'healthcare', 'pharmacy', 'Lampertheim', 'Kernstadt', 'Kaiserstraße 18', '68623', 49.5938, 8.4682, '06206 2445', 'https://andreas-apotheke-lampertheim.de', 'Traditionsapotheke im Zentrum von Lampertheim.', '{"Mo-Fr": "08:00-19:00", "Sa": "08:30-14:00"}'::jsonb, '{"emergency_duty": true, "wheelchair": true}'::jsonb),
+    ('fac-apo-la-schiller', 'Schiller-Apotheke Lampertheim', 'healthcare', 'pharmacy', 'Lampertheim', 'Kernstadt', 'Schillerplatz 3', '68623', 49.5948, 8.4680, '06206 59288', 'https://schiller-apotheke-lampertheim.de', 'Apotheke am Schillerplatz.', '{"Mo-Fr": "08:30-18:30", "Sa": "08:30-13:00"}'::jsonb, '{"emergency_duty": false, "wheelchair": true}'::jsonb),
+    ('fac-apo-bib-weschnitz', 'Weschnitz-Apotheke Biblis', 'healthcare', 'pharmacy', 'Biblis', 'Kernort', 'Darmstädter Straße 14', '68647', 49.6870, 8.4455, '06245 7064', 'https://weschnitz-apotheke.de', 'Apotheke im Ortskern von Biblis.', '{"Mo-Fr": "08:30-18:30", "Sa": "08:30-12:30"}'::jsonb, '{"emergency_duty": false, "wheelchair": true}'::jsonb),
+
+    -- 2. Healthcare: Doctors & Medical Centers (Ärzte)
+    ('fac-doc-bst-hausarzt', 'Hausarztzentrum & Allgemeinmedizin Bürstadt', 'healthcare', 'doctor_gp', 'Bürstadt', 'Kernstadt', 'Nibelungenstraße 42', '68642', 49.6416, 8.4532, '06206 70010', 'https://hausarzt-buerstadt.de', 'Gemeinschaftspraxis für Allgemeinmedizin, Innere Medizin und Akutversorgung.', '{"Mo-Fr": "08:00-12:00, 15:00-18:00"}'::jsonb, '{"specialty": "Allgemeinmedizin", "accepting_new_patients": true}'::jsonb),
+    ('fac-doc-la-mvz', 'Medizinisches Versorgungszentrum (MVZ) Lampertheim', 'healthcare', 'doctor_specialist', 'Lampertheim', 'Kernstadt', 'Neue Schulstraße 28', '68623', 49.5962, 8.4715, '06206 9450', 'https://mvz-lampertheim.de', 'Fachärztliches Versorgungszentrum: Orthopädie, Kardiologie & Chirurgie.', '{"Mo-Fr": "08:00-18:00"}'::jsonb, '{"specialty": "Facharztzentrum", "wheelchair": true}'::jsonb),
+    ('fac-doc-la-kinderarzt', 'Praxis für Kinder- und Jugendmedizin Lampertheim', 'healthcare', 'doctor_specialist', 'Lampertheim', 'Kernstadt', 'Wilhelmstraße 45', '68623', 49.5932, 8.4745, '06206 3211', NULL, 'Pädiatrische Grund- und Notfallversorgung für das Ried.', '{"Mo-Fr": "08:30-12:30, 14:00-17:00"}'::jsonb, '{"specialty": "Kinder- & Jugendmedizin"}'::jsonb),
+
+    -- 3. Culture & Sports: KAMÜ, Venues, Grounds, Halls
+    ('fac-kamue-kulturzentrum', 'KAMÜ Kulturzentrum Bürstadt', 'culture_sports', 'culture_center', 'Bürstadt', 'Kernstadt', 'Industriestraße 11', '68642', 49.6457, 8.4582, '06206 157980', 'https://kamue.me', 'Soziokulturelles Zentrum, Initiator von Open Ried Sens, Raum für Konzerte, Theater, Maker-Workshops und Hackathons.', '{"Di-So": "16:00-22:00"}'::jsonb, '{"is_kamue_hub": true, "capacity": 250, "maker_lab": true}'::jsonb),
+    ('fac-bst-sportpark', 'Sportpark Bürstadt & alla hopp!-Bewegungsanlage', 'culture_sports', 'sports_complex', 'Bürstadt', 'Kernstadt', 'Wasserwerkstraße 4', '68642', 49.6385, 8.4595, '06206 7010', 'https://buerstadt.de/sportpark', 'Moderner Bürger- und Vereinssportpark mit Leichtathletikanlagen, Kunstrasen und Mehrgenerationen-Parcours.', '{"Mo-So": "08:00-21:30"}'::jsonb, '{"free_access_area": true, "lighted": true}'::jsonb),
+    ('fac-bst-vfr-lache', 'Sportgelände VfR 1910 Bürstadt (Die Lache)', 'culture_sports', 'sports_complex', 'Bürstadt', 'Kernstadt', 'Die Lache 1', '68642', 49.6355, 8.4580, '06206 6128', 'https://vfr-buerstadt.de', 'Traditioneller Fußballverein mit Naturrasenstadion und Vereinsheim.', '{"Di-So": "17:00-22:00"}'::jsonb, '{"teams_count": 14}'::jsonb),
+    ('fac-la-altrheinhalle', 'Altrheinhalle & Sportzentrum Lampertheim', 'culture_sports', 'sports_complex', 'Lampertheim', 'Kernstadt', 'Biedensandstraße 57', '68623', 49.5982, 8.4542, '06206 9350', 'https://lampertheim.de', 'Zentrale Dreifelderhalle für Hand-, Basket- und Hallenballsport sowie Großveranstaltungen.', '{"Mo-Sa": "08:00-22:00"}'::jsonb, '{"tribune_capacity": 800}'::jsonb),
+    ('fac-la-kanuclub', 'Wassersportzentrum / Kanu-Club Lampertheim', 'culture_sports', 'sports_complex', 'Lampertheim', 'Kernstadt', 'Römerstraße 108 / Altrhein', '68623', 49.5915, 8.4610, '06206 4501', 'https://kanu-club-lampertheim.de', 'Bundesstützpunkt-Nachwuchs Kanu-Rennsport und Breitensport am Altrheinarm.', '{"Mo-So": "09:00-20:00"}'::jsonb, '{"water_access": true}'::jsonb),
+    ('fac-bst-buergerhaus', 'Bürgerhaus & Historisches Rathaus Bürstadt', 'culture_sports', 'culture_center', 'Bürstadt', 'Kernstadt', 'Rathausstraße 2', '68642', 49.6415, 8.4548, '06206 7010', 'https://buerstadt.de', 'Veranstaltungssaal für Konzerte, Theater, Bürgerversammlungen und Tagungen.', '{"Mo-Fr": "08:00-18:00"}'::jsonb, '{"capacity": 450}'::jsonb),
+
+    -- 4. Tourism & Nature Attractions
+    ('fac-tour-kloster-lorsch', 'UNESCO Welterbe Kloster Lorsch & Freilichtlabor Lauresham', 'tourism', 'attraction', 'Lorsch', 'Klosterbezirk', 'Im Klosterbezirk 1', '64653', 49.6538, 8.5695, '06251 869200', 'https://kloster-lorsch.de', 'Karolingische Königshalle (UNESCO-Weltkulturerbe 1991), Experimentalarchäologisches Freilichtlabor Lauresham und Kräutergarten.', '{"Di-So": "10:00-17:00"}'::jsonb, '{"unesco_world_heritage": true, "guided_tours": true}'::jsonb),
+    ('fac-tour-biedensand', 'Naturschutzgebiet Lampertheimer Altrhein (Biedensand)', 'tourism', 'attraction', 'Lampertheim', 'Biedensand', 'Biedensandstraße', '68623', 49.5960, 8.4480, '06206 9350', 'https://lampertheim.de', 'Größte Auenlandschaft Hessens mit Rundwanderwegen, Vogelbeobachtungstürmen und Altrheinarmen.', '{"Mo-So": "00:00-24:00"}'::jsonb, '{"trail_length_km": 14.5, "birdwatching": true}'::jsonb),
+    ('fac-tour-biedensand-baeder', 'Biedensand Bäder Lampertheim (Hallen- & Freibad)', 'tourism', 'attraction', 'Lampertheim', 'Kernstadt', 'Weidweg 40', '68623', 49.5975, 8.4548, '06206 94460', 'https://biedensand-baeder.de', 'Beliebtes Freizeit- und Erlebnisbad mit großer Liegewiese, 50m-Becken und Saunalandschaft.', '{"Di-Fr": "06:30-21:00", "Sa-So": "08:00-20:00"}'::jsonb, '{"open_air_pool": true, "sauna": true}'::jsonb),
+    ('fac-tour-domkirche', 'Domkirche Lampertheim (Lukasgemeinde)', 'tourism', 'attraction', 'Lampertheim', 'Kernstadt', 'Römerstraße 100', '68623', 49.5945, 8.4678, '06206 2446', 'https://lukasgemeinde-lampertheim.de', 'Größte neugotische Hallenkirche Südhessens, Wahrzeichen der Spargelstadt.', '{"Mo-So": "09:00-18:00"}'::jsonb, '{"architectural_style": "Neugotik"}'::jsonb),
+    ('fac-tour-boxheimerhof', 'Historischer Boxheimerhof Bürstadt', 'tourism', 'attraction', 'Bürstadt', 'Boxheimerhof', 'Boxheimerhof 1', '68642', 49.6290, 8.4800, NULL, 'https://buerstadt.de', 'Ehemaliger Gutshof des Klosters Lorsch mit historischer Kapelle St. Anna (1285).', '{"Mo-So": "00:00-24:00"}'::jsonb, '{"historic_monument": true}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    category = EXCLUDED.category,
+    facility_type = EXCLUDED.facility_type,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    phone = EXCLUDED.phone,
+    website = EXCLUDED.website,
+    description = EXCLUDED.description,
+    opening_hours = EXCLUDED.opening_hours,
+    extra_attributes = EXCLUDED.extra_attributes,
+    updated_at = NOW();
+
+-- Seed Cultural & Community Events (Featuring KAMÜ Kulturzentrum)
+INSERT INTO cultural_events (
+    id, title, organizer, venue_id, venue_name, municipality, start_time, end_time, category, description, ticket_url, is_free
+)
+VALUES
+    ('evt-kamue-hackathon-info', 'Open Ried Sens & Smart City Hackathon Infoabend', 'KAMÜ Kulturzentrum', 'fac-kamue-kulturzentrum', 'KAMÜ Kulturzentrum Bürstadt', 'Bürstadt', '2026-10-15 18:30:00+02', '2026-10-15 21:30:00+02', 'workshop', 'Einführung in die offenen Sensordaten, API-Zugriff, Sensorknoten-Bau und Themen für den regionalen Ried-Hackathon.', 'https://kamue.me/events/hackathon-kickoff', TRUE),
+    ('evt-kamue-live-acoustic', 'Ried Acoustic Session – Lokale Singer/Songwriter', 'KAMÜ Kulturzentrum', 'fac-kamue-kulturzentrum', 'KAMÜ Kulturzentrum Bürstadt', 'Bürstadt', '2026-10-24 20:00:00+02', '2026-10-24 23:00:00+02', 'concert', 'Gemütlicher Live-Musikabend mit Künstlern aus dem Ried und der Metropolregion Rhein-Neckar.', 'https://kamue.me/tickets', FALSE),
+    ('evt-bst-stadtlauf', '34. Bürstädter Stadtlauf & Schülercup', 'TSG Bürstadt / Stadt Bürstadt', 'fac-bst-sportpark', 'Sportpark Bürstadt & Bürgerhaus', 'Bürstadt', '2026-11-08 09:30:00+01', '2026-11-08 14:00:00+01', 'sports', 'Traditioneller Volkslauf mit 5 km, 10 km und Schülerstaffeln durch Bürstadt.', 'https://buerstadt.de/stadtlauf', FALSE),
+    ('evt-la-spargel-herbst', 'Lampertheimer Erntedank- & Spargel-Kulturabend', 'Stadt Lampertheim', 'fac-la-altrheinhalle', 'Altrheinhalle Lampertheim', 'Lampertheim', '2026-10-18 17:00:00+02', '2026-10-18 22:00:00+02', 'festival', 'Regionales Kulturprogramm, Musik der Stadtkapelle und kulinarische Ried-Spezialitäten.', 'https://lampertheim.de/veranstaltungen', TRUE),
+    ('evt-zakb-repair-cafe', 'ZAKB Repair-Café & Zero-Waste Workshop', 'ZAKB & Bürgerstiftung', 'fac-bst-buergerhaus', 'Bürgerhaus Bürstadt', 'Bürstadt', '2026-11-14 14:00:00+01', '2026-11-14 17:30:00+01', 'civic', 'Gemeinsam defekte Haushaltsgeräte, Fahrräder und Elektronik reparieren statt wegwerfen.', 'https://zakb.de/repair-cafe', TRUE)
+ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    start_time = EXCLUDED.start_time,
+    end_time = EXCLUDED.end_time,
+    description = EXCLUDED.description;
+
+INSERT INTO collector_schema_versions(version) VALUES (20260921) ON CONFLICT DO NOTHING;

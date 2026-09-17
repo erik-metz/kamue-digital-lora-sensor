@@ -1,5 +1,5 @@
 import { env } from "@/env";
-import { toStationNodes, mergeDefaultCrossings, mergeDefaultEducation, type ApiMapSensor } from "./mapData";
+import { toStationNodes, mergeDefaultCrossings, mergeDefaultEducation, mergeDefaultFacilities, type ApiMapSensor } from "./mapData";
 
 export async function fetchMapData() {
   const response = await fetch(new URL("/api/v1/map/sensors", env.BACKEND_API_URL), {
@@ -12,11 +12,11 @@ export async function fetchMapData() {
     });
     if (!legacy.ok) throw new Error("Map inventory unavailable");
     const sensors: ApiMapSensor[] = await legacy.json();
-    return { nodes: mergeDefaultEducation(mergeDefaultCrossings(toStationNodes(sensors))), readingsAvailable: false };
+    return { nodes: mergeDefaultFacilities(mergeDefaultEducation(mergeDefaultCrossings(toStationNodes(sensors)))), readingsAvailable: false };
   }
   if (!response.ok) throw new Error("Map data unavailable");
   const body: { sensors: ApiMapSensor[] } = await response.json();
-  return { nodes: mergeDefaultEducation(mergeDefaultCrossings(toStationNodes(body.sensors))), readingsAvailable: true };
+  return { nodes: mergeDefaultFacilities(mergeDefaultEducation(mergeDefaultCrossings(toStationNodes(body.sensors)))), readingsAvailable: true };
 }
 
 export async function fetchProtectedAreas() {

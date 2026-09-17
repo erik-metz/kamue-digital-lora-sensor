@@ -12,6 +12,7 @@ from endpoints import (
     traffic,
     waste_trucks,
     environment,
+    social_daily_life,
 )
 from fastapi import APIRouter
 
@@ -29,6 +30,7 @@ api_router.include_router(street_closures.router)
 api_router.include_router(demographics.router)
 api_router.include_router(infrastructure.router)
 api_router.include_router(environment.router)
+api_router.include_router(social_daily_life.router)
 
 
 
