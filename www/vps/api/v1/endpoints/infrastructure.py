@@ -4,13 +4,14 @@ Broadband Rollout, EV Charging Stations, and Public Wi-Fi Hotspots.
 """
 
 import json
+import math
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
 import psycopg_pool
 from dependencies import get_db_pool
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/infrastructure", tags=["Infrastructure & Energy"])
 
@@ -163,10 +164,9 @@ async def get_road_conditions(
         params.append(municipality)
     query += " ORDER BY condition_grade DESC"
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
 
     segments: list[RoadSegmentResponse] = []
     for r in rows:
@@ -208,25 +208,23 @@ async def get_road_conditions(
 @router.get("/energy/summary", response_model=EnergyGenerationSummary)
 async def get_energy_summary(pool: DbPool):
     """Retrieve real-time renewable energy production estimates for ZAKB and regional plants."""
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                SELECT id, name, facility_type, operator, municipality, address,
-                       latitude, longitude, installed_capacity_kw, annual_generation_mwh_est,
-                       commissioned_date::text, mastr_id, description
-                FROM energy_facilities
-                ORDER BY installed_capacity_kw DESC
-                """
-            )
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            SELECT id, name, facility_type, operator, municipality, address,
+                   latitude, longitude, installed_capacity_kw, annual_generation_mwh_est,
+                   commissioned_date::text, mastr_id, description
+            FROM energy_facilities
+            ORDER BY installed_capacity_kw DESC
+            """
+        )
+        rows = await cur.fetchall()
 
     now = datetime.now(UTC)
     hour = now.hour + now.minute / 60.0
 
     # Solar diurnal factor (peaking around 13:00 UTC)
     if 6.0 <= hour <= 20.0:
-        import math
         sun_angle = math.sin((hour - 6.0) / 14.0 * math.pi)
         solar_factor = max(0.0, sun_angle) * 0.78  # ~78% of peak on a clear afternoon
     else:
@@ -298,18 +296,17 @@ async def get_energy_summary(pool: DbPool):
 @router.get("/broadband", response_model=BroadbandSummary)
 async def get_broadband_coverage(pool: DbPool):
     """Retrieve broadband and fibre rollout coverage status across the Ried."""
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                SELECT id, municipality, district, area_name, tech_type, max_download_mbps,
-                       max_upload_mbps, rollout_status, contract_quota_pct, primary_provider,
-                       completion_target_date::text, coordinates
-                FROM broadband_coverage
-                ORDER BY municipality, area_name
-                """
-            )
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            SELECT id, municipality, district, area_name, tech_type, max_download_mbps,
+                   max_upload_mbps, rollout_status, contract_quota_pct, primary_provider,
+                   completion_target_date::text, coordinates
+            FROM broadband_coverage
+            ORDER BY municipality, area_name
+            """
+        )
+        rows = await cur.fetchall()
 
     areas: list[BroadbandAreaResponse] = []
     for r in rows:
@@ -345,22 +342,21 @@ async def get_broadband_coverage(pool: DbPool):
 @router.get("/ev-charging", response_model=EvChargingSummary)
 async def get_ev_charging_stations(pool: DbPool):
     """Retrieve EV charging stations and live slot availability in the Ried."""
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                SELECT s.id, s.bnetza_id, s.name, s.operator, s.address, s.municipality, s.district,
-                       s.latitude, s.longitude, s.total_points, s.max_power_kw, s.is_fast_charger,
-                       s.connector_types, s.is_public,
-                       COALESCE(st.available_points, s.total_points) as available_points,
-                       COALESCE(st.occupied_points, 0) as occupied_points,
-                       COALESCE(st.status_source, 'static_register') as status_source
-                FROM ev_charging_stations s
-                LEFT JOIN ev_charging_status st ON s.id = st.station_id
-                ORDER BY s.municipality, s.name
-                """
-            )
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            SELECT s.id, s.bnetza_id, s.name, s.operator, s.address, s.municipality, s.district,
+                   s.latitude, s.longitude, s.total_points, s.max_power_kw, s.is_fast_charger,
+                   s.connector_types, s.is_public,
+                   COALESCE(st.available_points, s.total_points) as available_points,
+                   COALESCE(st.occupied_points, 0) as occupied_points,
+                   COALESCE(st.status_source, 'static_register') as status_source
+            FROM ev_charging_stations s
+            LEFT JOIN ev_charging_status st ON s.id = st.station_id
+            ORDER BY s.municipality, s.name
+            """
+        )
+        rows = await cur.fetchall()
 
     stations: list[EvChargingStationResponse] = []
     tot_points = 0
@@ -410,18 +406,17 @@ async def get_ev_charging_stations(pool: DbPool):
 @router.get("/wifi-hotspots", response_model=list[WifiHotspotResponse])
 async def get_wifi_hotspots(pool: DbPool):
     """Retrieve public Wi-Fi hotspots (Hessen-WLAN, Freifunk) in the Ried."""
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(
-                """
-                SELECT id, name, ssid, operator, location_type, address, municipality,
-                       latitude, longitude, indoor_outdoor, auth_mode, bandwidth_mbps, is_active
-                FROM public_wifi_hotspots
-                WHERE is_active = TRUE
-                ORDER BY municipality, name
-                """
-            )
-            rows = await cur.fetchall()
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            SELECT id, name, ssid, operator, location_type, address, municipality,
+                   latitude, longitude, indoor_outdoor, auth_mode, bandwidth_mbps, is_active
+            FROM public_wifi_hotspots
+            WHERE is_active = TRUE
+            ORDER BY municipality, name
+            """
+        )
+        rows = await cur.fetchall()
 
     hotspots: list[WifiHotspotResponse] = []
     for r in rows:
