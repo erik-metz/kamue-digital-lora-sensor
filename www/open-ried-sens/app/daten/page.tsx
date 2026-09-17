@@ -351,6 +351,70 @@ export default async function DataDocsPage() {
           </div>
         </section>
 
+        {/* ENVIRONMENT, GROUNDWATER & AGRICULTURE API */}
+        <section className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                <Database className="w-3.5 h-3.5" /> Umwelt- &amp; Agrardaten API
+              </div>
+              <h2 className="text-2xl font-bold">Grundwasser, Pegelstände &amp; Landwirtschaft</h2>
+              <p className="text-slate-400 mt-1 text-sm">
+                REST-Endpunkte für regionale Monitoringdaten der HLNUG, Pegelonline WSV und InVeKoS Agrardaten.
+              </p>
+            </div>
+            <span className="text-xs px-3 py-1.5 rounded-full bg-slate-950 border border-slate-800 text-slate-300 font-mono self-start sm:self-auto">
+              /api/v1/environment/*
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-emerald-400">GET /api/v1/environment/groundwater</span>
+                <span className="text-[11px] text-slate-500">JSON</span>
+              </div>
+              <h4 className="text-sm font-semibold text-slate-200">Grundwassermessstellen &amp; Nitrat</h4>
+              <p className="text-xs text-slate-400">
+                Liefert Flurabstand (Tiefe zum Grundwasser in m) und Nitratkonzentration (mg/l) der HLNUG-Messstellen im Ried.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-emerald-400">GET /api/v1/environment/protected-areas</span>
+                <span className="text-[11px] text-slate-500">GeoJSON</span>
+              </div>
+              <h4 className="text-sm font-semibold text-slate-200">Naturschutz- &amp; Wasserschutzgebiete</h4>
+              <p className="text-xs text-slate-400">
+                GeoJSON-Polygone für NSG Lampertheimer Altrhein, Biedensand, FFH-Wälder und Trinkwasserschutzgebiete.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-emerald-400">GET /api/v1/environment/agriculture/stats</span>
+                <span className="text-[11px] text-slate-500">JSON</span>
+              </div>
+              <h4 className="text-sm font-semibold text-slate-200">Agrarflächen &amp; Kulturen</h4>
+              <p className="text-xs text-slate-400">
+                Flächenstatistiken für Bürstadt und Lampertheim: Spargel, Freilandgemüse, Erdbeeren, Getreide und Tabakhistorie.
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-xs font-bold text-emerald-400">GET /api/v1/environment/flood/gauges</span>
+                <span className="text-[11px] text-slate-500">JSON</span>
+              </div>
+              <h4 className="text-sm font-semibold text-slate-200">Flusspegelstände (Rhein &amp; Weschnitz)</h4>
+              <p className="text-xs text-slate-400">
+                Echtzeit-Wasserstände vom Rheinpegel Worms und Weschnitzpegel Lorsch mit Hochwasser-Meldestufen.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* OPEN DATA LICENSE */}
         <section className="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>

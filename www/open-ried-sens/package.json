@@ -7,13 +7,14 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/map.test.mjs tests/mobility.test.mjs tests/wasteTruck.test.mjs tests/busMobility.test.mjs tests/security.test.mjs tests/streetClosures.test.mjs",
+    "test": "node --test tests/map.test.mjs tests/mobility.test.mjs tests/wasteTruck.test.mjs tests/busMobility.test.mjs tests/security.test.mjs tests/streetClosures.test.mjs tests/environment.test.mjs",
     "test:security": "node --test tests/security.test.mjs",
     "test:map": "node --test tests/map.test.mjs",
     "test:mobility": "node --test tests/mobility.test.mjs",
     "test:waste": "node --test tests/wasteTruck.test.mjs",
     "test:bus": "node --test tests/busMobility.test.mjs",
-    "test:closures": "node --test tests/streetClosures.test.mjs"
+    "test:closures": "node --test tests/streetClosures.test.mjs",
+    "test:environment": "node --test tests/environment.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

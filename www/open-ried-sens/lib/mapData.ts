@@ -39,7 +39,7 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     if (["temperature", "soil_temperature", "humidity", "relative_humidity", "precipitation"].includes(r.metric))
       categories.add(r.metric === "soil_temperature" || soil ? "soil" : "weather");
     if (r.metric.startsWith("soil_") || r.metric === "water_surface_distance") categories.add("soil");
-    if (["water_level_delta", "water_level"].includes(r.metric)) categories.add("water");
+    if (["water_level_delta", "water_level"].includes(r.metric) || r.metric.startsWith("groundwater_") || r.metric.startsWith("river_")) categories.add("water");
     if (["air_quality_index", "NO2", "PM10", "PM25", "O3"].includes(r.metric)) categories.add("air");
     if (r.metric.startsWith("traffic_") || r.metric.startsWith("crossing_") || r.metric === "closure_duration") categories.add("traffic");
     if (r.metric.startsWith("parking_")) categories.add("parking");
@@ -49,6 +49,7 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
   }
   if (!categories.size) {
     if (sensor.id.startsWith("shake-")) categories.add("seismic");
+    else if (sensor.id.startsWith("gw-") || sensor.id.startsWith("pegel-")) categories.add("water");
     else if (sensor.id.startsWith("bu-")) categories.add("traffic");
     else if (sensor.id.startsWith("nextbike-")) categories.add("bikes");
     else if (type === "WeatherObserved") categories.add(soil ? "soil" : "weather");
@@ -700,6 +701,15 @@ export function valueLabel(reading: Reading | undefined, readings?: Reading[]) {
   if (reading.metric === "edu_enrollment" || reading.metric === "edu_capacity") {
     return `${value} Plätze`;
   }
+  if (reading.metric === "groundwater_depth_m") {
+    return `${value} m Flurabstand`;
+  }
+  if (reading.metric === "groundwater_nitrate_mg_l") {
+    return `${value} mg/l Nitrat`;
+  }
+  if (reading.metric === "river_gauge_m") {
+    return `${value} m Pegel`;
+  }
   if (reading.metric === "crossing_state") {
     return reading.value >= 2 ? "Geschlossen" : reading.value >= 1 ? "Schließt bald" : "Offen (Frei)";
   }
@@ -861,3 +871,68 @@ export function parseStoredCategories(raw: string | null): Category[] {
   } catch { /* Unavailable or old preferences use the default. */ }
   return CATEGORY_IDS;
 }
+
+export interface NatureArea {
+  id: string;
+  name: string;
+  designation: string;
+  municipality: string;
+  area_hectares?: number | null;
+  legal_ordinance_year?: number | null;
+  conservation_aims?: string | null;
+  visiting_rules?: Record<string, any> | null;
+  geojson: any;
+  source: string;
+}
+
+export interface CropZone {
+  id: string;
+  municipality: string;
+  crop_name: string;
+  crop_family: string;
+  year: number;
+  area_hectares?: number | null;
+  irrigation_demand_class?: string | null;
+  geojson: any;
+}
+
+export interface AgriculturalStat {
+  municipality: string;
+  year: number;
+  crop_family: string;
+  crop_name: string;
+  area_hectares: number;
+  percentage_of_agricultural_land: number;
+}
+
+export interface FloodGauge {
+  id: string;
+  name: string;
+  water_body: string;
+  municipality: string;
+  latitude: number;
+  longitude: number;
+  current_level_m: number;
+  discharge_m3_s?: number | null;
+  alarm_level_1_m: number;
+  alarm_level_2_m: number;
+  alarm_level_3_m: number;
+  status: string;
+  source: string;
+  updated_at: string;
+}
+
+export interface MapServiceLayer {
+  id: string;
+  title: string;
+  category: string;
+  service_type: string;
+  wms_url: string;
+  layer_name: string;
+  legend_url?: string | null;
+  attribution: string;
+  default_opacity: number;
+  min_zoom: number;
+  max_zoom: number;
+}
+

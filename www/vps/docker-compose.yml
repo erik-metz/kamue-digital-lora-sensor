@@ -137,6 +137,27 @@ services:
       timescaledb:
         condition: service_healthy
 
+  environment-collector:
+    build:
+      context: ./environment-collector
+      dockerfile: Dockerfile
+    image: ghcr.io/erik-metz/open-ried-sens-environment-collector:latest
+    restart: unless-stopped
+    stop_grace_period: 60s
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      ENVIRONMENT_POLL_SECONDS: ${ENVIRONMENT_POLL_SECONDS:-300}
+    volumes:
+      - environment_state:/data
+    depends_on:
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
 
   archive-worker:
     image: ghcr.io/erik-metz/open-ried-sens-archive-worker:latest
@@ -196,6 +217,7 @@ volumes:
   smartcity_state:
   nextbike_state:
   traffic_state:
+  environment_state:
   certbot_www:
   certbot_etc:
   timescale_data:

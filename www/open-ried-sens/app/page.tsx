@@ -22,6 +22,7 @@ import DashboardClient from "./components/DashboardClient.tsx";
 import HeaderLogo from "./components/HeaderLogo";
 import CleanEnergyWidget from "./components/CleanEnergyWidget";
 import BroadbandTrackerWidget from "./components/BroadbandTrackerWidget";
+import EnvironmentAgricultureWidget from "./components/EnvironmentAgricultureWidget";
 
 
 export const dynamic = "force-dynamic";
@@ -427,6 +428,11 @@ export default async function Home() {
         {/* DASHBOARD & KARTEN SECTION */}
         <section id="dashboard" className="space-y-8">
           <DashboardClient nodes={nodes} loadFailed={sensors === null} readingsAvailable={sensors?.readingsAvailable ?? false} />
+        </section>
+
+        {/* UMWELT, GRUNDWASSER & LANDWIRTSCHAFT */}
+        <section id="umwelt" className="space-y-8">
+          <EnvironmentAgricultureWidget />
         </section>
 
         {/* REGIONALE ÖKOSTROM- & BIOGASERZEUGUNG */}

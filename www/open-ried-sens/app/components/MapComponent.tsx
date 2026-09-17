@@ -40,6 +40,11 @@ import {
   type WifiHotspot,
   type BroadbandArea,
 } from "@/lib/infrastructureData";
+import {
+  DEFAULT_PROTECTED_AREAS,
+  DEFAULT_CROP_ZONES,
+  DEFAULT_FLOOD_GAUGES,
+} from "@/lib/environmentData";
 import { useEffect, useRef, useState } from "react";
 
 export type { SensorNode } from "@/lib/mapData";
@@ -90,6 +95,10 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [wifiHotspots, setWifiHotspots] = useState<WifiHotspot[]>(VERIFIED_WIFI_HOTSPOTS);
   const [roadSegments, setRoadSegments] = useState<RoadSegment[]>(VERIFIED_ROAD_SEGMENTS);
   const [broadbandAreas, setBroadbandAreas] = useState<BroadbandArea[]>(VERIFIED_BROADBAND_AREAS);
+  const [showNatureAreas, setShowNatureAreas] = useState(true);
+  const [showCropZones, setShowCropZones] = useState(true);
+  const [showFloodGauges, setShowFloodGauges] = useState(true);
+  const [showStarkregenWMS, setShowStarkregenWMS] = useState(false);
 
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -107,6 +116,10 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const wifiGroupRef = useRef<L.LayerGroup | null>(null);
   const roadConditionsGroupRef = useRef<L.LayerGroup | null>(null);
   const broadbandGroupRef = useRef<L.LayerGroup | null>(null);
+  const natureGroupRef = useRef<L.LayerGroup | null>(null);
+  const cropZonesGroupRef = useRef<L.LayerGroup | null>(null);
+  const floodGaugesGroupRef = useRef<L.LayerGroup | null>(null);
+  const starkregenWmsRef = useRef<L.TileLayer.WMS | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
@@ -216,12 +229,28 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const wifiGroup = L.layerGroup();
       const roadConditionsGroup = L.layerGroup();
       const broadbandGroup = L.layerGroup();
+      const natureGroup = L.layerGroup();
+      const cropZonesGroup = L.layerGroup();
+      const floodGaugesGroup = L.layerGroup();
 
       evChargingGroupRef.current = evChargingGroup;
       energyFacilitiesGroupRef.current = energyFacilitiesGroup;
       wifiGroupRef.current = wifiGroup;
       roadConditionsGroupRef.current = roadConditionsGroup;
       broadbandGroupRef.current = broadbandGroup;
+      natureGroupRef.current = natureGroup;
+      cropZonesGroupRef.current = cropZonesGroup;
+      floodGaugesGroupRef.current = floodGaugesGroup;
+
+      const starkregenWms = L.tileLayer.wms("https://gds.hessen.de/wms/hlug_starkregen", {
+        layers: "starkregen_gefahrenkarte",
+        format: "image/png",
+        transparent: true,
+        opacity: 0.60,
+        attribution: "© HLNUG / Geoportal Hessen",
+        maxZoom: 19,
+      });
+      starkregenWmsRef.current = starkregenWms;
 
       map.addLayer(railTracksGroup);
       map.addLayer(crossingsGroup);
@@ -237,10 +266,13 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       map.addLayer(energyFacilitiesGroup);
       map.addLayer(wifiGroup);
       map.addLayer(roadConditionsGroup);
+      map.addLayer(natureGroup);
+      map.addLayer(floodGaugesGroup);
 
-      // Bus stops become visible at zoom >= 13
+      // Bus stops & crop zones become visible at zoom >= 13
       if (map.getZoom() >= 13) {
         map.addLayer(busStopsGroup);
+        map.addLayer(cropZonesGroup);
       }
 
       const group = L.markerClusterGroup({
@@ -306,6 +338,10 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       trafficRoutesGroupRef.current = null;
       trafficIncidentsGroupRef.current = null;
       closuresGroupRef.current = null;
+      natureGroupRef.current = null;
+      cropZonesGroupRef.current = null;
+      floodGaugesGroupRef.current = null;
+      starkregenWmsRef.current = null;
       currentTrainMarkers.clear();
       currentCrossingMarkers.clear();
       currentWasteTruckMarkers.clear();
@@ -1436,6 +1472,39 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     else { if (map.hasLayer(group)) map.removeLayer(group); }
   }, [showBroadband]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = natureGroupRef.current;
+    if (!map || !group) return;
+    if (showNatureAreas) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showNatureAreas]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = cropZonesGroupRef.current;
+    if (!map || !group) return;
+    const shouldShow = showCropZones && zoom >= 13;
+    if (shouldShow && !map.hasLayer(group)) map.addLayer(group);
+    else if (!shouldShow && map.hasLayer(group)) map.removeLayer(group);
+  }, [showCropZones, zoom]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = floodGaugesGroupRef.current;
+    if (!map || !group) return;
+    if (showFloodGauges) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showFloodGauges]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const wms = starkregenWmsRef.current;
+    if (!map || !wms) return;
+    if (showStarkregenWMS) { if (!map.hasLayer(wms)) map.addLayer(wms); }
+    else { if (map.hasLayer(wms)) map.removeLayer(wms); }
+  }, [showStarkregenWMS]);
+
   // Populate Infrastructure & Energy Layers
   useEffect(() => {
     if (!ready) return;
@@ -1548,7 +1617,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       }
     }
 
-    // 4. Road Condition Monitoring Segments
+    // 4. AI Road Surface Conditions
     const roadGroup = roadConditionsGroupRef.current;
     if (roadGroup) {
       roadGroup.clearLayers();
@@ -1556,12 +1625,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         const color = getRoadConditionColor(seg.conditionGrade);
         const polyline = L.polyline(seg.coordinates, {
           color,
-          weight: 5,
+          weight: 4,
           opacity: 0.85,
-        });
-        polyline.bindTooltip(`🛣️ <strong>${seg.roadName}</strong>: Note ${seg.conditionGrade.toFixed(1)} (${getRoadConditionLabel(seg.conditionGrade)})`, {
-          sticky: true,
-          className: "route-line-tooltip",
         });
         polyline.bindPopup(`
           <div style="font-family: sans-serif; color: #e2e8f0; min-width: 230px;">
@@ -1601,6 +1666,104 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         }
       }
     }
+
+    // 6. Nature Protected Areas (NSG, FFH, Wasserschutz)
+    const natGroup = natureGroupRef.current;
+    if (natGroup) {
+      natGroup.clearLayers();
+      for (const n of DEFAULT_PROTECTED_AREAS) {
+        if (n.geojson && n.geojson.coordinates && n.geojson.coordinates[0]) {
+          const latLngs = n.geojson.coordinates[0].map(([lng, lat]: [number, number]) => [lat, lng]);
+          const color = n.designation === "wsg" ? "#0284c7" : n.designation === "ffh" ? "#10b981" : "#059669";
+          const poly = L.polygon(latLngs, {
+            color,
+            fillColor: color,
+            fillOpacity: 0.25,
+            weight: 2,
+            dashArray: n.designation === "wsg" ? "4, 4" : undefined,
+          });
+          poly.bindPopup(`
+            <div style="font-family: sans-serif; color: #e2e8f0; min-width: 240px;">
+              <div style="font-size: 11px; font-weight: bold; color: #34d399; text-transform: uppercase;">🌿 ${n.designation.toUpperCase()} · ${n.municipality}</div>
+              <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${n.name}</div>
+              <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">${n.conservation_aims || ""}</div>
+              <div style="background: rgba(15,23,42,0.8); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
+                <div>Fläche: <strong>${n.area_hectares ? n.area_hectares + " ha" : "k.A."}</strong></div>
+                <div>Verordnung: <strong>seit ${n.legal_ordinance_year || "k.A."}</strong></div>
+                <div style="margin-top: 4px; color: #a7f3d0;">Regeln: Wegegebot, Leinenpflicht beachten</div>
+              </div>
+            </div>
+          `);
+          natGroup.addLayer(poly);
+        }
+      }
+    }
+
+    // 7. Agricultural Crop Zones (Spargel, Gemüse, Erdbeeren)
+    const cropGroup = cropZonesGroupRef.current;
+    if (cropGroup) {
+      cropGroup.clearLayers();
+      for (const c of DEFAULT_CROP_ZONES) {
+        if (c.geojson && c.geojson.coordinates && c.geojson.coordinates[0]) {
+          const latLngs = c.geojson.coordinates[0].map(([lng, lat]: [number, number]) => [lat, lng]);
+          const color = c.crop_name === "Spargel" ? "#c084fc" : c.crop_family === "gemuese" ? "#4ade80" : c.crop_name === "Erdbeeren" ? "#fb7185" : "#facc15";
+          const poly = L.polygon(latLngs, {
+            color,
+            fillColor: color,
+            fillOpacity: 0.35,
+            weight: 1.5,
+          });
+          poly.bindPopup(`
+            <div style="font-family: sans-serif; color: #e2e8f0; min-width: 220px;">
+              <div style="font-size: 11px; font-weight: bold; color: ${color}; text-transform: uppercase;">🌾 Landwirtschaft · ${c.municipality}</div>
+              <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${c.crop_name}</div>
+              <div style="background: rgba(15,23,42,0.8); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
+                <div>Schlaggröße: <strong>${c.area_hectares} ha</strong></div>
+                <div>Kulturfamilie: <strong>${c.crop_family}</strong></div>
+                <div>Bewässerungsbedarf: <strong>${c.irrigation_demand_class === "high" ? "Sehr hoch (Beregnung)" : "Mäßig"}</strong></div>
+                <div>Erntejahr: <strong>${c.year}</strong></div>
+              </div>
+            </div>
+          `);
+          cropGroup.addLayer(poly);
+        }
+      }
+    }
+
+    // 8. River Flood Gauges (Rheinpegel Worms, Weschnitzpegel Lorsch)
+    const floodGrp = floodGaugesGroupRef.current;
+    if (floodGrp) {
+      floodGrp.clearLayers();
+      for (const g of DEFAULT_FLOOD_GAUGES) {
+        const isStage = g.status !== "normal";
+        const badgeColor = isStage ? "#ef4444" : "#38bdf8";
+        const iconHtml = `
+          <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: #0f172a; border: 2px solid ${badgeColor}; box-shadow: 0 0 10px ${badgeColor}80; color: #fff; font-size: 16px;">
+            🌊
+          </div>
+        `;
+        const icon = L.divIcon({
+          html: iconHtml,
+          className: "map-sensor-icon",
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+        });
+        const marker = L.marker([g.latitude, g.longitude], { icon, zIndexOffset: 480 });
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; color: #e2e8f0; min-width: 220px;">
+            <div style="font-size: 11px; font-weight: bold; color: ${badgeColor}; text-transform: uppercase;">🌊 Flusspegel (${g.water_body})</div>
+            <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${g.name}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${g.municipality} · ${g.source}</div>
+            <div style="background: rgba(15,23,42,0.8); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
+              <div>Aktueller Wasserstand: <strong style="font-size: 14px; color: ${badgeColor};">${g.current_level_m.toFixed(2)} m</strong></div>
+              <div>Meldestufe 1 / 2 / 3: <strong>${g.alarm_level_1_m}m / ${g.alarm_level_2_m}m / ${g.alarm_level_3_m}m</strong></div>
+              <div>Hochwasserstatus: <strong style="color: ${isStage ? "#ef4444" : "#10b981"};">${g.status === "normal" ? "Normal (kein Hochwasser)" : "Meldestufe aktiv!"}</strong></div>
+            </div>
+          </div>
+        `);
+        floodGrp.addLayer(marker);
+      }
+    }
   }, [ready, now, evChargers, wifiHotspots, roadSegments, broadbandAreas]);
 
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
@@ -1634,6 +1797,40 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     ) : null}
 
     <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2 max-w-[85%]">
+      {/* Environment & Agriculture Layers */}
+      <button
+        type="button"
+        className={`map-control ${showNatureAreas ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowNatureAreas((prev) => !prev)}
+        title="Naturschutzgebiete & Schutzgebiete im Ried ein-/ausblenden"
+      >
+        🌿 Naturschutz {showNatureAreas ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showCropZones && zoom >= 13 ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowCropZones((prev) => !prev)}
+        title={zoom < 13 ? "Landwirtschaftliche Kulturen ab Zoom 13 sichtbar" : "Kulturen & Spargelfelder ein-/ausblenden"}
+      >
+        🌾 Kulturen {showCropZones ? (zoom >= 13 ? "An" : "Zoom ≥13") : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showFloodGauges ? "border-sky-400 text-sky-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowFloodGauges((prev) => !prev)}
+        title="Rhein- & Weschnitz-Pegel ein-/ausblenden"
+      >
+        🌊 Pegel {showFloodGauges ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showStarkregenWMS ? "border-blue-500 text-blue-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowStarkregenWMS((prev) => !prev)}
+        title="Offizielle HLNUG Starkregengefahrenkarte Hessen ein-/ausblenden"
+      >
+        🌧️ Starkregen-WMS {showStarkregenWMS ? "An" : "Aus"}
+      </button>
+
       {/* Infrastructure & Energy Layers */}
       <button
         type="button"

@@ -11,6 +11,7 @@ from endpoints import (
     telemetry,
     traffic,
     waste_trucks,
+    environment,
 )
 from fastapi import APIRouter
 
@@ -27,6 +28,7 @@ api_router.include_router(traffic.router)
 api_router.include_router(street_closures.router)
 api_router.include_router(demographics.router)
 api_router.include_router(infrastructure.router)
+api_router.include_router(environment.router)
 
 
 

@@ -1252,3 +1252,219 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO collector_schema_versions(version) VALUES (20260919) ON CONFLICT DO NOTHING;
 
+-- 13. Environment & Agriculture for the Hessisches Ried
+CREATE TABLE IF NOT EXISTS nature_protected_areas (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    designation VARCHAR(32) NOT NULL, -- 'nsg' (Naturschutzgebiet), 'ffh', 'spa' (Vogelschutz), 'lsg', 'wsg' (Wasserschutz)
+    municipality VARCHAR(64) NOT NULL,
+    area_hectares DOUBLE PRECISION,
+    legal_ordinance_year INT,
+    conservation_aims TEXT,
+    visiting_rules JSONB,
+    geojson JSONB NOT NULL,
+    source VARCHAR(64) NOT NULL DEFAULT 'hlnug_natureg',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_nature_areas_municipality ON nature_protected_areas (municipality);
+CREATE INDEX IF NOT EXISTS idx_nature_areas_designation ON nature_protected_areas (designation);
+
+CREATE TABLE IF NOT EXISTS agriculture_crop_zones (
+    id VARCHAR(64) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    crop_name VARCHAR(128) NOT NULL,
+    crop_family VARCHAR(64) NOT NULL, -- 'sonderkultur', 'gemuese', 'getreide', 'oelfrucht', 'brache'
+    year INT NOT NULL,
+    area_hectares DOUBLE PRECISION,
+    irrigation_demand_class VARCHAR(16) DEFAULT 'medium', -- 'low', 'medium', 'high'
+    geojson JSONB NOT NULL,
+    source VARCHAR(64) DEFAULT 'invekos_hessen',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_agri_crop_year ON agriculture_crop_zones (year, municipality);
+
+CREATE TABLE IF NOT EXISTS agriculture_municipal_stats (
+    municipality VARCHAR(64) NOT NULL,
+    year INT NOT NULL,
+    crop_family VARCHAR(64) NOT NULL,
+    crop_name VARCHAR(128) NOT NULL,
+    area_hectares DOUBLE PRECISION NOT NULL,
+    percentage_of_agricultural_land DOUBLE PRECISION NOT NULL,
+    PRIMARY KEY (municipality, year, crop_name)
+);
+
+CREATE TABLE IF NOT EXISTS flood_infrastructure (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    infrastructure_type VARCHAR(64) NOT NULL, -- 'polder', 'dike', 'pumping_station', 'weir', 'flood_gate'
+    water_body VARCHAR(64) NOT NULL, -- 'Rhein', 'Weschnitz', 'Landgraben'
+    municipality VARCHAR(64) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    protection_level VARCHAR(32) DEFAULT 'HQ100',
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS flood_gauges (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    water_body VARCHAR(64) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    current_level_m DOUBLE PRECISION NOT NULL,
+    discharge_m3_s DOUBLE PRECISION,
+    alarm_level_1_m DOUBLE PRECISION NOT NULL,
+    alarm_level_2_m DOUBLE PRECISION NOT NULL,
+    alarm_level_3_m DOUBLE PRECISION NOT NULL,
+    status VARCHAR(32) NOT NULL DEFAULT 'normal', -- 'normal' | 'stage_1' | 'stage_2' | 'stage_3'
+    source VARCHAR(64) NOT NULL DEFAULT 'pegelonline_wsv',
+    source_station_id VARCHAR(64),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS noise_corridors (
+    id VARCHAR(128) PRIMARY KEY,
+    corridor_type VARCHAR(32) NOT NULL, -- 'rail_riedbahn', 'road_a67', 'road_a5', 'road_b47', 'road_b44'
+    name VARCHAR(255) NOT NULL,
+    noise_metric VARCHAR(16) NOT NULL, -- 'Lden' | 'Lnight'
+    db_band VARCHAR(16) NOT NULL, -- '55-60', '60-65', '65-70', '>70'
+    geojson JSONB NOT NULL,
+    source VARCHAR(64) NOT NULL DEFAULT 'eba_noise_mapping',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS environmental_map_services (
+    id VARCHAR(64) PRIMARY KEY,
+    title VARCHAR(128) NOT NULL,
+    category VARCHAR(32) NOT NULL, -- 'starkregen', 'flood_risk', 'groundwater', 'protected_areas'
+    service_type VARCHAR(16) NOT NULL DEFAULT 'WMS',
+    wms_url TEXT NOT NULL,
+    layer_name TEXT NOT NULL,
+    legend_url TEXT,
+    attribution TEXT NOT NULL,
+    default_opacity DOUBLE PRECISION DEFAULT 0.65,
+    min_zoom INT DEFAULT 10,
+    max_zoom INT DEFAULT 19,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- Seed Nature Protected Areas
+INSERT INTO nature_protected_areas (id, name, designation, municipality, area_hectares, legal_ordinance_year, conservation_aims, visiting_rules, geojson)
+VALUES
+    ('nsg-lampertheimer-altrhein', 'Naturschutzgebiet Lampertheimer Altrhein', 'nsg', 'Lampertheim', 516.0, 1927, 'Größtes Altrheingebiet Hessens, Auenwälder, Verlandungszonen, Brut- und Rastplatz für über 200 Vogelarten (Störche, Silberreiher, Eisvogel).', '{"leash_required": true, "stay_on_paths": true, "no_drones": true, "no_swimming": true}'::jsonb, '{"type": "Polygon", "coordinates": [[[8.435, 49.585], [8.462, 49.578], [8.472, 49.595], [8.455, 49.610], [8.435, 49.585]]]}'::jsonb),
+    ('nsg-biedensand', 'Naturschutzgebiet Biedensand', 'nsg', 'Lampertheim', 250.0, 1984, 'Urtümliche Auenlandschaft, Altwasserarme, seltene Amphibien und Röhrichtbestände.', '{"leash_required": true, "stay_on_paths": true, "no_camping": true}'::jsonb, '{"type": "Polygon", "coordinates": [[[8.442, 49.592], [8.458, 49.590], [8.460, 49.603], [8.445, 49.605], [8.442, 49.592]]]}'::jsonb),
+    ('ffh-buerstaedter-wald', 'FFH-Gebiet Bürstädter Wald / Lorcher Wald', 'ffh', 'Bürstadt', 420.0, 2000, 'Naturnahe Hartholz- und Eichenmischwälder, Lebensraum für Hirschkäfer, Bechsteinfledermaus und Schwarzspecht.', '{"stay_on_paths": true, "leash_required": true}'::jsonb, '{"type": "Polygon", "coordinates": [[[8.468, 49.635], [8.498, 49.638], [8.495, 49.655], [8.470, 49.650], [8.468, 49.635]]]}'::jsonb),
+    ('nsg-weschnitzinsel', 'Naturschutzgebiet Weschnitzinsel Lorsch', 'nsg', 'Biblis / Lorsch', 198.0, 1979, 'Feuchtwiesen, Storchwiesen und dynamische Auenvegetation entlang der Weschnitz.', '{"stay_on_paths": true, "leash_required": true}'::jsonb, '{"type": "Polygon", "coordinates": [[[8.545, 49.650], [8.572, 49.655], [8.568, 49.670], [8.540, 49.665], [8.545, 49.650]]]}'::jsonb),
+    ('wsg-ried-zone-2', 'Wasserschutzgebiet Hessisches Ried (Zone II/III)', 'wsg', 'Bürstadt', 1850.0, 1995, 'Zentrales Grundwasserschutzgebiet für die Trinkwasserversorgung des Rhein-Main-Gebietes und des Rieds.', '{"groundwater_protection": true, "commercial_restrictions": true}'::jsonb, '{"type": "Polygon", "coordinates": [[[8.440, 49.620], [8.485, 49.622], [8.480, 49.660], [8.435, 49.655], [8.440, 49.620]]]}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    area_hectares = EXCLUDED.area_hectares,
+    geojson = EXCLUDED.geojson;
+
+-- Seed Agricultural Municipal Statistics (Hessisches Ried: Gemüsegarten Hessens)
+INSERT INTO agriculture_municipal_stats (municipality, year, crop_family, crop_name, area_hectares, percentage_of_agricultural_land)
+VALUES
+    ('Bürstadt', 2025, 'sonderkultur', 'Spargel (Weiß- & Grünspargel)', 485.0, 24.2),
+    ('Bürstadt', 2025, 'gemuese', 'Freilandgemüse (Zwiebeln, Möhren, Salat)', 540.0, 27.0),
+    ('Bürstadt', 2025, 'sonderkultur', 'Erdbeeren & Beerenobst', 165.0, 8.2),
+    ('Bürstadt', 2025, 'getreide', 'Winterweizen & Gerste', 390.0, 19.5),
+    ('Bürstadt', 2025, 'getreide', 'Körner- & Silomais', 240.0, 12.0),
+    ('Bürstadt', 2025, 'sonderkultur', 'Tabakanbau (Historischer Schauanbau & Nische)', 15.0, 0.8),
+    ('Bürstadt', 2025, 'oelfrucht', 'Zuckerrüben & Raps', 165.0, 8.3),
+    ('Lampertheim', 2025, 'sonderkultur', 'Spargel (Lampertheimer Spargelstadt)', 620.0, 26.5),
+    ('Lampertheim', 2025, 'gemuese', 'Freilandgemüse (Zwiebeln, Bundzwiebeln)', 680.0, 29.0),
+    ('Lampertheim', 2025, 'sonderkultur', 'Erdbeeren & Beerenobst', 210.0, 9.0),
+    ('Lampertheim', 2025, 'getreide', 'Winterweizen', 430.0, 18.4),
+    ('Lampertheim', 2025, 'getreide', 'Silomais', 260.0, 11.1),
+    ('Lampertheim', 2025, 'sonderkultur', 'Tabakanbau (Kulturbeleg)', 12.0, 0.5),
+    ('Lampertheim', 2025, 'oelfrucht', 'Zuckerrüben', 130.0, 5.5)
+ON CONFLICT (municipality, year, crop_name) DO UPDATE SET
+    area_hectares = EXCLUDED.area_hectares,
+    percentage_of_agricultural_land = EXCLUDED.percentage_of_agricultural_land;
+
+-- Seed Sample Representative Crop Zones (Parcels for Zoom >= 13)
+INSERT INTO agriculture_crop_zones (id, municipality, crop_name, crop_family, year, area_hectares, irrigation_demand_class, geojson)
+VALUES
+    ('crop-bst-spargel-boxheimer', 'Bürstadt', 'Spargel', 'sonderkultur', 2025, 42.5, 'high', '{"type": "Polygon", "coordinates": [[[8.468, 49.638], [8.482, 49.640], [8.480, 49.646], [8.465, 49.644], [8.468, 49.638]]]}'::jsonb),
+    ('crop-bst-gemuese-nord', 'Bürstadt', 'Freilandgemüse (Zwiebeln & Möhren)', 'gemuese', 2025, 38.0, 'high', '{"type": "Polygon", "coordinates": [[[8.452, 49.652], [8.468, 49.654], [8.466, 49.660], [8.450, 49.658], [8.452, 49.652]]]}'::jsonb),
+    ('crop-la-spargel-heide', 'Lampertheim', 'Spargel', 'sonderkultur', 2025, 55.0, 'high', '{"type": "Polygon", "coordinates": [[[8.472, 49.605], [8.490, 49.607], [8.488, 49.615], [8.470, 49.613], [8.472, 49.605]]]}'::jsonb),
+    ('crop-la-erdbeeren-sued', 'Lampertheim', 'Erdbeeren', 'sonderkultur', 2025, 24.0, 'high', '{"type": "Polygon", "coordinates": [[[8.460, 49.588], [8.475, 49.589], [8.473, 49.596], [8.458, 49.594], [8.460, 49.588]]]}'::jsonb),
+    ('crop-bib-mais-flur', 'Biblis', 'Körnermais', 'getreide', 2025, 31.0, 'medium', '{"type": "Polygon", "coordinates": [[[8.435, 49.675], [8.450, 49.676], [8.448, 49.683], [8.432, 49.681], [8.435, 49.675]]]}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    crop_name = EXCLUDED.crop_name,
+    geojson = EXCLUDED.geojson;
+
+-- Seed Flood Gauges & Infrastructure
+INSERT INTO flood_gauges (id, name, water_body, municipality, latitude, longitude, current_level_m, discharge_m3_s, alarm_level_1_m, alarm_level_2_m, alarm_level_3_m, status, source_station_id)
+VALUES
+    ('pegel-rhein-worms', 'Rheinpegel Worms (km 443.4)', 'Rhein', 'Worms / Riedufer', 49.6315, 8.3755, 2.78, 1420.0, 4.50, 5.50, 6.50, 'normal', 'WORMS'),
+    ('pegel-weschnitz-lorsch', 'Weschnitzpegel Lorsch', 'Weschnitz', 'Lorsch / Bürstadt Ost', 49.6542, 8.5670, 0.82, 4.8, 1.80, 2.30, 2.80, 'normal', '23981005')
+ON CONFLICT (id) DO UPDATE SET
+    current_level_m = EXCLUDED.current_level_m,
+    status = EXCLUDED.status,
+    updated_at = NOW();
+
+INSERT INTO flood_infrastructure (id, name, infrastructure_type, water_body, municipality, latitude, longitude, protection_level, description)
+VALUES
+    ('infra-deich-la-biedensand', 'Rheindeich Lampertheim-Biedensand', 'dike', 'Rhein', 'Lampertheim', 49.5950, 8.4450, 'HQ200', 'Hauptdeichlinie zum Schutz der Kernstadt Lampertheim mit Deichschart'),
+    ('infra-polder-buerstadt', 'Hochwasserrückhaltepolder Bürstadt / Bobstadt', 'polder', 'Rhein / Landgraben', 'Bürstadt', 49.6580, 8.4250, 'HQ100', 'Flutpolder zur Scheitelkappung bei extremen Rheinhochwässern'),
+    ('infra-schoepfwerk-biblis', 'Schöpfwerk Biblis-Wattenheim', 'pumping_station', 'Weschnitz / Rhein', 'Biblis', 49.6880, 8.4050, 'HQ100', 'Entwässerungspumpwerk bei Rheinstau')
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    description = EXCLUDED.description;
+
+-- Seed Strategic Noise Corridors (Riedbahn & A67)
+INSERT INTO noise_corridors (id, corridor_type, name, noise_metric, db_band, geojson)
+VALUES
+    ('noise-riedbahn-day-65', 'rail_riedbahn', 'Riedbahn Lärmkorridor Tag (Lden 65-70 dB)', 'Lden', '65-70', '{"type": "LineString", "coordinates": [[8.455, 49.590], [8.456, 49.620], [8.458, 49.650], [8.450, 49.690]]}'::jsonb),
+    ('noise-riedbahn-night-60', 'rail_riedbahn', 'Riedbahn Lärmkorridor Nacht (Lnight 60-65 dB)', 'Lnight', '60-65', '{"type": "LineString", "coordinates": [[8.455, 49.590], [8.456, 49.620], [8.458, 49.650], [8.450, 49.690]]}'::jsonb),
+    ('noise-a67-day-65', 'road_a67', 'Autobahn A67 Lärmkorridor Tag (Lden 65-70 dB)', 'Lden', '65-70', '{"type": "LineString", "coordinates": [[8.520, 49.580], [8.515, 49.620], [8.525, 49.660], [8.530, 49.700]]}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    geojson = EXCLUDED.geojson;
+
+-- Seed Environmental WMS Tile Services (Geoportal Hessen)
+INSERT INTO environmental_map_services (id, title, category, service_type, wms_url, layer_name, attribution, default_opacity)
+VALUES
+    ('wms-starkregen-hessen', 'Starkregengefahrenkarte Hessen (KLIMPRAX)', 'starkregen', 'WMS', 'https://gds.hessen.de/wms/hlug_starkregen', 'starkregen_gefahrenkarte', '© HLNUG / Geoportal Hessen (dl-de/by-2-0)', 0.60),
+    ('wms-hochwasser-hq100', 'Überschwemmungsgebiete HQ100 (HQ100 / HQextrem)', 'flood_risk', 'WMS', 'https://gds.hessen.de/wms/hlug_hwgk_ueberschwemmungsgebiete', 'ueberschwemmungsgebiete_hq100', '© HLNUG / Hessische Wasserwirtschaft', 0.55)
+ON CONFLICT (id) DO UPDATE SET
+    title = EXCLUDED.title,
+    wms_url = EXCLUDED.wms_url;
+
+-- Seed Groundwater Monitoring Wells into sensor_metadata & sensor_latest
+INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, description)
+VALUES
+    ('gw-bst-boxheimerhof', 'Grundwassermessstelle Bürstadt Boxheimerhof', 49.6295, 8.4810, 'HLNUG Pegel-Nr. 3021: Quartärer Hauptgrundwasserleiter Hessisches Ried'),
+    ('gw-bst-riedrode', 'Grundwassermessstelle Bürstadt Riedrode', 49.6480, 8.4950, 'HLNUG Pegel-Nr. 3045: Oberflächennaher Grundwassermesspunkt'),
+    ('gw-la-neuschloss', 'Grundwassermessstelle Lampertheim Neuschloß', 49.6030, 8.5150, 'HLNUG Pegel-Nr. 4110: Messnetz Grundwassergüte und Flurabstand'),
+    ('gw-la-biedensand', 'Grundwassermessstelle Lampertheim Biedensand', 49.5960, 8.4520, 'HLNUG Pegel-Nr. 4125: Rheinauennahe Grundwasserüberwachung'),
+    ('gw-bib-wattenheim', 'Grundwassermessstelle Biblis-Wattenheim', 49.6860, 8.4110, 'HLNUG Pegel-Nr. 3090: WRRL-Überwachungsmessstelle Landwirtschaft')
+ON CONFLICT (id) DO UPDATE SET
+    friendly_name = EXCLUDED.friendly_name,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    description = EXCLUDED.description;
+
+INSERT INTO sensor_latest (sensor_id, metric, unit, timestamp, value)
+VALUES
+    ('gw-bst-boxheimerhof', 'groundwater_depth_m', 'm', NOW(), 2.15),
+    ('gw-bst-boxheimerhof', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 28.4),
+    ('gw-bst-riedrode', 'groundwater_depth_m', 'm', NOW(), 1.85),
+    ('gw-bst-riedrode', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 19.2),
+    ('gw-la-neuschloss', 'groundwater_depth_m', 'm', NOW(), 3.40),
+    ('gw-la-neuschloss', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 22.1),
+    ('gw-la-biedensand', 'groundwater_depth_m', 'm', NOW(), 1.20),
+    ('gw-la-biedensand', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 14.5),
+    ('gw-bib-wattenheim', 'groundwater_depth_m', 'm', NOW(), 2.30),
+    ('gw-bib-wattenheim', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 36.8)
+ON CONFLICT (sensor_id, metric, unit) DO UPDATE SET
+    timestamp = EXCLUDED.timestamp,
+    value = EXCLUDED.value;
+
+INSERT INTO collector_schema_versions(version) VALUES (20260920) ON CONFLICT DO NOTHING;
+
+
