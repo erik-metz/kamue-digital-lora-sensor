@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import DashboardClient from "./components/DashboardClient.tsx";
-import HeaderLogo from "./components/HeaderLogo";
+import SiteHeader from "./components/SiteHeader";
 import CleanEnergyWidget from "./components/CleanEnergyWidget";
 import BroadbandTrackerWidget from "./components/BroadbandTrackerWidget";
 import EnvironmentAgricultureWidget from "./components/EnvironmentAgricultureWidget";
@@ -40,91 +40,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
       {/* Top Header / Navigation Bar */}
-      <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo & Brand */}
-          <HeaderLogo />
-
-          {/* Quick Nav Links */}
-          <nav className="hidden md:flex items-end gap-6 text-sm font-medium text-slate-300">
-            {/* <a
-              href="#projekt"
-              className="hover:text-emerald-400 transition-colors"
-            >
-              Über das Projekt
-            </a>
-            <a
-              href="#sensorik"
-              className="hover:text-emerald-400 transition-colors"
-            >
-              Multisensorik
-            </a>
-            <a
-              href="#dashboard"
-              className="hover:text-emerald-400 transition-colors"
-            >
-              Echtzeit-Dashboard
-            </a>
-            <a
-              href="#karte"
-              className="hover:text-emerald-400 transition-colors"
-            >
-              Kartennetz
-            </a>
-            <a
-              href="#telemetrie"
-              className="hover:text-emerald-400 transition-colors"
-            >
-              LoRaWAN TTN
-            </a> */}
-            <Link
-              href="/bauen-wohnen"
-              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
-            >
-              Bauen & Wohnen
-            </Link>
-            <Link
-              href="/demografie"
-              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
-            >
-              Demografie & Bildung
-            </Link>
-            <Link
-              href="/statistik"
-              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
-            >
-              Regionalstatistik & Leben
-            </Link>
-            <Link
-              href="/haushalt"
-              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
-            >
-              Finanzen & Haushalt
-            </Link>
-            <Link
-              href="/wirtschaft"
-              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
-            >
-              Wirtschaft & Gewerbe
-            </Link>
-            <Link
-              href="/daten"
-              className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
-            >
-              Offene Daten & API
-            </Link>
-
-          </nav>
-
-          {/* Network Status Badge */}
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-full text-sm text-slate-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="font-medium text-emerald-400">
-              {sensors === null ? "Stationen nicht erreichbar" : `${nodes.length} Sensorstandorte`}
-            </span>
-          </div>
-        </div>
-      </header>
+      <SiteHeader sensorCount={nodes.length} />
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">

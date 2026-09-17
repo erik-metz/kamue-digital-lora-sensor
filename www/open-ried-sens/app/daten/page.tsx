@@ -16,7 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import HeaderLogo from "../components/HeaderLogo";
+import SiteHeader from "../components/SiteHeader";
 import DataDownload from "./DataDownload";
 import ArchiveDownloads from "./ArchiveDownloads";
 import SiteFooter from "../components/SiteFooter";
@@ -39,57 +39,7 @@ export default async function DataDocsPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo & Brand */}
-          <HeaderLogo />
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Sensor-Karte</span>
-            </Link>
-            <Link
-              href="/bauen-wohnen"
-              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
-            >
-              <Building2 className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline">Bauen & Wohnen</span>
-            </Link>
-            <Link
-              href="/demografie"
-              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
-            >
-              <Users className="w-4 h-4 text-teal-400" />
-              <span className="hidden sm:inline">Demografie</span>
-            </Link>
-            <Link
-              href="/statistik"
-              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
-            >
-              <Activity className="w-4 h-4 text-violet-400" />
-              <span className="hidden sm:inline">Statistik</span>
-            </Link>
-            <Link
-              href="/haushalt"
-              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
-            >
-              <Coins className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline">Finanzen</span>
-            </Link>
-            <Link
-              href="/admin"
-              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-emerald-400 transition-colors"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span className="hidden sm:inline">Admin</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
