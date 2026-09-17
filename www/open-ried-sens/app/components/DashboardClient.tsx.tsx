@@ -14,6 +14,7 @@ import {
   updateUrlDebounced,
 } from "@/lib/urlState";
 import TelemetryCharts from "./TelemetryCharts";
+import MapDarstellungBar from "./MapDarstellungBar";
 
 const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
@@ -53,6 +54,8 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
   const [selectedMetric, setSelectedMetric] = useState<string>();
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isLayersDrawerOpen, setIsLayersDrawerOpen] = useState(false);
+  const [activeClosuresCount, setActiveClosuresCount] = useState(7);
 
   const stored = useSyncExternalStore(subscribe, preferences, () => DEFAULT_SELECTION);
   const categories = useMemo(() => parseStoredCategories(stored), [stored]);
@@ -213,16 +216,26 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
             <CategoryIcon category={c} />{CATEGORIES[c].label}<span className="text-xs opacity-70">{counts[c]}</span>
           </button>)}
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 pt-4">
-          <label className="flex items-center gap-2 text-sm text-slate-300">Darstellung
-            <select value={mode} onChange={e => setMode(e.target.value as MapMode)} className="rounded-lg border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100">
-              <option value="category">Themenfarben</option><option value="temperature" disabled={!data.readingsAvailable}>Temperatur · °C</option>
-            </select>
-          </label>
-          <span className="text-xs text-slate-400" aria-live="polite">{filtered.length} von {nodes.length} Standorten ausgewählt</span>
-        </div>
         <p className="text-xs text-slate-500">Ein Thema anklicken, danach weitere hinzufügen. Ein Standort kann zu mehreren Themen gehören.</p>
       </div>
+
+      <MapDarstellungBar
+        mode={mode}
+        onModeChange={setMode}
+        layers={layers}
+        onLayerToggle={(layerId, enabled) =>
+          setLayers((prev) => ({ ...prev, [layerId]: enabled }))
+        }
+        onSetLayers={setLayers}
+        readingsAvailable={data.readingsAvailable}
+        activeClosuresCount={activeClosuresCount}
+        isOpen={isLayersDrawerOpen}
+        onToggleOpen={() => setIsLayersDrawerOpen((prev) => !prev)}
+        filteredCount={filtered.length}
+        totalCount={nodes.length}
+        zoom={viewport.z}
+      />
+
       <MapComponent
         nodes={mapNodes}
         categories={categories}
@@ -239,6 +252,11 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         onLayerToggle={(layerId, enabled) =>
           setLayers((prev) => ({ ...prev, [layerId]: enabled }))
         }
+        onOpenLayersDrawer={() => {
+          setIsLayersDrawerOpen(true);
+          document.getElementById("darstellung-control-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }}
+        onActiveClosuresCountChange={setActiveClosuresCount}
       />
       {filtered.length > mapNodes.length && <p className="text-xs text-slate-400">{filtered.length - mapNodes.length} Stationen ohne Kartenposition sind unter „Messwerte & Zeitverlauf“ auswählbar.</p>}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400" aria-label="Kartenlegende">

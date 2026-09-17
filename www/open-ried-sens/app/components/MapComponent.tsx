@@ -83,6 +83,8 @@ interface MapProps {
   layers?: Record<MapLayerId, boolean>;
   onViewportChange?: (center: [number, number], zoom: number) => void;
   onLayerToggle?: (layerId: MapLayerId, enabled: boolean) => void;
+  onOpenLayersDrawer?: () => void;
+  onActiveClosuresCountChange?: (count: number) => void;
 }
 
 export default function MapComponent({
@@ -97,6 +99,8 @@ export default function MapComponent({
   layers,
   onViewportChange,
   onLayerToggle,
+  onOpenLayersDrawer,
+  onActiveClosuresCountChange,
 }: MapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -145,6 +149,13 @@ export default function MapComponent({
   useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
   useEffect(() => { onViewportChangeRef.current = onViewportChange; }, [onViewportChange]);
   useEffect(() => { onLayerToggleRef.current = onLayerToggle; }, [onLayerToggle]);
+
+  useEffect(() => {
+    if (onActiveClosuresCountChange) {
+      const activeCount = streetClosures.filter((c) => isClosureActive(c, now)).length;
+      onActiveClosuresCountChange(activeCount);
+    }
+  }, [streetClosures, now, onActiveClosuresCountChange]);
 
   useEffect(() => {
     if (!layers) return;
@@ -2082,180 +2093,55 @@ export default function MapComponent({
       </div>
     ) : null}
 
-    <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2 max-w-[85%]">
-      {/* Environment & Agriculture Layers */}
+    {/* Clean, Minimal Map HUD */}
+    <div className="absolute top-3 right-3 z-[400] flex items-center gap-1.5 sm:gap-2 pointer-events-auto">
+      {onOpenLayersDrawer && (
+        <button
+          type="button"
+          onClick={onOpenLayersDrawer}
+          className="map-control flex items-center gap-1.5 shadow-lg font-medium border-slate-700 bg-slate-900/90 hover:bg-slate-800"
+          title="Kartenebenen & Overlays anpassen"
+        >
+          <span>🥞</span>
+          <span className="hidden sm:inline">Ebenen</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-950 text-emerald-300 font-bold border border-emerald-700/50">
+            {layers ? Object.values(layers).filter(Boolean).length : 0}
+          </span>
+        </button>
+      )}
+
       <button
         type="button"
-        className={`map-control ${showNatureAreas ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("nature", showNatureAreas, setShowNatureAreas)}
-        title="Naturschutzgebiete & Schutzgebiete im Ried ein-/ausblenden"
+        className="map-control flex items-center gap-1 shadow-lg border-slate-700 bg-slate-900/90 hover:bg-slate-800"
+        onClick={() => {
+          mapRef.current?.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+          onViewportChangeRef.current?.(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+        }}
+        title="Auf das Hessische Ried zentrieren"
       >
-        🌿 Naturschutz {showNatureAreas ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showCropZones && zoom >= 13 ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("crops", showCropZones, setShowCropZones)}
-        title={zoom < 13 ? "Landwirtschaftliche Kulturen ab Zoom 13 sichtbar" : "Kulturen & Spargelfelder ein-/ausblenden"}
-      >
-        🌾 Kulturen {showCropZones ? (zoom >= 13 ? "An" : "Zoom ≥13") : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showFloodGauges ? "border-sky-400 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("floods", showFloodGauges, setShowFloodGauges)}
-        title="Rhein- & Weschnitz-Pegel ein-/ausblenden"
-      >
-        🌊 Pegel {showFloodGauges ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showStarkregenWMS ? "border-blue-500 text-blue-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("starkregen", showStarkregenWMS, setShowStarkregenWMS)}
-        title="Offizielle HLNUG Starkregengefahrenkarte Hessen ein-/ausblenden"
-      >
-        🌧️ Starkregen-WMS {showStarkregenWMS ? "An" : "Aus"}
+        <span>🧭</span>
+        <span>Ried</span>
       </button>
 
-      {/* Infrastructure & Energy Layers */}
       <button
         type="button"
-        className={`map-control ${showEvCharging ? "border-emerald-400 text-emerald-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("charging", showEvCharging, setShowEvCharging)}
-        title="Elektro-Ladesäulen und Live-Belegung ein-/ausblenden"
+        className="map-control flex items-center gap-1 shadow-lg border-slate-700 bg-slate-900/90 hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed"
+        disabled={!nodes.length}
+        onClick={() => {
+          if (nodes.length && mapRef.current) {
+            const bounds = L.latLngBounds(nodes.map((n) => [n.lat, n.lng]));
+            mapRef.current.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
+            const c = mapRef.current.getCenter();
+            const z = mapRef.current.getZoom();
+            onViewportChangeRef.current?.([c.lat, c.lng], z);
+          }
+        }}
+        title="Ausschnitt auf alle sichtbaren Stationen anpassen"
       >
-        ⚡ Ladesäulen {showEvCharging ? "An" : "Aus"}
+        <span>🎯</span>
+        <span className="hidden sm:inline">Alle Standorte</span>
+        <span className="sm:hidden">Alle</span>
       </button>
-      <button
-        type="button"
-        className={`map-control ${showEnergyFacilities ? "border-amber-400 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("energy", showEnergyFacilities, setShowEnergyFacilities)}
-        title="ZAKB Biogas & Solarparks im Ried ein-/ausblenden"
-      >
-        ☀️ Ökostrom {showEnergyFacilities ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showRoadConditions ? "border-lime-400 text-lime-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("road", showRoadConditions, setShowRoadConditions)}
-        title="KI-Straßenzustandsbewertung (ZAKB-Flottensensoren) ein-/ausblenden"
-      >
-        🛣️ Straßen-KI {showRoadConditions ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showWifiHotspots ? "border-cyan-400 text-cyan-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("wifi", showWifiHotspots, setShowWifiHotspots)}
-        title="Öffentliches WLAN (Hessen-WLAN & Freifunk) ein-/ausblenden"
-      >
-        📶 WLAN {showWifiHotspots ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showBroadband ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("broadband", showBroadband, setShowBroadband)}
-        title="Glasfaser & Breitband-Gebietsabdeckung ein-/ausblenden"
-      >
-        🌐 Glasfaser {showBroadband ? "An" : "Aus"}
-      </button>
-
-      {/* Real Estate & Planning Layers */}
-      <button
-        type="button"
-        className={`map-control ${showBoris ? "border-teal-400 text-teal-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("boris", showBoris, setShowBoris)}
-        title="BORIS Hessen Bodenrichtwertzonen ein-/ausblenden"
-      >
-        🏡 Bodenrichtwerte {showBoris ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showDevPlans ? "border-amber-400 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("devplans", showDevPlans, setShowDevPlans)}
-        title="Bebauungspläne & Neubaugebiete (B-Pläne) ein-/ausblenden"
-      >
-        🏗️ B-Pläne {showDevPlans ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showWahlbezirke ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("elections", showWahlbezirke, setShowWahlbezirke)}
-        title="Wahlbezirke & Wahlbeteiligung (Kommunalwahl) ein-/ausblenden"
-      >
-        🗳️ Wahlbezirke {showWahlbezirke ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showCompanies ? "border-sky-400 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("companies", showCompanies, setShowCompanies)}
-        title="Bedeutende Arbeitgeber & Gewerbestandorte ein-/ausblenden"
-      >
-        🏢 Arbeitgeber {showCompanies ? "An" : "Aus"}
-      </button>
-
-
-      {/* Mobility & Sensor Layers */}
-      <button
-        type="button"
-        className={`map-control ${showClosures ? "border-red-500 text-red-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("closures", showClosures, setShowClosures)}
-        title="Straßensperrungen und Baustellen im Ried ein-/ausblenden"
-      >
-        ⛔ Sperrungen ({streetClosures.filter((c) => isClosureActive(c, now)).length}) {showClosures ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showTraffic ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("traffic", showTraffic, setShowTraffic)}
-        title="Verkehrslage und Staus im Ried ein-/ausblenden"
-      >
-        🚗 Verkehr {showTraffic ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showBuses ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("buses", showBuses, setShowBuses)}
-        title="VRN Busse im Ried ein-/ausblenden"
-      >
-        🚌 Busse {showBuses ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showBusStops && zoom >= 13 ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("stops", showBusStops, setShowBusStops)}
-        title={zoom < 13 ? "Haltestellen ab Zoomstufe 13 sichtbar (aktuell: Zoom " + zoom + ")" : "VRN Haltestellen ein-/ausblenden"}
-      >
-        🚏 Haltestellen {showBusStops ? (zoom >= 13 ? "An" : "Zoom ≥13") : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showWasteTrucks ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("waste", showWasteTrucks, setShowWasteTrucks)}
-        title="ZAKB Müllabfuhr im Ried ein-/ausblenden"
-      >
-        🚛 Müllabfuhr {showWasteTrucks ? "An" : "Aus"}
-      </button>
-      <button
-        type="button"
-        className={`map-control ${showRailMobility ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => toggleLayer("trains", showRailMobility, setShowRailMobility)}
-        title="Züge und Bahnübergänge im Ried ein-/ausblenden"
-      >
-        🚅 Züge & BÜ {showRailMobility ? "An" : "Aus"}
-      </button>
-      <button type="button" className="map-control" onClick={() => {
-        mapRef.current?.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
-        onViewportChangeRef.current?.(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
-      }}>Ried</button>
-      <button type="button" className="map-control" disabled={!nodes.length} onClick={() => {
-        if (nodes.length && mapRef.current) {
-          const bounds = L.latLngBounds(nodes.map((n) => [n.lat, n.lng]));
-          mapRef.current.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
-          const c = mapRef.current.getCenter();
-          const z = mapRef.current.getZoom();
-          onViewportChangeRef.current?.([c.lat, c.lng], z);
-        }
-      }}>Alle Standorte</button>
     </div>
     {!nodes.length && ready ? <p className="absolute bottom-8 left-3 right-3 z-[400] rounded-xl bg-slate-950/95 p-4 text-sm text-slate-200">Keine Standorte für diese Auswahl. Wähle eine weitere Gruppe oder „Alle“.</p> : null}
   </div>;

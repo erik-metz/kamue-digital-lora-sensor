@@ -13,9 +13,30 @@
 .sensor-map .leaflet-popup-content p { margin: 8px 0; }
 .sensor-map .map-popup-value { font-size: 20px; font-weight: 700; }
 .sensor-map .leaflet-popup-close-button { color: #e2e8f0; }
-.map-control { background: #0f172a; color: #e2e8f0; border: 1px solid #475569; border-radius: 8px; padding: 8px 10px; font-size: 12px; cursor: pointer; }
+.map-control {
+  background: rgba(15, 23, 42, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 7px 11px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: all 0.15s ease;
+}
+.map-control:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: #64748b;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+.map-control:active {
+  transform: translateY(0);
+}
 .map-control:focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }
-.map-control:disabled { opacity: .5; cursor: default; }
+.map-control:disabled { opacity: .4; cursor: default; transform: none; }
 
 .sensor-temp-pin { position: relative; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 50%; background: #0f172a; border: 2.5px solid var(--marker-color, #fbbf24); box-shadow: 0 2px 6px #000b, 0 0 8px var(--marker-color); cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .sensor-temp-pin::after { content: ""; display: block; width: 4px; height: 4px; border-radius: 50%; background: var(--marker-color, #fbbf24); }
