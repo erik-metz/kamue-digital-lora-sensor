@@ -3,6 +3,7 @@ from endpoints import (
     bikes,
     buses,
     demographics,
+    infrastructure,
     map_sensors,
     mobility,
     sensors,
@@ -25,6 +26,7 @@ api_router.include_router(bikes.router)
 api_router.include_router(traffic.router)
 api_router.include_router(street_closures.router)
 api_router.include_router(demographics.router)
+api_router.include_router(infrastructure.router)
 
 
 

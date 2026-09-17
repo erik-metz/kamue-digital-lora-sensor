@@ -1,0 +1,243 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  Globe,
+  Wifi,
+  BatteryCharging,
+  Route,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  ArrowUpRight,
+} from "lucide-react";
+import {
+  VERIFIED_BROADBAND_AREAS,
+  VERIFIED_EV_CHARGERS,
+  VERIFIED_ROAD_SEGMENTS,
+  VERIFIED_WIFI_HOTSPOTS,
+  getRoadConditionColor,
+  getRoadConditionLabel,
+  type BroadbandArea,
+  type EvChargingStation,
+  type RoadSegment,
+  type WifiHotspot,
+} from "@/lib/infrastructureData";
+
+export default function BroadbandTrackerWidget() {
+  const [broadbandAreas, setBroadbandAreas] = useState<BroadbandArea[]>(VERIFIED_BROADBAND_AREAS);
+  const [evChargers, setEvChargers] = useState<EvChargingStation[]>(VERIFIED_EV_CHARGERS);
+  const [roadSegments, setRoadSegments] = useState<RoadSegment[]>(VERIFIED_ROAD_SEGMENTS);
+  const [wifiHotspots, setWifiHotspots] = useState<WifiHotspot[]>(VERIFIED_WIFI_HOTSPOTS);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      try {
+        const [bbRes, evRes, roadRes, wifiRes] = await Promise.all([
+          fetch("/api/infrastructure/broadband", { cache: "no-store" }),
+          fetch("/api/infrastructure/ev-charging", { cache: "no-store" }),
+          fetch("/api/infrastructure/road-conditions", { cache: "no-store" }),
+          fetch("/api/infrastructure/wifi", { cache: "no-store" }),
+        ]);
+
+        if (!cancelled) {
+          if (bbRes.ok) {
+            const d = await bbRes.json();
+            if (Array.isArray(d.areas)) setBroadbandAreas(d.areas);
+          }
+          if (evRes.ok) {
+            const d = await evRes.json();
+            if (Array.isArray(d.stations)) setEvChargers(d.stations);
+          }
+          if (roadRes.ok) {
+            const d = await roadRes.json();
+            if (Array.isArray(d.segments)) setRoadSegments(d.segments);
+          }
+          if (wifiRes.ok) {
+            const d = await wifiRes.json();
+            if (Array.isArray(d.hotspots)) setWifiHotspots(d.hotspots);
+          }
+        }
+      } catch {
+        // Local fallbacks already set
+      }
+    }
+
+    void loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const totalSockets = evChargers.reduce((sum, e) => sum + e.totalPoints, 0);
+  const freeSockets = evChargers.reduce((sum, e) => sum + e.availablePoints, 0);
+  const fastChargers = evChargers.filter((e) => e.isFastCharger).length;
+
+  const avgRoadGrade = roadSegments.length > 0
+    ? roadSegments.reduce((sum, r) => sum + r.conditionGrade, 0) / roadSegments.length
+    : 2.2;
+  const goodRoadPct = roadSegments.length > 0
+    ? Math.round((roadSegments.filter((r) => r.conditionGrade <= 2.5).length / roadSegments.length) * 100)
+    : 75;
+
+  return (
+    <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8 space-y-6">
+      <div className="border-b border-slate-800 pb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-2">
+          <Globe className="size-3.5" /> Vernetzte Infrastruktur
+        </div>
+        <h3 className="text-xl sm:text-2xl font-bold text-slate-100">
+          Breitband, E-Mobilität & Straßenzustand
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-400 mt-1">
+          Transparente Einblicke in digitale Lebensadern: Glasfaser-Ausbauquote, Ladesäulen-Verfügbarkeit und KI-Straßenzustand.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Panel 1: Broadband & Fibre Rollout */}
+        <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-200">
+                <Globe className="size-4 text-purple-400" />
+                <span>Glasfaserausbau (FTTH)</span>
+              </div>
+              <span className="text-[10px] uppercase font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                Gigabit-Status
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">
+              Fortschritt der Gigabit-Infrastruktur von Deutscher Glasfaser, Deutscher GigaNetz und Telekom.
+            </p>
+
+            <div className="space-y-2.5 pt-1">
+              {broadbandAreas.slice(0, 4).map((area) => {
+                const isComplete = area.rolloutStatus === "active_available";
+                const isBuilding = area.rolloutStatus === "under_construction";
+                const pct = area.contractQuotaPct || (isComplete ? 100 : 40);
+
+                return (
+                  <div key={area.id} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-300 font-medium truncate max-w-[170px]">
+                        {area.municipality} – {area.areaName}
+                      </span>
+                      <span className={isComplete ? "text-emerald-400 font-bold" : isBuilding ? "text-amber-400" : "text-slate-400"}>
+                        {isComplete ? "Aktiv (1 Gbit/s)" : isBuilding ? `${pct}% Quote (Im Bau)` : "In Planung"}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${isComplete ? "bg-emerald-400" : isBuilding ? "bg-amber-400" : "bg-purple-500"}`}
+                        style={{ width: `${Math.min(100, Math.max(10, pct))}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="text-[11px] text-slate-500 border-t border-slate-800/80 pt-2 flex items-center justify-between">
+            <span>Quelle: BMDV & Netzbetreiber</span>
+            <span className="text-purple-400">Auf Karte einblendbar</span>
+          </div>
+        </div>
+
+        {/* Panel 2: EV Charging Stations */}
+        <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-200">
+                <BatteryCharging className="size-4 text-emerald-400" />
+                <span>Öffentliche E-Ladesäulen</span>
+              </div>
+              <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                BNetzA & OCPI
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                <div className="text-xl font-extrabold text-emerald-400">
+                  {freeSockets} <span className="text-xs font-normal text-slate-400">/ {totalSockets}</span>
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Freie Ladepunkte</div>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                <div className="text-xl font-extrabold text-sky-400">
+                  {fastChargers}
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">DC Schnelllader (≥50kW)</div>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs text-slate-300">
+              {evChargers.slice(0, 3).map((ev) => (
+                <div key={ev.id} className="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/40">
+                  <span className="truncate max-w-[150px] font-medium">{ev.name.replace(/^(Entega|Stadtwerke|Pfalzwerke|EnBW)\s+Ladesäule\s+/i, "")}</span>
+                  <span className="shrink-0 flex items-center gap-1">
+                    <span className={`size-1.5 rounded-full ${ev.availablePoints > 0 ? "bg-emerald-400" : "bg-red-400"}`} />
+                    <span className="text-[11px] font-mono text-slate-400">{ev.availablePoints}/{ev.totalPoints} frei</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="text-[11px] text-slate-500 border-t border-slate-800/80 pt-2 flex items-center justify-between">
+            <span>Standorte in Bürstadt, Lampertheim & Biblis</span>
+            <span className="text-emerald-400">Auf Karte aktiv</span>
+          </div>
+        </div>
+
+        {/* Panel 3: Road Quality Monitoring (ZAKB AI Fleet) */}
+        <div className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-4 flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-bold text-slate-200">
+                <Route className="size-4 text-lime-400" />
+                <span>KI-Straßenzustand (ZAKB)</span>
+              </div>
+              <span className="text-[10px] uppercase font-bold text-lime-400 bg-lime-500/10 border border-lime-500/20 px-2 py-0.5 rounded-full">
+                Smarter Kreis
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-400">
+              Erfasst über Smartphone-Kameras an Windschutzscheiben der ZAKB-Müllfahrzeuge während der Regeltouren.
+            </p>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                <div className="text-xl font-extrabold text-lime-400">
+                  {avgRoadGrade.toFixed(1)}
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Ø Zustandsnote</div>
+              </div>
+              <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
+                <div className="text-xl font-extrabold text-emerald-400">
+                  {goodRoadPct}%
+                </div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Guter Zustand (≤2.5)</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/80 border border-slate-800 text-xs">
+              <div className="flex items-center gap-1.5 text-slate-300">
+                <Wifi className="size-3.5 text-cyan-400" />
+                <span>Freies WLAN ({wifiHotspots.length} Hotspots)</span>
+              </div>
+              <span className="text-[11px] text-cyan-400 font-medium">Hessen-WLAN & Freifunk</span>
+            </div>
+          </div>
+          <div className="text-[11px] text-slate-500 border-t border-slate-800/80 pt-2 flex items-center justify-between">
+            <span>Förderung: Starke Heimat Hessen</span>
+            <span className="text-lime-400">Farbkodiert auf Karte</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

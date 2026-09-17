@@ -21,6 +21,25 @@ import {
   isClosureActive,
   VERIFIED_RIED_STREET_CLOSURES,
 } from "@/lib/streetClosures";
+import {
+  createEvChargingMarkerContent,
+  createEnergyFacilityMarkerContent,
+  createWifiMarkerContent,
+} from "@/lib/mapMarker";
+import {
+  VERIFIED_ROAD_SEGMENTS,
+  getRoadConditionColor,
+  getRoadConditionLabel,
+  calculateLiveEnergyGeneration,
+  VERIFIED_EV_CHARGERS,
+  VERIFIED_WIFI_HOTSPOTS,
+  VERIFIED_BROADBAND_AREAS,
+  type RoadSegment,
+  type LiveEnergyFacility,
+  type EvChargingStation,
+  type WifiHotspot,
+  type BroadbandArea,
+} from "@/lib/infrastructureData";
 import { useEffect, useRef, useState } from "react";
 
 export type { SensorNode } from "@/lib/mapData";
@@ -61,6 +80,17 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [trafficCorridors, setTrafficCorridors] = useState<TrafficCorridor[]>([]);
   const [showClosures, setShowClosures] = useState(true);
   const [streetClosures, setStreetClosures] = useState<StreetClosure[]>([]);
+  const [showEvCharging, setShowEvCharging] = useState(true);
+  const [showEnergyFacilities, setShowEnergyFacilities] = useState(true);
+  const [showWifiHotspots, setShowWifiHotspots] = useState(true);
+  const [showRoadConditions, setShowRoadConditions] = useState(true);
+  const [showBroadband, setShowBroadband] = useState(false);
+  const [evChargers, setEvChargers] = useState<EvChargingStation[]>(VERIFIED_EV_CHARGERS);
+  const [energyFacilities, setEnergyFacilities] = useState<LiveEnergyFacility[]>([]);
+  const [wifiHotspots, setWifiHotspots] = useState<WifiHotspot[]>(VERIFIED_WIFI_HOTSPOTS);
+  const [roadSegments, setRoadSegments] = useState<RoadSegment[]>(VERIFIED_ROAD_SEGMENTS);
+  const [broadbandAreas, setBroadbandAreas] = useState<BroadbandArea[]>(VERIFIED_BROADBAND_AREAS);
+
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
   const crossingsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -72,6 +102,11 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const trafficRoutesGroupRef = useRef<L.LayerGroup | null>(null);
   const trafficIncidentsGroupRef = useRef<L.LayerGroup | null>(null);
   const closuresGroupRef = useRef<L.LayerGroup | null>(null);
+  const evChargingGroupRef = useRef<L.LayerGroup | null>(null);
+  const energyFacilitiesGroupRef = useRef<L.LayerGroup | null>(null);
+  const wifiGroupRef = useRef<L.LayerGroup | null>(null);
+  const roadConditionsGroupRef = useRef<L.LayerGroup | null>(null);
+  const broadbandGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
@@ -176,6 +211,18 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       trafficIncidentsGroupRef.current = trafficIncidentsGroup;
       closuresGroupRef.current = closuresGroup;
 
+      const evChargingGroup = L.layerGroup();
+      const energyFacilitiesGroup = L.layerGroup();
+      const wifiGroup = L.layerGroup();
+      const roadConditionsGroup = L.layerGroup();
+      const broadbandGroup = L.layerGroup();
+
+      evChargingGroupRef.current = evChargingGroup;
+      energyFacilitiesGroupRef.current = energyFacilitiesGroup;
+      wifiGroupRef.current = wifiGroup;
+      roadConditionsGroupRef.current = roadConditionsGroup;
+      broadbandGroupRef.current = broadbandGroup;
+
       map.addLayer(railTracksGroup);
       map.addLayer(crossingsGroup);
       map.addLayer(trainsGroup);
@@ -186,6 +233,10 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       map.addLayer(trafficRoutesGroup);
       map.addLayer(trafficIncidentsGroup);
       map.addLayer(closuresGroup);
+      map.addLayer(evChargingGroup);
+      map.addLayer(energyFacilitiesGroup);
+      map.addLayer(wifiGroup);
+      map.addLayer(roadConditionsGroup);
 
       // Bus stops become visible at zoom >= 13
       if (map.getZoom() >= 13) {
@@ -1344,6 +1395,213 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     };
   }, [ready]);
 
+  // Toggle handlers for Infrastructure & Energy layers
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = evChargingGroupRef.current;
+    if (!map || !group) return;
+    if (showEvCharging) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showEvCharging]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = energyFacilitiesGroupRef.current;
+    if (!map || !group) return;
+    if (showEnergyFacilities) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showEnergyFacilities]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = wifiGroupRef.current;
+    if (!map || !group) return;
+    if (showWifiHotspots) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showWifiHotspots]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = roadConditionsGroupRef.current;
+    if (!map || !group) return;
+    if (showRoadConditions) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showRoadConditions]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = broadbandGroupRef.current;
+    if (!map || !group) return;
+    if (showBroadband) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showBroadband]);
+
+  // Populate Infrastructure & Energy Layers
+  useEffect(() => {
+    if (!ready) return;
+
+    // 1. EV Charging
+    const evGroup = evChargingGroupRef.current;
+    if (evGroup) {
+      evGroup.clearLayers();
+      for (const ev of evChargers) {
+        const icon = L.divIcon({
+          html: createEvChargingMarkerContent({
+            name: ev.name,
+            availablePoints: ev.availablePoints,
+            totalPoints: ev.totalPoints,
+            maxPowerKw: ev.maxPowerKw,
+            isFastCharger: ev.isFastCharger,
+          }),
+          className: "map-sensor-icon",
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+        });
+        const marker = L.marker([ev.lat, ev.lng], { icon, zIndexOffset: 460 });
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; color: #e2e8f0; min-width: 220px;">
+            <div style="font-size: 11px; font-weight: bold; color: #38bdf8; text-transform: uppercase;">⚡ E-Ladesäule (${ev.isFastCharger ? "Schnelllader DC" : "Normallader AC"})</div>
+            <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${ev.name}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${ev.address}</div>
+            <div style="background: rgba(15,23,42,0.8); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
+              <div>Verfügbar: <strong style="color: ${ev.availablePoints > 0 ? "#10b981" : "#ef4444"};">${ev.availablePoints} von ${ev.totalPoints} frei</strong></div>
+              <div>Max. Leistung: <strong>${ev.maxPowerKw} kW</strong></div>
+              <div>Stecker: <strong>${ev.connectorTypes.join(", ")}</strong></div>
+              <div>Betreiber: <strong>${ev.operator}</strong></div>
+            </div>
+          </div>
+        `);
+        evGroup.addLayer(marker);
+      }
+    }
+
+    // 2. Renewable Energy
+    const nrgGroup = energyFacilitiesGroupRef.current;
+    if (nrgGroup) {
+      nrgGroup.clearLayers();
+      const liveGen = calculateLiveEnergyGeneration(now);
+      setEnergyFacilities(liveGen.facilities);
+      for (const fac of liveGen.facilities) {
+        const icon = L.divIcon({
+          html: createEnergyFacilityMarkerContent({
+            name: fac.name,
+            facilityType: fac.facilityType,
+            currentPowerKw: fac.currentPowerKw,
+            installedCapacityKw: fac.installedCapacityKw,
+          }),
+          className: "map-sensor-icon",
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+        });
+        const marker = L.marker([fac.lat, fac.lng], { icon, zIndexOffset: 470 });
+        const isBiogas = fac.facilityType === "biogas" || fac.facilityType === "landfill_gas";
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; color: #e2e8f0; min-width: 240px;">
+            <div style="font-size: 11px; font-weight: bold; color: ${isBiogas ? "#10b981" : "#f59e0b"}; text-transform: uppercase;">
+              ${isBiogas ? "🌱 Erneuerbares Gas & Ökostrom" : "☀️ Solarpark & Photovoltaik"}
+            </div>
+            <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${fac.name}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${fac.address}</div>
+            <div style="background: rgba(15,23,42,0.8); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px; line-height: 1.4;">
+              <div>Aktuelle Leistung: <strong style="color: ${isBiogas ? "#10b981" : "#f59e0b"}; font-size: 13px;">${fac.currentPowerKw >= 1000 ? (fac.currentPowerKw / 1000).toFixed(2) + " MW" : Math.round(fac.currentPowerKw) + " kW"}</strong></div>
+              <div>Installierte Leistung: <strong>${fac.installedCapacityKw >= 1000 ? (fac.installedCapacityKw / 1000).toFixed(1) + " MWp" : fac.installedCapacityKw + " kWp"}</strong></div>
+              <div>Ertrag heute: <strong>~${Math.round(fac.todayYieldKwh).toLocaleString("de-DE")} kWh</strong></div>
+              <div>Betreiber: <strong>${fac.operator}</strong></div>
+            </div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 5px;">${fac.description}</div>
+          </div>
+        `);
+        nrgGroup.addLayer(marker);
+      }
+    }
+
+    // 3. Public Wi-Fi Hotspots
+    const wifiGroup = wifiGroupRef.current;
+    if (wifiGroup) {
+      wifiGroup.clearLayers();
+      for (const w of wifiHotspots) {
+        const icon = L.divIcon({
+          html: createWifiMarkerContent({
+            name: w.name,
+            ssid: w.ssid,
+            locationType: w.locationType,
+          }),
+          className: "map-sensor-icon",
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
+        });
+        const marker = L.marker([w.lat, w.lng], { icon, zIndexOffset: 450 });
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; color: #e2e8f0; min-width: 220px;">
+            <div style="font-size: 11px; font-weight: bold; color: #06b6d4; text-transform: uppercase;">📶 Öffentliches WLAN (Kostenlos)</div>
+            <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${w.name}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${w.address}</div>
+            <div style="background: rgba(15,23,42,0.8); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
+              <div>Netzwerk (SSID): <strong style="color: #38bdf8;">${w.ssid}</strong></div>
+              <div>Zugang: <strong>${w.authMode}</strong></div>
+              <div>Bandbreite: <strong>bis zu ${w.bandwidthMbps} Mbit/s</strong></div>
+              <div>Betreiber: <strong>${w.operator}</strong></div>
+            </div>
+          </div>
+        `);
+        wifiGroup.addLayer(marker);
+      }
+    }
+
+    // 4. Road Condition Monitoring Segments
+    const roadGroup = roadConditionsGroupRef.current;
+    if (roadGroup) {
+      roadGroup.clearLayers();
+      for (const seg of roadSegments) {
+        const color = getRoadConditionColor(seg.conditionGrade);
+        const polyline = L.polyline(seg.coordinates, {
+          color,
+          weight: 5,
+          opacity: 0.85,
+        });
+        polyline.bindTooltip(`🛣️ <strong>${seg.roadName}</strong>: Note ${seg.conditionGrade.toFixed(1)} (${getRoadConditionLabel(seg.conditionGrade)})`, {
+          sticky: true,
+          className: "route-line-tooltip",
+        });
+        polyline.bindPopup(`
+          <div style="font-family: sans-serif; color: #e2e8f0; min-width: 230px;">
+            <div style="font-size: 11px; font-weight: bold; color: ${color}; text-transform: uppercase;">🛣️ Straßenzustandsmonitoring</div>
+            <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${seg.roadName}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${seg.municipality} (${seg.district})</div>
+            <div style="background: rgba(15,23,42,0.8); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px; line-height: 1.4;">
+              <div>Zustandsnote: <strong style="color: ${color}; font-size: 13px;">${seg.conditionGrade.toFixed(1)} – ${getRoadConditionLabel(seg.conditionGrade)}</strong></div>
+              <div>Schlaglöcher / Schäden: <strong>${seg.potholesCount > 0 ? `${seg.potholesCount} erfasst` : "Keine"}</strong></div>
+              <div>Rissbildung: <strong>${seg.crackingSeverity}</strong></div>
+              <div>Belag: <strong>${seg.surfaceType}</strong></div>
+              <div style="font-size: 10px; color: #64748b; margin-top: 4px;">Sensorik: ${seg.inspectedBy}</div>
+            </div>
+          </div>
+        `);
+        roadGroup.addLayer(polyline);
+      }
+    }
+
+    // 5. Broadband & Fibre Rollout Areas
+    const bbGroup = broadbandGroupRef.current;
+    if (bbGroup) {
+      bbGroup.clearLayers();
+      for (const bb of broadbandAreas) {
+        if (bb.coordinates && bb.coordinates.length >= 3) {
+          const isFibre = bb.techType === "ftth_fibre";
+          const isActive = bb.rolloutStatus === "active_available";
+          const color = isFibre ? (isActive ? "#a855f7" : "#eab308") : "#64748b";
+          const polygon = L.polygon(bb.coordinates, {
+            color,
+            fillColor: color,
+            fillOpacity: 0.25,
+            weight: 2,
+          });
+          polygon.bindTooltip(`🌐 <strong>${bb.areaName}</strong>: ${isFibre ? "FTTH Glasfaser (1 Gbit/s)" : "VDSL Vectoring"} – ${isActive ? "Verfügbar" : "Im Ausbau"}`, { sticky: true });
+          bbGroup.addLayer(polygon);
+        }
+      }
+    }
+  }, [ready, now, evChargers, wifiHotspots, roadSegments, broadbandAreas]);
 
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
@@ -1375,7 +1633,50 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       </div>
     ) : null}
 
-    <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2">
+    <div className="absolute top-3 right-3 z-[400] flex flex-wrap justify-end gap-2 max-w-[85%]">
+      {/* Infrastructure & Energy Layers */}
+      <button
+        type="button"
+        className={`map-control ${showEvCharging ? "border-emerald-400 text-emerald-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowEvCharging((prev) => !prev)}
+        title="Elektro-Ladesäulen und Live-Belegung ein-/ausblenden"
+      >
+        ⚡ Ladesäulen {showEvCharging ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showEnergyFacilities ? "border-amber-400 text-amber-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowEnergyFacilities((prev) => !prev)}
+        title="ZAKB Biogas & Solarparks im Ried ein-/ausblenden"
+      >
+        ☀️ Ökostrom {showEnergyFacilities ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showRoadConditions ? "border-lime-400 text-lime-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowRoadConditions((prev) => !prev)}
+        title="KI-Straßenzustandsbewertung (ZAKB-Flottensensoren) ein-/ausblenden"
+      >
+        🛣️ Straßen-KI {showRoadConditions ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showWifiHotspots ? "border-cyan-400 text-cyan-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowWifiHotspots((prev) => !prev)}
+        title="Öffentliches WLAN (Hessen-WLAN & Freifunk) ein-/ausblenden"
+      >
+        📶 WLAN {showWifiHotspots ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showBroadband ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowBroadband((prev) => !prev)}
+        title="Glasfaser & Breitband-Gebietsabdeckung ein-/ausblenden"
+      >
+        🌐 Glasfaser {showBroadband ? "An" : "Aus"}
+      </button>
+
+      {/* Mobility & Sensor Layers */}
       <button
         type="button"
         className={`map-control ${showClosures ? "border-red-500 text-red-300 font-semibold" : "opacity-60"}`}
@@ -1387,16 +1688,15 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showTraffic ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowTraffic(prev => !prev)}
+        onClick={() => setShowTraffic((prev) => !prev)}
         title="Verkehrslage und Staus im Ried ein-/ausblenden"
       >
         🚗 Verkehr {showTraffic ? "An" : "Aus"}
       </button>
-
       <button
         type="button"
         className={`map-control ${showBuses ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowBuses(prev => !prev)}
+        onClick={() => setShowBuses((prev) => !prev)}
         title="VRN Busse im Ried ein-/ausblenden"
       >
         🚌 Busse {showBuses ? "An" : "Aus"}
@@ -1404,7 +1704,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showBusStops && zoom >= 13 ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowBusStops(prev => !prev)}
+        onClick={() => setShowBusStops((prev) => !prev)}
         title={zoom < 13 ? "Haltestellen ab Zoomstufe 13 sichtbar (aktuell: Zoom " + zoom + ")" : "VRN Haltestellen ein-/ausblenden"}
       >
         🚏 Haltestellen {showBusStops ? (zoom >= 13 ? "An" : "Zoom ≥13") : "Aus"}
@@ -1412,7 +1712,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showWasteTrucks ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowWasteTrucks(prev => !prev)}
+        onClick={() => setShowWasteTrucks((prev) => !prev)}
         title="ZAKB Müllabfuhr im Ried ein-/ausblenden"
       >
         🚛 Müllabfuhr {showWasteTrucks ? "An" : "Aus"}
@@ -1420,14 +1720,14 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showRailMobility ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowRailMobility(prev => !prev)}
+        onClick={() => setShowRailMobility((prev) => !prev)}
         title="Züge und Bahnübergänge im Ried ein-/ausblenden"
       >
         🚅 Züge & BÜ {showRailMobility ? "An" : "Aus"}
       </button>
       <button type="button" className="map-control" onClick={() => mapRef.current?.setView([49.62, 8.46], 12)}>Ried</button>
       <button type="button" className="map-control" disabled={!nodes.length} onClick={() => {
-        if (nodes.length) mapRef.current?.fitBounds(L.latLngBounds(nodes.map(n => [n.lat, n.lng])), { padding: [45, 45], maxZoom: 15 });
+        if (nodes.length) mapRef.current?.fitBounds(L.latLngBounds(nodes.map((n) => [n.lat, n.lng])), { padding: [45, 45], maxZoom: 15 });
       }}>Alle Standorte</button>
     </div>
     {!nodes.length && ready ? <p className="absolute bottom-8 left-3 right-3 z-[400] rounded-xl bg-slate-950/95 p-4 text-sm text-slate-200">Keine Standorte für diese Auswahl. Wähle eine weitere Gruppe oder „Alle“.</p> : null}

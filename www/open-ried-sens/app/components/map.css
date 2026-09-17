@@ -662,3 +662,125 @@
   line-height: 1.35;
 }
 
+/* EV Charging Stations */
+.ev-charging-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 2px solid var(--ev-color, #10b981);
+  color: #f8fafc;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 8px var(--ev-color, #10b981);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.ev-charging-marker:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 14px var(--ev-color, #10b981), 0 0 20px rgba(255, 255, 255, 0.4);
+}
+.ev-marker-icon {
+  font-size: 15px;
+}
+.ev-marker-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--ev-color, #10b981);
+  color: #0f172a;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.ev-marker-fast-badge {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0284c7;
+  color: #f8fafc;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 0px 4px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+
+/* Renewable Energy Facilities */
+.energy-facility-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #0f172a;
+  border: 2.5px solid var(--energy-color, #f59e0b);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 10px var(--energy-color, #f59e0b);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.energy-facility-marker:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 16px #fff, 0 0 18px var(--energy-color);
+}
+.energy-marker-icon {
+  font-size: 17px;
+}
+.energy-marker-power {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172af0;
+  border: 1px solid var(--energy-color);
+  color: var(--energy-color);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Public Wi-Fi Hotspots */
+.wifi-hotspot-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #0f172a;
+  border: 2px solid var(--wifi-color, #06b6d4);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 8px var(--wifi-color);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.wifi-hotspot-marker:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 14px var(--wifi-color);
+}
+.wifi-marker-icon {
+  font-size: 14px;
+}
+.wifi-marker-ssid {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172af0;
+  border: 1px solid var(--wifi-color);
+  color: var(--wifi-color);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+

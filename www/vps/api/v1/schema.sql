@@ -1039,3 +1039,216 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO collector_schema_versions(version) VALUES (20260918) ON CONFLICT DO NOTHING;
 
+-- 11. Infrastructure, Energy & Connectivity (Straßenzustandsmonitoring, ZAKB Energy, Broadband, EV Charging, Wi-Fi)
+
+-- 11.1 Road Condition / Street Quality (Straßenzustandsmonitoring Kreis Bergstraße / ZAKB Fleet AI)
+CREATE TABLE IF NOT EXISTS road_condition_segments (
+    id VARCHAR(64) PRIMARY KEY,
+    road_name VARCHAR(128) NOT NULL,
+    road_class VARCHAR(32) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    condition_grade DOUBLE PRECISION NOT NULL,
+    condition_category VARCHAR(32) NOT NULL,
+    potholes_count INT NOT NULL DEFAULT 0,
+    cracking_severity VARCHAR(32) DEFAULT 'none',
+    surface_type VARCHAR(64) DEFAULT 'asphalt',
+    last_inspected_at TIMESTAMPTZ NOT NULL,
+    inspected_by VARCHAR(64) DEFAULT 'zakb_fleet_ai',
+    coordinates JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_road_cond_muni ON road_condition_segments (municipality, condition_category);
+CREATE INDEX IF NOT EXISTS idx_road_cond_grade ON road_condition_segments (condition_grade);
+
+-- 11.2 Renewable Energy Facilities & Generation Telemetry
+CREATE TABLE IF NOT EXISTS energy_facilities (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    facility_type VARCHAR(32) NOT NULL,
+    operator VARCHAR(128) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    address VARCHAR(255),
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    installed_capacity_kw DOUBLE PRECISION NOT NULL,
+    annual_generation_mwh_est DOUBLE PRECISION,
+    commissioned_date DATE,
+    mastr_id VARCHAR(64),
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS energy_production_readings (
+    timestamp TIMESTAMPTZ NOT NULL,
+    facility_id VARCHAR(64) NOT NULL REFERENCES energy_facilities(id) ON DELETE CASCADE,
+    current_power_kw DOUBLE PRECISION NOT NULL,
+    energy_today_kwh DOUBLE PRECISION,
+    total_energy_mwh DOUBLE PRECISION,
+    co2_saved_today_kg DOUBLE PRECISION,
+    source VARCHAR(64) NOT NULL DEFAULT 'zakb_telemetry'
+);
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        PERFORM create_hypertable('energy_production_readings', 'timestamp', if_not_exists => TRUE);
+    END IF;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_energy_readings_fac_time ON energy_production_readings (facility_id, timestamp DESC);
+
+-- 11.3 Broadband & Fibre Rollout (Breitbandausbau / Gigabit-Grundbuch)
+CREATE TABLE IF NOT EXISTS broadband_coverage (
+    id VARCHAR(64) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64) NOT NULL,
+    area_name VARCHAR(128) NOT NULL,
+    tech_type VARCHAR(32) NOT NULL,
+    max_download_mbps INT NOT NULL,
+    max_upload_mbps INT NOT NULL,
+    rollout_status VARCHAR(32) NOT NULL,
+    contract_quota_pct DOUBLE PRECISION,
+    primary_provider VARCHAR(128) NOT NULL,
+    completion_target_date DATE,
+    coordinates JSONB,
+    source VARCHAR(64) DEFAULT 'bmdv_gigabit_grundbuch',
+    last_updated TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_broadband_muni_status ON broadband_coverage (municipality, rollout_status);
+
+-- 11.4 EV Charging Infrastructure & Live Utilisation (BNetzA Ladesäulenregister & OCPI)
+CREATE TABLE IF NOT EXISTS ev_charging_stations (
+    id VARCHAR(64) PRIMARY KEY,
+    bnetza_id VARCHAR(64),
+    name VARCHAR(255) NOT NULL,
+    operator VARCHAR(128) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    total_points INT NOT NULL DEFAULT 2,
+    max_power_kw DOUBLE PRECISION NOT NULL,
+    is_fast_charger BOOLEAN NOT NULL DEFAULT FALSE,
+    connector_types TEXT[] NOT NULL DEFAULT ARRAY['Type2'],
+    pricing_info TEXT,
+    is_public BOOLEAN NOT NULL DEFAULT TRUE,
+    access_hours VARCHAR(64) DEFAULT '24/7',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS ev_charging_status (
+    station_id VARCHAR(64) PRIMARY KEY REFERENCES ev_charging_stations(id) ON DELETE CASCADE,
+    timestamp TIMESTAMPTZ NOT NULL,
+    available_points INT NOT NULL,
+    occupied_points INT NOT NULL,
+    out_of_service_points INT NOT NULL DEFAULT 0,
+    status_source VARCHAR(64) NOT NULL DEFAULT 'live_ocpi'
+);
+
+-- 11.5 Public Wi-Fi Hotspots (Hessen-WLAN, Freifunk, etc.)
+CREATE TABLE IF NOT EXISTS public_wifi_hotspots (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    ssid VARCHAR(64) NOT NULL,
+    operator VARCHAR(128) NOT NULL,
+    location_type VARCHAR(64) NOT NULL,
+    address VARCHAR(255) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    indoor_outdoor VARCHAR(16) DEFAULT 'outdoor',
+    auth_mode VARCHAR(64) DEFAULT 'captive_terms_only',
+    bandwidth_mbps INT DEFAULT 50,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_wifi_muni ON public_wifi_hotspots (municipality, is_active);
+
+-- Seed Baseline Data for Infrastructure & Energy
+INSERT INTO road_condition_segments (id, road_name, road_class, municipality, district, condition_grade, condition_category, potholes_count, cracking_severity, surface_type, last_inspected_at, inspected_by, coordinates)
+VALUES
+    ('rc-bst-b47-nibelungenstr', 'Nibelungenstraße (B47)', 'bundesstrasse', 'Bürstadt', 'Kernstadt', 2.1, 'gut', 0, 'none', 'asphalt', '2026-08-15T09:30:00Z', 'zakb_fleet_ai', '[[49.6415, 8.4480], [49.6416, 8.4550], [49.6418, 8.4620]]'::jsonb),
+    ('rc-bst-mainstr', 'Mainstraße', 'gemeindestrasse', 'Bürstadt', 'Kernstadt', 1.8, 'sehr_gut', 0, 'none', 'asphalt', '2026-08-20T11:15:00Z', 'zakb_fleet_ai', '[[49.6432, 8.4516], [49.6460, 8.4540], [49.6495, 8.4565]]'::jsonb),
+    ('rc-bst-industriestr', 'Industriestraße (KAMÜ Kulturzentrum)', 'gemeindestrasse', 'Bürstadt', 'Kernstadt', 3.2, 'befriedigend', 2, 'minor', 'asphalt', '2026-08-18T14:40:00Z', 'zakb_fleet_ai', '[[49.6456, 8.4560], [49.6458, 8.4590], [49.6462, 8.4630]]'::jsonb),
+    ('rc-bob-frankenstr', 'Frankenstraße (L3411)', 'landesstrasse', 'Bürstadt', 'Bobstadt', 3.8, 'ausreichend', 4, 'moderate', 'asphalt', '2026-08-12T08:20:00Z', 'zakb_fleet_ai', '[[49.6608, 8.4470], [49.6635, 8.4465], [49.6660, 8.4460]]'::jsonb),
+    ('rc-la-b44-roemerstr', 'Römerstraße (B44)', 'bundesstrasse', 'Lampertheim', 'Kernstadt', 2.4, 'gut', 1, 'minor', 'asphalt', '2026-08-22T10:00:00Z', 'zakb_fleet_ai', '[[49.5910, 8.4650], [49.5945, 8.4675], [49.5985, 8.4710]]'::jsonb),
+    ('rc-la-l3110-neuschloss', 'Neuschloßstraße (L3110)', 'landesstrasse', 'Lampertheim', 'Neuschloß', 4.1, 'ausreichend', 5, 'severe', 'asphalt', '2026-08-10T13:10:00Z', 'zakb_fleet_ai', '[[49.5990, 8.4850], [49.6010, 8.5050], [49.6018, 8.5180]]'::jsonb),
+    ('rc-bib-kirchstr', 'Kirchstraße', 'gemeindestrasse', 'Biblis', 'Kernort', 2.2, 'gut', 0, 'none', 'asphalt', '2026-08-14T15:25:00Z', 'zakb_fleet_ai', '[[49.6845, 8.4455], [49.6870, 8.4452], [49.6890, 8.4450]]'::jsonb),
+    ('rc-gr-kornstr', 'Kornstraße', 'gemeindestrasse', 'Groß-Rohrheim', 'Kernort', 2.6, 'befriedigend', 1, 'minor', 'asphalt', '2026-08-16T12:05:00Z', 'zakb_fleet_ai', '[[49.7150, 8.4770], [49.7175, 8.4785], [49.7200, 8.4800]]'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    condition_grade = EXCLUDED.condition_grade,
+    condition_category = EXCLUDED.condition_category,
+    potholes_count = EXCLUDED.potholes_count,
+    cracking_severity = EXCLUDED.cracking_severity,
+    last_inspected_at = EXCLUDED.last_inspected_at;
+
+INSERT INTO energy_facilities (id, name, facility_type, operator, municipality, address, latitude, longitude, installed_capacity_kw, annual_generation_mwh_est, commissioned_date, mastr_id, description)
+VALUES
+    ('nrg-zakb-huettenfeld-pv', 'ZAKB Solarpark Energiepark Hüttenfeld', 'solar_pv', 'ZAKB', 'Lampertheim', 'Heidenfahrt 1, 68623 Lampertheim-Hüttenfeld', 49.5965, 8.5845, 3200.0, 3400.0, '2018-06-01', 'SEE984729104821', 'Großflächige Photovoltaik-Freiflächenanlage auf ehemaliger Deponiefläche'),
+    ('nrg-zakb-huettenfeld-gas', 'ZAKB Deponiegasverwertung Hüttenfeld (BHKW)', 'landfill_gas', 'ZAKB', 'Lampertheim', 'Heidenfahrt 1, 68623 Lampertheim-Hüttenfeld', 49.5960, 8.5835, 850.0, 5100.0, '2014-03-15', 'SEE932847192019', 'Blockheizkraftwerk zur kontinuierlichen Strom- und Wärmeerzeugung aus Deponiegas'),
+    ('nrg-zakb-buerstadt-biogas', 'ZAKB Biogasanlage & Vergärungszentrum Bürstadt', 'biogas', 'ZAKB', 'Bürstadt', 'Außerhalb Biogasanlage 1, 68642 Bürstadt', 49.6385, 8.4480, 1200.0, 8400.0, '2016-11-01', 'SEE910293847561', 'Modernes Bioabfall-Vergärungszentrum mit Biomethaneinspeisung und Ökostrom'),
+    ('nrg-bst-boxheimerhof-pv', 'Bürstadt Solarpark Boxheimerhof', 'solar_pv', 'Bürgerenergie Ried eG', 'Bürstadt', 'Boxheimerhof, 68642 Bürstadt', 49.6290, 8.4810, 1500.0, 1650.0, '2020-04-20', 'SEE920192847162', 'Bürgergetragene Photovoltaikanlage zur lokalen Ökostromerzeugung'),
+    ('nrg-la-klaerwerk-pv', 'Stadtwerke Lampertheim PV Klärwerk', 'solar_pv', 'Stadtwerke Lampertheim', 'Lampertheim', 'Klärwerkstraße 6, 68623 Lampertheim', 49.6015, 8.4520, 650.0, 700.0, '2022-09-10', 'SEE939102948271', 'Eigenverbrauchs- und Einspeise-PV der Kläranlage Lampertheim')
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    installed_capacity_kw = EXCLUDED.installed_capacity_kw,
+    annual_generation_mwh_est = EXCLUDED.annual_generation_mwh_est;
+
+INSERT INTO broadband_coverage (id, municipality, district, area_name, tech_type, max_download_mbps, max_upload_mbps, rollout_status, contract_quota_pct, primary_provider, completion_target_date, coordinates)
+VALUES
+    ('bb-bst-gewerbe-ost', 'Bürstadt', 'Kernstadt', 'Gewerbegebiet Ost / Industriestraße', 'ftth_fibre', 1000, 500, 'active_available', 100.0, 'Deutsche Glasfaser', '2024-06-30', '[[49.644, 8.456], [49.648, 8.465], [49.642, 8.468]]'::jsonb),
+    ('bb-bst-kernstadt', 'Bürstadt', 'Kernstadt', 'Bürstadt Kernstadt & Sonneneck', 'ftth_fibre', 1000, 250, 'under_construction', 78.0, 'Telekom / GigaNetz', '2026-12-31', '[[49.638, 8.448], [49.652, 8.456], [49.645, 8.465]]'::jsonb),
+    ('bb-bob-bobstadt', 'Bürstadt', 'Bobstadt', 'Bobstadt Gesamtlage', 'vdsl_vectoring', 250, 40, 'planned', 35.0, 'Telekom', '2027-06-30', '[[49.658, 8.442], [49.668, 8.448], [49.662, 8.452]]'::jsonb),
+    ('bb-la-neuschloss', 'Lampertheim', 'Neuschloß', 'Neuschloß Wohnsiedlung', 'ftth_fibre', 1000, 500, 'under_construction', 42.0, 'Deutsche GigaNetz', '2026-11-30', '[[49.598, 8.512], [49.605, 8.522], [49.600, 8.525]]'::jsonb),
+    ('bb-la-rosenstock', 'Lampertheim', 'Rosenstock', 'Rosenstock & Schulzentrum West', 'ftth_fibre', 1000, 500, 'under_construction', 44.0, 'Deutsche GigaNetz', '2026-12-15', '[[49.595, 8.450], [49.602, 8.460], [49.598, 8.465]]'::jsonb),
+    ('bb-la-kernstadt-coax', 'Lampertheim', 'Kernstadt', 'Lampertheim Innenstadt & Sedandamm', 'coax_cable', 1000, 50, 'active_available', 100.0, 'Vodafone', '2023-01-01', '[[49.590, 8.460], [49.598, 8.475], [49.593, 8.480]]'::jsonb),
+    ('bb-bib-biblis', 'Biblis', 'Kernort', 'Biblis Kernort & Bahnhofsumfeld', 'ftth_fibre', 1000, 500, 'active_available', 68.0, 'Entega Medianet', '2025-03-31', '[[49.682, 8.440], [49.692, 8.455], [49.686, 8.458]]'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    rollout_status = EXCLUDED.rollout_status,
+    contract_quota_pct = EXCLUDED.contract_quota_pct;
+
+INSERT INTO ev_charging_stations (id, bnetza_id, name, operator, address, municipality, district, latitude, longitude, total_points, max_power_kw, is_fast_charger, connector_types, is_public)
+VALUES
+    ('ev-bst-marktplatz', 'DE*ENT*E004812', 'Entega Ladesäule Marktplatz Bürstadt', 'ENTEGA Energie GmbH', 'Marktplatz 1, 68642 Bürstadt', 'Bürstadt', 'Kernstadt', 49.6415, 8.4547, 2, 22.0, FALSE, ARRAY['Type2'], TRUE),
+    ('ev-bst-bahnhof', 'DE*PWK*E009182', 'Pfalzwerke Schnellladepark Bürstadt Bahnhof', 'Pfalzwerke ecopower', 'Wilhelminenstraße 2, 68642 Bürstadt', 'Bürstadt', 'Kernstadt', 49.6453, 8.4580, 4, 150.0, TRUE, ARRAY['CCS', 'Type2'], TRUE),
+    ('ev-la-schillerplatz', 'DE*SWL*E001290', 'Stadtwerke Ladesäule Schillerplatz Lampertheim', 'Stadtwerke Lampertheim', 'Schillerplatz 1, 68623 Lampertheim', 'Lampertheim', 'Kernstadt', 49.5947, 8.4680, 4, 22.0, FALSE, ARRAY['Type2'], TRUE),
+    ('ev-la-biedensand', 'DE*ENT*E005129', 'Entega Biedensand Bäder Lampertheim', 'ENTEGA Energie GmbH', 'Weidweg 40, 68623 Lampertheim', 'Lampertheim', 'Kernstadt', 49.5975, 8.4550, 2, 22.0, FALSE, ARRAY['Type2'], TRUE),
+    ('ev-la-neuschloss', 'DE*PWK*E008371', 'Pfalzwerke Neuschloß Schlossplatz', 'Pfalzwerke ecopower', 'Schlossplatz 3, 68623 Lampertheim', 'Lampertheim', 'Neuschloß', 49.6017, 8.5185, 2, 50.0, TRUE, ARRAY['CCS', 'Type2'], TRUE),
+    ('ev-bib-bahnhof', 'DE*EWR*E003810', 'EWR Ladesäule Biblis Bahnhof P+R', 'EWR AG', 'Bahnhofstraße 1, 68647 Biblis', 'Biblis', 'Kernort', 49.6891, 8.4504, 2, 22.0, FALSE, ARRAY['Type2'], TRUE),
+    ('ev-gr-buergerhalle', 'DE*EBW*E007128', 'EnBW Schnellladestation Bürgerhalle Groß-Rohrheim', 'EnBW', 'Kirchstraße 1, 68649 Groß-Rohrheim', 'Groß-Rohrheim', 'Kernort', 49.7185, 8.4795, 2, 50.0, TRUE, ARRAY['CCS', 'Type2'], TRUE)
+ON CONFLICT (id) DO UPDATE SET
+    total_points = EXCLUDED.total_points,
+    max_power_kw = EXCLUDED.max_power_kw,
+    is_fast_charger = EXCLUDED.is_fast_charger;
+
+INSERT INTO ev_charging_status (station_id, timestamp, available_points, occupied_points, out_of_service_points, status_source)
+VALUES
+    ('ev-bst-marktplatz', NOW(), 1, 1, 0, 'live_ocpi'),
+    ('ev-bst-bahnhof', NOW(), 3, 1, 0, 'live_ocpi'),
+    ('ev-la-schillerplatz', NOW(), 2, 2, 0, 'live_ocpi'),
+    ('ev-la-biedensand', NOW(), 2, 0, 0, 'live_ocpi'),
+    ('ev-la-neuschloss', NOW(), 1, 1, 0, 'live_ocpi'),
+    ('ev-bib-bahnhof', NOW(), 2, 0, 0, 'live_ocpi'),
+    ('ev-gr-buergerhalle', NOW(), 1, 1, 0, 'live_ocpi')
+ON CONFLICT (station_id) DO UPDATE SET
+    available_points = EXCLUDED.available_points,
+    occupied_points = EXCLUDED.occupied_points;
+
+INSERT INTO public_wifi_hotspots (id, name, ssid, operator, location_type, address, municipality, latitude, longitude, indoor_outdoor, auth_mode, bandwidth_mbps)
+VALUES
+    ('wifi-bst-alla-hopp', 'Hessen-WLAN Bürgerhaus & alla hopp!-Anlage', 'Hessen-WLAN', 'Land Hessen / Stadt Bürstadt', 'sports_park', 'Rathausstraße 2, 68642 Bürstadt', 'Bürstadt', 49.6420, 8.4552, 'outdoor', 'captive_terms_only', 100),
+    ('wifi-bst-marktplatz', 'Hessen-WLAN Historisches Rathaus & Marktplatz', 'Hessen-WLAN', 'Stadt Bürstadt', 'market_square', 'Marktplatz 1, 68642 Bürstadt', 'Bürstadt', 49.6414, 8.4546, 'outdoor', 'captive_terms_only', 100),
+    ('wifi-bst-kamue', 'Freifunk KAMÜ Kulturzentrum Bürstadt', 'Freifunk', 'KAMÜ & Freifunk Rhein-Neckar', 'community_center', 'Industriestraße 11, 68642 Bürstadt', 'Bürstadt', 49.6457, 8.4582, 'both', 'open', 100),
+    ('wifi-la-altrheinhalle', 'Hessen-WLAN Altrheinhalle & Sportzentrum', 'Hessen-WLAN', 'Stadt Lampertheim', 'sports_facility', 'Biedensandstraße 57, 68623 Lampertheim', 'Lampertheim', 49.5982, 8.4542, 'both', 'captive_terms_only', 100),
+    ('wifi-la-buergerhaus-neuschloss', 'Hessen-WLAN Bürgerhaus Neuschloß', 'Hessen-WLAN', 'Land Hessen / Stadt Lampertheim', 'community_center', 'Ahornweg 4, 68623 Lampertheim-Neuschloß', 'Lampertheim', 49.6015, 8.5170, 'both', 'captive_terms_only', 50),
+    ('wifi-la-rathaus', 'Hessen-WLAN Haus am Dom & Rathaus', 'Hessen-WLAN', 'Stadt Lampertheim', 'town_hall', 'Römerstraße 102, 68623 Lampertheim', 'Lampertheim', 49.5942, 8.4674, 'both', 'captive_terms_only', 100),
+    ('wifi-bib-buergerzentrum', 'Hessen-WLAN Bürgerzentrum Biblis', 'Hessen-WLAN', 'Gemeinde Biblis', 'community_center', 'Darmstädter Straße 25, 68647 Biblis', 'Biblis', 49.6875, 8.4435, 'both', 'captive_terms_only', 50)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    is_active = EXCLUDED.is_active;
+
+INSERT INTO collector_schema_versions(version) VALUES (20260919) ON CONFLICT DO NOTHING;
+

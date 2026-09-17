@@ -9,6 +9,7 @@ import {
   Radio,
   ShieldCheck,
   Users,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import HeaderLogo from "../components/HeaderLogo";
@@ -208,6 +209,56 @@ export default async function DataDocsPage() {
               <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Schulen & Kitas</span>
               <p className="text-emerald-400 font-bold">GET /api/v1/demographics/facilities</p>
               <p className="text-slate-400 font-sans text-xs">Standorte, Kapazitäten, aktuelle Schülerzahlen, Träger und Betreuungsquoten.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* INFRASTRUCTURE, ENERGY & CONNECTIVITY OPEN DATA SECTION */}
+        <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-400" />
+                Infrastruktur, Energie & Vernetzung (Open Data)
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">
+                Echtzeit-Schnittstellen für KI-Straßenzustand, regenerative Erzeugung (ZAKB Biogas/Solar), Breitbandausbau, Ladesäulen und freies WLAN.
+              </p>
+            </div>
+            <span className="text-xs px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 font-semibold self-start sm:self-auto">
+              REST & GeoJSON
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">🛣️ KI-Straßenzustand</span>
+              <p className="text-amber-400 font-bold">GET /api/infrastructure/road-conditions</p>
+              <p className="text-slate-400 font-sans text-xs">Zustandsnoten (1-5), Schlaglöcher, Risse und Koordinaten über ZAKB-Fahrzeugkameras.</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">☀️ Regenerative Erzeugung</span>
+              <p className="text-amber-400 font-bold">GET /api/infrastructure/energy</p>
+              <p className="text-slate-400 font-sans text-xs">Live-Leistung (MW), Biogas-Grundlast, Solarpark-Ertrag und vermiedene CO₂-Emissionen.</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">⚡ E-Ladesäulen & Belegung</span>
+              <p className="text-amber-400 font-bold">GET /api/infrastructure/ev-charging</p>
+              <p className="text-slate-400 font-sans text-xs">BNetzA-Register, Steckertypen, Schnelllader (kW) und freie/belegte Ladepunkte.</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">📶 Öffentliches WLAN</span>
+              <p className="text-amber-400 font-bold">GET /api/infrastructure/wifi</p>
+              <p className="text-slate-400 font-sans text-xs">Kostenlose Hotspots (Hessen-WLAN & Freifunk), Standorte, SSIDs und Zugangsbedingungen.</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">🌐 Breitband & Glasfaser</span>
+              <p className="text-amber-400 font-bold">GET /api/infrastructure/broadband</p>
+              <p className="text-slate-400 font-sans text-xs">FTTH-Ausbaustatus, Quoten und Geschwindigkeitsklassen nach Ortsteilen im Ried.</p>
             </div>
           </div>
         </section>

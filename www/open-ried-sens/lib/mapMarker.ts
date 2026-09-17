@@ -569,3 +569,102 @@ export function createTrafficIncidentMarkerContent(props: TrafficIncidentMarkerP
 
   return content;
 }
+
+export interface EvChargingMarkerProps {
+  name: string;
+  availablePoints: number;
+  totalPoints: number;
+  maxPowerKw: number;
+  isFastCharger: boolean;
+}
+
+export function createEvChargingMarkerContent(props: EvChargingMarkerProps): HTMLElement {
+  const content = document.createElement("div");
+  const isAvailable = props.availablePoints > 0;
+  const color = isAvailable ? (props.isFastCharger ? "#38bdf8" : "#10b981") : "#94a3b8";
+
+  content.className = `ev-charging-marker ${isAvailable ? "ev-available" : "ev-occupied"}${props.isFastCharger ? " ev-fast" : ""}`;
+  content.style.setProperty("--ev-color", color);
+  content.title = `${props.name} – ${props.availablePoints}/${props.totalPoints} frei (${props.maxPowerKw} kW)`;
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "ev-marker-icon";
+  iconSpan.textContent = "⚡";
+  content.append(iconSpan);
+
+  const badge = document.createElement("span");
+  badge.className = "ev-marker-badge";
+  badge.textContent = `${props.availablePoints}/${props.totalPoints}`;
+  content.append(badge);
+
+  if (props.isFastCharger) {
+    const fastBadge = document.createElement("span");
+    fastBadge.className = "ev-marker-fast-badge";
+    fastBadge.textContent = `${props.maxPowerKw}k`;
+    content.append(fastBadge);
+  }
+
+  return content;
+}
+
+export interface EnergyFacilityMarkerProps {
+  name: string;
+  facilityType: string;
+  currentPowerKw?: number;
+  installedCapacityKw: number;
+}
+
+export function createEnergyFacilityMarkerContent(props: EnergyFacilityMarkerProps): HTMLElement {
+  const content = document.createElement("div");
+  const isBiogas = props.facilityType === "biogas" || props.facilityType === "landfill_gas";
+  const color = isBiogas ? "#10b981" : "#f59e0b"; // Emerald for Biogas/ZAKB, Amber for Solar
+
+  content.className = `energy-facility-marker ${isBiogas ? "energy-biogas" : "energy-solar"}`;
+  content.style.setProperty("--energy-color", color);
+  content.title = `${props.name} (${props.installedCapacityKw} kWp)`;
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "energy-marker-icon";
+  iconSpan.textContent = isBiogas ? "🌱" : "☀️";
+  content.append(iconSpan);
+
+  if (props.currentPowerKw !== undefined && props.currentPowerKw > 0) {
+    const powerBadge = document.createElement("span");
+    powerBadge.className = "energy-marker-power";
+    const label = props.currentPowerKw >= 1000
+      ? `${(props.currentPowerKw / 1000).toFixed(1)}MW`
+      : `${Math.round(props.currentPowerKw)}kW`;
+    powerBadge.textContent = label;
+    content.append(powerBadge);
+  }
+
+  return content;
+}
+
+export interface WifiMarkerProps {
+  name: string;
+  ssid: string;
+  locationType: string;
+}
+
+export function createWifiMarkerContent(props: WifiMarkerProps): HTMLElement {
+  const content = document.createElement("div");
+  const isFreifunk = props.ssid.toLowerCase().includes("freifunk");
+  const color = isFreifunk ? "#ec4899" : "#06b6d4"; // Pink for Freifunk, Cyan for Hessen-WLAN
+
+  content.className = "wifi-hotspot-marker";
+  content.style.setProperty("--wifi-color", color);
+  content.title = `${props.name} (SSID: ${props.ssid})`;
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "wifi-marker-icon";
+  iconSpan.textContent = "📶";
+  content.append(iconSpan);
+
+  const ssidBadge = document.createElement("span");
+  ssidBadge.className = "wifi-marker-ssid";
+  ssidBadge.textContent = isFreifunk ? "Freifunk" : "Hessen-WLAN";
+  content.append(ssidBadge);
+
+  return content;
+}
