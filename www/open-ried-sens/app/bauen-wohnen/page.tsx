@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import HeaderLogo from "../components/HeaderLogo";
+import SiteFooter from "../components/SiteFooter";
 import BauenWohnenClient from "./BauenWohnenClient";
 
 export const dynamic = "force-dynamic";
@@ -144,18 +145,7 @@ export default async function BauenWohnenPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950/60 py-8 mt-16 text-center text-xs text-slate-500 space-y-2">
-        <p>
-          Open Ried Sens · Datenquellen: Hessisches Statistisches Landesamt (HSL), Zensus 2022, BORIS Hessen
-          (dl-zero-de/2.0), Gutachterausschuss für Immobilienwerte Kreis Bergstraße.
-        </p>
-        <p>
-          Ein ehrenamtliches Projekt zur Förderung offener Geodaten und Smart Cities im Ried in Kooperation mit{" "}
-          <a href="https://kamue.me" target="_blank" rel="noreferrer" className="text-emerald-400 underline">
-            Kulturzentrum KAMÜ
-          </a>.
-        </p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

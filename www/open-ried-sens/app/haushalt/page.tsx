@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Landmark, Database } from "lucide-react";
 import HeaderLogo from "../components/HeaderLogo";
+import SiteFooter from "../components/SiteFooter";
 import HaushaltClient from "./HaushaltClient";
 import { fetchBudgets, fetchFinanceComparison, fetchSpending } from "@/lib/financeData";
 import { fetchElections } from "@/lib/electionsData";
@@ -88,16 +89,7 @@ export default async function HaushaltPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 space-y-2">
-          <p>
-            Open Ried Sens ist eine ehrenamtliche Bürgerinitiative in Kooperation mit dem Kulturzentrum KAMÜ in Bürstadt.
-          </p>
-          <p>
-            Alle Finanz- und Verwaltungsdaten stammen aus amtlichen Haushaltsplänen, dem Hessischen Statistischen Landesamt und Votemanager Hessen.
-          </p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

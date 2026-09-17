@@ -16,6 +16,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { listSensorsAction, loginAction, logoutAction } from "./actions";
 import AdminClient from "./AdminClient";
+import SiteFooter from "../components/SiteFooter";
 
 interface AdminClientGateProps {
   initialAuthenticated: boolean;
@@ -254,6 +255,7 @@ export default function AdminClientGate({
       </header>
 
       <AdminClient initialSensors={initialSensors} initialError="" />
+      <SiteFooter />
     </div>
   );
 }

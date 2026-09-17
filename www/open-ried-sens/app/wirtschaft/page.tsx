@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Briefcase, Database, MapPin } from "lucide-react";
 import HeaderLogo from "../components/HeaderLogo";
+import SiteFooter from "../components/SiteFooter";
 import WirtschaftClient from "./WirtschaftClient";
 import {
   fetchBusinessRegistrations,
@@ -112,9 +113,7 @@ export default async function WirtschaftPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-8 text-center text-xs text-slate-500">
-        <p>© 2026 Open Ried Sens · Ehrenamtliche Bürgerdaten-Initiative Kulturzentrum KAMÜ e.V. · Datenquellen: Hessisches Statistisches Landesamt (HSL), Kommunalhaushalte & Bundesanzeiger</p>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -11,12 +11,12 @@ import {
   GraduationCap,
   HeartHandshake,
   MapPin,
-  Radio,
   Sparkles,
   Users,
 } from "lucide-react";
 import Link from "next/link";
 import HeaderLogo from "../components/HeaderLogo";
+import SiteFooter from "../components/SiteFooter";
 import DemographicsClient from "./DemographicsClient";
 
 export const dynamic = "force-dynamic";
@@ -156,49 +156,7 @@ export default async function DemographicsPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950 py-8 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-slate-400">
-          <div className="flex items-center gap-2">
-            <Radio className="w-4 h-4 text-emerald-400" />
-            <span>
-              <strong>Open Ried Sens</strong> – Eine private Bürgerinitiative mit
-              dem Kulturzentrum{" "}
-              <a
-                href="https://kamue.me"
-                target="_blank"
-                rel="noreferrer"
-                className="text-emerald-400 underline font-medium hover:text-emerald-300"
-              >
-                KAMÜ
-              </a>{" "}
-              in Bürstadt.
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-4 text-xs">
-            <Link
-              href="/"
-              className="text-slate-400 hover:text-emerald-400 transition-colors"
-            >
-              Dashboard
-            </Link>
-            <span>•</span>
-            <Link
-              href="/demografie"
-              className="text-emerald-400 font-semibold"
-            >
-              Demografie
-            </Link>
-            <span>•</span>
-            <Link
-              href="/daten"
-              className="text-slate-400 hover:text-emerald-400 transition-colors"
-            >
-              Offene Daten & API
-            </Link>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
