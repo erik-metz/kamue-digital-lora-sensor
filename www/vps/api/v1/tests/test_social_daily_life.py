@@ -1,6 +1,6 @@
 import sys
 import unittest
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules:
@@ -50,11 +50,6 @@ if "dependencies" not in sys.modules:
     sys.modules["dependencies"] = mock_dep
 
 from endpoints.social_daily_life import (
-    CulturalEventResponse,
-    MunicipalIndicatorResponse,
-    RegionalFacilityResponse,
-    SocialKpiSummary,
-    ZakbWasteStatResponse,
     get_cultural_events,
     get_regional_facilities,
     get_social_indicators,
@@ -95,7 +90,7 @@ class TestSocialDailyLife(unittest.IsolatedAsyncioTestCase):
                 "source_url": None,
             }
         ]
-        pool, cur = mock_pool_with_rows([sample_rows])
+        pool, _ = mock_pool_with_rows([sample_rows])
         res = await get_social_indicators(pool, municipality="Bürstadt", category="employment")
         self.assertEqual(len(res), 1)
         self.assertEqual(res[0].municipality, "Bürstadt")
@@ -177,8 +172,8 @@ class TestSocialDailyLife(unittest.IsolatedAsyncioTestCase):
                 "venue_id": "fac-kamue-kulturzentrum",
                 "venue_name": "KAMÜ Kulturzentrum Bürstadt",
                 "municipality": "Bürstadt",
-                "start_time": datetime(2026, 10, 15, 18, 30, tzinfo=timezone.utc),
-                "end_time": datetime(2026, 10, 15, 21, 30, tzinfo=timezone.utc),
+                "start_time": datetime(2026, 10, 15, 18, 30, tzinfo=UTC),
+                "end_time": datetime(2026, 10, 15, 21, 30, tzinfo=UTC),
                 "category": "workshop",
                 "description": "Ried Hackathon Kickoff",
                 "ticket_url": "https://kamue.me",

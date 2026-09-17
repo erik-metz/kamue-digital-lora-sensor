@@ -2,6 +2,7 @@
 
 import math
 from datetime import UTC, datetime
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 

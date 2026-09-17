@@ -1,6 +1,6 @@
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules:
@@ -30,7 +30,7 @@ class TrafficTests(unittest.IsolatedAsyncioTestCase):
         self.pool.connection.return_value.__aenter__.return_value = self.conn
 
     async def test_list_active_incidents(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.cursor.fetchall.return_value = [
             {
                 "id": "autobahn-a67-001",
@@ -60,8 +60,8 @@ class TrafficTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result[0].is_active)
 
     async def test_list_traffic_history(self):
-        t1 = datetime(2026, 9, 14, 7, 30, tzinfo=timezone.utc)
-        t2 = datetime(2026, 9, 14, 8, 15, tzinfo=timezone.utc)
+        t1 = datetime(2026, 9, 14, 7, 30, tzinfo=UTC)
+        t2 = datetime(2026, 9, 14, 8, 15, tzinfo=UTC)
         self.cursor.fetchall.return_value = [
             {
                 "id": "autobahn-a67-old",

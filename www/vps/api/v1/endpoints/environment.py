@@ -3,13 +3,13 @@ Provides groundwater monitoring, nature reserves, agricultural crop distribution
 river gauges, flood infrastructure, noise corridors, and WMS layer metadata.
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Annotated, Any
 
 import psycopg_pool
-from dependencies import get_db_pool, verify_api_key
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from dependencies import get_db_pool
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/environment", tags=["Environment & Agriculture"])
 

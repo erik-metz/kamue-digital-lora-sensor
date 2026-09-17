@@ -1,6 +1,6 @@
 import sys
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules:
@@ -72,7 +72,7 @@ class StreetClosuresTests(unittest.IsolatedAsyncioTestCase):
         self.pool.connection.return_value.__aenter__.return_value = self.conn
 
     async def test_list_street_closures(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         start = now - timedelta(days=1)
         end = now + timedelta(days=10)
         self.cursor.fetchall.return_value = [
@@ -107,7 +107,7 @@ class StreetClosuresTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result[0].is_currently_active)
 
     async def test_get_street_closure_found(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.cursor.fetchone.return_value = {
             "id": "closure-rosengarten-b47",
             "municipality": "Lampertheim",
@@ -136,7 +136,7 @@ class StreetClosuresTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result.is_currently_active)
 
     async def test_sync_street_closures(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = SyncClosuresPayload(
             closures=[
                 IngestClosurePayload(
@@ -166,7 +166,7 @@ class StreetClosuresTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(self.cursor.execute.called)
 
     async def test_update_closure(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = UpdateClosurePayload(
             end_time=now + timedelta(days=20),
             status="extended",

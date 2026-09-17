@@ -1,5 +1,5 @@
 import unittest
-from datetime import date, datetime, time, timezone
+from datetime import UTC, date, datetime, time
 from unittest.mock import AsyncMock, MagicMock
 
 from endpoints.waste_trucks import (
@@ -104,7 +104,7 @@ class WasteTrucksTests(unittest.IsolatedAsyncioTestCase):
         self.conn.execute.assert_called()
 
     async def test_get_latest_positions(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.cursor.fetchall.return_value = [
             {
                 "timestamp": now,
@@ -129,7 +129,7 @@ class WasteTrucksTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result[0]["status"], "collecting")
 
     async def test_record_waste_truck_positions(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = RecordWasteTruckPositionsPayload(
             positions=[
                 WasteTruckPositionRecord(

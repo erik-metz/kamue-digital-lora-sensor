@@ -3,11 +3,10 @@
 from datetime import date, datetime, time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Security, status
 import psycopg_pool
-from pydantic import BaseModel, Field
-
 from dependencies import get_db_pool, verify_admin_key, verify_ingestion_key
+from fastapi import APIRouter, Depends, Query, Security, status
+from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/waste-trucks", tags=["ZAKB Waste Management"])
 

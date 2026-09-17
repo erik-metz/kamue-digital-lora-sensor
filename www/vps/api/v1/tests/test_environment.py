@@ -1,6 +1,6 @@
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules:
@@ -49,13 +49,10 @@ if "dependencies" not in sys.modules:
     sys.modules["dependencies"] = mock_dep
 
 from endpoints.environment import (
-    get_protected_areas,
     get_agriculture_stats,
-    get_crop_parcels,
     get_flood_gauges,
-    get_noise_corridors,
-    get_map_services,
     get_groundwater_stations,
+    get_protected_areas,
 )
 
 
@@ -111,7 +108,7 @@ class EnvironmentEndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(results[0]["percentage_of_agricultural_land"], 24.2)
 
     async def test_get_flood_gauges(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.cursor.fetchall.return_value = [
             {
                 "id": "pegel-rhein-worms",
@@ -136,7 +133,7 @@ class EnvironmentEndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(results[0]["current_level_m"], 2.78)
 
     async def test_get_groundwater_stations(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.cursor.fetchall.return_value = [
             {
                 "id": "gw-bst-boxheimerhof",

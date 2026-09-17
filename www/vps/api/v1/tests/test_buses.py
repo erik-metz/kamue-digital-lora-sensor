@@ -1,6 +1,6 @@
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules:
@@ -9,7 +9,6 @@ if "psycopg" not in sys.modules:
     sys.modules["psycopg"] = MagicMock()
 
 from endpoints.buses import (
-
     BusPositionRecord,
     RecordBusPositionsPayload,
     get_latest_bus_positions,
@@ -64,7 +63,7 @@ class BusesTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result[0]["line_number"], "641")
 
     async def test_get_latest_bus_positions(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.cursor.fetchall.return_value = [
             {
                 "timestamp": now,
@@ -90,7 +89,7 @@ class BusesTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(result[0]["is_school_bus"])
 
     async def test_record_bus_positions(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = RecordBusPositionsPayload(
             positions=[
                 BusPositionRecord(

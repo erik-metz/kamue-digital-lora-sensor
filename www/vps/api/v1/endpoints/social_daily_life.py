@@ -12,7 +12,7 @@ from typing import Annotated, Any
 
 import psycopg_pool
 from dependencies import get_db_pool, verify_admin_key
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/social", tags=["Social & Daily Life"])

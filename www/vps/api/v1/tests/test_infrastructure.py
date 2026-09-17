@@ -1,6 +1,6 @@
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules:
@@ -28,7 +28,7 @@ class InfrastructureTests(unittest.IsolatedAsyncioTestCase):
         self.pool.connection.return_value.__aenter__.return_value = self.conn
 
     async def test_get_road_conditions(self):
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         self.cursor.fetchall.return_value = [
             (
                 "rc-bst-mainstr",

@@ -3,16 +3,16 @@ from endpoints import (
     bikes,
     buses,
     demographics,
+    environment,
     infrastructure,
     map_sensors,
     mobility,
     sensors,
+    social_daily_life,
     street_closures,
     telemetry,
     traffic,
     waste_trucks,
-    environment,
-    social_daily_life,
 )
 from fastapi import APIRouter
 
