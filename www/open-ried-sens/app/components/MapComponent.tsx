@@ -51,6 +51,7 @@ import {
   getBorisZoneColor,
   formatEuro,
 } from "@/lib/realestateData";
+import { BASELINE_DISTRICTS_GEOJSON } from "@/lib/electionsData";
 import { useEffect, useRef, useState } from "react";
 
 export type { SensorNode } from "@/lib/mapData";
@@ -107,6 +108,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [showStarkregenWMS, setShowStarkregenWMS] = useState(false);
   const [showBoris, setShowBoris] = useState(false);
   const [showDevPlans, setShowDevPlans] = useState(false);
+  const [showWahlbezirke, setShowWahlbezirke] = useState(false);
 
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -130,6 +132,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const starkregenWmsRef = useRef<L.TileLayer.WMS | null>(null);
   const borisGroupRef = useRef<L.LayerGroup | null>(null);
   const devPlansGroupRef = useRef<L.LayerGroup | null>(null);
+  const wahlbezirkeGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
@@ -244,6 +247,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const floodGaugesGroup = L.layerGroup();
       const borisGroup = L.layerGroup();
       const devPlansGroup = L.layerGroup();
+      const wahlbezirkeGroup = L.layerGroup();
 
       evChargingGroupRef.current = evChargingGroup;
       energyFacilitiesGroupRef.current = energyFacilitiesGroup;
@@ -255,6 +259,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       floodGaugesGroupRef.current = floodGaugesGroup;
       borisGroupRef.current = borisGroup;
       devPlansGroupRef.current = devPlansGroup;
+      wahlbezirkeGroupRef.current = wahlbezirkeGroup;
 
       const starkregenWms = L.tileLayer.wms("https://sgx.geodatenzentrum.de/wms_starkregen", {
         layers: "tiefe_extrem",
@@ -358,6 +363,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       starkregenWmsRef.current = null;
       borisGroupRef.current = null;
       devPlansGroupRef.current = null;
+      wahlbezirkeGroupRef.current = null;
       currentTrainMarkers.clear();
       currentCrossingMarkers.clear();
       currentWasteTruckMarkers.clear();
@@ -1537,6 +1543,14 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     else { if (map.hasLayer(group)) map.removeLayer(group); }
   }, [showDevPlans]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = wahlbezirkeGroupRef.current;
+    if (!map || !group) return;
+    if (showWahlbezirke) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showWahlbezirke]);
+
   // Populate Infrastructure & Energy Layers
   useEffect(() => {
     if (!ready) return;
@@ -1859,6 +1873,46 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         }
       }
     }
+
+    // 10. Election Districts & Turnout Choropleth (Wahlbezirke)
+    const wahlGrp = wahlbezirkeGroupRef.current;
+    if (wahlGrp) {
+      wahlGrp.clearLayers();
+      for (const [, collection] of Object.entries(BASELINE_DISTRICTS_GEOJSON)) {
+        for (const feat of collection.features) {
+          if (feat.geometry?.type === "Polygon" && feat.geometry.coordinates?.[0]) {
+            const coords = (feat.geometry.coordinates[0] as [number, number][]).map(([lng, lat]) => [lat, lng] as [number, number]);
+            const turnout = feat.properties.turnout_percent ?? 50;
+            const color = turnout >= 52 ? "#10b981" : turnout >= 49 ? "#38bdf8" : "#f59e0b";
+            const poly = L.polygon(coords, {
+              color,
+              fillColor: color,
+              fillOpacity: 0.28,
+              weight: 2,
+              dashArray: "5, 4",
+            });
+            const partyRows = Object.entries(feat.properties.party_results ?? {})
+              .map(([p, v]) => `<div>${p}: <strong>${v}</strong></div>`)
+              .join("");
+            poly.bindPopup(`
+              <div style="font-family: sans-serif; color: #e2e8f0; min-width: 250px;">
+                <div style="font-size: 11px; font-weight: bold; color: ${color}; text-transform: uppercase;">🗳️ Wahlbezirk · ${collection.municipality}</div>
+                <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${feat.properties.name}</div>
+                <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">Wahllokal: <strong>${feat.properties.polling_station_name ?? "Wahllokal"}</strong></div>
+                <div style="background: rgba(15,23,42,0.85); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px; margin-bottom: 6px;">
+                  <div>Wahlbeteiligung: <strong style="color: ${color};">${turnout.toFixed(1)}%</strong></div>
+                  <div>Wahlberechtigte: <strong>${feat.properties.eligible_voters?.toLocaleString("de-DE") ?? "–"}</strong></div>
+                  <div>Gültige Stimmen: <strong>${feat.properties.valid_votes?.toLocaleString("de-DE") ?? "–"}</strong></div>
+                  <div>Stärkste Kraft: <strong style="color: #60a5fa;">${feat.properties.winning_party ?? "–"}</strong></div>
+                </div>
+                ${partyRows ? `<div style="font-size: 11px; color: #94a3b8; display: grid; grid-template-columns: 1fr 1fr; gap: 2px;">${partyRows}</div>` : ""}
+              </div>
+            `);
+            wahlGrp.addLayer(poly);
+          }
+        }
+      }
+    }
   }, [ready, now, evChargers, wifiHotspots, roadSegments, broadbandAreas]);
 
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
@@ -1984,6 +2038,14 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         title="Bebauungspläne & Neubaugebiete (B-Pläne) ein-/ausblenden"
       >
         🏗️ B-Pläne {showDevPlans ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showWahlbezirke ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowWahlbezirke((prev) => !prev)}
+        title="Wahlbezirke & Wahlbeteiligung (Kommunalwahl) ein-/ausblenden"
+      >
+        🗳️ Wahlbezirke {showWahlbezirke ? "An" : "Aus"}
       </button>
 
       {/* Mobility & Sensor Layers */}

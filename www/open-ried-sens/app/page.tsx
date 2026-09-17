@@ -96,6 +96,12 @@ export default async function Home() {
               Regionalstatistik & Leben
             </Link>
             <Link
+              href="/haushalt"
+              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
+            >
+              Finanzen & Haushalt
+            </Link>
+            <Link
               href="/daten"
               className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
             >

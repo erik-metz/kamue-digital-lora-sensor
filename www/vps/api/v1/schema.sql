@@ -2153,3 +2153,353 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO collector_schema_versions(version) VALUES (20260922) ON CONFLICT DO NOTHING;
 
+-- ============================================================================
+-- 13. Public Finance, Municipal Budgets, Spending & Elections
+-- Covers Municipal Budgets (Haushalte & Steuern: Gewerbesteuer, Grundsteuer, etc.),
+-- Functional Expenditures (Produkthaushalt: Schulen, Straßen, Kultur/Sport, Kitas/Soziales),
+-- Election Events & Voting Districts (Wahlbezirke / Stimmbezirke mit Geodaten & Wahlergebnissen).
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS finance_budgets (
+    id VARCHAR(64) PRIMARY KEY, -- e.g. 'buerstadt-2024-plan'
+    municipality VARCHAR(64) NOT NULL,
+    fiscal_year INT NOT NULL,
+    record_type VARCHAR(16) NOT NULL DEFAULT 'plan', -- 'plan' (Ansatz) | 'actual' (Rechnungsergebnis)
+    total_revenue_eur DOUBLE PRECISION NOT NULL,
+    total_expense_eur DOUBLE PRECISION NOT NULL,
+    net_result_eur DOUBLE PRECISION NOT NULL,
+    tax_gewerbesteuer_eur DOUBLE PRECISION,
+    tax_grundsteuer_a_eur DOUBLE PRECISION,
+    tax_grundsteuer_b_eur DOUBLE PRECISION,
+    tax_income_share_eur DOUBLE PRECISION, -- Gemeindeanteil an der Einkommensteuer
+    tax_vat_share_eur DOUBLE PRECISION,    -- Gemeindeanteil an der Umsatzsteuer
+    hebesatz_gewerbesteuer INT,          -- Hebesatz in % (z.B. 400)
+    hebesatz_grundsteuer_a INT,
+    hebesatz_grundsteuer_b INT,
+    total_debt_eur DOUBLE PRECISION,       -- Schuldenstand Kernhaushalt
+    debt_per_capita_eur DOUBLE PRECISION,
+    reserves_eur DOUBLE PRECISION,         -- Rücklagen
+    source_document_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_finance_budget UNIQUE (municipality, fiscal_year, record_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_finance_budgets_muni_year ON finance_budgets (municipality, fiscal_year);
+
+CREATE TABLE IF NOT EXISTS finance_expenditures (
+    id BIGSERIAL PRIMARY KEY,
+    budget_id VARCHAR(64) NOT NULL REFERENCES finance_budgets(id) ON DELETE CASCADE,
+    municipality VARCHAR(64) NOT NULL,
+    fiscal_year INT NOT NULL,
+    product_area_code VARCHAR(8) NOT NULL, -- '01', '02', '03', '06', '08', '11', '12'
+    category_name VARCHAR(64) NOT NULL,    -- 'administration', 'public_order', 'schools', 'social_childcare', 'culture_sport', 'roads_transport', 'utilities'
+    title VARCHAR(255) NOT NULL,           -- e.g. 'Schulträgeraufgaben & Grundschulen'
+    expense_budgeted_eur DOUBLE PRECISION NOT NULL,
+    expense_actual_eur DOUBLE PRECISION,
+    investments_eur DOUBLE PRECISION DEFAULT 0, -- Sachinvestitionen / Baumaßnahmen
+    notes TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_finance_exp_cat ON finance_expenditures (municipality, category_name, fiscal_year);
+
+CREATE TABLE IF NOT EXISTS election_events (
+    id VARCHAR(64) PRIMARY KEY, -- e.g. 'kw-2021-buerstadt', 'bm-2023-buerstadt', 'eu-2024-buerstadt'
+    municipality VARCHAR(64) NOT NULL,
+    election_type VARCHAR(32) NOT NULL, -- 'kommunalwahl', 'buergermeister', 'landtag', 'bundestag', 'europawahl'
+    title VARCHAR(255) NOT NULL,
+    election_date DATE NOT NULL,
+    eligible_voters INT NOT NULL,
+    total_voters INT NOT NULL,
+    turnout_percent DOUBLE PRECISION NOT NULL,
+    valid_votes INT NOT NULL,
+    invalid_votes INT NOT NULL,
+    seats_total INT,
+    results_summary JSONB NOT NULL, -- party vote shares, percentage, seats
+    source VARCHAR(128) DEFAULT 'votemanager_ekom21',
+    source_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_elections_muni_type ON election_events (municipality, election_type, election_date DESC);
+
+CREATE TABLE IF NOT EXISTS election_districts (
+    id VARCHAR(64) PRIMARY KEY, -- e.g. 'ed-bst-01-altes-rathaus'
+    municipality VARCHAR(64) NOT NULL,
+    district_number VARCHAR(16) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    polling_station_name VARCHAR(255),
+    polling_station_address VARCHAR(255),
+    center_lat DOUBLE PRECISION NOT NULL,
+    center_lng DOUBLE PRECISION NOT NULL,
+    boundaries JSONB, -- GeoJSON Polygon / MultiPolygon
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_election_districts_muni ON election_districts (municipality);
+
+CREATE TABLE IF NOT EXISTS election_district_results (
+    id BIGSERIAL PRIMARY KEY,
+    election_id VARCHAR(64) NOT NULL REFERENCES election_events(id) ON DELETE CASCADE,
+    district_id VARCHAR(64) NOT NULL REFERENCES election_districts(id) ON DELETE CASCADE,
+    eligible_voters INT NOT NULL,
+    total_voters INT NOT NULL,
+    turnout_percent DOUBLE PRECISION NOT NULL,
+    valid_votes INT NOT NULL,
+    invalid_votes INT NOT NULL,
+    party_results JSONB NOT NULL, -- {"CDU": 520, "SPD": 310, "Gruene": 180, ...}
+    winning_party VARCHAR(64),
+    CONSTRAINT uq_election_district_res UNIQUE (election_id, district_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_election_district_res_lookup ON election_district_results (election_id, district_id);
+
+-- Seed Municipal Budgets (Bürstadt, Lampertheim, Biblis, Groß-Rohrheim)
+INSERT INTO finance_budgets (
+    id, municipality, fiscal_year, record_type, total_revenue_eur, total_expense_eur, net_result_eur,
+    tax_gewerbesteuer_eur, tax_grundsteuer_a_eur, tax_grundsteuer_b_eur, tax_income_share_eur, tax_vat_share_eur,
+    hebesatz_gewerbesteuer, hebesatz_grundsteuer_a, hebesatz_grundsteuer_b, total_debt_eur, debt_per_capita_eur, reserves_eur, source_document_url
+)
+VALUES
+    -- Bürstadt 2024 Plan
+    ('bst-2024-plan', 'Bürstadt', 2024, 'plan', 39850000.0, 41200000.0, -1350000.0,
+     9200000.0, 48000.0, 3450000.0, 11400000.0, 1680000.0,
+     400, 380, 495, 17800000.0, 1048.0, 4100000.0, 'https://buerstadt.de/haushalt/2024'),
+    -- Bürstadt 2024 Actual
+    ('bst-2024-actual', 'Bürstadt', 2024, 'actual', 41200000.0, 40950000.0, 250000.0,
+     9850000.0, 49000.0, 3480000.0, 11650000.0, 1720000.0,
+     400, 380, 495, 17250000.0, 1015.0, 4350000.0, 'https://buerstadt.de/haushalt/2024'),
+    -- Bürstadt 2025 Plan
+    ('bst-2025-plan', 'Bürstadt', 2025, 'plan', 42100000.0, 42850000.0, -750000.0,
+     9950000.0, 50000.0, 3600000.0, 12100000.0, 1780000.0,
+     400, 380, 495, 16900000.0, 995.0, 4200000.0, 'https://buerstadt.de/haushalt/2025'),
+
+    -- Lampertheim 2024 Plan
+    ('la-2024-plan', 'Lampertheim', 2024, 'plan', 91500000.0, 94200000.0, -2700000.0,
+     22400000.0, 92000.0, 8650000.0, 24800000.0, 3950000.0,
+     400, 390, 495, 41200000.0, 1249.0, 7200000.0, 'https://lampertheim.de/haushalt/2024'),
+    -- Lampertheim 2024 Actual
+    ('la-2024-actual', 'Lampertheim', 2024, 'actual', 93800000.0, 93650000.0, 150000.0,
+     23800000.0, 94000.0, 8720000.0, 25200000.0, 4050000.0,
+     400, 390, 495, 40100000.0, 1215.0, 7500000.0, 'https://lampertheim.de/haushalt/2024'),
+    -- Lampertheim 2025 Plan
+    ('la-2025-plan', 'Lampertheim', 2025, 'plan', 95200000.0, 96800000.0, -1600000.0,
+     23500000.0, 95000.0, 8900000.0, 25900000.0, 4150000.0,
+     400, 390, 495, 39500000.0, 1197.0, 7100000.0, 'https://lampertheim.de/haushalt/2025'),
+
+    -- Biblis 2024 Plan
+    ('bib-2024-plan', 'Biblis', 2024, 'plan', 24100000.0, 24800000.0, -700000.0,
+     4850000.0, 36000.0, 1920000.0, 6950000.0, 1050000.0,
+     380, 350, 450, 8900000.0, 972.0, 2100000.0, 'https://biblis.de/haushalt/2024'),
+    -- Biblis 2025 Plan
+    ('bib-2025-plan', 'Biblis', 2025, 'plan', 25200000.0, 25650000.0, -450000.0,
+     5100000.0, 37000.0, 2010000.0, 7300000.0, 1120000.0,
+     380, 350, 450, 8650000.0, 945.0, 2250000.0, 'https://biblis.de/haushalt/2025'),
+
+    -- Groß-Rohrheim 2024 Plan
+    ('gross-2024-plan', 'Groß-Rohrheim', 2024, 'plan', 10900000.0, 11250000.0, -350000.0,
+     2650000.0, 19000.0, 940000.0, 3100000.0, 480000.0,
+     380, 350, 450, 3400000.0, 894.0, 950000.0, 'https://gross-rohrheim.de/haushalt/2024')
+ON CONFLICT (id) DO UPDATE SET
+    total_revenue_eur = EXCLUDED.total_revenue_eur,
+    total_expense_eur = EXCLUDED.total_expense_eur,
+    net_result_eur = EXCLUDED.net_result_eur,
+    tax_gewerbesteuer_eur = EXCLUDED.tax_gewerbesteuer_eur,
+    tax_grundsteuer_b_eur = EXCLUDED.tax_grundsteuer_b_eur,
+    tax_income_share_eur = EXCLUDED.tax_income_share_eur,
+    total_debt_eur = EXCLUDED.total_debt_eur,
+    reserves_eur = EXCLUDED.reserves_eur,
+    updated_at = NOW();
+
+-- Seed Functional Spending by Product Area (Bürstadt & Lampertheim 2024/2025)
+INSERT INTO finance_expenditures (
+    budget_id, municipality, fiscal_year, product_area_code, category_name, title,
+    expense_budgeted_eur, expense_actual_eur, investments_eur, notes
+)
+VALUES
+    -- Bürstadt 2024
+    ('bst-2024-plan', 'Bürstadt', 2024, '01', 'administration', 'Innere Verwaltung & Bürgerbüro',
+     5450000.0, 5380000.0, 420000.0, 'Personal- und Sachkosten Stadtverwaltung, Digitalisierung'),
+    ('bst-2024-plan', 'Bürstadt', 2024, '02', 'public_order', 'Sicherheit & Freiwillige Feuerwehr',
+     1850000.0, 1810000.0, 680000.0, 'Feuerwehrstützpunkt Bürstadt, Bobstadt, Riedrode, Fuhrpark'),
+    ('bst-2024-plan', 'Bürstadt', 2024, '03', 'schools', 'Schulträgeraufgaben, Grundschulen & Bildung',
+     2650000.0, 2590000.0, 850000.0, 'Schillerschule, Grundschule Bobstadt, Betreuung & DigitalPakt'),
+    ('bst-2024-plan', 'Bürstadt', 2024, '06', 'social_childcare', 'Kinder-, Jugend- und Familienhilfe (Kitas)',
+     11200000.0, 11450000.0, 1250000.0, 'Betrieb städtischer & kirchlicher Kitas, U3/Ü3-Plätze, Spielplätze'),
+    ('bst-2024-plan', 'Bürstadt', 2024, '08', 'culture_sport', 'Kultur, Sportförderung & Vereine (KAMÜ)',
+     3100000.0, 2980000.0, 750000.0, 'Bürgerhaus, KAMÜ Kulturzentrum, Sportpark Die Lache, Vereinszuschüsse'),
+    ('bst-2024-plan', 'Bürstadt', 2024, '11', 'roads_transport', 'Bauen, Wohnen, Straßen & Mobilität',
+     6450000.0, 6380000.0, 2100000.0, 'Straßenunterhalt, Radwegenetz, Straßenbeleuchtung LED, B-Plan-Erschließung'),
+    ('bst-2024-plan', 'Bürstadt', 2024, '12', 'utilities', 'Umwelt, Grünflächen & Entsorgung',
+     2450000.0, 2410000.0, 380000.0, 'Grünanlagenpflege, Friedhofswesen, Hochwasserschutz & Renaturierung'),
+
+    -- Lampertheim 2024
+    ('la-2024-plan', 'Lampertheim', 2024, '01', 'administration', 'Innere Verwaltung & Ratsarbeit',
+     12800000.0, 12650000.0, 950000.0, 'Rathauszentrale, Digitalisierung Bürgerservice'),
+    ('la-2024-plan', 'Lampertheim', 2024, '02', 'public_order', 'Öffentliche Ordnung & Feuerwehr',
+     4200000.0, 4150000.0, 1450000.0, 'Feuerwehren Lampertheim, Hofheim, Hüttenfeld, Neuschloß'),
+    ('la-2024-plan', 'Lampertheim', 2024, '03', 'schools', 'Schulwesen & Schülerbeförderung',
+     5800000.0, 5650000.0, 1950000.0, 'Pestalozzi, Nibelungenschule Hofheim, Schulsozialarbeit'),
+    ('la-2024-plan', 'Lampertheim', 2024, '06', 'social_childcare', 'Kindertagesstätten & Jugendpflege',
+     25900000.0, 26200000.0, 3100000.0, '14 Kitas, Ganztagesbetreuung, Jugendzentrum Zehntscheune'),
+    ('la-2024-plan', 'Lampertheim', 2024, '08', 'culture_sport', 'Kultur, Biedensand Bäder & Sport',
+     7650000.0, 7550000.0, 1850000.0, 'Hallen- und Freibad Biedensand, Altrheinhalle, Stadtbücherei'),
+    ('la-2024-plan', 'Lampertheim', 2024, '11', 'roads_transport', 'Straßennetz, Tiefbau & Stadtentwicklung',
+     15200000.0, 14900000.0, 4800000.0, 'Sanierung Ortsstraßen, Ausbau Radwegenetz B44/B47, Neubaugebiete'),
+    ('la-2024-plan', 'Lampertheim', 2024, '12', 'utilities', 'Stadtentwässerung, Grünflächen & Gewässer',
+     5850000.0, 5780000.0, 1100000.0, 'Stadtgärtnerei, Naturschutz Biedensand, Renaturierung Weschnitz');
+
+-- Seed Election Events (Kommunalwahlen, Bürgermeisterwahlen, Europawahl)
+INSERT INTO election_events (
+    id, municipality, election_type, title, election_date,
+    eligible_voters, total_voters, turnout_percent, valid_votes, invalid_votes, seats_total, results_summary, source_url
+)
+VALUES
+    -- Bürstadt Kommunalwahl 2021
+    ('kw-2021-bst', 'Bürstadt', 'kommunalwahl', 'Kommunalwahl 2021 – Stadtverordnetenversammlung', '2021-03-14',
+     12450, 6420, 51.57, 6185, 235, 31,
+     '{"parties": [
+         {"name": "CDU", "color": "#1e293b", "votes": 75850, "percent": 45.8, "seats": 14},
+         {"name": "SPD", "color": "#ef4444", "votes": 41200, "percent": 24.9, "seats": 8},
+         {"name": "Bündnis 90/Die Grünen", "color": "#22c55e", "votes": 26800, "percent": 16.2, "seats": 5},
+         {"name": "FDP", "color": "#eab308", "votes": 21750, "percent": 13.1, "seats": 4}
+     ]}'::jsonb, 'https://votemanager.ekom21.de/2021-03-14/06431005/praesentation/'),
+
+    -- Bürstadt Bürgermeisterwahl 2023
+    ('bm-2023-bst', 'Bürstadt', 'buergermeister', 'Bürgermeisterwahl 2023 Bürstadt', '2023-03-12',
+     12620, 5980, 47.38, 5910, 70, NULL,
+     '{"candidates": [
+         {"name": "Barbara Schader (CDU)", "votes": 3487, "percent": 59.0, "elected": true},
+         {"name": "Boris Wenz (Unabhängig / Bürger)", "votes": 2423, "percent": 41.0, "elected": false}
+     ]}'::jsonb, 'https://votemanager.ekom21.de/2023-03-12/06431005/praesentation/'),
+
+    -- Lampertheim Kommunalwahl 2021
+    ('kw-2021-la', 'Lampertheim', 'kommunalwahl', 'Kommunalwahl 2021 – Stadtverordnetenversammlung', '2021-03-14',
+     24800, 11950, 48.19, 11520, 430, 45,
+     '{"parties": [
+         {"name": "CDU", "color": "#1e293b", "votes": 162400, "percent": 34.2, "seats": 15},
+         {"name": "SPD", "color": "#ef4444", "votes": 158200, "percent": 33.3, "seats": 15},
+         {"name": "FDP", "color": "#eab308", "votes": 79500, "percent": 16.7, "seats": 8},
+         {"name": "Bündnis 90/Die Grünen", "color": "#22c55e", "votes": 75100, "percent": 15.8, "seats": 7}
+     ]}'::jsonb, 'https://votemanager.ekom21.de/2021-03-14/06431013/praesentation/'),
+
+    -- Biblis Kommunalwahl 2021
+    ('kw-2021-bib', 'Biblis', 'kommunalwahl', 'Kommunalwahl 2021 – Gemeindevertretung', '2021-03-14',
+     6950, 3680, 52.95, 3570, 110, 31,
+     '{"parties": [
+         {"name": "CDU", "color": "#1e293b", "votes": 41200, "percent": 42.5, "seats": 13},
+         {"name": "SPD", "color": "#ef4444", "votes": 25800, "percent": 26.6, "seats": 8},
+         {"name": "FLB (Freie Liste Biblis)", "color": "#0284c7", "votes": 18400, "percent": 19.0, "seats": 6},
+         {"name": "Bündnis 90/Die Grünen", "color": "#22c55e", "votes": 11500, "percent": 11.9, "seats": 4}
+     ]}'::jsonb, 'https://votemanager.ekom21.de/2021-03-14/06431003/praesentation/'),
+
+    -- Bürstadt Europawahl 2024
+    ('eu-2024-bst', 'Bürstadt', 'europawahl', 'Europawahl 2024 – Bürstadt', '2024-06-09',
+     12750, 7840, 61.49, 7755, 85, NULL,
+     '{"parties": [
+         {"name": "CDU", "color": "#1e293b", "votes": 2840, "percent": 36.6},
+         {"name": "AfD", "color": "#0ea5e9", "votes": 1420, "percent": 18.3},
+         {"name": "SPD", "color": "#ef4444", "votes": 1210, "percent": 15.6},
+         {"name": "Bündnis 90/Die Grünen", "color": "#22c55e", "votes": 720, "percent": 9.3},
+         {"name": "FDP", "color": "#eab308", "votes": 485, "percent": 6.3},
+         {"name": "BSW", "color": "#d946ef", "votes": 410, "percent": 5.3},
+         {"name": "Sonstige", "color": "#64748b", "votes": 670, "percent": 8.6}
+     ]}'::jsonb, 'https://votemanager.ekom21.de/2024-06-09/06431005/praesentation/')
+ON CONFLICT (id) DO UPDATE SET
+    turnout_percent = EXCLUDED.turnout_percent,
+    results_summary = EXCLUDED.results_summary;
+
+-- Seed Polling Districts (Wahlbezirke / Stimmbezirke mit GeoJSON Polygonen)
+INSERT INTO election_districts (
+    id, municipality, district_number, name, polling_station_name, polling_station_address, center_lat, center_lng, boundaries
+)
+VALUES
+    -- Bürstadt Wahlbezirk 1 (Kernstadt Nord / Schillerschule)
+    ('ed-bst-01', 'Bürstadt', '01', 'Bürstadt 01 – Schillerschule', 'Schillerschule Bürstadt (Aula)', 'Boxheimerhofstraße 18, 68642 Bürstadt',
+     49.6495, 8.4615,
+     '{"type": "Polygon", "coordinates": [[[8.4550, 49.6460], [8.4680, 49.6460], [8.4680, 49.6540], [8.4550, 49.6540], [8.4550, 49.6460]]]}'::jsonb),
+
+    -- Bürstadt Wahlbezirk 2 (Kernstadt Mitte / Historisches Rathaus)
+    ('ed-bst-02', 'Bürstadt', '02', 'Bürstadt 02 – Altes Rathaus / Marktplatz', 'Historisches Rathaus (Ratssaal)', 'Marktplatz 1, 68642 Bürstadt',
+     49.6415, 8.4545,
+     '{"type": "Polygon", "coordinates": [[[8.4480, 49.6380], [8.4600, 49.6380], [8.4600, 49.6460], [8.4480, 49.6460], [8.4480, 49.6380]]]}'::jsonb),
+
+    -- Bürstadt Wahlbezirk 3 (Kernstadt Ost / Erich-Kästner-Schule)
+    ('ed-bst-03', 'Bürstadt', '03', 'Bürstadt 03 – EKS Gesamtschule', 'Erich-Kästner-Schule (Mensa)', 'Wolfstraße 23, 68642 Bürstadt',
+     49.6480, 8.4660,
+     '{"type": "Polygon", "coordinates": [[[8.4600, 49.6430], [8.4750, 49.6430], [8.4750, 49.6520], [8.4600, 49.6520], [8.4600, 49.6430]]]}'::jsonb),
+
+    -- Bürstadt Wahlbezirk 4 (Kernstadt Süd / Jugendhaus Balla-Balla)
+    ('ed-bst-04', 'Bürstadt', '04', 'Bürstadt 04 – Jugendhaus Balla-Balla', 'Jugendzentrum Balla-Balla', 'Wasserwerkstraße 4, 68642 Bürstadt',
+     49.6385, 8.4590,
+     '{"type": "Polygon", "coordinates": [[[8.4500, 49.6300], [8.4680, 49.6300], [8.4680, 49.6380], [8.4500, 49.6380], [8.4500, 49.6300]]]}'::jsonb),
+
+    -- Bürstadt Wahlbezirk 5 (Stadtteil Bobstadt)
+    ('ed-bst-05', 'Bürstadt', '05', 'Bürstadt 05 – Stadtteil Bobstadt', 'Bürgerhaus Bobstadt', 'Frankenstraße 1, 68642 Bürstadt-Bobstadt',
+     49.6625, 8.4465,
+     '{"type": "Polygon", "coordinates": [[[8.4350, 49.6540], [8.4580, 49.6540], [8.4580, 49.6710], [8.4350, 49.6710], [8.4350, 49.6540]]]}'::jsonb),
+
+    -- Bürstadt Wahlbezirk 6 (Stadtteil Riedrode)
+    ('ed-bst-06', 'Bürstadt', '06', 'Bürstadt 06 – Stadtteil Riedrode', 'Bürgerhaus Riedrode', 'Bahnhofstraße 14, 68642 Bürstadt-Riedrode',
+     49.6475, 8.4910,
+     '{"type": "Polygon", "coordinates": [[[8.4780, 49.6380], [8.5050, 49.6380], [8.5050, 49.6560], [8.4780, 49.6560], [8.4780, 49.6380]]]}'::jsonb),
+
+    -- Lampertheim Wahlbezirk 1 (Kernstadt / Lessing-Gymnasium)
+    ('ed-la-01', 'Lampertheim', '01', 'Lampertheim 01 – Lessing-Gymnasium', 'Lessing-Gymnasium Lampertheim', 'Biedensandstraße 55, 68623 Lampertheim',
+     49.5985, 49.4550,
+     '{"type": "Polygon", "coordinates": [[[8.4500, 49.5920], [8.4650, 49.5920], [8.4650, 49.6050], [8.4500, 49.6050], [8.4500, 49.5920]]]}'::jsonb),
+
+    -- Lampertheim Wahlbezirk 2 (Kernstadt / Pestalozzischule)
+    ('ed-la-02', 'Lampertheim', '02', 'Lampertheim 02 – Pestalozzischule', 'Pestalozzischule (Turnhalle)', 'Römerstraße 40, 68623 Lampertheim',
+     49.5990, 8.4635,
+     '{"type": "Polygon", "coordinates": [[[8.4600, 49.5920], [8.4780, 49.5920], [8.4780, 49.6050], [8.4600, 49.6050], [8.4600, 49.5920]]]}'::jsonb),
+
+    -- Lampertheim Wahlbezirk 3 (Stadtteil Neuschloß)
+    ('ed-la-03', 'Lampertheim', '03', 'Lampertheim 03 – Neuschloß', 'Bürgersaal Schlossplatz Neuschloß', 'Schlossplatz 1, 68623 Lampertheim-Neuschloß',
+     49.6015, 8.5180,
+     '{"type": "Polygon", "coordinates": [[[8.5050, 49.5950], [8.5300, 49.5950], [8.5300, 49.6100], [8.5050, 49.6100], [8.5050, 49.5950]]]}'::jsonb),
+
+    -- Lampertheim Wahlbezirk 4 (Stadtteil Hüttenfeld)
+    ('ed-la-04', 'Lampertheim', '04', 'Lampertheim 04 – Hüttenfeld', 'Bürgerhaus Hüttenfeld', 'Alfred-Delp-Straße 50, 68623 Lampertheim-Hüttenfeld',
+     49.5980, 8.5830,
+     '{"type": "Polygon", "coordinates": [[[8.5650, 49.5880], [8.6000, 49.5880], [8.6000, 49.6080], [8.5650, 49.6080], [8.5650, 49.5880]]]}'::jsonb),
+
+    -- Biblis Wahlbezirk 1 (Kernort / Bürgerzentrum)
+    ('ed-bib-01', 'Biblis', '01', 'Biblis 01 – Bürgerzentrum', 'Bürgerzentrum Biblis', 'Darmstädter Straße 25, 68647 Biblis',
+     49.6875, 8.4435,
+     '{"type": "Polygon", "coordinates": [[[8.4350, 49.6800], [8.4550, 49.6800], [8.4550, 49.6950], [8.4350, 49.6950], [8.4350, 49.6800]]]}'::jsonb),
+
+    -- Biblis Wahlbezirk 2 (Stadtteil Nordheim)
+    ('ed-bib-02', 'Biblis', '02', 'Biblis 02 – Nordheim', 'Altes Rathaus Nordheim', 'Hauptstraße 15, 68647 Biblis-Nordheim',
+     49.6830, 8.3880,
+     '{"type": "Polygon", "coordinates": [[[8.3750, 49.6750], [8.4020, 49.6750], [8.4020, 49.6900], [8.3750, 49.6900], [8.3750, 49.6750]]]}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    polling_station_name = EXCLUDED.polling_station_name,
+    center_lat = EXCLUDED.center_lat,
+    center_lng = EXCLUDED.center_lng,
+    boundaries = EXCLUDED.boundaries;
+
+-- Seed Precinct Results for Bürstadt Kommunalwahl 2021
+INSERT INTO election_district_results (
+    election_id, district_id, eligible_voters, total_voters, turnout_percent, valid_votes, invalid_votes, party_results, winning_party
+)
+VALUES
+    ('kw-2021-bst', 'ed-bst-01', 2150, 1140, 53.02, 1098, 42,
+     '{"CDU": 482, "SPD": 284, "Gruene": 182, "FDP": 150}'::jsonb, 'CDU'),
+    ('kw-2021-bst', 'ed-bst-02', 2080, 1020, 49.04, 982, 38,
+     '{"CDU": 456, "SPD": 268, "Gruene": 142, "FDP": 116}'::jsonb, 'CDU'),
+    ('kw-2021-bst', 'ed-bst-03', 2280, 1180, 51.75, 1140, 40,
+     '{"CDU": 512, "SPD": 298, "Gruene": 194, "FDP": 136}'::jsonb, 'CDU'),
+    ('kw-2021-bst', 'ed-bst-04', 1950, 930, 47.69, 895, 35,
+     '{"CDU": 388, "SPD": 265, "Gruene": 128, "FDP": 114}'::jsonb, 'CDU'),
+    ('kw-2021-bst', 'ed-bst-05', 2120, 1185, 55.90, 1145, 40,
+     '{"CDU": 542, "SPD": 282, "Gruene": 178, "FDP": 143}'::jsonb, 'CDU'),
+    ('kw-2021-bst', 'ed-bst-06', 1870, 965, 51.60, 925, 40,
+     '{"CDU": 448, "SPD": 235, "Gruene": 128, "FDP": 114}'::jsonb, 'CDU')
+ON CONFLICT (election_id, district_id) DO UPDATE SET
+    turnout_percent = EXCLUDED.turnout_percent,
+    party_results = EXCLUDED.party_results,
+    winning_party = EXCLUDED.winning_party;
+
+INSERT INTO collector_schema_versions(version) VALUES (20260923) ON CONFLICT DO NOTHING;

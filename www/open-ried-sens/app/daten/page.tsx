@@ -4,12 +4,15 @@ import {
   ArrowLeft,
   Building2,
   Code2,
+  Coins,
   Database,
   ExternalLink,
   Globe,
+  Landmark,
   Radio,
   ShieldCheck,
   Users,
+  Vote,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -68,6 +71,13 @@ export default async function DataDocsPage() {
             >
               <Activity className="w-4 h-4 text-violet-400" />
               <span className="hidden sm:inline">Statistik</span>
+            </Link>
+            <Link
+              href="/haushalt"
+              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
+            >
+              <Coins className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Finanzen</span>
             </Link>
             <Link
               href="/admin"
@@ -268,6 +278,50 @@ export default async function DataDocsPage() {
               <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Neubaugebiete &amp; B-Pläne</span>
               <p className="text-emerald-400 font-bold">GET /api/v1/realestate/development-plans</p>
               <p className="text-slate-400 font-sans text-xs">Aktive Bebauungspläne (Sonneneck, Rosenstock, etc.) mit Rechtsstatus, Hektar und Gemeindelinks.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* PUBLIC FINANCE, BUDGETS & ELECTIONS OPEN DATA SECTION */}
+        <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Coins className="w-5 h-5 text-emerald-400" />
+                Öffentliche Finanzen, Haushalte &amp; Wahlergebnisse (Open Data)
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">
+                Gemeindehaushalte, Gewerbesteuer- und Grundsteuer-Erträge, Hebesätze, Ausgaben nach Produktbereichen (Schulen, Straßen, Kitas) sowie Wahlergebnisse.
+              </p>
+            </div>
+            <Link
+              href="/haushalt"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors shrink-0"
+            >
+              Finanz-Dashboard <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Gemeindehaushalte &amp; Steuern</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/finance/budgets</p>
+              <p className="text-slate-400 font-sans text-xs">Haushaltsvolumen, Gewerbesteuer, Grundsteuer A/B, Hebesätze, Schuldenstand und Jahresergebnisse.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Produkthaushalt / Ausgaben</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/finance/spending</p>
+              <p className="text-slate-400 font-sans text-xs">Aufgabenbereiche: Schulen &amp; Bildung, Straßen &amp; Mobilität, Kitas/Soziales, Kultur (KAMÜ) &amp; Verwaltung.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Kommunalvergleich</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/finance/compare</p>
+              <p className="text-slate-400 font-sans text-xs">Vergleich Bürstadt, Lampertheim, Biblis, Groß-Rohrheim: Hebesätze, Pro-Kopf-Schulden &amp; Rücklagen.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Wahlergebnisse &amp; Stimmbezirke</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/elections</p>
+              <p className="text-slate-400 font-sans text-xs">Kommunalwahlen, Bürgermeisterwahlen &amp; Europawahl inkl. Stimmbezirke, Wahlbeteiligung und Mandaten.</p>
             </div>
           </div>
         </section>
