@@ -2503,3 +2503,392 @@ ON CONFLICT (election_id, district_id) DO UPDATE SET
     winning_party = EXCLUDED.winning_party;
 
 INSERT INTO collector_schema_versions(version) VALUES (20260923) ON CONFLICT DO NOTHING;
+
+-- 11. Economy, Companies, Business Registrations & Municipal Trade Taxes (Kreis Bergstraße & Hessisches Ried)
+
+CREATE TABLE IF NOT EXISTS municipality_tax_rates (
+    id BIGSERIAL PRIMARY KEY,
+    municipality_id VARCHAR(64) NOT NULL REFERENCES municipalities(id) ON DELETE CASCADE,
+    year INT NOT NULL,
+    hebesatz_gewerbesteuer INT NOT NULL,      -- Trade tax rate in % (e.g. 380)
+    hebesatz_grundsteuer_a INT NOT NULL,      -- Agricultural property tax in % (e.g. 350)
+    hebesatz_grundsteuer_b INT NOT NULL,      -- Real property tax B in % (e.g. 450)
+    revenue_gewerbesteuer_eur BIGINT,         -- Net trade tax revenue in €
+    revenue_grundsteuer_a_eur BIGINT,         -- Property tax A revenue in €
+    revenue_grundsteuer_b_eur BIGINT,         -- Property tax B revenue in €
+    tax_revenue_per_capita_eur DOUBLE PRECISION,
+    source VARCHAR(128) NOT NULL DEFAULT 'statistik_hessen', -- HSL Realsteuervergleich
+    source_url TEXT,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_muni_tax_year UNIQUE (municipality_id, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_tax_rates_muni_year ON municipality_tax_rates (municipality_id, year DESC);
+CREATE INDEX IF NOT EXISTS idx_tax_rates_year_gewerbe ON municipality_tax_rates (year, hebesatz_gewerbesteuer);
+
+CREATE TABLE IF NOT EXISTS business_registrations (
+    id BIGSERIAL PRIMARY KEY,
+    region_code VARCHAR(64) NOT NULL, -- municipality_id or 'kreis-bergstrasse'
+    region_type VARCHAR(16) NOT NULL, -- 'municipality' | 'county'
+    year INT NOT NULL,
+    registrations_total INT NOT NULL,   -- Gewerbeanmeldungen gesamt
+    new_foundations INT NOT NULL,       -- Betriebsgründungen & sonstige Neugründungen
+    relocations_in INT NOT NULL,        -- Zuzüge aus anderen Gemeinden/Kreisen
+    deregistrations_total INT NOT NULL, -- Gewerbeabmeldungen gesamt
+    liquidations INT NOT NULL,          -- Vollständige Aufgaben / Liquidationen
+    relocations_out INT NOT NULL,       -- Fortzüge in andere Regionen
+    net_balance INT GENERATED ALWAYS AS (registrations_total - deregistrations_total) STORED,
+    source VARCHAR(128) NOT NULL DEFAULT 'statistik_hessen', -- HSL Statistischer Bericht D I 1 - j
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_biz_reg_year UNIQUE (region_code, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_biz_reg_region_year ON business_registrations (region_code, year DESC);
+
+CREATE TABLE IF NOT EXISTS industry_employment (
+    id BIGSERIAL PRIMARY KEY,
+    region_code VARCHAR(64) NOT NULL, -- municipality_id or 'kreis-bergstrasse'
+    year INT NOT NULL,
+    sector_code VARCHAR(16) NOT NULL, -- 'A', 'B-F', 'G-J', 'K-N', 'O-U'
+    sector_name VARCHAR(128) NOT NULL,
+    employees_count INT NOT NULL,
+    share_percent DOUBLE PRECISION,
+    source VARCHAR(128) NOT NULL DEFAULT 'statistik_hessen',
+    CONSTRAINT uq_industry_emp UNIQUE (region_code, year, sector_code)
+);
+
+CREATE INDEX IF NOT EXISTS idx_industry_emp_region_year ON industry_employment (region_code, year DESC);
+
+CREATE TABLE IF NOT EXISTS companies (
+    id VARCHAR(64) PRIMARY KEY, -- e.g. 'comp-basf-lampertheim'
+    name VARCHAR(255) NOT NULL,
+    legal_form VARCHAR(64),     -- 'GmbH', 'AG', 'SE', 'e.K.'
+    municipality_id VARCHAR(64) NOT NULL REFERENCES municipalities(id) ON DELETE CASCADE,
+    district VARCHAR(64),
+    street_address VARCHAR(255) NOT NULL,
+    postal_code VARCHAR(10) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    industry_sector VARCHAR(128) NOT NULL, -- e.g. 'Chemie & Kunststoffe', 'Logistik & Distribution'
+    wz_code VARCHAR(16),
+    employee_range VARCHAR(32) NOT NULL,   -- '10-49', '50-249', '250-499', '500-999', '1000+'
+    turnover_estimated_range VARCHAR(64),  -- '< 10 Mio. €', '10-50 Mio. €', '50-100 Mio. €', '> 100 Mio. €'
+    description TEXT,
+    website VARCHAR(255),
+    is_headquarters BOOLEAN DEFAULT FALSE,
+    source VARCHAR(128) NOT NULL DEFAULT 'bundesanzeiger_northdata',
+    source_url TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_companies_muni ON companies (municipality_id);
+CREATE INDEX IF NOT EXISTS idx_companies_sector ON companies (industry_sector);
+
+CREATE TABLE IF NOT EXISTS startup_initiatives (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    category VARCHAR(64) NOT NULL, -- 'grant', 'consulting', 'competition', 'hub'
+    organizer VARCHAR(128) NOT NULL,
+    description TEXT NOT NULL,
+    url VARCHAR(255),
+    funding_bracket VARCHAR(64),
+    target_group VARCHAR(128),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed All 22 Municipalities of Kreis Bergstraße (including Bergstraße core and Odenwald parts)
+INSERT INTO municipalities (id, ags, name, county, state, area_sqkm, center_lat, center_lng)
+VALUES
+    ('bensheim', '06431002', 'Bensheim', 'Kreis Bergstraße', 'Hessen', 57.83, 49.6808, 8.6225),
+    ('heppenheim', '06431011', 'Heppenheim (Bergstraße)', 'Kreis Bergstraße', 'Hessen', 52.14, 49.6424, 8.6441),
+    ('viernheim', '06431020', 'Viernheim', 'Kreis Bergstraße', 'Hessen', 48.40, 49.5381, 8.5833),
+    ('zwingenberg', '06431022', 'Zwingenberg', 'Kreis Bergstraße', 'Hessen', 5.66, 49.7233, 8.6133),
+    ('lautertal', '06431014', 'Lautertal (Odenwald)', 'Kreis Bergstraße', 'Hessen', 30.76, 49.7153, 8.6853),
+    ('lindenfels', '06431016', 'Lindenfels', 'Kreis Bergstraße', 'Hessen', 21.09, 49.6833, 8.7833),
+    ('fuerth', '06431007', 'Fürth (Odenwald)', 'Kreis Bergstraße', 'Hessen', 38.41, 49.6500, 8.7833),
+    ('rimbach', '06431019', 'Rimbach', 'Kreis Bergstraße', 'Hessen', 22.90, 49.6231, 8.7594),
+    ('moerlenbach', '06431017', 'Mörlenbach', 'Kreis Bergstraße', 'Hessen', 27.22, 49.5986, 8.7408),
+    ('birkenau', '06431004', 'Birkenau', 'Kreis Bergstraße', 'Hessen', 24.56, 49.5639, 8.7061),
+    ('wald-michelbach', '06431021', 'Wald-Michelbach', 'Kreis Bergstraße', 'Hessen', 74.36, 49.5714, 8.8286),
+    ('grasellenbach', '06431009', 'Grasellenbach', 'Kreis Bergstraße', 'Hessen', 22.88, 49.6272, 8.8683),
+    ('abtsteinach', '06431001', 'Abtsteinach', 'Kreis Bergstraße', 'Hessen', 11.03, 49.5444, 8.7906),
+    ('gorxheimertal', '06431008', 'Gorxheimertal', 'Kreis Bergstraße', 'Hessen', 10.45, 49.5333, 8.7167),
+    ('hirschhorn', '06431012', 'Hirschhorn (Neckar)', 'Kreis Bergstraße', 'Hessen', 30.86, 49.4458, 8.8958),
+    ('neckarsteinach', '06431018', 'Neckarsteinach', 'Kreis Bergstraße', 'Hessen', 17.22, 49.4083, 8.8389)
+ON CONFLICT (id) DO UPDATE SET
+    ags = EXCLUDED.ags,
+    name = EXCLUDED.name,
+    county = EXCLUDED.county,
+    state = EXCLUDED.state,
+    area_sqkm = EXCLUDED.area_sqkm,
+    center_lat = EXCLUDED.center_lat,
+    center_lng = EXCLUDED.center_lng;
+
+-- Seed Trade Tax Rates (Gewerbesteuer-Hebesätze) & Property Taxes across Municipalities
+INSERT INTO municipality_tax_rates (
+    municipality_id, year, hebesatz_gewerbesteuer, hebesatz_grundsteuer_a, hebesatz_grundsteuer_b,
+    revenue_gewerbesteuer_eur, revenue_grundsteuer_a_eur, revenue_grundsteuer_b_eur, tax_revenue_per_capita_eur, source
+)
+VALUES
+    -- Bürstadt (Attraktiver Hebesatz 380% / Solider Gewerbestandort)
+    ('buerstadt', 2024, 380, 350, 480, 9450000, 38000, 2480000, 1085.50, 'haushalt_buerstadt_2024'),
+    ('buerstadt', 2023, 380, 350, 480, 9120000, 37500, 2450000, 1058.20, 'hsl_realsteuervergleich'),
+    ('buerstadt', 2022, 380, 350, 450, 8850000, 37000, 2290000, 1025.10, 'hsl_realsteuervergleich'),
+
+    -- Lampertheim (Größte Ried-Stadt, 400% Hebesatz, starke Chemie & Industrie)
+    ('lampertheim', 2024, 400, 360, 520, 22800000, 68000, 5950000, 1265.40, 'haushalt_lampertheim_2024'),
+    ('lampertheim', 2023, 400, 360, 500, 21950000, 67000, 5680000, 1210.80, 'hsl_realsteuervergleich'),
+    ('lampertheim', 2022, 395, 360, 480, 20400000, 66000, 5410000, 1145.00, 'hsl_realsteuervergleich'),
+
+    -- Biblis (Hebesatz 400%, Kraftwerksrückbau & Transformation)
+    ('biblis', 2024, 400, 360, 450, 4950000, 29000, 1420000, 1020.30, 'haushalt_biblis_2024'),
+    ('biblis', 2023, 400, 360, 450, 4780000, 28500, 1390000, 988.60, 'hsl_realsteuervergleich'),
+
+    -- Groß-Rohrheim
+    ('gross-rohrheim', 2024, 380, 350, 450, 2210000, 14000, 540000, 948.20, 'haushalt_gross_rohrheim_2024'),
+
+    -- Einhausen
+    ('einhausen', 2024, 380, 350, 465, 3450000, 19000, 1120000, 925.80, 'hsl_realsteuervergleich'),
+
+    -- Lorsch (UNESCO Welterbe & starkes Gewerbegebiet)
+    ('lorsch', 2024, 395, 350, 490, 8920000, 31000, 2680000, 1180.40, 'hsl_realsteuervergleich'),
+
+    -- Bensheim (Größte Stadt im Kreis, Hebesatz 380%, starke Medizintechnik & Dental)
+    ('bensheim', 2024, 380, 350, 495, 34500000, 62000, 7850000, 1420.00, 'haushalt_bensheim_2024'),
+
+    -- Heppenheim (Kreisstadt, Hebesatz 390%)
+    ('heppenheim', 2024, 390, 350, 490, 18400000, 54000, 4950000, 1210.50, 'hsl_realsteuervergleich'),
+
+    -- Viernheim (Grenze zu Mannheim, Hebesatz 410%, RNZ & starker Handel)
+    ('viernheim', 2024, 410, 370, 550, 25600000, 48000, 7400000, 1340.20, 'haushalt_viernheim_2024'),
+
+    -- Zwingenberg (Älteste Stadt an der Bergstraße)
+    ('zwingenberg', 2024, 380, 350, 470, 4120000, 12000, 1180000, 1125.00, 'hsl_realsteuervergleich'),
+
+    -- Odenwaldgemeinden im Kreis
+    ('lautertal', 2024, 400, 360, 520, 2850000, 24000, 1380000, 740.10, 'hsl_realsteuervergleich'),
+    ('lindenfels', 2024, 420, 380, 580, 1420000, 18000, 890000, 690.40, 'hsl_realsteuervergleich'),
+    ('fuerth', 2024, 390, 360, 480, 4890000, 32000, 1690000, 860.20, 'hsl_realsteuervergleich'),
+    ('rimbach', 2024, 380, 350, 460, 3450000, 22000, 1410000, 810.50, 'hsl_realsteuervergleich'),
+    ('moerlenbach', 2024, 390, 360, 490, 4100000, 26000, 1750000, 850.30, 'hsl_realsteuervergleich'),
+    ('birkenau', 2024, 400, 370, 510, 3600000, 21000, 1820000, 790.00, 'hsl_realsteuervergleich'),
+    ('wald-michelbach', 2024, 400, 360, 500, 3850000, 35000, 1720000, 760.80, 'hsl_realsteuervergleich'),
+    ('grasellenbach', 2024, 390, 350, 480, 1250000, 16000, 680000, 710.20, 'hsl_realsteuervergleich'),
+    ('abtsteinach', 2024, 380, 350, 450, 890000, 9000, 440000, 780.00, 'hsl_realsteuervergleich'),
+    ('gorxheimertal', 2024, 390, 360, 470, 1180000, 8000, 690000, 730.50, 'hsl_realsteuervergleich'),
+    ('hirschhorn', 2024, 410, 380, 540, 1340000, 14000, 680000, 750.00, 'hsl_realsteuervergleich'),
+    ('neckarsteinach', 2024, 400, 370, 520, 1280000, 12000, 650000, 740.00, 'hsl_realsteuervergleich')
+ON CONFLICT (municipality_id, year) DO UPDATE SET
+    hebesatz_gewerbesteuer = EXCLUDED.hebesatz_gewerbesteuer,
+    hebesatz_grundsteuer_a = EXCLUDED.hebesatz_grundsteuer_a,
+    hebesatz_grundsteuer_b = EXCLUDED.hebesatz_grundsteuer_b,
+    revenue_gewerbesteuer_eur = EXCLUDED.revenue_gewerbesteuer_eur,
+    revenue_grundsteuer_a_eur = EXCLUDED.revenue_grundsteuer_a_eur,
+    revenue_grundsteuer_b_eur = EXCLUDED.revenue_grundsteuer_b_eur,
+    tax_revenue_per_capita_eur = EXCLUDED.tax_revenue_per_capita_eur;
+
+-- Seed Business Registrations & Closures (Statistik Hessen HSL D I 1 - j)
+INSERT INTO business_registrations (
+    region_code, region_type, year, registrations_total, new_foundations, relocations_in,
+    deregistrations_total, liquidations, relocations_out, source
+)
+VALUES
+    -- Kreis Bergstraße Gesamt (Zeitreihe 2018-2024)
+    ('kreis-bergstrasse', 'county', 2024, 2640, 2180, 460, 2380, 1940, 440, 'hsl_d_i_1'),
+    ('kreis-bergstrasse', 'county', 2023, 2580, 2140, 440, 2410, 1980, 430, 'hsl_d_i_1'),
+    ('kreis-bergstrasse', 'county', 2022, 2490, 2050, 440, 2290, 1860, 430, 'hsl_d_i_1'),
+    ('kreis-bergstrasse', 'county', 2021, 2620, 2190, 430, 2210, 1790, 420, 'hsl_d_i_1'),
+    ('kreis-bergstrasse', 'county', 2020, 2380, 1960, 420, 2150, 1740, 410, 'hsl_d_i_1'),
+    ('kreis-bergstrasse', 'county', 2019, 2540, 2100, 440, 2320, 1890, 430, 'hsl_d_i_1'),
+    ('kreis-bergstrasse', 'county', 2018, 2510, 2080, 430, 2280, 1850, 430, 'hsl_d_i_1'),
+
+    -- Bürstadt (Dynamisches Gewerbe im Ried)
+    ('buerstadt', 'municipality', 2024, 184, 152, 32, 158, 129, 29, 'hsl_d_i_1'),
+    ('buerstadt', 'municipality', 2023, 176, 146, 30, 162, 134, 28, 'hsl_d_i_1'),
+    ('buerstadt', 'municipality', 2022, 168, 138, 30, 150, 122, 28, 'hsl_d_i_1'),
+    ('buerstadt', 'municipality', 2021, 182, 154, 28, 145, 118, 27, 'hsl_d_i_1'),
+
+    -- Lampertheim
+    ('lampertheim', 'municipality', 2024, 324, 268, 56, 298, 245, 53, 'hsl_d_i_1'),
+    ('lampertheim', 'municipality', 2023, 318, 264, 54, 305, 252, 53, 'hsl_d_i_1'),
+    ('lampertheim', 'municipality', 2022, 305, 252, 53, 288, 236, 52, 'hsl_d_i_1'),
+
+    -- Biblis
+    ('biblis', 'municipality', 2024, 88, 73, 15, 76, 62, 14, 'hsl_d_i_1'),
+    ('biblis', 'municipality', 2023, 84, 70, 14, 80, 66, 14, 'hsl_d_i_1'),
+
+    -- Groß-Rohrheim
+    ('gross-rohrheim', 'municipality', 2024, 38, 31, 7, 34, 27, 7, 'hsl_d_i_1'),
+
+    -- Bensheim
+    ('bensheim', 'municipality', 2024, 442, 366, 76, 395, 324, 71, 'hsl_d_i_1'),
+
+    -- Viernheim
+    ('viernheim', 'municipality', 2024, 365, 302, 63, 340, 280, 60, 'hsl_d_i_1'),
+
+    -- Heppenheim
+    ('heppenheim', 'municipality', 2024, 280, 232, 48, 255, 210, 45, 'hsl_d_i_1'),
+
+    -- Lorsch
+    ('lorsch', 'municipality', 2024, 145, 120, 25, 128, 105, 23, 'hsl_d_i_1')
+ON CONFLICT (region_code, year) DO UPDATE SET
+    registrations_total = EXCLUDED.registrations_total,
+    new_foundations = EXCLUDED.new_foundations,
+    relocations_in = EXCLUDED.relocations_in,
+    deregistrations_total = EXCLUDED.deregistrations_total,
+    liquidations = EXCLUDED.liquidations,
+    relocations_out = EXCLUDED.relocations_out;
+
+-- Seed Industry Employment Structure (WZ 2008 / Statistik Hessen)
+INSERT INTO industry_employment (
+    region_code, year, sector_code, sector_name, employees_count, share_percent, source
+)
+VALUES
+    -- Kreis Bergstraße Gesamt 2024 (ca. 82.500 sozialversicherungspflichtig Beschäftigte am Arbeitsort)
+    ('kreis-bergstrasse', 2024, 'A', 'Land- und Forstwirtschaft, Fischerei', 1320, 1.6, 'statistik_hessen_wz2008'),
+    ('kreis-bergstrasse', 2024, 'B-F', 'Produzierendes Gewerbe (Industrie, Bau, Energie)', 26800, 32.5, 'statistik_hessen_wz2008'),
+    ('kreis-bergstrasse', 2024, 'G-J', 'Handel, Verkehr, Gastgewerbe, IT & Logistik', 23100, 28.0, 'statistik_hessen_wz2008'),
+    ('kreis-bergstrasse', 2024, 'K-N', 'Erbringung von Unternehmens- und Finanzdienstleistungen', 14850, 18.0, 'statistik_hessen_wz2008'),
+    ('kreis-bergstrasse', 2024, 'O-U', 'Öffentliche Dienstleister, Erziehung, Gesundheit', 16430, 19.9, 'statistik_hessen_wz2008'),
+
+    -- Bürstadt 2024 (ca. 4.250 SVB am Arbeitsort – stark durch Gewerbegebiete & Logistik)
+    ('buerstadt', 2024, 'A', 'Landwirtschaft & Gartenbau', 170, 4.0, 'statistik_hessen_wz2008'),
+    ('buerstadt', 2024, 'B-F', 'Produzierendes Gewerbe & Handwerk', 1230, 28.9, 'statistik_hessen_wz2008'),
+    ('buerstadt', 2024, 'G-J', 'Handel, Logistik & Distribution', 1620, 38.1, 'statistik_hessen_wz2008'),
+    ('buerstadt', 2024, 'K-N', 'Wirtschaftliche Dienstleistungen', 510, 12.0, 'statistik_hessen_wz2008'),
+    ('buerstadt', 2024, 'O-U', 'Öffentliche Hand, Gesundheit & Soziales', 720, 17.0, 'statistik_hessen_wz2008'),
+
+    -- Lampertheim 2024 (ca. 9.800 SVB am Arbeitsort – Chemie, Kunststoff, Großhandel)
+    ('lampertheim', 2024, 'A', 'Landwirtschaft, Gemüse & Spargelanbau', 390, 4.0, 'statistik_hessen_wz2008'),
+    ('lampertheim', 2024, 'B-F', 'Industrie (Chemie/Kunststoff) & Baugewerbe', 3530, 36.0, 'statistik_hessen_wz2008'),
+    ('lampertheim', 2024, 'G-J', 'Handel, Verkehr, Transport & Lagerung', 2840, 29.0, 'statistik_hessen_wz2008'),
+    ('lampertheim', 2024, 'K-N', 'Dienstleistungen & Beratung', 1270, 13.0, 'statistik_hessen_wz2008'),
+    ('lampertheim', 2024, 'O-U', 'Gesundheitswesen, Schulen & Verwaltung', 1770, 18.0, 'statistik_hessen_wz2008')
+ON CONFLICT (region_code, year, sector_code) DO UPDATE SET
+    employees_count = EXCLUDED.employees_count,
+    share_percent = EXCLUDED.share_percent;
+
+-- Seed Major Employers (Bürstadt, Lampertheim, Biblis, Bensheim, Lorsch, Viernheim)
+INSERT INTO companies (
+    id, name, legal_form, municipality_id, district, street_address, postal_code,
+    latitude, longitude, industry_sector, wz_code, employee_range, turnover_estimated_range,
+    description, website, is_headquarters, source
+)
+VALUES
+    -- Bürstadt
+    ('comp-erdt-gruppe', 'ERDT Gruppe (ERDT Systems & ERDT ArtWorks)', 'GmbH & Co. KG', 'buerstadt', 'Bürstadt-Ost', 'Industriestraße 18', '68642',
+     49.6468, 8.4625, 'Logistik & Medizintechnik-Fulfillment', '52.10', '250-499', '50-100 Mio. €',
+     'Führender regionaler Dienstleister für Medizintechnik-Packaging, Kontraktlogistik, Co-Packing und E-Commerce Fulfillment.', 'https://www.erdt-gruppe.de', TRUE, 'bundesanzeiger_northdata'),
+
+    ('comp-fiege-buerstadt', 'FIEGE Logistik Bürstadt', 'GmbH', 'buerstadt', 'Bürstadt-Ost', 'Riedstraße 2', '68642',
+     49.6435, 8.4680, 'Kontraktlogistik & Spedition', '52.29', '250-499', '> 50 Mio. €',
+     'Großes Distributionszentrum an der B47 / A67 mit modernem Hochregallager für Konsumgüter und Reifenlogistik.', 'https://www.fiege.com', FALSE, 'bundesanzeiger_northdata'),
+
+    ('comp-moebel-kempf', 'Möbel Kempf / Binnig Bürstadt', 'GmbH & Co. KG', 'buerstadt', 'Bürstadt-Ost', 'Riedstraße 1', '68642',
+     49.6420, 8.4665, 'Möbel- & Einzelhandel', '47.59', '100-249', '25-50 Mio. €',
+     'Traditionsreiches Einrichtungshaus und Wohnfachmarkt mit regionalem Einzugsgebiet im Ried und Rhein-Neckar-Raum.', 'https://www.moebel-kempf.de', FALSE, 'bundesanzeiger_northdata'),
+
+    ('comp-liedtke-antrieb', 'Liedtke Antriebstechnik GmbH', 'GmbH', 'buerstadt', 'Kernstadt', 'Gartnerstraße 14', '68642',
+     49.6472, 8.4520, 'Maschinenbau & Antriebstechnik', '28.15', '10-49', '< 10 Mio. €',
+     'Spezialist für Wickeltechnik, Rollenbahnen und Sonderantriebe für die Converting-Industrie.', 'https://www.liedtke-antriebstechnik.de', TRUE, 'bundesanzeiger_northdata'),
+
+    ('comp-reinig-metallbau', 'Reinig Metallbau GmbH', 'GmbH', 'buerstadt', 'Bobstadt', 'Industriestraße 3', '68642',
+     49.6640, 8.4490, 'Metallbau & Fassadentechnik', '25.11', '50-99', '10-25 Mio. €',
+     'Präzisionsmetallbau, Stahl- und Glaskonstruktionen für Industrie- und Gewerbebau in Südhessen.', 'https://www.reinig-metallbau.de', TRUE, 'bundesanzeiger_northdata'),
+
+    -- Lampertheim
+    ('comp-basf-lampertheim', 'BASF Lampertheim GmbH', 'GmbH', 'lampertheim', 'Chemiestraße', 'Chemiestraße 22', '68623',
+     49.5965, 8.4578, 'Spezialchemie & Kunststoffadditive', '20.14', '500-999', '> 100 Mio. €',
+     'Bedeutender Produktionsstandort der BASF-Gruppe für Lichtschutzmittel, Antioxidantien und Prozesshilfsmittel für Hochleistungskunststoffe.', 'https://www.basf.com', FALSE, 'bundesanzeiger_northdata'),
+
+    ('comp-ixys-lampertheim', 'IXYS Semiconductor GmbH (Littelfuse Group)', 'GmbH', 'lampertheim', 'Gewerbegebiet Nord', 'Edisonstraße 15', '68623',
+     49.6055, 8.4720, 'Leistungshalbleiter & Elektronik', '26.11', '250-499', '50-100 Mio. €',
+     'Entwicklung und hochautomatisierte Fertigung von Leistungs-Dioden, Thyristoren und Modulen für die Leistungselektronik.', 'https://www.littelfuse.com', FALSE, 'bundesanzeiger_northdata'),
+
+    ('comp-brenntag-lampertheim', 'Brenntag Chempartner / Distribution', 'GmbH', 'lampertheim', 'Riedstraße', 'Riedstraße 45', '68623',
+     49.5910, 8.4710, 'Chemiedistribution & Gefahrgutlogistik', '46.75', '50-149', '25-50 Mio. €',
+     'Regionales Distributionszentrum und Umschlaglager des Weltmarktführers für Industrie- und Spezialchemikalien.', 'https://www.brenntag.com', FALSE, 'bundesanzeiger_northdata'),
+
+    ('comp-braun-transporte', 'Spedition Heinrich Braun GmbH', 'GmbH', 'lampertheim', 'Hüttenfeld', 'Viernheimer Straße 12', '68623',
+     49.5940, 8.5860, 'Spedition & Silotransporte', '49.41', '50-99', '10-25 Mio. €',
+     'Spezialisiert auf Silo- und Schüttguttransporte für die Chemie- und Baustoffindustrie.', 'https://www.spedition-braun.de', TRUE, 'bundesanzeiger_northdata'),
+
+    -- Biblis
+    ('comp-amprion-biblis', 'Amprion Konverterstation Biblis', 'GmbH', 'biblis', 'Kernort', 'Am Kernkraftwerk 1', '68647',
+     49.7080, 8.4150, 'Energieinfrastruktur & Stromnetz', '35.12', '50-99', '> 100 Mio. €',
+     'Zentraler Netzknoten und im Bau befindlicher Konverter für die Gleichstromtrasse Ultranet zur Einspeisung von Windstrom.', 'https://www.amprion.net', FALSE, 'bundesanzeiger_northdata'),
+
+    ('comp-ewn-biblis', 'EWN / BGZ Zwischenlager Biblis', 'GmbH', 'biblis', 'Kernort', 'Kernkraftwerk Biblis', '68647',
+     49.7095, 8.4165, 'Rückbau & Nukleare Entsorgung', '38.22', '100-249', '25-50 Mio. €',
+     'Verantwortlich für den sicheren Rückbau der beiden Reaktorblöcke des ehemaligen Kernkraftwerks Biblis und den Betrieb des Standort-Zwischenlagers.', 'https://www.bgz.de', FALSE, 'bundesanzeiger_northdata'),
+
+    -- Bensheim & Lorsch
+    ('comp-dentsply-sirona', 'Dentsply Sirona Dental Systems', 'GmbH', 'bensheim', 'Industriegebiet Süd', 'Fabrikstraße 31', '64625',
+     49.6730, 8.6180, 'Medizintechnik & Dentalgeräte', '32.50', '1000+', '> 100 Mio. €',
+     'Weltweit größter Entwicklungs- und Produktionsstandort für zahnärztliche Behandlungseinheiten, Röntgensysteme und CAD/CAM-Dentaltechnologie.', 'https://www.dentsplysirona.com', TRUE, 'bundesanzeiger_northdata'),
+
+    ('comp-surtec-bensheim', 'SurTec International GmbH', 'GmbH', 'bensheim', 'Industriegebiet Süd', 'SurTec-Straße 2', '64625',
+     49.6710, 8.6210, 'Oberflächenchemie & Beschichtungstechnik', '20.59', '100-249', '50-100 Mio. €',
+     'Globaler Entwickler chemischer Spezialitäten für die industrielle Teilereinigung, Vorbehandlung und Galvanotechnik.', 'https://www.surtec.com', TRUE, 'bundesanzeiger_northdata'),
+
+    ('comp-te-connectivity', 'TE Connectivity Solutions', 'GmbH', 'bensheim', 'Gewerbegebiet', 'Amperestraße 12-14', '64625',
+     49.6860, 8.6150, 'Elektronik & Steckverbinder', '26.11', '500-999', '> 100 Mio. €',
+     'Technologiezentrum für hochpräzise Steckverbinder und Sensorik für Automobil- und Industrieanwendungen.', 'https://www.te.com', FALSE, 'bundesanzeiger_northdata'),
+
+    ('comp-treffpack-lorsch', 'Treffpack Verpackungen GmbH', 'GmbH', 'lorsch', 'Gewerbegebiet Ost', 'Kriemhildenstraße 10', '64653',
+     49.6550, 8.5750, 'Verpackungslogistik & Handel', '46.76', '50-99', '10-25 Mio. €',
+     'Spezialisiert auf Primärverpackungen, Glas- und Kunststoffflaschen für Kosmetik, Pharma und Lebensmittel.', 'https://www.treffpack.de', FALSE, 'bundesanzeiger_northdata')
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    legal_form = EXCLUDED.legal_form,
+    municipality_id = EXCLUDED.municipality_id,
+    district = EXCLUDED.district,
+    street_address = EXCLUDED.street_address,
+    postal_code = EXCLUDED.postal_code,
+    latitude = EXCLUDED.latitude,
+    longitude = EXCLUDED.longitude,
+    industry_sector = EXCLUDED.industry_sector,
+    wz_code = EXCLUDED.wz_code,
+    employee_range = EXCLUDED.employee_range,
+    turnover_estimated_range = EXCLUDED.turnover_estimated_range,
+    description = EXCLUDED.description,
+    website = EXCLUDED.website,
+    is_headquarters = EXCLUDED.is_headquarters,
+    source = EXCLUDED.source;
+
+-- Seed Regional Startup & Innovation Initiatives
+INSERT INTO startup_initiatives (
+    id, name, category, organizer, description, url, funding_bracket, target_group
+)
+VALUES
+    ('init-wfb-gruenderberatung', 'Gründungsberatung Kreis Bergstraße', 'consulting', 'Wirtschaftsförderung Bergstraße GmbH (WFB)',
+     'Kostenfreie Erstberatung, Begleitung bei Businessplanerstellung, Fördermittelbeantragung und Behördengängen für Existenzgründer und Start-ups im Kreis Bergstraße.',
+     'https://www.wirtschaftsfoerderung-bergstrasse.de', 'Kostenlose Beratung', 'Gründerinnen, Gründer & Nachfolger'),
+
+    ('init-gruenderpreis-bergstrasse', 'Gründerpreis Bergstraße', 'competition', 'Wirtschaftsförderung Bergstraße GmbH (WFB)',
+     'Jährlicher Wettbewerb zur Auszeichnung herausragender innovativer Neugründungen und Betriebsnachfolgen in den Kategorien Mut & Innovation sowie Nachhaltigkeit.',
+     'https://www.wirtschaftsfoerderung-bergstrasse.de/gruenderpreis', 'Preisgelder bis 10.000 € + Medienpräsenz', 'Startups & junge Unternehmen bis 5 Jahre'),
+
+    ('init-hessen-ideen', 'Hessen Ideen Stipendium & Wettbewerb', 'grant', 'Hessisches Ministerium für Wissenschaft & Hochschulen',
+     'Förderprogramm für gründungsaffine Hochschulangehörige und Absolventen in Hessen zur Weiterentwicklung wissensbasierter unternehmerischer Geschäftsideen.',
+     'https://www.hessen-ideen.de', 'Bis zu 2.000 € / Monat pro Person für 6 Monate', 'Akademische Gründerteams'),
+
+    ('init-wibank-gruendungsdarlehen', 'WIBank Hessen-Mikrodarlehen', 'grant', 'Wirtschafts- und Infrastrukturbank Hessen (WIBank)',
+     'Gefördertes Darlehen zur Finanzierung von Investitionen und Betriebsmitteln für Kleingründungen, Freiberufler und junge Unternehmen in Südhessen.',
+     'https://www.wibank.de', '3.000 € bis 35.000 € bei günstigen Zinsen', 'Existenzgründer & Kleinbetriebe'),
+
+    ('init-hub31-darmstadt', 'Technologie- & Innovationszentrum HUB31', 'hub', 'IHK Darmstadt & Wissenschaftsstadt Darmstadt',
+     'Regionaler Technologie-Inkubator und Co-Working-Hub für Deep-Tech-, Sensorik- und Digital-Start-ups mit Anbindung an die Metropolregion Rhein-Neckar / Rhein-Main.',
+     'https://www.hub31.de', 'Büroflächen, Mentoring & Investorennetzwerk', 'Technologie-Startups & Scale-ups')
+ON CONFLICT (id) DO UPDATE SET
+    name = EXCLUDED.name,
+    category = EXCLUDED.category,
+    organizer = EXCLUDED.organizer,
+    description = EXCLUDED.description,
+    url = EXCLUDED.url,
+    funding_bracket = EXCLUDED.funding_bracket,
+    target_group = EXCLUDED.target_group;
+
+INSERT INTO collector_schema_versions(version) VALUES (20260924) ON CONFLICT DO NOTHING;
+

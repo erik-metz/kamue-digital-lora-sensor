@@ -668,3 +668,49 @@ export function createWifiMarkerContent(props: WifiMarkerProps): HTMLElement {
 
   return content;
 }
+
+export interface CompanyMarkerProps {
+  name: string;
+  industry: string;
+  isHeadquarters?: boolean;
+}
+
+export function createCompanyMarkerContent(props: CompanyMarkerProps): HTMLElement {
+  const content = document.createElement("div");
+  content.className = `company-marker${props.isHeadquarters ? " company-marker-hq" : ""}`;
+  content.title = `${props.name} (${props.industry})`;
+
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  icon.setAttribute("style", "width: 18px; height: 18px;");
+
+  // Building / factory icon paths
+  const path1 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path1.setAttribute("d", "M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z");
+  const path2 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path2.setAttribute("d", "M6 12H4a2 2 0 0 0-2 2v8h4");
+  const path3 = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path3.setAttribute("d", "M18 9h2a2 2 0 0 1 2 2v11h-4");
+  icon.append(path1, path2, path3);
+  content.append(icon);
+
+  if (props.isHeadquarters) {
+    const badge = document.createElement("span");
+    badge.className = "company-marker-badge";
+    badge.textContent = "HQ";
+    content.append(badge);
+  }
+
+  const label = document.createElement("span");
+  label.className = "company-marker-label";
+  label.textContent = props.name.length > 18 ? `${props.name.slice(0, 16)}…` : props.name;
+  content.append(label);
+
+  return content;
+}
+

@@ -784,3 +784,54 @@
   white-space: nowrap;
 }
 
+
+/* Major Employers & Industrial Companies */
+.company-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #0f172a;
+  border: 2px solid #38bdf8;
+  color: #38bdf8;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4), 0 3px 10px #000a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.company-marker:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 16px #fff, 0 0 20px #38bdf8;
+}
+.company-marker-hq {
+  border-color: #f59e0b;
+  color: #f59e0b;
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.5), 0 3px 10px #000a;
+}
+.company-marker-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #f59e0b;
+  color: #0f172a;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+.company-marker-label {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  background: #0f172af0;
+  border: 1px solid #334155;
+  color: #f8fafc;
+  padding: 1px 5px;
+  border-radius: 4px;
+  pointer-events: none;
+}

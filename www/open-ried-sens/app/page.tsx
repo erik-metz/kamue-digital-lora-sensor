@@ -102,11 +102,18 @@ export default async function Home() {
               Finanzen & Haushalt
             </Link>
             <Link
+              href="/wirtschaft"
+              className="text-slate-300 hover:text-emerald-400 font-medium transition-colors"
+            >
+              Wirtschaft & Gewerbe
+            </Link>
+            <Link
               href="/daten"
               className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
             >
               Offene Daten & API
             </Link>
+
           </nav>
 
           {/* Network Status Badge */}

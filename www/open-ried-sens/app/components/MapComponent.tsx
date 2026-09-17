@@ -25,7 +25,10 @@ import {
   createEvChargingMarkerContent,
   createEnergyFacilityMarkerContent,
   createWifiMarkerContent,
+  createCompanyMarkerContent,
 } from "@/lib/mapMarker";
+import { Company, BASELINE_COMPANIES } from "@/lib/economyData";
+
 import {
   VERIFIED_ROAD_SEGMENTS,
   getRoadConditionColor,
@@ -109,6 +112,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [showBoris, setShowBoris] = useState(false);
   const [showDevPlans, setShowDevPlans] = useState(false);
   const [showWahlbezirke, setShowWahlbezirke] = useState(false);
+  const [showCompanies, setShowCompanies] = useState(true);
+  const [companies, setCompanies] = useState<Company[]>(BASELINE_COMPANIES);
 
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -133,6 +138,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const borisGroupRef = useRef<L.LayerGroup | null>(null);
   const devPlansGroupRef = useRef<L.LayerGroup | null>(null);
   const wahlbezirkeGroupRef = useRef<L.LayerGroup | null>(null);
+  const companiesGroupRef = useRef<L.LayerGroup | null>(null);
+
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
@@ -248,6 +255,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const borisGroup = L.layerGroup();
       const devPlansGroup = L.layerGroup();
       const wahlbezirkeGroup = L.layerGroup();
+      const companiesGroup = L.layerGroup();
 
       evChargingGroupRef.current = evChargingGroup;
       energyFacilitiesGroupRef.current = energyFacilitiesGroup;
@@ -260,6 +268,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       borisGroupRef.current = borisGroup;
       devPlansGroupRef.current = devPlansGroup;
       wahlbezirkeGroupRef.current = wahlbezirkeGroup;
+      companiesGroupRef.current = companiesGroup;
+
 
       const starkregenWms = L.tileLayer.wms("https://sgx.geodatenzentrum.de/wms_starkregen", {
         layers: "tiefe_extrem",
@@ -287,6 +297,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       map.addLayer(roadConditionsGroup);
       map.addLayer(natureGroup);
       map.addLayer(floodGaugesGroup);
+      map.addLayer(companiesGroup);
+
 
       // Bus stops & crop zones become visible at zoom >= 13
       if (map.getZoom() >= 13) {
@@ -1551,6 +1563,15 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     else { if (map.hasLayer(group)) map.removeLayer(group); }
   }, [showWahlbezirke]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = companiesGroupRef.current;
+    if (!map || !group) return;
+    if (showCompanies) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showCompanies]);
+
+
   // Populate Infrastructure & Energy Layers
   useEffect(() => {
     if (!ready) return;
@@ -1913,7 +1934,48 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         }
       }
     }
-  }, [ready, now, evChargers, wifiHotspots, roadSegments, broadbandAreas]);
+
+    // 11. Major Companies & Employers
+    const compGroup = companiesGroupRef.current;
+    if (compGroup) {
+      compGroup.clearLayers();
+      for (const comp of companies) {
+        const icon = L.divIcon({
+          html: createCompanyMarkerContent({
+            name: comp.name,
+            industry: comp.industry_sector,
+            isHeadquarters: comp.is_headquarters,
+          }),
+          className: "map-sensor-icon",
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+        });
+        const marker = L.marker([comp.latitude, comp.longitude], { icon, zIndexOffset: 470 });
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; color: #e2e8f0; min-width: 240px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
+              <span style="font-size: 11px; font-weight: bold; color: #38bdf8; text-transform: uppercase;">🏢 Arbeitgeber & Standort</span>
+              ${comp.is_headquarters ? '<span style="background: #f59e0b; color: #0f172a; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px;">HAUPTSITZ</span>' : ''}
+            </div>
+            <div style="font-weight: bold; font-size: 15px; margin: 4px 0 2px;">${comp.name}</div>
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">${comp.street_address}, ${comp.postal_code} ${comp.municipality_name ?? ""}${comp.district ? " (" + comp.district + ")" : ""}</div>
+            <div style="background: rgba(15,23,42,0.85); padding: 8px 10px; border-radius: 6px; border: 1px solid #334155; font-size: 12px; display: flex; flex-direction: column; gap: 4px;">
+              <div>Branche: <strong style="color: #f1f5f9;">${comp.industry_sector}</strong></div>
+              <div>Beschäftigte: <strong style="color: #38bdf8;">${comp.employee_range}</strong></div>
+              ${comp.turnover_estimated_range ? `<div>Umsatzklasse: <strong style="color: #10b981;">${comp.turnover_estimated_range}</strong></div>` : ""}
+              ${comp.description ? `<div style="color: #cbd5e1; font-size: 11px; line-height: 1.35; margin-top: 2px;">${comp.description}</div>` : ""}
+            </div>
+            <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+              ${comp.website ? `<a href="${comp.website}" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; text-decoration: underline;">Website ↗</a>` : '<span></span>'}
+              <a href="/wirtschaft" style="color: #34d399; font-weight: 600;">Wirtschaftsportal →</a>
+            </div>
+          </div>
+        `);
+        compGroup.addLayer(marker);
+      }
+    }
+  }, [ready, now, evChargers, wifiHotspots, roadSegments, broadbandAreas, companies]);
+
 
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
     <div ref={container} className="w-full h-full z-0" aria-label="Sensorstandorte, gruppiert nach Nähe" />
@@ -2047,6 +2109,15 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       >
         🗳️ Wahlbezirke {showWahlbezirke ? "An" : "Aus"}
       </button>
+      <button
+        type="button"
+        className={`map-control ${showCompanies ? "border-sky-400 text-sky-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowCompanies((prev) => !prev)}
+        title="Bedeutende Arbeitgeber & Gewerbestandorte ein-/ausblenden"
+      >
+        🏢 Arbeitgeber {showCompanies ? "An" : "Aus"}
+      </button>
+
 
       {/* Mobility & Sensor Layers */}
       <button

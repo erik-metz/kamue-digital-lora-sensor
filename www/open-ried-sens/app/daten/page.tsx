@@ -2,6 +2,7 @@ import { env } from "@/env";
 import {
   Activity,
   ArrowLeft,
+  Briefcase,
   Building2,
   Code2,
   Coins,
@@ -326,7 +327,52 @@ export default async function DataDocsPage() {
           </div>
         </section>
 
+        {/* ECONOMY, COMPANIES & TRADE TAXES SECTION */}
+        <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Briefcase className="w-5 h-5 text-emerald-400" />
+                Wirtschaft, Unternehmen &amp; Gewerbesteuer (Statistik Hessen &amp; Bundesanzeiger)
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">
+                Gewerbeanmeldungen, Netto-Gewerbesaldo, Gewerbesteuer-Hebesätze aller 22 Kommunen im Kreis Bergstraße, Branchenstrukturen (WZ 2008) und Top-Arbeitgeber.
+              </p>
+            </div>
+            <Link
+              href="/wirtschaft"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors shrink-0"
+            >
+              Wirtschaftsportal <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Gewerbedynamik &amp; Saldo</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/economy/registrations</p>
+              <p className="text-slate-400 font-sans text-xs">Gewerbeanmeldungen, Neugründungen, Zuzüge, Abmeldungen, Aufgaben und Netto-Wachstum (2018–2024).</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Hebesätze (22 Gemeinden)</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/economy/taxes</p>
+              <p className="text-slate-400 font-sans text-xs">Gewerbesteuer- und Grundsteuer-Hebesätze, Erträge und Pro-Kopf-Steuerkraft für alle Kommunen des Kreises.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Top-Arbeitgeber</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/economy/companies</p>
+              <p className="text-slate-400 font-sans text-xs">Unternehmensstandorte mit Geokoordinaten, Branchen, Mitarbeitergrößenklassen und Umsatzspannen.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Branchen &amp; Startups</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/economy/industry-structure</p>
+              <p className="text-slate-400 font-sans text-xs">Beschäftigung nach WZ 2008 Sektoren sowie regionale Förderprogramme und Inkubatoren.</p>
+            </div>
+          </div>
+        </section>
+
         {/* SOCIAL, HEALTHCARE & WASTE SECTION */}
+
         <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>

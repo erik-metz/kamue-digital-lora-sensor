@@ -3,6 +3,7 @@ from endpoints import (
     bikes,
     buses,
     demographics,
+    economy,
     elections,
     environment,
     finance,
@@ -37,6 +38,8 @@ api_router.include_router(social_daily_life.router)
 api_router.include_router(realestate.router)
 api_router.include_router(finance.router)
 api_router.include_router(elections.router)
+api_router.include_router(economy.router)
+
 
 
 
