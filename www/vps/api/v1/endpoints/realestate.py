@@ -6,14 +6,13 @@ from datetime import date, datetime
 from typing import Annotated, Any
 
 import psycopg_pool
-from dependencies import get_db_pool, verify_admin_key
-from fastapi import APIRouter, Depends, Query, status
-from pydantic import BaseModel, Field
+from dependencies import get_db_pool
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/realestate", tags=["Real Estate & Buildings"])
 
 DbPool = Annotated[psycopg_pool.AsyncConnectionPool, Depends(get_db_pool)]
-AdminAuth = Annotated[str, Depends(verify_admin_key)]
 
 
 class HousingStockResponse(BaseModel):

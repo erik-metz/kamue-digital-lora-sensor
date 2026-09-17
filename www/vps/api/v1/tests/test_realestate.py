@@ -1,6 +1,6 @@
 import sys
 import unittest
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 if "psycopg_pool" not in sys.modules:
@@ -44,14 +44,6 @@ if "dependencies" not in sys.modules:
     sys.modules["dependencies"] = mock_dep
 
 from endpoints.realestate import (
-    BorisZoneResponse,
-    ConstructionPermitResponse,
-    DevelopmentPlanResponse,
-    HousingStockResponse,
-    LandUsePolygonResponse,
-    MarketBenchmarkResponse,
-    RealEstateSourceResponse,
-    RealEstateSummaryItem,
     get_boris_zones,
     get_construction_activity,
     get_development_plans,
@@ -112,7 +104,7 @@ class TestRealEstateEndpoints(unittest.IsolatedAsyncioTestCase):
                 "building_types": {"single_family": 2740},
                 "heating_energy": {"gas": 64.2, "oil": 21.8},
                 "source": "statistik_hessen_zensus_2022",
-                "updated_at": datetime.now(),
+                "updated_at": datetime.now(UTC),
             }
         ]
         res = await get_housing_stock(self.pool, municipality="Bürstadt")
@@ -136,7 +128,7 @@ class TestRealEstateEndpoints(unittest.IsolatedAsyncioTestCase):
                 "center_lng": 8.4550,
                 "geometry": {"type": "Polygon", "coordinates": []},
                 "source": "boris_hessen",
-                "updated_at": datetime.now(),
+                "updated_at": datetime.now(UTC),
             }
         ]
         res = await get_boris_zones(self.pool, municipality="Bürstadt", zone_type="Wohnbaufläche")
@@ -157,7 +149,7 @@ class TestRealEstateEndpoints(unittest.IsolatedAsyncioTestCase):
                 "center_lng": 8.4980,
                 "geometry": {"type": "Polygon", "coordinates": []},
                 "source": "alkis_hessen",
-                "updated_at": datetime.now(),
+                "updated_at": datetime.now(UTC),
             }
         ]
         res = await get_land_use(self.pool, municipality="Bürstadt", category="forest")
@@ -178,7 +170,7 @@ class TestRealEstateEndpoints(unittest.IsolatedAsyncioTestCase):
                 "completions_buildings_count": 35,
                 "completions_dwellings_count": 56,
                 "source": "statistik_hessen_f_ii_1",
-                "updated_at": datetime.now(),
+                "updated_at": datetime.now(UTC),
             }
         ]
         res = await get_construction_activity(self.pool, municipality="Bürstadt")
@@ -200,7 +192,7 @@ class TestRealEstateEndpoints(unittest.IsolatedAsyncioTestCase):
                 "transaction_count": None,
                 "source": "gutachterausschuss_bergstrasse",
                 "source_title": "Nettokaltmiete Wohnungsbestand",
-                "updated_at": datetime.now(),
+                "updated_at": datetime.now(UTC),
             }
         ]
         res = await get_market_benchmarks(self.pool, municipality="Bürstadt", metric_type="rent_cold_sqm")
@@ -223,7 +215,7 @@ class TestRealEstateEndpoints(unittest.IsolatedAsyncioTestCase):
                 "center_lat": 49.6480,
                 "center_lng": 8.4670,
                 "geometry": None,
-                "updated_at": datetime.now(),
+                "updated_at": datetime.now(UTC),
             }
         ]
         res = await get_development_plans(self.pool, municipality="Bürstadt")
@@ -239,7 +231,7 @@ class TestRealEstateEndpoints(unittest.IsolatedAsyncioTestCase):
                 "dataset_type": "boris",
                 "license": "dl-zero-de/2.0",
                 "source_url": "https://www.gds.hessen.de/wfs2/boris",
-                "last_imported_at": datetime.now(),
+                "last_imported_at": datetime.now(UTC),
                 "record_count": 24,
             }
         ]
