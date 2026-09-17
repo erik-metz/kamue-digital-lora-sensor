@@ -2910,9 +2910,9 @@ CREATE INDEX IF NOT EXISTS idx_sync_logs_job ON collector_sync_logs (job_name, s
 CREATE INDEX IF NOT EXISTS idx_sync_logs_status ON collector_sync_logs (status, started_at DESC);
 
 -- Historical indexes and time-range query support for master registries
-CREATE INDEX IF NOT EXISTS idx_boris_historical_zone ON boris_land_value_zones (municipality, valid_date DESC, id);
-CREATE INDEX IF NOT EXISTS idx_broadband_survey_time ON broadband_coverage (municipality, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_boris_historical_zone ON boris_land_value_zones (municipality, stichtag DESC, id);
+CREATE INDEX IF NOT EXISTS idx_broadband_survey_time ON broadband_coverage (municipality, last_updated DESC);
 CREATE INDEX IF NOT EXISTS idx_wifi_verification_time ON public_wifi_hotspots (municipality, created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_permits_historical ON construction_permits (municipality, year DESC, month);
+CREATE INDEX IF NOT EXISTS idx_permits_historical ON construction_permits (municipality, year DESC);
 
 INSERT INTO collector_schema_versions(version) VALUES (20260925) ON CONFLICT DO NOTHING;
