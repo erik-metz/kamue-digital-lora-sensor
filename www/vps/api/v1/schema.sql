@@ -1435,35 +1435,38 @@ ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
     wms_url = EXCLUDED.wms_url;
 
--- Seed Groundwater Monitoring Wells into sensor_metadata & sensor_latest
-INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, description)
+CREATE TABLE IF NOT EXISTS groundwater_stations (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    depth_to_water_m DOUBLE PRECISION,
+    nitrate_mg_l DOUBLE PRECISION,
+    measured_at TIMESTAMPTZ,
+    hlnug_station_no VARCHAR(32),
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Seed Groundwater Monitoring Wells
+INSERT INTO groundwater_stations (id, name, municipality, latitude, longitude, depth_to_water_m, nitrate_mg_l, measured_at, hlnug_station_no, description)
 VALUES
-    ('gw-bst-boxheimerhof', 'Grundwassermessstelle Bürstadt Boxheimerhof', 49.6295, 8.4810, 'HLNUG Pegel-Nr. 3021: Quartärer Hauptgrundwasserleiter Hessisches Ried'),
-    ('gw-bst-riedrode', 'Grundwassermessstelle Bürstadt Riedrode', 49.6480, 8.4950, 'HLNUG Pegel-Nr. 3045: Oberflächennaher Grundwassermesspunkt'),
-    ('gw-la-neuschloss', 'Grundwassermessstelle Lampertheim Neuschloß', 49.6030, 8.5150, 'HLNUG Pegel-Nr. 4110: Messnetz Grundwassergüte und Flurabstand'),
-    ('gw-la-biedensand', 'Grundwassermessstelle Lampertheim Biedensand', 49.5960, 8.4520, 'HLNUG Pegel-Nr. 4125: Rheinauennahe Grundwasserüberwachung'),
-    ('gw-bib-wattenheim', 'Grundwassermessstelle Biblis-Wattenheim', 49.6860, 8.4110, 'HLNUG Pegel-Nr. 3090: WRRL-Überwachungsmessstelle Landwirtschaft')
+    ('gw-bst-boxheimerhof', 'Grundwassermessstelle Bürstadt Boxheimerhof', 'Bürstadt', 49.6295, 8.4810, 2.15, 28.4, NOW(), '3021', 'HLNUG Pegel-Nr. 3021: Quartärer Hauptgrundwasserleiter Hessisches Ried'),
+    ('gw-bst-riedrode', 'Grundwassermessstelle Bürstadt Riedrode', 'Bürstadt', 49.6480, 8.4950, 1.85, 19.2, NOW(), '3045', 'HLNUG Pegel-Nr. 3045: Oberflächennaher Grundwassermesspunkt'),
+    ('gw-la-neuschloss', 'Grundwassermessstelle Lampertheim Neuschloß', 'Lampertheim', 49.6030, 8.5150, 3.40, 22.1, NOW(), '4110', 'HLNUG Pegel-Nr. 4110: Messnetz Grundwassergüte und Flurabstand'),
+    ('gw-la-biedensand', 'Grundwassermessstelle Lampertheim Biedensand', 'Lampertheim', 49.5960, 8.4520, 1.20, 14.5, NOW(), '4125', 'HLNUG Pegel-Nr. 4125: Rheinauennahe Grundwasserüberwachung'),
+    ('gw-bib-wattenheim', 'Grundwassermessstelle Biblis-Wattenheim', 'Biblis', 49.6860, 8.4110, 2.30, 36.8, NOW(), '3090', 'HLNUG Pegel-Nr. 3090: WRRL-Überwachungsmessstelle Landwirtschaft')
 ON CONFLICT (id) DO UPDATE SET
-    friendly_name = EXCLUDED.friendly_name,
+    name = EXCLUDED.name,
     latitude = EXCLUDED.latitude,
     longitude = EXCLUDED.longitude,
-    description = EXCLUDED.description;
-
-INSERT INTO sensor_latest (sensor_id, metric, unit, timestamp, value)
-VALUES
-    ('gw-bst-boxheimerhof', 'groundwater_depth_m', 'm', NOW(), 2.15),
-    ('gw-bst-boxheimerhof', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 28.4),
-    ('gw-bst-riedrode', 'groundwater_depth_m', 'm', NOW(), 1.85),
-    ('gw-bst-riedrode', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 19.2),
-    ('gw-la-neuschloss', 'groundwater_depth_m', 'm', NOW(), 3.40),
-    ('gw-la-neuschloss', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 22.1),
-    ('gw-la-biedensand', 'groundwater_depth_m', 'm', NOW(), 1.20),
-    ('gw-la-biedensand', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 14.5),
-    ('gw-bib-wattenheim', 'groundwater_depth_m', 'm', NOW(), 2.30),
-    ('gw-bib-wattenheim', 'groundwater_nitrate_mg_l', 'mg/l', NOW(), 36.8)
-ON CONFLICT (sensor_id, metric, unit) DO UPDATE SET
-    timestamp = EXCLUDED.timestamp,
-    value = EXCLUDED.value;
+    depth_to_water_m = EXCLUDED.depth_to_water_m,
+    nitrate_mg_l = EXCLUDED.nitrate_mg_l,
+    measured_at = EXCLUDED.measured_at,
+    description = EXCLUDED.description,
+    updated_at = NOW();
 
 INSERT INTO collector_schema_versions(version) VALUES (20260920) ON CONFLICT DO NOTHING;
 

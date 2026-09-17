@@ -115,15 +115,15 @@ class GroundwaterStationResponse(BaseModel):
 @router.get("/protected-areas", response_model=list[NatureAreaResponse])
 async def get_protected_areas(
     pool: DbPool,
-    municipality: str | None = Query(None, description="Filter by municipality"),
-    designation: str | None = Query(None, description="Filter by designation: nsg, ffh, spa, wsg"),
+    municipality: Annotated[str | None, Query(description="Filter by municipality")] = None,
+    designation: Annotated[str | None, Query(description="Filter by designation: nsg, ffh, spa, wsg")] = None,
 ):
     query = "SELECT id, name, designation, municipality, area_hectares, legal_ordinance_year, conservation_aims, visiting_rules, geojson, source FROM nature_protected_areas WHERE 1=1"
     params: list[Any] = []
-    if municipality:
+    if municipality and isinstance(municipality, str):
         query += " AND municipality ILIKE %s"
         params.append(f"%{municipality}%")
-    if designation:
+    if designation and isinstance(designation, str):
         query += " AND designation = %s"
         params.append(designation.lower())
     query += " ORDER BY area_hectares DESC NULLS LAST"
@@ -137,15 +137,15 @@ async def get_protected_areas(
 @router.get("/agriculture/stats", response_model=list[AgriculturalMunicipalStat])
 async def get_agriculture_stats(
     pool: DbPool,
-    municipality: str | None = Query(None, description="Filter by municipality"),
-    year: int | None = Query(None, description="Filter by reporting year"),
+    municipality: Annotated[str | None, Query(description="Filter by municipality")] = None,
+    year: Annotated[int | None, Query(description="Filter by reporting year")] = None,
 ):
     query = "SELECT municipality, year, crop_family, crop_name, area_hectares, percentage_of_agricultural_land FROM agriculture_municipal_stats WHERE 1=1"
     params: list[Any] = []
-    if municipality:
+    if municipality and isinstance(municipality, str):
         query += " AND municipality ILIKE %s"
         params.append(f"%{municipality}%")
-    if year:
+    if year and isinstance(year, int):
         query += " AND year = %s"
         params.append(year)
     query += " ORDER BY municipality, percentage_of_agricultural_land DESC"
@@ -159,15 +159,15 @@ async def get_agriculture_stats(
 @router.get("/agriculture/parcels", response_model=list[CropZoneResponse])
 async def get_crop_parcels(
     pool: DbPool,
-    crop_family: str | None = Query(None, description="Filter by crop family: sonderkultur, gemuese, getreide"),
-    year: int | None = Query(2025, description="Crop harvest year"),
+    crop_family: Annotated[str | None, Query(description="Filter by crop family: sonderkultur, gemuese, getreide")] = None,
+    year: Annotated[int | None, Query(description="Crop harvest year")] = 2025,
 ):
     query = "SELECT id, municipality, crop_name, crop_family, year, area_hectares, irrigation_demand_class, geojson FROM agriculture_crop_zones WHERE 1=1"
     params: list[Any] = []
-    if crop_family:
+    if crop_family and isinstance(crop_family, str):
         query += " AND crop_family = %s"
         params.append(crop_family)
-    if year:
+    if year and isinstance(year, int):
         query += " AND year = %s"
         params.append(year)
     query += " ORDER BY area_hectares DESC NULLS LAST LIMIT 200"
@@ -217,15 +217,10 @@ async def get_map_services(pool: DbPool):
 @router.get("/groundwater", response_model=list[GroundwaterStationResponse])
 async def get_groundwater_stations(pool: DbPool):
     query = """
-    SELECT sm.id, sm.friendly_name, sm.latitude, sm.longitude, sm.description,
-           d.value AS depth_to_water_m,
-           d.timestamp AS measured_at,
-           n.value AS nitrate_mg_l
-    FROM sensor_metadata sm
-    LEFT JOIN sensor_latest d ON d.sensor_id = sm.id AND d.metric = 'groundwater_depth_m'
-    LEFT JOIN sensor_latest n ON n.sensor_id = sm.id AND n.metric = 'groundwater_nitrate_mg_l'
-    WHERE sm.id LIKE 'gw-%' AND sm.is_hidden = FALSE
-    ORDER BY sm.friendly_name
+    SELECT id, name AS friendly_name, latitude, longitude, description,
+           depth_to_water_m, nitrate_mg_l, measured_at
+    FROM groundwater_stations
+    ORDER BY name
     """
     async with pool.connection() as conn:
         cursor = await conn.execute(query)

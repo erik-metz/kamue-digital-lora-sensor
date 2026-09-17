@@ -89,6 +89,11 @@ class EnvironmentEndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(results[0]["id"], "nsg-lampertheimer-altrhein")
         self.assertEqual(results[0]["designation"], "nsg")
 
+        # Test with filters
+        filtered_results = await get_protected_areas(self.pool, municipality="Lampertheim", designation="nsg")
+        self.assertEqual(len(filtered_results), 1)
+        self.conn.execute.assert_called()
+
     async def test_get_agriculture_stats(self):
         self.cursor.fetchall.return_value = [
             {
