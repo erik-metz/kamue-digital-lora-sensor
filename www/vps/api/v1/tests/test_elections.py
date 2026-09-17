@@ -41,7 +41,11 @@ if "dependencies" not in sys.modules:
     mock_dep.get_db_pool = MagicMock()
     sys.modules["dependencies"] = mock_dep
 
-from endpoints.elections import get_election_detail, get_election_districts, list_elections
+from endpoints.elections import (
+    get_election_detail,
+    get_election_districts,
+    list_elections,
+)
 
 
 class TestElectionEndpoints(unittest.IsolatedAsyncioTestCase):

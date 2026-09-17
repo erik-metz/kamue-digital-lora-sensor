@@ -96,35 +96,34 @@ async def get_budgets(
 
     query += " ORDER BY fiscal_year DESC, municipality ASC"
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return [
-                FinanceBudgetResponse(
-                    id=r[0],
-                    municipality=r[1],
-                    fiscal_year=r[2],
-                    record_type=r[3],
-                    total_revenue_eur=r[4],
-                    total_expense_eur=r[5],
-                    net_result_eur=r[6],
-                    tax_gewerbesteuer_eur=r[7],
-                    tax_grundsteuer_a_eur=r[8],
-                    tax_grundsteuer_b_eur=r[9],
-                    tax_income_share_eur=r[10],
-                    tax_vat_share_eur=r[11],
-                    hebesatz_gewerbesteuer=r[12],
-                    hebesatz_grundsteuer_a=r[13],
-                    hebesatz_grundsteuer_b=r[14],
-                    total_debt_eur=r[15],
-                    debt_per_capita_eur=r[16],
-                    reserves_eur=r[17],
-                    source_document_url=r[18],
-                    updated_at=r[19],
-                )
-                for r in rows
-            ]
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
+        return [
+            FinanceBudgetResponse(
+                id=r[0],
+                municipality=r[1],
+                fiscal_year=r[2],
+                record_type=r[3],
+                total_revenue_eur=r[4],
+                total_expense_eur=r[5],
+                net_result_eur=r[6],
+                tax_gewerbesteuer_eur=r[7],
+                tax_grundsteuer_a_eur=r[8],
+                tax_grundsteuer_b_eur=r[9],
+                tax_income_share_eur=r[10],
+                tax_vat_share_eur=r[11],
+                hebesatz_gewerbesteuer=r[12],
+                hebesatz_grundsteuer_a=r[13],
+                hebesatz_grundsteuer_b=r[14],
+                total_debt_eur=r[15],
+                debt_per_capita_eur=r[16],
+                reserves_eur=r[17],
+                source_document_url=r[18],
+                updated_at=r[19],
+            )
+            for r in rows
+        ]
 
 
 @router.get("/spending", response_model=list[FinanceExpenditureResponse])
@@ -153,26 +152,25 @@ async def get_spending(
 
     query += " ORDER BY product_area_code ASC"
 
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, params)
-            rows = await cur.fetchall()
-            return [
-                FinanceExpenditureResponse(
-                    id=r[0],
-                    budget_id=r[1],
-                    municipality=r[2],
-                    fiscal_year=r[3],
-                    product_area_code=r[4],
-                    category_name=r[5],
-                    title=r[6],
-                    expense_budgeted_eur=r[7],
-                    expense_actual_eur=r[8],
-                    investments_eur=r[9],
-                    notes=r[10],
-                )
-                for r in rows
-            ]
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, params)
+        rows = await cur.fetchall()
+        return [
+            FinanceExpenditureResponse(
+                id=r[0],
+                budget_id=r[1],
+                municipality=r[2],
+                fiscal_year=r[3],
+                product_area_code=r[4],
+                category_name=r[5],
+                title=r[6],
+                expense_budgeted_eur=r[7],
+                expense_actual_eur=r[8],
+                investments_eur=r[9],
+                notes=r[10],
+            )
+            for r in rows
+        ]
 
 
 @router.get("/compare", response_model=list[MunicipalFinanceComparison])
@@ -189,24 +187,23 @@ async def compare_finances(
         WHERE fiscal_year = %s AND record_type = %s
         ORDER BY total_revenue_eur DESC
     """
-    async with pool.connection() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute(query, [year, record_type])
-            rows = await cur.fetchall()
-            return [
-                MunicipalFinanceComparison(
-                    municipality=r[0],
-                    fiscal_year=r[1],
-                    total_revenue_eur=r[2],
-                    total_expense_eur=r[3],
-                    net_result_eur=r[4],
-                    tax_gewerbesteuer_eur=r[5],
-                    tax_grundsteuer_b_eur=r[6],
-                    hebesatz_gewerbesteuer=r[7],
-                    hebesatz_grundsteuer_b=r[8],
-                    total_debt_eur=r[9],
-                    debt_per_capita_eur=r[10],
-                    reserves_eur=r[11],
-                )
-                for r in rows
-            ]
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(query, [year, record_type])
+        rows = await cur.fetchall()
+        return [
+            MunicipalFinanceComparison(
+                municipality=r[0],
+                fiscal_year=r[1],
+                total_revenue_eur=r[2],
+                total_expense_eur=r[3],
+                net_result_eur=r[4],
+                tax_gewerbesteuer_eur=r[5],
+                tax_grundsteuer_b_eur=r[6],
+                hebesatz_gewerbesteuer=r[7],
+                hebesatz_grundsteuer_b=r[8],
+                total_debt_eur=r[9],
+                debt_per_capita_eur=r[10],
+                reserves_eur=r[11],
+            )
+            for r in rows
+        ]
