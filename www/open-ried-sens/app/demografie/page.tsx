@@ -40,6 +40,12 @@ export default async function DemographicsPage() {
               Sensor-Karte
             </Link>
             <Link
+              href="/bauen-wohnen"
+              className="text-slate-300 hover:text-emerald-400 transition-colors"
+            >
+              Bauen & Wohnen
+            </Link>
+            <Link
               href="/demografie"
               className="text-emerald-400 font-bold border-b-2 border-emerald-400 pb-0.5"
             >

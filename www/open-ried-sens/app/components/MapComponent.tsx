@@ -45,6 +45,12 @@ import {
   DEFAULT_CROP_ZONES,
   DEFAULT_FLOOD_GAUGES,
 } from "@/lib/environmentData";
+import {
+  BASELINE_BORIS_ZONES,
+  BASELINE_DEVELOPMENT_PLANS,
+  getBorisZoneColor,
+  formatEuro,
+} from "@/lib/realestateData";
 import { useEffect, useRef, useState } from "react";
 
 export type { SensorNode } from "@/lib/mapData";
@@ -99,6 +105,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const [showCropZones, setShowCropZones] = useState(true);
   const [showFloodGauges, setShowFloodGauges] = useState(true);
   const [showStarkregenWMS, setShowStarkregenWMS] = useState(false);
+  const [showBoris, setShowBoris] = useState(false);
+  const [showDevPlans, setShowDevPlans] = useState(false);
 
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -120,6 +128,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const cropZonesGroupRef = useRef<L.LayerGroup | null>(null);
   const floodGaugesGroupRef = useRef<L.LayerGroup | null>(null);
   const starkregenWmsRef = useRef<L.TileLayer.WMS | null>(null);
+  const borisGroupRef = useRef<L.LayerGroup | null>(null);
+  const devPlansGroupRef = useRef<L.LayerGroup | null>(null);
   const trainMarkers = useRef(new Map<string, L.Marker>());
   const crossingMarkers = useRef(new Map<string, L.Marker>());
   const wasteTruckMarkers = useRef(new Map<string, L.Marker>());
@@ -232,6 +242,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       const natureGroup = L.layerGroup();
       const cropZonesGroup = L.layerGroup();
       const floodGaugesGroup = L.layerGroup();
+      const borisGroup = L.layerGroup();
+      const devPlansGroup = L.layerGroup();
 
       evChargingGroupRef.current = evChargingGroup;
       energyFacilitiesGroupRef.current = energyFacilitiesGroup;
@@ -241,6 +253,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       natureGroupRef.current = natureGroup;
       cropZonesGroupRef.current = cropZonesGroup;
       floodGaugesGroupRef.current = floodGaugesGroup;
+      borisGroupRef.current = borisGroup;
+      devPlansGroupRef.current = devPlansGroup;
 
       const starkregenWms = L.tileLayer.wms("https://sgx.geodatenzentrum.de/wms_starkregen", {
         layers: "tiefe_extrem",
@@ -342,6 +356,8 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       cropZonesGroupRef.current = null;
       floodGaugesGroupRef.current = null;
       starkregenWmsRef.current = null;
+      borisGroupRef.current = null;
+      devPlansGroupRef.current = null;
       currentTrainMarkers.clear();
       currentCrossingMarkers.clear();
       currentWasteTruckMarkers.clear();
@@ -1505,6 +1521,22 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
     else { if (map.hasLayer(wms)) map.removeLayer(wms); }
   }, [showStarkregenWMS]);
 
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = borisGroupRef.current;
+    if (!map || !group) return;
+    if (showBoris) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showBoris]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const group = devPlansGroupRef.current;
+    if (!map || !group) return;
+    if (showDevPlans) { if (!map.hasLayer(group)) map.addLayer(group); }
+    else { if (map.hasLayer(group)) map.removeLayer(group); }
+  }, [showDevPlans]);
+
   // Populate Infrastructure & Energy Layers
   useEffect(() => {
     if (!ready) return;
@@ -1764,6 +1796,69 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         floodGrp.addLayer(marker);
       }
     }
+
+    // 8. BORIS Hessen Bodenrichtwerte
+    const borisGrp = borisGroupRef.current;
+    if (borisGrp) {
+      borisGrp.clearLayers();
+      for (const b of BASELINE_BORIS_ZONES) {
+        if (b.geometry?.coordinates?.[0]) {
+          const latLngs = (b.geometry.coordinates[0] as [number, number][]).map(([lng, lat]) => [lat, lng] as [number, number]);
+          const color = getBorisZoneColor(b.land_value_eur_sqm, b.zone_type);
+          const poly = L.polygon(latLngs, {
+            color,
+            fillColor: color,
+            fillOpacity: 0.28,
+            weight: 2,
+          });
+          poly.bindPopup(`
+            <div style="font-family: sans-serif; color: #e2e8f0; min-width: 240px;">
+              <div style="font-size: 11px; font-weight: bold; color: ${color}; text-transform: uppercase;">🏡 BORIS Hessen · ${b.municipality}</div>
+              <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${b.district ?? b.zone_code}</div>
+              <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">Zone: ${b.zone_code} · ${b.zone_type}</div>
+              <div style="background: rgba(15,23,42,0.85); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
+                <div>Bodenrichtwert: <strong style="font-size: 15px; color: #34d399;">${formatEuro(b.land_value_eur_sqm, true)}</strong></div>
+                <div>Zustand: <strong>${b.development_status}</strong></div>
+                ${b.floor_space_index ? `<div>WGFZ: <strong>${b.floor_space_index}</strong></div>` : ""}
+                <div style="margin-top: 4px; font-size: 10px; color: #94a3b8;">Stichtag ${b.stichtag} · dl-zero-de/2.0</div>
+              </div>
+            </div>
+          `);
+          borisGrp.addLayer(poly);
+        }
+      }
+    }
+
+    // 9. Active Development Plans (B-Pläne)
+    const devGrp = devPlansGroupRef.current;
+    if (devGrp) {
+      devGrp.clearLayers();
+      for (const d of BASELINE_DEVELOPMENT_PLANS) {
+        if (d.geometry?.coordinates?.[0]) {
+          const latLngs = (d.geometry.coordinates[0] as [number, number][]).map(([lng, lat]) => [lat, lng] as [number, number]);
+          const color = d.status === "rechtskraeftig" ? "#10b981" : d.status === "im_verfahren" ? "#f59e0b" : "#38bdf8";
+          const poly = L.polygon(latLngs, {
+            color,
+            fillColor: color,
+            fillOpacity: 0.22,
+            weight: 2,
+            dashArray: "6, 4",
+          });
+          poly.bindPopup(`
+            <div style="font-family: sans-serif; color: #e2e8f0; min-width: 240px;">
+              <div style="font-size: 11px; font-weight: bold; color: ${color}; text-transform: uppercase;">🏗️ Bebauungsplan · ${d.municipality}</div>
+              <div style="font-weight: bold; font-size: 14px; margin: 3px 0;">${d.plan_name}</div>
+              <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">Nutzung: <strong>${d.target_use}</strong> · Plan-Nr: ${d.plan_number}</div>
+              <div style="background: rgba(15,23,42,0.85); padding: 6px 8px; border-radius: 6px; border: 1px solid #334155; font-size: 12px;">
+                <div>Status: <strong style="color: ${color};">${d.status === "rechtskraeftig" ? "Rechtskräftig" : d.status === "im_verfahren" ? "Im Verfahren" : "In Aufstellung"}</strong></div>
+                <div>Geltungsbereich: <strong>${d.area_hectares} ha</strong></div>
+              </div>
+            </div>
+          `);
+          devGrp.addLayer(poly);
+        }
+      }
+    }
   }, [ready, now, evChargers, wifiHotspots, roadSegments, broadbandAreas]);
 
   return <div className="sensor-map relative w-full h-[480px] sm:h-[560px] rounded-2xl overflow-hidden border border-slate-700 shadow-2xl">
@@ -1871,6 +1966,24 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
         title="Glasfaser & Breitband-Gebietsabdeckung ein-/ausblenden"
       >
         🌐 Glasfaser {showBroadband ? "An" : "Aus"}
+      </button>
+
+      {/* Real Estate & Planning Layers */}
+      <button
+        type="button"
+        className={`map-control ${showBoris ? "border-teal-400 text-teal-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowBoris((prev) => !prev)}
+        title="BORIS Hessen Bodenrichtwertzonen ein-/ausblenden"
+      >
+        🏡 Bodenrichtwerte {showBoris ? "An" : "Aus"}
+      </button>
+      <button
+        type="button"
+        className={`map-control ${showDevPlans ? "border-amber-400 text-amber-300 font-semibold" : "opacity-60"}`}
+        onClick={() => setShowDevPlans((prev) => !prev)}
+        title="Bebauungspläne & Neubaugebiete (B-Pläne) ein-/ausblenden"
+      >
+        🏗️ B-Pläne {showDevPlans ? "An" : "Aus"}
       </button>
 
       {/* Mobility & Sensor Layers */}

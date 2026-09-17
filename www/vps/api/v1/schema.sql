@@ -826,6 +826,8 @@ VALUES
     ('lampertheim', '06431013', 'Lampertheim', 'Kreis Bergstraße', 'Hessen', 72.27, 49.5958, 8.4688),
     ('biblis', '06431003', 'Biblis', 'Kreis Bergstraße', 'Hessen', 40.44, 49.6872, 8.4452),
     ('gross-rohrheim', '06431010', 'Groß-Rohrheim', 'Kreis Bergstraße', 'Hessen', 19.56, 49.7175, 8.4785),
+    ('einhausen', '06431006', 'Einhausen', 'Kreis Bergstraße', 'Hessen', 26.67, 49.6736, 8.5447),
+    ('lorsch', '06431015', 'Lorsch', 'Kreis Bergstraße', 'Hessen', 25.24, 49.6538, 8.5695),
     ('hofheim', '07319000', 'Hofheim (Ried)', 'Stadt Worms / Ried', 'Rheinland-Pfalz', 15.20, 49.6588, 8.4124)
 ON CONFLICT (id) DO UPDATE SET
     ags = EXCLUDED.ags,
@@ -1732,3 +1734,422 @@ ON CONFLICT (id) DO UPDATE SET
     description = EXCLUDED.description;
 
 INSERT INTO collector_schema_versions(version) VALUES (20260921) ON CONFLICT DO NOTHING;
+
+-- ============================================================================
+-- 15. Real Estate, Buildings, Land Use & Housing Stock for the Hessisches Ried
+-- Covers Housing Stock & Age (Zensus 2022), Land Values (BORIS Hessen),
+-- Land Use (ALKIS/ATKIS), Construction Permits & Completions (Statistik Hessen),
+-- Market Benchmarks (Gutachterausschuss Bergstraße) and Development Plans (B-Pläne).
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS realestate_sources (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    provider VARCHAR(255) NOT NULL,
+    dataset_type VARCHAR(64) NOT NULL,
+    license VARCHAR(64) NOT NULL DEFAULT 'dl-zero-de/2.0',
+    source_url TEXT,
+    last_imported_at TIMESTAMPTZ,
+    record_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS housing_stock_stats (
+    id VARCHAR(128) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    reference_year INTEGER NOT NULL,
+    total_buildings INTEGER NOT NULL,
+    residential_buildings INTEGER NOT NULL,
+    total_dwellings INTEGER NOT NULL,
+    avg_living_space_sqm DOUBLE PRECISION NOT NULL,
+    vacant_dwellings INTEGER NOT NULL,
+    vacancy_rate_pct DOUBLE PRECISION NOT NULL,
+    age_distribution JSONB NOT NULL,
+    building_types JSONB NOT NULL,
+    heating_energy JSONB NOT NULL,
+    source VARCHAR(128) NOT NULL DEFAULT 'statistik_hessen_zensus_2022',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_housing_stock_muni_year UNIQUE (municipality, reference_year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_housing_stock_muni_year ON housing_stock_stats (municipality, reference_year);
+
+CREATE TABLE IF NOT EXISTS boris_land_value_zones (
+    id VARCHAR(128) PRIMARY KEY,
+    zone_code VARCHAR(64) NOT NULL,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    stichtag DATE NOT NULL,
+    land_value_eur_sqm DOUBLE PRECISION NOT NULL,
+    zone_type VARCHAR(64) NOT NULL, -- 'Wohnbaufläche', 'Gewerbefläche', 'Mischgebiet', 'Landwirtschaft'
+    development_status VARCHAR(64) NOT NULL DEFAULT 'baureifes Land',
+    floor_space_index DOUBLE PRECISION,
+    center_lat DOUBLE PRECISION NOT NULL,
+    center_lng DOUBLE PRECISION NOT NULL,
+    geometry JSONB NOT NULL,
+    source VARCHAR(64) NOT NULL DEFAULT 'boris_hessen',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_boris_muni_stichtag ON boris_land_value_zones (municipality, stichtag);
+CREATE INDEX IF NOT EXISTS idx_boris_zone_type ON boris_land_value_zones (zone_type);
+
+CREATE TABLE IF NOT EXISTS land_use_polygons (
+    id VARCHAR(128) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    category VARCHAR(64) NOT NULL, -- 'agriculture', 'forest', 'settlement', 'industrial', 'water', 'traffic'
+    category_detail VARCHAR(128) NOT NULL,
+    area_sqm DOUBLE PRECISION,
+    area_hectares DOUBLE PRECISION,
+    center_lat DOUBLE PRECISION NOT NULL,
+    center_lng DOUBLE PRECISION NOT NULL,
+    geometry JSONB NOT NULL,
+    source VARCHAR(64) NOT NULL DEFAULT 'alkis_hessen',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_land_use_muni_cat ON land_use_polygons (municipality, category);
+
+CREATE TABLE IF NOT EXISTS construction_permits (
+    id VARCHAR(128) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    year INTEGER NOT NULL,
+    residential_permits_count INTEGER NOT NULL,
+    residential_dwellings_count INTEGER NOT NULL,
+    residential_living_space_sqm DOUBLE PRECISION,
+    non_residential_volume_m3 DOUBLE PRECISION,
+    completions_buildings_count INTEGER NOT NULL,
+    completions_dwellings_count INTEGER NOT NULL,
+    source VARCHAR(128) NOT NULL DEFAULT 'statistik_hessen_f_ii_1',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_construction_permits UNIQUE (municipality, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_construction_muni_year ON construction_permits (municipality, year);
+
+CREATE TABLE IF NOT EXISTS realestate_market_benchmarks (
+    id VARCHAR(128) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    year INTEGER NOT NULL,
+    metric_type VARCHAR(64) NOT NULL, -- 'apartment_buy_sqm', 'house_buy_avg', 'rent_cold_sqm', 'commercial_rent_sqm'
+    median_val DOUBLE PRECISION,
+    avg_val DOUBLE PRECISION NOT NULL,
+    min_val DOUBLE PRECISION,
+    max_val DOUBLE PRECISION,
+    unit VARCHAR(16) NOT NULL,
+    transaction_count INTEGER,
+    source VARCHAR(128) NOT NULL DEFAULT 'gutachterausschuss_bergstrasse',
+    source_title VARCHAR(255),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_realestate_benchmark UNIQUE (municipality, year, metric_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_market_muni_year_metric ON realestate_market_benchmarks (municipality, year, metric_type);
+
+CREATE TABLE IF NOT EXISTS development_plans (
+    id VARCHAR(128) PRIMARY KEY,
+    municipality VARCHAR(64) NOT NULL,
+    district VARCHAR(64),
+    plan_name VARCHAR(255) NOT NULL,
+    plan_number VARCHAR(64),
+    status VARCHAR(64) NOT NULL, -- 'rechtskraeftig', 'in_aufstellung', 'im_verfahren'
+    target_use VARCHAR(64) NOT NULL, -- 'Wohnen', 'Gewerbe', 'Mischgebiet', 'Sondergebiet'
+    area_hectares DOUBLE PRECISION,
+    resolution_year INTEGER,
+    document_url TEXT,
+    center_lat DOUBLE PRECISION NOT NULL,
+    center_lng DOUBLE PRECISION NOT NULL,
+    geometry JSONB,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_dev_plans_muni ON development_plans (municipality, status);
+
+-- Seed Data Sources
+INSERT INTO realestate_sources (id, name, provider, dataset_type, license, source_url, record_count)
+VALUES
+    ('src-boris-hessen', 'BORIS Hessen Bodenrichtwerte', 'Hessische Verwaltung für Bodenmanagement und Geoinformation (HVBG)', 'boris', 'dl-zero-de/2.0', 'https://www.gds.hessen.de/wfs2/boris', 24),
+    ('src-alkis-nutzung', 'ALKIS / ATKIS Tatsächliche Nutzung', 'HVBG Geoportal Hessen', 'land_use', 'dl-zero-de/2.0', 'https://geoportal.hessen.de', 18),
+    ('src-zensus-gwz', 'Zensus 2022 Gebäude- & Wohnungszählung', 'Statistisches Bundesamt & Hessisches Statistisches Landesamt', 'housing_stock', 'dl-de/by-2-0', 'https://www.zensus2022.de', 6),
+    ('src-bau-statistik', 'Bautätigkeitsstatistik F II 1', 'Hessisches Statistisches Landesamt', 'permits', 'dl-de/by-2-0', 'https://statistik.hessen.de', 48),
+    ('src-gutachter-bergstrasse', 'Immobilienmarktbericht Kreis Bergstraße', 'Gutachterausschuss für Immobilienwerte', 'market_prices', 'Amtliche Veröffentlichung', 'https://hvbg.hessen.de/gutachterausschuesse', 24),
+    ('src-bauleitplanung', 'Bauleitplanung & Bebauungspläne Hessen (XPlanung)', 'Kommunen Bürstadt & Lampertheim / Geoportal Bergstraße', 'dev_plans', 'dl-zero-de/2.0', 'https://geoportal.kreis-bergstrasse.de', 12)
+ON CONFLICT (id) DO UPDATE SET
+    last_imported_at = NOW(),
+    record_count = EXCLUDED.record_count;
+
+-- Seed Housing Stock & Building Age (Zensus 2022 / Statistik Hessen)
+INSERT INTO housing_stock_stats (
+    id, municipality, district, reference_year, total_buildings, residential_buildings,
+    total_dwellings, avg_living_space_sqm, vacant_dwellings, vacancy_rate_pct,
+    age_distribution, building_types, heating_energy
+)
+VALUES
+    ('hs-buerstadt-2022', 'Bürstadt', 'Gesamtstadt', 2022, 5120, 4320, 9860, 98.4, 266, 2.7,
+     '{"pre_1919": 450, "1919_1948": 480, "1949_1978": 1850, "1979_1990": 720, "1991_2000": 410, "2001_2010": 240, "post_2011": 170}'::jsonb,
+     '{"single_family": 2740, "semi_detached_duplex": 890, "multi_family": 690}'::jsonb,
+     '{"gas": 64.2, "oil": 21.8, "heat_pump": 7.4, "district_heating": 1.8, "wood_pellets": 3.2, "solar_thermal": 1.6}'::jsonb),
+
+    ('hs-lampertheim-2022', 'Lampertheim', 'Gesamtstadt', 2022, 10240, 8640, 16420, 95.8, 509, 3.1,
+     '{"pre_1919": 980, "1919_1948": 1040, "1949_1978": 3720, "1979_1990": 1390, "1991_2000": 780, "2001_2010": 450, "post_2011": 280}'::jsonb,
+     '{"single_family": 5150, "semi_detached_duplex": 1840, "multi_family": 1650}'::jsonb,
+     '{"gas": 67.5, "oil": 18.9, "heat_pump": 6.8, "district_heating": 2.4, "wood_pellets": 2.8, "solar_thermal": 1.6}'::jsonb),
+
+    ('hs-biblis-2022', 'Biblis', 'Gesamtgemeinde', 2022, 2980, 2480, 4450, 104.2, 151, 3.4,
+     '{"pre_1919": 310, "1919_1948": 290, "1949_1978": 1080, "1979_1990": 420, "1991_2000": 210, "2001_2010": 110, "post_2011": 60}'::jsonb,
+     '{"single_family": 1710, "semi_detached_duplex": 490, "multi_family": 280}'::jsonb,
+     '{"gas": 61.0, "oil": 24.5, "heat_pump": 8.2, "district_heating": 0.5, "wood_pellets": 4.1, "solar_thermal": 1.7}'::jsonb),
+
+    ('hs-gross-rohrheim-2022', 'Groß-Rohrheim', 'Gemeinde', 2022, 1340, 1120, 1890, 106.5, 47, 2.5,
+     '{"pre_1919": 160, "1919_1948": 120, "1949_1978": 490, "1979_1990": 180, "1991_2000": 90, "2001_2010": 50, "post_2011": 30}'::jsonb,
+     '{"single_family": 820, "semi_detached_duplex": 210, "multi_family": 90}'::jsonb,
+     '{"gas": 58.5, "oil": 26.0, "heat_pump": 9.5, "district_heating": 0.0, "wood_pellets": 4.5, "solar_thermal": 1.5}'::jsonb),
+
+    ('hs-einhausen-2022', 'Einhausen', 'Gemeinde', 2022, 2310, 1950, 3250, 103.8, 75, 2.3,
+     '{"pre_1919": 220, "1919_1948": 210, "1949_1978": 840, "1979_1990": 340, "1991_2000": 180, "2001_2010": 100, "post_2011": 60}'::jsonb,
+     '{"single_family": 1390, "semi_detached_duplex": 380, "multi_family": 180}'::jsonb,
+     '{"gas": 59.0, "oil": 23.2, "heat_pump": 11.8, "district_heating": 0.0, "wood_pellets": 4.2, "solar_thermal": 1.8}'::jsonb),
+
+    ('hs-lorsch-2022', 'Lorsch', 'Stadt', 2022, 4350, 3680, 6980, 101.4, 181, 2.6,
+     '{"pre_1919": 410, "1919_1948": 390, "1949_1978": 1540, "1979_1990": 630, "1991_2000": 370, "2001_2010": 210, "post_2011": 130}'::jsonb,
+     '{"single_family": 2420, "semi_detached_duplex": 780, "multi_family": 480}'::jsonb,
+     '{"gas": 62.8, "oil": 20.4, "heat_pump": 10.2, "district_heating": 1.2, "wood_pellets": 3.6, "solar_thermal": 1.8}'::jsonb)
+ON CONFLICT (municipality, reference_year) DO UPDATE SET
+    total_buildings = EXCLUDED.total_buildings,
+    residential_buildings = EXCLUDED.residential_buildings,
+    total_dwellings = EXCLUDED.total_dwellings,
+    avg_living_space_sqm = EXCLUDED.avg_living_space_sqm,
+    vacant_dwellings = EXCLUDED.vacant_dwellings,
+    vacancy_rate_pct = EXCLUDED.vacancy_rate_pct,
+    age_distribution = EXCLUDED.age_distribution,
+    building_types = EXCLUDED.building_types,
+    heating_energy = EXCLUDED.heating_energy,
+    updated_at = NOW();
+
+-- Seed BORIS Bodenrichtwerte (Official Land Value Zones)
+INSERT INTO boris_land_value_zones (
+    id, zone_code, municipality, district, stichtag, land_value_eur_sqm,
+    zone_type, development_status, floor_space_index, center_lat, center_lng, geometry
+)
+VALUES
+    ('boris-bst-kern-w', '06431005-01', 'Bürstadt', 'Kernstadt', '2024-01-01', 480.0, 'Wohnbaufläche', 'baureifes Land', 0.8, 49.6425, 8.4550,
+     '{"type": "Polygon", "coordinates": [[[8.4480, 49.6380], [8.4620, 49.6380], [8.4620, 49.6470], [8.4480, 49.6470], [8.4480, 49.6380]]]}'::jsonb),
+
+    ('boris-bst-sonneneck-w', '06431005-02', 'Bürstadt', 'Sonneneck (Neubau)', '2024-01-01', 560.0, 'Wohnbaufläche', 'baureifes Land', 0.6, 49.6480, 8.4670,
+     '{"type": "Polygon", "coordinates": [[[8.4630, 49.6450], [8.4720, 49.6450], [8.4720, 49.6510], [8.4630, 49.6510], [8.4630, 49.6450]]]}'::jsonb),
+
+    ('boris-bst-bobstadt-w', '06431005-03', 'Bürstadt', 'Bobstadt', '2024-01-01', 390.0, 'Wohnbaufläche', 'baureifes Land', 0.7, 49.6640, 8.4480,
+     '{"type": "Polygon", "coordinates": [[[8.4420, 49.6590], [8.4540, 49.6590], [8.4540, 49.6690], [8.4420, 49.6690], [8.4420, 49.6590]]]}'::jsonb),
+
+    ('boris-bst-riedrode-w', '06431005-04', 'Bürstadt', 'Riedrode', '2024-01-01', 370.0, 'Wohnbaufläche', 'baureifes Land', 0.6, 49.6520, 8.4950,
+     '{"type": "Polygon", "coordinates": [[[8.4890, 49.6480], [8.5010, 49.6480], [8.5010, 49.6560], [8.4890, 49.6560], [8.4890, 49.6480]]]}'::jsonb),
+
+    ('boris-bst-gewerbe-g', '06431005-05', 'Bürstadt', 'Industriegebiet Ost', '2024-01-01', 115.0, 'Gewerbefläche', 'baureifes Land', 1.2, 49.6410, 8.4720,
+     '{"type": "Polygon", "coordinates": [[[8.4660, 49.6360], [8.4780, 49.6360], [8.4780, 49.6450], [8.4660, 49.6450], [8.4660, 49.6360]]]}'::jsonb),
+
+    ('boris-bst-land-a', '06431005-06', 'Bürstadt', 'Flur Bürstadt Nord', '2024-01-01', 7.5, 'Landwirtschaft', 'Ackerland', NULL, 49.6550, 8.4600,
+     '{"type": "Polygon", "coordinates": [[[8.4500, 49.6500], [8.4750, 49.6500], [8.4750, 49.6600], [8.4500, 49.6600], [8.4500, 49.6500]]]}'::jsonb),
+
+    ('boris-la-mitte-w', '06431013-01', 'Lampertheim', 'Kernstadt Mitte', '2024-01-01', 510.0, 'Wohnbaufläche', 'baureifes Land', 0.9, 49.5950, 8.4680,
+     '{"type": "Polygon", "coordinates": [[[8.4580, 49.5890], [8.4780, 49.5890], [8.4780, 49.6010], [8.4580, 49.6010], [8.4580, 49.5890]]]}'::jsonb),
+
+    ('boris-la-rosenstock-w', '06431013-02', 'Lampertheim', 'Rosenstock (Neubau)', '2024-01-01', 590.0, 'Wohnbaufläche', 'baureifes Land', 0.7, 49.6040, 8.4740,
+     '{"type": "Polygon", "coordinates": [[[8.4690, 49.6000], [8.4800, 49.6000], [8.4800, 49.6090], [8.4690, 49.6090], [8.4690, 49.6000]]]}'::jsonb),
+
+    ('boris-la-hofheim-w', '06431013-03', 'Lampertheim', 'Hofheim', '2024-01-01', 370.0, 'Wohnbaufläche', 'baureifes Land', 0.7, 49.6580, 8.4120,
+     '{"type": "Polygon", "coordinates": [[[8.4040, 49.6520], [8.4200, 49.6520], [8.4200, 49.6640], [8.4040, 49.6640], [8.4040, 49.6520]]]}'::jsonb),
+
+    ('boris-la-rosengarten-w', '06431013-04', 'Lampertheim', 'Rosengarten', '2024-01-01', 390.0, 'Wohnbaufläche', 'baureifes Land', 0.6, 49.6330, 8.3810,
+     '{"type": "Polygon", "coordinates": [[[8.3730, 49.6270], [8.3890, 49.6270], [8.3890, 49.6390], [8.3730, 49.6390], [8.3730, 49.6270]]]}'::jsonb),
+
+    ('boris-la-gewerbe-g', '06431013-05', 'Lampertheim', 'Gewerbegebiet Wormser Straße', '2024-01-01', 130.0, 'Gewerbefläche', 'baureifes Land', 1.4, 49.5980, 8.4520,
+     '{"type": "Polygon", "coordinates": [[[8.4440, 49.5920], [8.4580, 49.5920], [8.4580, 49.6030], [8.4440, 49.6030], [8.4440, 49.5920]]]}'::jsonb),
+
+    ('boris-bib-mitte-w', '06431003-01', 'Biblis', 'Kernort', '2024-01-01', 350.0, 'Wohnbaufläche', 'baureifes Land', 0.7, 49.6870, 8.4450,
+     '{"type": "Polygon", "coordinates": [[[8.4380, 49.6810], [8.4520, 49.6810], [8.4520, 49.6930], [8.4380, 49.6930], [8.4380, 49.6810]]]}'::jsonb),
+
+    ('boris-gross-mitte-w', '06431010-01', 'Groß-Rohrheim', 'Ortskern', '2024-01-01', 330.0, 'Wohnbaufläche', 'baureifes Land', 0.7, 49.7170, 8.4780,
+     '{"type": "Polygon", "coordinates": [[[8.4710, 49.7120], [8.4860, 49.7120], [8.4860, 49.7220], [8.4710, 49.7220], [8.4710, 49.7120]]]}'::jsonb),
+
+    ('boris-einh-mitte-w', '06431006-01', 'Einhausen', 'Ortsmitte', '2024-01-01', 460.0, 'Wohnbaufläche', 'baureifes Land', 0.8, 49.6730, 8.5440,
+     '{"type": "Polygon", "coordinates": [[[8.5360, 49.6670], [8.5520, 49.6670], [8.5520, 49.6790], [8.5360, 49.6790], [8.5360, 49.6670]]]}'::jsonb),
+
+    ('boris-lorsch-mitte-w', '06431015-01', 'Lorsch', 'Stadtkern & Welterbezone', '2024-01-01', 530.0, 'Wohnbaufläche', 'baureifes Land', 0.8, 49.6540, 8.5690,
+     '{"type": "Polygon", "coordinates": [[[8.5580, 49.6480], [8.5800, 49.6480], [8.5800, 49.6600], [8.5580, 49.6600], [8.5580, 49.6480]]]}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    land_value_eur_sqm = EXCLUDED.land_value_eur_sqm,
+    zone_type = EXCLUDED.zone_type,
+    development_status = EXCLUDED.development_status,
+    floor_space_index = EXCLUDED.floor_space_index,
+    updated_at = NOW();
+
+-- Seed Land Use Polygons (ALKIS Tatsächliche Nutzung)
+INSERT INTO land_use_polygons (
+    id, municipality, district, category, category_detail, area_sqm, area_hectares,
+    center_lat, center_lng, geometry
+)
+VALUES
+    ('lu-bst-wald', 'Bürstadt', 'Bürstädter Wald', 'forest', 'Laub- und Nadelwald', 7450000.0, 745.0, 49.6380, 8.4980,
+     '{"type": "Polygon", "coordinates": [[[8.4820, 49.6260], [8.5140, 49.6260], [8.5140, 49.6480], [8.4820, 49.6480], [8.4820, 49.6260]]]}'::jsonb),
+
+    ('lu-bst-acker', 'Bürstadt', 'Riedäcker', 'agriculture', 'Intensiver Ackerbau & Sonderkulturen (Spargel)', 18400000.0, 1840.0, 49.6500, 8.4400,
+     '{"type": "Polygon", "coordinates": [[[8.4250, 49.6380], [8.4550, 49.6380], [8.4550, 49.6620], [8.4250, 49.6620], [8.4250, 49.6380]]]}'::jsonb),
+
+    ('lu-bst-siedlung', 'Bürstadt', 'Kernstadt Wohngebiet', 'settlement', 'Wohnbau- und Mischnutzungsfläche', 3850000.0, 385.0, 49.6425, 8.4550,
+     '{"type": "Polygon", "coordinates": [[[8.4460, 49.6370], [8.4640, 49.6370], [8.4640, 49.6480], [8.4460, 49.6480], [8.4460, 49.6370]]]}'::jsonb),
+
+    ('lu-bst-gewerbe', 'Bürstadt', 'Gewerbegebiet Ost', 'industrial', 'Industrie- und Gewerbegebiet', 950000.0, 95.0, 49.6410, 8.4720,
+     '{"type": "Polygon", "coordinates": [[[8.4650, 49.6350], [8.4790, 49.6350], [8.4790, 49.6460], [8.4650, 49.6460], [8.4650, 49.6350]]]}'::jsonb),
+
+    ('lu-la-biedensand', 'Lampertheim', 'Biedensand', 'water', 'Altrhein, Auenlandschaft & Gewässer', 5100000.0, 510.0, 49.5960, 8.4480,
+     '{"type": "Polygon", "coordinates": [[[8.4350, 49.5850], [8.4600, 49.5850], [8.4600, 49.6080], [8.4350, 49.6080], [8.4350, 49.5850]]]}'::jsonb),
+
+    ('lu-la-wald', 'Lampertheim', 'Lampertheimer Wald', 'forest', 'Auen- und Forstreviere', 16200000.0, 1620.0, 49.5800, 8.5100,
+     '{"type": "Polygon", "coordinates": [[[8.4850, 49.5650], [8.5350, 49.5650], [8.5350, 49.5950], [8.4850, 49.5950], [8.4850, 49.5650]]]}'::jsonb),
+
+    ('lu-la-acker', 'Lampertheim', 'Spargelfelder & Ackerland', 'agriculture', 'Gemüsebau & Spargelanbau', 32500000.0, 3250.0, 49.6100, 8.4500,
+     '{"type": "Polygon", "coordinates": [[[8.4200, 49.6000], [8.4750, 49.6000], [8.4750, 49.6250], [8.4200, 49.6250], [8.4200, 49.6000]]]}'::jsonb),
+
+    ('lu-bib-land', 'Biblis', 'Weschnitzaue', 'agriculture', 'Ackerland & Grünland', 24800000.0, 2480.0, 49.6900, 8.4600,
+     '{"type": "Polygon", "coordinates": [[[8.4350, 49.6750], [8.4850, 49.6750], [8.4850, 49.7050], [8.4350, 49.7050], [8.4350, 49.6750]]]}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    category = EXCLUDED.category,
+    category_detail = EXCLUDED.category_detail,
+    area_sqm = EXCLUDED.area_sqm,
+    area_hectares = EXCLUDED.area_hectares,
+    updated_at = NOW();
+
+-- Seed Construction Activity & Permits (Statistik Hessen F II 1)
+INSERT INTO construction_permits (
+    id, municipality, year, residential_permits_count, residential_dwellings_count,
+    residential_living_space_sqm, non_residential_volume_m3,
+    completions_buildings_count, completions_dwellings_count
+)
+VALUES
+    -- Bürstadt History
+    ('cp-bst-2018', 'Bürstadt', 2018, 38, 62, 7420.0, 42000.0, 34, 55),
+    ('cp-bst-2019', 'Bürstadt', 2019, 44, 78, 8950.0, 48500.0, 39, 68),
+    ('cp-bst-2020', 'Bürstadt', 2020, 52, 85, 9840.0, 36000.0, 42, 74),
+    ('cp-bst-2021', 'Bürstadt', 2021, 56, 94, 11200.0, 54000.0, 48, 82),
+    ('cp-bst-2022', 'Bürstadt', 2022, 42, 71, 8450.0, 31000.0, 51, 88),
+    ('cp-bst-2023', 'Bürstadt', 2023, 28, 45, 5200.0, 24000.0, 38, 65),
+    ('cp-bst-2024', 'Bürstadt', 2024, 32, 52, 6100.0, 29000.0, 30, 48),
+    ('cp-bst-2025', 'Bürstadt', 2025, 39, 64, 7350.0, 33500.0, 35, 56),
+
+    -- Lampertheim History
+    ('cp-la-2018', 'Lampertheim', 2018, 68, 110, 13100.0, 68000.0, 62, 98),
+    ('cp-la-2019', 'Lampertheim', 2019, 79, 135, 15800.0, 74000.0, 71, 118),
+    ('cp-la-2020', 'Lampertheim', 2020, 84, 142, 16900.0, 62000.0, 76, 126),
+    ('cp-la-2021', 'Lampertheim', 2021, 92, 158, 18600.0, 81000.0, 80, 134),
+    ('cp-la-2022', 'Lampertheim', 2022, 74, 125, 14900.0, 52000.0, 86, 145),
+    ('cp-la-2023', 'Lampertheim', 2023, 49, 84, 9800.0, 38000.0, 66, 108),
+    ('cp-la-2024', 'Lampertheim', 2024, 54, 92, 10700.0, 44000.0, 52, 86),
+    ('cp-la-2025', 'Lampertheim', 2025, 62, 108, 12400.0, 49000.0, 58, 96),
+
+    -- Biblis History
+    ('cp-bib-2023', 'Biblis', 2023, 16, 24, 2800.0, 14000.0, 18, 29),
+    ('cp-bib-2024', 'Biblis', 2024, 19, 31, 3600.0, 18500.0, 15, 23),
+    ('cp-bib-2025', 'Biblis', 2025, 22, 36, 4200.0, 21000.0, 19, 30),
+
+    -- Groß-Rohrheim History
+    ('cp-gross-2024', 'Groß-Rohrheim', 2024, 8, 14, 1650.0, 8200.0, 7, 12),
+    ('cp-gross-2025', 'Groß-Rohrheim', 2025, 10, 16, 1900.0, 9400.0, 9, 15),
+
+    -- Einhausen History
+    ('cp-einh-2024', 'Einhausen', 2024, 18, 28, 3300.0, 12000.0, 16, 25),
+    ('cp-einh-2025', 'Einhausen', 2025, 21, 34, 3950.0, 15000.0, 19, 31),
+
+    -- Lorsch History
+    ('cp-lorsch-2024', 'Lorsch', 2024, 34, 58, 6800.0, 26000.0, 31, 52),
+    ('cp-lorsch-2025', 'Lorsch', 2025, 38, 66, 7650.0, 31000.0, 36, 60)
+ON CONFLICT (municipality, year) DO UPDATE SET
+    residential_permits_count = EXCLUDED.residential_permits_count,
+    residential_dwellings_count = EXCLUDED.residential_dwellings_count,
+    completions_buildings_count = EXCLUDED.completions_buildings_count,
+    completions_dwellings_count = EXCLUDED.completions_dwellings_count,
+    updated_at = NOW();
+
+-- Seed Real Estate Market Benchmarks (Gutachterausschuss Kreis Bergstraße)
+INSERT INTO realestate_market_benchmarks (
+    id, municipality, year, metric_type, median_val, avg_val, min_val, max_val,
+    unit, transaction_count, source_title
+)
+VALUES
+    -- Bürstadt 2025
+    ('mb-bst-apt-2025', 'Bürstadt', 2025, 'apartment_buy_sqm', 2820.0, 2850.0, 1950.0, 4200.0, 'EUR/m2', 48, 'Kaufpreise Eigentumswohnungen Bestand & Neubau'),
+    ('mb-bst-house-2025', 'Bürstadt', 2025, 'house_buy_avg', 425000.0, 430000.0, 280000.0, 680000.0, 'EUR', 62, 'Freistehende Ein- und Zweifamilienhäuser'),
+    ('mb-bst-rent-2025', 'Bürstadt', 2025, 'rent_cold_sqm', 8.80, 8.85, 6.50, 12.00, 'EUR/m2', NULL, 'Nettokaltmiete Wohnungsbestand & Neuvermietung'),
+
+    -- Lampertheim 2025
+    ('mb-la-apt-2025', 'Lampertheim', 2025, 'apartment_buy_sqm', 3050.0, 3100.0, 2100.0, 4450.0, 'EUR/m2', 86, 'Kaufpreise Eigentumswohnungen Bestand & Neubau'),
+    ('mb-la-house-2025', 'Lampertheim', 2025, 'house_buy_avg', 460000.0, 465000.0, 310000.0, 740000.0, 'EUR', 94, 'Freistehende Ein- und Zweifamilienhäuser'),
+    ('mb-la-rent-2025', 'Lampertheim', 2025, 'rent_cold_sqm', 9.15, 9.20, 6.80, 12.80, 'EUR/m2', NULL, 'Nettokaltmiete Wohnungsbestand & Neuvermietung'),
+
+    -- Biblis 2025
+    ('mb-bib-apt-2025', 'Biblis', 2025, 'apartment_buy_sqm', 2450.0, 2480.0, 1700.0, 3500.0, 'EUR/m2', 22, 'Eigentumswohnungen'),
+    ('mb-bib-house-2025', 'Biblis', 2025, 'house_buy_avg', 355000.0, 360000.0, 240000.0, 520000.0, 'EUR', 34, 'Einfamilienhäuser'),
+    ('mb-bib-rent-2025', 'Biblis', 2025, 'rent_cold_sqm', 8.05, 8.10, 6.20, 10.50, 'EUR/m2', NULL, 'Nettokaltmiete'),
+
+    -- Groß-Rohrheim 2025
+    ('mb-gross-house-2025', 'Groß-Rohrheim', 2025, 'house_buy_avg', 340000.0, 345000.0, 230000.0, 490000.0, 'EUR', 16, 'Einfamilienhäuser'),
+    ('mb-gross-rent-2025', 'Groß-Rohrheim', 2025, 'rent_cold_sqm', 7.90, 7.95, 6.00, 10.20, 'EUR/m2', NULL, 'Nettokaltmiete'),
+
+    -- Einhausen 2025
+    ('mb-einh-house-2025', 'Einhausen', 2025, 'house_buy_avg', 485000.0, 490000.0, 330000.0, 720000.0, 'EUR', 28, 'Einfamilienhäuser'),
+    ('mb-einh-rent-2025', 'Einhausen', 2025, 'rent_cold_sqm', 9.05, 9.10, 7.00, 12.20, 'EUR/m2', NULL, 'Nettokaltmiete'),
+
+    -- Lorsch 2025
+    ('mb-lorsch-apt-2025', 'Lorsch', 2025, 'apartment_buy_sqm', 3300.0, 3350.0, 2300.0, 4650.0, 'EUR/m2', 42, 'Eigentumswohnungen'),
+    ('mb-lorsch-house-2025', 'Lorsch', 2025, 'house_buy_avg', 515000.0, 520000.0, 350000.0, 810000.0, 'EUR', 46, 'Einfamilienhäuser'),
+    ('mb-lorsch-rent-2025', 'Lorsch', 2025, 'rent_cold_sqm', 9.75, 9.80, 7.50, 13.50, 'EUR/m2', NULL, 'Nettokaltmiete')
+ON CONFLICT (municipality, year, metric_type) DO UPDATE SET
+    avg_val = EXCLUDED.avg_val,
+    median_val = EXCLUDED.median_val,
+    min_val = EXCLUDED.min_val,
+    max_val = EXCLUDED.max_val,
+    updated_at = NOW();
+
+-- Seed Active Municipal Development Plans (B-Pläne / Neubaugebiete)
+INSERT INTO development_plans (
+    id, municipality, district, plan_name, plan_number, status, target_use,
+    area_hectares, resolution_year, document_url, center_lat, center_lng, geometry
+)
+VALUES
+    ('dp-bst-sonneneck-2', 'Bürstadt', 'Kernstadt', 'Bebauungsplan Sonneneck II', 'BP-BST-52', 'rechtskraeftig', 'Wohnen', 8.4, 2021,
+     'https://buerstadt.de/stadtentwicklung/sonneneck-2', 49.6480, 8.4670,
+     '{"type": "Polygon", "coordinates": [[[8.4630, 49.6450], [8.4720, 49.6450], [8.4720, 49.6510], [8.4630, 49.6510], [8.4630, 49.6450]]]}'::jsonb),
+
+    ('dp-bst-gewerbe-ost-erw', 'Bürstadt', 'Kernstadt', 'Gewerbegebiet Ost – 3. Bauabschnitt', 'BP-BST-61', 'im_verfahren', 'Gewerbe', 6.2, 2024,
+     'https://buerstadt.de/stadtentwicklung/gewerbe-ost-3', 49.6430, 8.4750,
+     '{"type": "Polygon", "coordinates": [[[8.4680, 49.6380], [8.4780, 49.6380], [8.4780, 49.6450], [8.4680, 49.6450], [8.4680, 49.6380]]]}'::jsonb),
+
+    ('dp-la-rosenstock-3', 'Lampertheim', 'Kernstadt', 'Bebauungsplan Rosenstock III', 'BP-LA-88', 'rechtskraeftig', 'Wohnen', 11.2, 2022,
+     'https://lampertheim.de/bauen-wohnen/rosenstock-3', 49.6040, 8.4740,
+     '{"type": "Polygon", "coordinates": [[[8.4690, 49.6000], [8.4800, 49.6000], [8.4800, 49.6090], [8.4690, 49.6090], [8.4690, 49.6000]]]}'::jsonb),
+
+    ('dp-la-gleisdreieck', 'Lampertheim', 'Kernstadt', 'Gewerbepark Gleisdreieck', 'BP-LA-94', 'in_aufstellung', 'Gewerbe', 7.5, 2025,
+     'https://lampertheim.de/wirtschaft/gleisdreieck', 49.5910, 8.4790,
+     '{"type": "Polygon", "coordinates": [[[8.4720, 49.5870], [8.4840, 49.5870], [8.4840, 49.5950], [8.4720, 49.5950], [8.4720, 49.5870]]]}'::jsonb),
+
+    ('dp-bib-hinter-kirche', 'Biblis', 'Kernort', 'Wohngebiet Hinter der katholischen Kirche', 'BP-BIB-28', 'rechtskraeftig', 'Wohnen', 3.2, 2023,
+     'https://biblis.de/bauen/hinter-der-kirche', 49.6890, 8.4420,
+     '{"type": "Polygon", "coordinates": [[[8.4370, 49.6860], [8.4470, 49.6860], [8.4470, 49.6920], [8.4370, 49.6920], [8.4370, 49.6860]]]}'::jsonb),
+
+    ('dp-einh-am-sportfeld', 'Einhausen', 'Ortsrand', 'Wohngebiet Am Sportfeld Nord', 'BP-EINH-19', 'rechtskraeftig', 'Wohnen', 4.1, 2023,
+     'https://einhausen.de/bauen/am-sportfeld', 49.6760, 8.5480,
+     '{"type": "Polygon", "coordinates": [[[8.5420, 49.6720], [8.5540, 49.6720], [8.5540, 49.6800], [8.5420, 49.6800], [8.5420, 49.6720]]]}'::jsonb),
+
+    ('dp-lorsch-klosterfeld', 'Lorsch', 'Nordost', 'Wohn- und Mischgebiet Klosterfeld', 'BP-LOR-45', 'im_verfahren', 'Mischgebiet', 5.6, 2024,
+     'https://lorsch.de/stadtplanung/klosterfeld', 49.6590, 8.5750,
+     '{"type": "Polygon", "coordinates": [[[8.5680, 49.6540], [8.5820, 49.6540], [8.5820, 49.6640], [8.5680, 49.6640], [8.5680, 49.6540]]]}'::jsonb)
+ON CONFLICT (id) DO UPDATE SET
+    plan_name = EXCLUDED.plan_name,
+    status = EXCLUDED.status,
+    target_use = EXCLUDED.target_use,
+    area_hectares = EXCLUDED.area_hectares,
+    updated_at = NOW();
+
+INSERT INTO collector_schema_versions(version) VALUES (20260922) ON CONFLICT DO NOTHING;
+

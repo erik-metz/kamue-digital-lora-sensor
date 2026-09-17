@@ -7,6 +7,7 @@ from endpoints import (
     infrastructure,
     map_sensors,
     mobility,
+    realestate,
     sensors,
     social_daily_life,
     street_closures,
@@ -31,6 +32,7 @@ api_router.include_router(demographics.router)
 api_router.include_router(infrastructure.router)
 api_router.include_router(environment.router)
 api_router.include_router(social_daily_life.router)
+api_router.include_router(realestate.router)
 
 
 

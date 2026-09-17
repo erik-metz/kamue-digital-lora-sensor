@@ -47,6 +47,12 @@ export default async function RegionalStatistikPage() {
               Sensor-Karte
             </Link>
             <Link
+              href="/bauen-wohnen"
+              className="text-slate-300 hover:text-emerald-400 transition-colors"
+            >
+              Bauen & Wohnen
+            </Link>
+            <Link
               href="/demografie"
               className="text-slate-300 hover:text-emerald-400 transition-colors"
             >

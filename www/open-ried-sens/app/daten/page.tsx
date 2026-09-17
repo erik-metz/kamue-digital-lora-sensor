@@ -2,6 +2,7 @@ import { env } from "@/env";
 import {
   Activity,
   ArrowLeft,
+  Building2,
   Code2,
   Database,
   ExternalLink,
@@ -46,6 +47,13 @@ export default async function DataDocsPage() {
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Sensor-Karte</span>
+            </Link>
+            <Link
+              href="/bauen-wohnen"
+              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 transition-colors"
+            >
+              <Building2 className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Bauen & Wohnen</span>
             </Link>
             <Link
               href="/demografie"
@@ -216,6 +224,50 @@ export default async function DataDocsPage() {
               <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Schulen & Kitas</span>
               <p className="text-emerald-400 font-bold">GET /api/v1/demographics/facilities</p>
               <p className="text-slate-400 font-sans text-xs">Standorte, Kapazitäten, aktuelle Schülerzahlen, Träger und Betreuungsquoten.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* REAL ESTATE & BUILDINGS SECTION */}
+        <section className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-100 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-emerald-400" />
+                Immobilien, Bauen &amp; Bodenrichtwerte (BORIS &amp; Zensus 2022)
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">
+                Amtliche Bodenrichtwerte (BORIS Hessen dl-zero-de/2.0), Gebäudealter, Heizungsenergieträger, Bautätigkeit und Neubaugebiete für das Ried.
+              </p>
+            </div>
+            <Link
+              href="/bauen-wohnen"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold hover:bg-emerald-500/20 transition-colors shrink-0"
+            >
+              Immobilien-Atlas <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Bodenrichtwerte (BORIS)</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/realestate/boris</p>
+              <p className="text-slate-400 font-sans text-xs">Amtliche Bodenrichtwertzonen (€/m²), Nutzungsarten (Wohnen, Gewerbe, Acker) und WGFZ-Werte.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Gebäudealter &amp; Heizung</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/realestate/housing-stock</p>
+              <p className="text-slate-400 font-sans text-xs">Zensus 2022 Altersklassen (vor 1919 bis 2011+), Heizungsarten (Wärmepumpe, Gas, Öl) und Leerstände.</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Bautätigkeit (Genehmigt / Fertig)</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/realestate/construction-activity</p>
+              <p className="text-slate-400 font-sans text-xs">Statistik Hessen F II 1 Zeitreihen: Genehmigte Wohnungen vs. fertiggestellte Wohngebäude (2018–2025).</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 font-mono text-xs">
+              <span className="text-[10px] text-slate-500 font-sans uppercase font-bold">Neubaugebiete &amp; B-Pläne</span>
+              <p className="text-emerald-400 font-bold">GET /api/v1/realestate/development-plans</p>
+              <p className="text-slate-400 font-sans text-xs">Aktive Bebauungspläne (Sonneneck, Rosenstock, etc.) mit Rechtsstatus, Hektar und Gemeindelinks.</p>
             </div>
           </div>
         </section>
