@@ -242,12 +242,12 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       cropZonesGroupRef.current = cropZonesGroup;
       floodGaugesGroupRef.current = floodGaugesGroup;
 
-      const starkregenWms = L.tileLayer.wms("https://gds.hessen.de/wms/hlug_starkregen", {
-        layers: "starkregen_gefahrenkarte",
+      const starkregenWms = L.tileLayer.wms("https://sgx.geodatenzentrum.de/wms_starkregen", {
+        layers: "tiefe_extrem",
         format: "image/png",
         transparent: true,
-        opacity: 0.60,
-        attribution: "© HLNUG / Geoportal Hessen",
+        opacity: 0.65,
+        attribution: "© BKG / Bund Geodatenzentrum",
         maxZoom: 19,
       });
       starkregenWmsRef.current = starkregenWms;

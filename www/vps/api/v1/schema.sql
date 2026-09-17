@@ -1426,14 +1426,16 @@ ON CONFLICT (id) DO UPDATE SET
     name = EXCLUDED.name,
     geojson = EXCLUDED.geojson;
 
--- Seed Environmental WMS Tile Services (Geoportal Hessen)
+-- Seed Environmental WMS Tile Services (BKG & Geoportal Hessen)
 INSERT INTO environmental_map_services (id, title, category, service_type, wms_url, layer_name, attribution, default_opacity)
 VALUES
-    ('wms-starkregen-hessen', 'Starkregengefahrenkarte Hessen (KLIMPRAX)', 'starkregen', 'WMS', 'https://gds.hessen.de/wms/hlug_starkregen', 'starkregen_gefahrenkarte', '© HLNUG / Geoportal Hessen (dl-de/by-2-0)', 0.60),
-    ('wms-hochwasser-hq100', 'Überschwemmungsgebiete HQ100 (HQ100 / HQextrem)', 'flood_risk', 'WMS', 'https://gds.hessen.de/wms/hlug_hwgk_ueberschwemmungsgebiete', 'ueberschwemmungsgebiete_hq100', '© HLNUG / Hessische Wasserwirtschaft', 0.55)
+    ('wms-starkregen-bkg', 'Hinweiskarte Starkregengefahren (BKG)', 'starkregen', 'WMS', 'https://sgx.geodatenzentrum.de/wms_starkregen', 'tiefe_extrem', '© BKG / Bund Geodatenzentrum (dl-de/by-2-0)', 0.65),
+    ('wms-hochwasser-hq100', 'Überschwemmungsgebiete HQ100 (HLNUG)', 'flood_risk', 'WMS', 'https://geodienste-umwelt.hessen.de/arcgis/services/inspire/gebiete_naturbedingter_risiken/MapServer/WMSServer', 'Ueberschwemmungsgebiete_HQ100_nach_HWG', '© HLNUG / Hessische Wasserwirtschaft (CC BY 4.0)', 0.55)
 ON CONFLICT (id) DO UPDATE SET
     title = EXCLUDED.title,
-    wms_url = EXCLUDED.wms_url;
+    wms_url = EXCLUDED.wms_url,
+    layer_name = EXCLUDED.layer_name,
+    attribution = EXCLUDED.attribution;
 
 CREATE TABLE IF NOT EXISTS groundwater_stations (
     id VARCHAR(64) PRIMARY KEY,
