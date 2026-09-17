@@ -55,6 +55,12 @@ import {
   formatEuro,
 } from "@/lib/realestateData";
 import { BASELINE_DISTRICTS_GEOJSON } from "@/lib/electionsData";
+import {
+  type MapLayerId,
+  DEFAULT_MAP_LAYERS,
+  DEFAULT_MAP_CENTER,
+  DEFAULT_MAP_ZOOM,
+} from "@/lib/urlState";
 import { useEffect, useRef, useState } from "react";
 
 export type { SensorNode } from "@/lib/mapData";
@@ -72,9 +78,26 @@ interface MapProps {
   categories: Category[];
   mode: MapMode;
   now: number;
+  initialCenter?: [number, number];
+  initialZoom?: number;
+  layers?: Record<MapLayerId, boolean>;
+  onViewportChange?: (center: [number, number], zoom: number) => void;
+  onLayerToggle?: (layerId: MapLayerId, enabled: boolean) => void;
 }
 
-export default function MapComponent({ nodes, selectedNodeId, onSelectNode, categories, mode, now }: MapProps) {
+export default function MapComponent({
+  nodes,
+  selectedNodeId,
+  onSelectNode,
+  categories,
+  mode,
+  now,
+  initialCenter,
+  initialZoom,
+  layers,
+  onViewportChange,
+  onLayerToggle,
+}: MapProps) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const groupRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -84,36 +107,77 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
   const markers = useRef(new Map<string, ColoredMarker>());
   const selectedRef = useRef<string | undefined>(undefined);
   const onSelectRef = useRef(onSelectNode);
+  const onViewportChangeRef = useRef(onViewportChange);
+  const onLayerToggleRef = useRef(onLayerToggle);
   const [ready, setReady] = useState(false);
-  const [zoom, setZoom] = useState(12);
+  const [zoom, setZoom] = useState(initialZoom ?? DEFAULT_MAP_ZOOM);
   const [failed, setFailed] = useState(false);
-  const [showRailMobility, setShowRailMobility] = useState(true);
-  const [showWasteTrucks, setShowWasteTrucks] = useState(true);
-  const [showBuses, setShowBuses] = useState(true);
-  const [showBusStops, setShowBusStops] = useState(true);
-  const [showTraffic, setShowTraffic] = useState(true);
+
+  const initialL = layers ?? DEFAULT_MAP_LAYERS;
+  const [showRailMobility, setShowRailMobility] = useState(initialL.trains);
+  const [showWasteTrucks, setShowWasteTrucks] = useState(initialL.waste);
+  const [showBuses, setShowBuses] = useState(initialL.buses);
+  const [showBusStops, setShowBusStops] = useState(initialL.stops);
+  const [showTraffic, setShowTraffic] = useState(initialL.traffic);
   const [trafficCorridors, setTrafficCorridors] = useState<TrafficCorridor[]>([]);
-  const [showClosures, setShowClosures] = useState(true);
+  const [showClosures, setShowClosures] = useState(initialL.closures);
   const [streetClosures, setStreetClosures] = useState<StreetClosure[]>([]);
-  const [showEvCharging, setShowEvCharging] = useState(true);
-  const [showEnergyFacilities, setShowEnergyFacilities] = useState(true);
-  const [showWifiHotspots, setShowWifiHotspots] = useState(true);
-  const [showRoadConditions, setShowRoadConditions] = useState(true);
-  const [showBroadband, setShowBroadband] = useState(false);
+  const [showEvCharging, setShowEvCharging] = useState(initialL.charging);
+  const [showEnergyFacilities, setShowEnergyFacilities] = useState(initialL.energy);
+  const [showWifiHotspots, setShowWifiHotspots] = useState(initialL.wifi);
+  const [showRoadConditions, setShowRoadConditions] = useState(initialL.road);
+  const [showBroadband, setShowBroadband] = useState(initialL.broadband);
   const [evChargers, setEvChargers] = useState<EvChargingStation[]>(VERIFIED_EV_CHARGERS);
   const [energyFacilities, setEnergyFacilities] = useState<LiveEnergyFacility[]>([]);
   const [wifiHotspots, setWifiHotspots] = useState<WifiHotspot[]>(VERIFIED_WIFI_HOTSPOTS);
   const [roadSegments, setRoadSegments] = useState<RoadSegment[]>(VERIFIED_ROAD_SEGMENTS);
   const [broadbandAreas, setBroadbandAreas] = useState<BroadbandArea[]>(VERIFIED_BROADBAND_AREAS);
-  const [showNatureAreas, setShowNatureAreas] = useState(true);
-  const [showCropZones, setShowCropZones] = useState(true);
-  const [showFloodGauges, setShowFloodGauges] = useState(true);
-  const [showStarkregenWMS, setShowStarkregenWMS] = useState(false);
-  const [showBoris, setShowBoris] = useState(false);
-  const [showDevPlans, setShowDevPlans] = useState(false);
-  const [showWahlbezirke, setShowWahlbezirke] = useState(false);
-  const [showCompanies, setShowCompanies] = useState(true);
+  const [showNatureAreas, setShowNatureAreas] = useState(initialL.nature);
+  const [showCropZones, setShowCropZones] = useState(initialL.crops);
+  const [showFloodGauges, setShowFloodGauges] = useState(initialL.floods);
+  const [showStarkregenWMS, setShowStarkregenWMS] = useState(initialL.starkregen);
+  const [showBoris, setShowBoris] = useState(initialL.boris);
+  const [showDevPlans, setShowDevPlans] = useState(initialL.devplans);
+  const [showWahlbezirke, setShowWahlbezirke] = useState(initialL.elections);
+  const [showCompanies, setShowCompanies] = useState(initialL.companies);
   const [companies, setCompanies] = useState<Company[]>(BASELINE_COMPANIES);
+
+  useEffect(() => { onSelectRef.current = onSelectNode; }, [onSelectNode]);
+  useEffect(() => { onViewportChangeRef.current = onViewportChange; }, [onViewportChange]);
+  useEffect(() => { onLayerToggleRef.current = onLayerToggle; }, [onLayerToggle]);
+
+  useEffect(() => {
+    if (!layers) return;
+    setShowNatureAreas(layers.nature);
+    setShowCropZones(layers.crops);
+    setShowFloodGauges(layers.floods);
+    setShowStarkregenWMS(layers.starkregen);
+    setShowEvCharging(layers.charging);
+    setShowEnergyFacilities(layers.energy);
+    setShowRoadConditions(layers.road);
+    setShowWifiHotspots(layers.wifi);
+    setShowBroadband(layers.broadband);
+    setShowBoris(layers.boris);
+    setShowDevPlans(layers.devplans);
+    setShowWahlbezirke(layers.elections);
+    setShowCompanies(layers.companies);
+    setShowClosures(layers.closures);
+    setShowTraffic(layers.traffic);
+    setShowBuses(layers.buses);
+    setShowBusStops(layers.stops);
+    setShowWasteTrucks(layers.waste);
+    setShowRailMobility(layers.trains);
+  }, [layers]);
+
+  const toggleLayer = (
+    id: MapLayerId,
+    current: boolean,
+    setter: React.Dispatch<React.SetStateAction<boolean>>
+  ) => {
+    const next = !current;
+    setter(next);
+    onLayerToggleRef.current?.(id, next);
+  };
 
   const railTracksGroupRef = useRef<L.LayerGroup | null>(null);
   const trainsGroupRef = useRef<L.LayerGroup | null>(null);
@@ -169,7 +233,11 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       (window as typeof window & { L: typeof L }).L = L;
       await import("leaflet.markercluster");
       if (cancelled || !container.current) return;
-      const map = L.map(container.current, { center: [49.62, 8.46], zoom: 12, maxZoom: 19 });
+      const map = L.map(container.current, {
+        center: initialCenter ?? DEFAULT_MAP_CENTER,
+        zoom: initialZoom ?? DEFAULT_MAP_ZOOM,
+        maxZoom: 19,
+      });
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19,
       }).addTo(map);
@@ -345,7 +413,14 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       }
       prevModeRef.current = mode;
 
-      map.on("zoomend", () => setZoom(map.getZoom()));
+      const handleViewport = () => {
+        const z = map.getZoom();
+        setZoom(z);
+        const c = map.getCenter();
+        onViewportChangeRef.current?.([c.lat, c.lng], z);
+      };
+      map.on("zoomend", handleViewport);
+      map.on("moveend", handleViewport);
       mapRef.current = map;
       groupRef.current = group;
       setReady(true);
@@ -2012,7 +2087,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showNatureAreas ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowNatureAreas((prev) => !prev)}
+        onClick={() => toggleLayer("nature", showNatureAreas, setShowNatureAreas)}
         title="Naturschutzgebiete & Schutzgebiete im Ried ein-/ausblenden"
       >
         🌿 Naturschutz {showNatureAreas ? "An" : "Aus"}
@@ -2020,7 +2095,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showCropZones && zoom >= 13 ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowCropZones((prev) => !prev)}
+        onClick={() => toggleLayer("crops", showCropZones, setShowCropZones)}
         title={zoom < 13 ? "Landwirtschaftliche Kulturen ab Zoom 13 sichtbar" : "Kulturen & Spargelfelder ein-/ausblenden"}
       >
         🌾 Kulturen {showCropZones ? (zoom >= 13 ? "An" : "Zoom ≥13") : "Aus"}
@@ -2028,7 +2103,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showFloodGauges ? "border-sky-400 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowFloodGauges((prev) => !prev)}
+        onClick={() => toggleLayer("floods", showFloodGauges, setShowFloodGauges)}
         title="Rhein- & Weschnitz-Pegel ein-/ausblenden"
       >
         🌊 Pegel {showFloodGauges ? "An" : "Aus"}
@@ -2036,7 +2111,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showStarkregenWMS ? "border-blue-500 text-blue-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowStarkregenWMS((prev) => !prev)}
+        onClick={() => toggleLayer("starkregen", showStarkregenWMS, setShowStarkregenWMS)}
         title="Offizielle HLNUG Starkregengefahrenkarte Hessen ein-/ausblenden"
       >
         🌧️ Starkregen-WMS {showStarkregenWMS ? "An" : "Aus"}
@@ -2046,7 +2121,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showEvCharging ? "border-emerald-400 text-emerald-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowEvCharging((prev) => !prev)}
+        onClick={() => toggleLayer("charging", showEvCharging, setShowEvCharging)}
         title="Elektro-Ladesäulen und Live-Belegung ein-/ausblenden"
       >
         ⚡ Ladesäulen {showEvCharging ? "An" : "Aus"}
@@ -2054,7 +2129,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showEnergyFacilities ? "border-amber-400 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowEnergyFacilities((prev) => !prev)}
+        onClick={() => toggleLayer("energy", showEnergyFacilities, setShowEnergyFacilities)}
         title="ZAKB Biogas & Solarparks im Ried ein-/ausblenden"
       >
         ☀️ Ökostrom {showEnergyFacilities ? "An" : "Aus"}
@@ -2062,7 +2137,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showRoadConditions ? "border-lime-400 text-lime-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowRoadConditions((prev) => !prev)}
+        onClick={() => toggleLayer("road", showRoadConditions, setShowRoadConditions)}
         title="KI-Straßenzustandsbewertung (ZAKB-Flottensensoren) ein-/ausblenden"
       >
         🛣️ Straßen-KI {showRoadConditions ? "An" : "Aus"}
@@ -2070,7 +2145,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showWifiHotspots ? "border-cyan-400 text-cyan-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowWifiHotspots((prev) => !prev)}
+        onClick={() => toggleLayer("wifi", showWifiHotspots, setShowWifiHotspots)}
         title="Öffentliches WLAN (Hessen-WLAN & Freifunk) ein-/ausblenden"
       >
         📶 WLAN {showWifiHotspots ? "An" : "Aus"}
@@ -2078,7 +2153,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showBroadband ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowBroadband((prev) => !prev)}
+        onClick={() => toggleLayer("broadband", showBroadband, setShowBroadband)}
         title="Glasfaser & Breitband-Gebietsabdeckung ein-/ausblenden"
       >
         🌐 Glasfaser {showBroadband ? "An" : "Aus"}
@@ -2088,7 +2163,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showBoris ? "border-teal-400 text-teal-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowBoris((prev) => !prev)}
+        onClick={() => toggleLayer("boris", showBoris, setShowBoris)}
         title="BORIS Hessen Bodenrichtwertzonen ein-/ausblenden"
       >
         🏡 Bodenrichtwerte {showBoris ? "An" : "Aus"}
@@ -2096,7 +2171,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showDevPlans ? "border-amber-400 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowDevPlans((prev) => !prev)}
+        onClick={() => toggleLayer("devplans", showDevPlans, setShowDevPlans)}
         title="Bebauungspläne & Neubaugebiete (B-Pläne) ein-/ausblenden"
       >
         🏗️ B-Pläne {showDevPlans ? "An" : "Aus"}
@@ -2104,7 +2179,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showWahlbezirke ? "border-purple-400 text-purple-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowWahlbezirke((prev) => !prev)}
+        onClick={() => toggleLayer("elections", showWahlbezirke, setShowWahlbezirke)}
         title="Wahlbezirke & Wahlbeteiligung (Kommunalwahl) ein-/ausblenden"
       >
         🗳️ Wahlbezirke {showWahlbezirke ? "An" : "Aus"}
@@ -2112,7 +2187,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showCompanies ? "border-sky-400 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowCompanies((prev) => !prev)}
+        onClick={() => toggleLayer("companies", showCompanies, setShowCompanies)}
         title="Bedeutende Arbeitgeber & Gewerbestandorte ein-/ausblenden"
       >
         🏢 Arbeitgeber {showCompanies ? "An" : "Aus"}
@@ -2123,7 +2198,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showClosures ? "border-red-500 text-red-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowClosures((prev) => !prev)}
+        onClick={() => toggleLayer("closures", showClosures, setShowClosures)}
         title="Straßensperrungen und Baustellen im Ried ein-/ausblenden"
       >
         ⛔ Sperrungen ({streetClosures.filter((c) => isClosureActive(c, now)).length}) {showClosures ? "An" : "Aus"}
@@ -2131,7 +2206,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showTraffic ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowTraffic((prev) => !prev)}
+        onClick={() => toggleLayer("traffic", showTraffic, setShowTraffic)}
         title="Verkehrslage und Staus im Ried ein-/ausblenden"
       >
         🚗 Verkehr {showTraffic ? "An" : "Aus"}
@@ -2139,7 +2214,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showBuses ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowBuses((prev) => !prev)}
+        onClick={() => toggleLayer("buses", showBuses, setShowBuses)}
         title="VRN Busse im Ried ein-/ausblenden"
       >
         🚌 Busse {showBuses ? "An" : "Aus"}
@@ -2147,7 +2222,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showBusStops && zoom >= 13 ? "border-amber-500 text-amber-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowBusStops((prev) => !prev)}
+        onClick={() => toggleLayer("stops", showBusStops, setShowBusStops)}
         title={zoom < 13 ? "Haltestellen ab Zoomstufe 13 sichtbar (aktuell: Zoom " + zoom + ")" : "VRN Haltestellen ein-/ausblenden"}
       >
         🚏 Haltestellen {showBusStops ? (zoom >= 13 ? "An" : "Zoom ≥13") : "Aus"}
@@ -2155,7 +2230,7 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showWasteTrucks ? "border-emerald-500 text-emerald-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowWasteTrucks((prev) => !prev)}
+        onClick={() => toggleLayer("waste", showWasteTrucks, setShowWasteTrucks)}
         title="ZAKB Müllabfuhr im Ried ein-/ausblenden"
       >
         🚛 Müllabfuhr {showWasteTrucks ? "An" : "Aus"}
@@ -2163,14 +2238,23 @@ export default function MapComponent({ nodes, selectedNodeId, onSelectNode, cate
       <button
         type="button"
         className={`map-control ${showRailMobility ? "border-sky-500 text-sky-300 font-semibold" : "opacity-60"}`}
-        onClick={() => setShowRailMobility((prev) => !prev)}
+        onClick={() => toggleLayer("trains", showRailMobility, setShowRailMobility)}
         title="Züge und Bahnübergänge im Ried ein-/ausblenden"
       >
         🚅 Züge & BÜ {showRailMobility ? "An" : "Aus"}
       </button>
-      <button type="button" className="map-control" onClick={() => mapRef.current?.setView([49.62, 8.46], 12)}>Ried</button>
+      <button type="button" className="map-control" onClick={() => {
+        mapRef.current?.setView(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+        onViewportChangeRef.current?.(DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM);
+      }}>Ried</button>
       <button type="button" className="map-control" disabled={!nodes.length} onClick={() => {
-        if (nodes.length) mapRef.current?.fitBounds(L.latLngBounds(nodes.map((n) => [n.lat, n.lng])), { padding: [45, 45], maxZoom: 15 });
+        if (nodes.length && mapRef.current) {
+          const bounds = L.latLngBounds(nodes.map((n) => [n.lat, n.lng]));
+          mapRef.current.fitBounds(bounds, { padding: [45, 45], maxZoom: 15 });
+          const c = mapRef.current.getCenter();
+          const z = mapRef.current.getZoom();
+          onViewportChangeRef.current?.([c.lat, c.lng], z);
+        }
       }}>Alle Standorte</button>
     </div>
     {!nodes.length && ready ? <p className="absolute bottom-8 left-3 right-3 z-[400] rounded-xl bg-slate-950/95 p-4 text-sm text-slate-200">Keine Standorte für diese Auswahl. Wähle eine weitere Gruppe oder „Alle“.</p> : null}

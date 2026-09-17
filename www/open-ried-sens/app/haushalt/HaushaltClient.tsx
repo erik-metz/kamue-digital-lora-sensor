@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Landmark,
@@ -24,6 +24,11 @@ import {
 import { FinanceBudget, FinanceExpenditure, MunicipalFinanceComparison } from "@/lib/financeData";
 import { ElectionEvent } from "@/lib/electionsData";
 import { DevelopmentPlan, ConstructionPermit } from "@/lib/realestateData";
+import {
+  parseSubpageParams,
+  serializeSubpageParams,
+  updateUrlDebounced,
+} from "@/lib/urlState";
 
 interface Props {
   budgets: FinanceBudget[];
@@ -45,8 +50,65 @@ export default function HaushaltClient({
   const [selectedMunicipality, setSelectedMunicipality] = useState<string>("Bürstadt");
   const [selectedYear, setSelectedYear] = useState<number>(2024);
   const [activeTab, setActiveTab] = useState<"haushalt" | "ausgaben" | "wahlen" | "bauen">("haushalt");
+  const [mounted, setMounted] = useState(false);
 
   const municipalities = ["Bürstadt", "Lampertheim", "Biblis", "Groß-Rohrheim"];
+
+  // Initial read from URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = parseSubpageParams(window.location.search, {
+      tab: "haushalt",
+      muni: "Bürstadt",
+      year: "2024",
+    });
+    if (["haushalt", "ausgaben", "wahlen", "bauen"].includes(p.tab)) {
+      setActiveTab(p.tab as any);
+    }
+    const matchedMuni = municipalities.find(
+      (m) => m.toLowerCase() === p.muni.toLowerCase()
+    );
+    if (matchedMuni) setSelectedMunicipality(matchedMuni);
+    const y = parseInt(p.year, 10);
+    if (!Number.isNaN(y) && y >= 2020 && y <= 2030) setSelectedYear(y);
+    setMounted(true);
+  }, []);
+
+  // Listen to popstate
+  useEffect(() => {
+    const onPopState = () => {
+      const p = parseSubpageParams(window.location.search, {
+        tab: "haushalt",
+        muni: "Bürstadt",
+        year: "2024",
+      });
+      if (["haushalt", "ausgaben", "wahlen", "bauen"].includes(p.tab)) {
+        setActiveTab(p.tab as any);
+      }
+      const matchedMuni = municipalities.find(
+        (m) => m.toLowerCase() === p.muni.toLowerCase()
+      );
+      if (matchedMuni) setSelectedMunicipality(matchedMuni);
+      const y = parseInt(p.year, 10);
+      if (!Number.isNaN(y) && y >= 2020 && y <= 2030) setSelectedYear(y);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // Sync to URL
+  useEffect(() => {
+    if (!mounted) return;
+    const query = serializeSubpageParams(
+      {
+        tab: activeTab,
+        muni: selectedMunicipality,
+        year: selectedYear,
+      },
+      { tab: "haushalt", muni: "Bürstadt", year: 2024 }
+    );
+    updateUrlDebounced(query);
+  }, [mounted, activeTab, selectedMunicipality, selectedYear]);
 
   // Filtered Budget
   const currentBudget = useMemo(() => {

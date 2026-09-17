@@ -14,7 +14,7 @@ import {
   Search,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BASELINE_AGE_STRUCTURE,
   BASELINE_COMMUTER_FLOWS,
@@ -22,6 +22,11 @@ import {
   type DemographicSummary,
   type EducationalFacility,
 } from "@/lib/demographicsData";
+import {
+  parseSubpageParams,
+  serializeSubpageParams,
+  updateUrlDebounced,
+} from "@/lib/urlState";
 
 interface Props {
   summaries: DemographicSummary[];
@@ -32,6 +37,51 @@ export default function DemographicsClient({ summaries, facilities }: Props) {
   const [selectedMuni, setSelectedMuni] = useState<string>("all");
   const [facilitySearch, setFacilitySearch] = useState<string>("");
   const [facilityTypeFilter, setFacilityTypeFilter] = useState<string>("all");
+  const [mounted, setMounted] = useState(false);
+
+  // Initial read from URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = parseSubpageParams(window.location.search, {
+      muni: "all",
+      q: "",
+      type: "all",
+    });
+    if (p.muni) setSelectedMuni(p.muni);
+    if (p.q) setFacilitySearch(p.q);
+    if (p.type) setFacilityTypeFilter(p.type);
+    setMounted(true);
+  }, []);
+
+  // Listen to popstate
+  useEffect(() => {
+    const onPopState = () => {
+      const p = parseSubpageParams(window.location.search, {
+        muni: "all",
+        q: "",
+        type: "all",
+      });
+      setSelectedMuni(p.muni || "all");
+      setFacilitySearch(p.q || "");
+      setFacilityTypeFilter(p.type || "all");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // Sync to URL
+  useEffect(() => {
+    if (!mounted) return;
+    const query = serializeSubpageParams(
+      {
+        muni: selectedMuni,
+        q: facilitySearch,
+        type: facilityTypeFilter,
+      },
+      { muni: "all", q: "", type: "all" }
+    );
+    updateUrlDebounced(query);
+  }, [mounted, selectedMuni, facilitySearch, facilityTypeFilter]);
 
   const activeSummary = useMemo(() => {
     if (selectedMuni === "all") {

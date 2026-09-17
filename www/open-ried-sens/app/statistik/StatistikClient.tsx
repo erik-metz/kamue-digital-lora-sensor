@@ -25,13 +25,18 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   type CulturalEvent,
   type RegionalFacility,
   type SocialKpiSummary,
   type ZakbWasteStat,
 } from "@/lib/regionalStats";
+import {
+  parseSubpageParams,
+  serializeSubpageParams,
+  updateUrlDebounced,
+} from "@/lib/urlState";
 
 interface Props {
   summaries: SocialKpiSummary[];
@@ -52,6 +57,55 @@ export default function StatistikClient({
   >("all");
   const [facilityCategoryFilter, setFacilityCategoryFilter] =
     useState<string>("all");
+  const [mounted, setMounted] = useState(false);
+
+  // Initial read from URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = parseSubpageParams(window.location.search, {
+      tab: "all",
+      muni: "Bürstadt",
+      cat: "all",
+    });
+    if (["all", "employment", "healthcare", "waste", "culture", "tourism"].includes(p.tab)) {
+      setActiveTab(p.tab as any);
+    }
+    if (p.muni) setSelectedMuni(p.muni);
+    if (p.cat) setFacilityCategoryFilter(p.cat);
+    setMounted(true);
+  }, []);
+
+  // Listen to popstate
+  useEffect(() => {
+    const onPopState = () => {
+      const p = parseSubpageParams(window.location.search, {
+        tab: "all",
+        muni: "Bürstadt",
+        cat: "all",
+      });
+      if (["all", "employment", "healthcare", "waste", "culture", "tourism"].includes(p.tab)) {
+        setActiveTab(p.tab as any);
+      }
+      setSelectedMuni(p.muni || "Bürstadt");
+      setFacilityCategoryFilter(p.cat || "all");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // Sync to URL
+  useEffect(() => {
+    if (!mounted) return;
+    const query = serializeSubpageParams(
+      {
+        tab: activeTab,
+        muni: selectedMuni,
+        cat: facilityCategoryFilter,
+      },
+      { tab: "all", muni: "Bürstadt", cat: "all" }
+    );
+    updateUrlDebounced(query);
+  }, [mounted, activeTab, selectedMuni, facilityCategoryFilter]);
 
   const muniList = useMemo(() => {
     return summaries.map((s) => s.municipality);

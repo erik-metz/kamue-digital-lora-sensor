@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Briefcase,
@@ -32,6 +32,11 @@ import {
   IndustryEmployment,
   StartupInitiative,
 } from "@/lib/economyData";
+import {
+  parseSubpageParams,
+  serializeSubpageParams,
+  updateUrlDebounced,
+} from "@/lib/urlState";
 
 interface Props {
   overview: EconomyOverview;
@@ -58,6 +63,60 @@ export default function WirtschaftClient({
   const [companySearch, setCompanySearch] = useState("");
   const [companyMuniFilter, setCompanyMuniFilter] = useState("all");
   const [companySectorFilter, setCompanySectorFilter] = useState("all");
+  const [mounted, setMounted] = useState(false);
+
+  // Initial read from URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = parseSubpageParams(window.location.search, {
+      tab: "overview",
+      muni: "all",
+      sector: "all",
+      q: "",
+    });
+    if (["overview", "companies", "taxes", "registrations", "industry", "startups"].includes(p.tab)) {
+      setActiveTab(p.tab as any);
+    }
+    if (p.muni) setCompanyMuniFilter(p.muni);
+    if (p.sector) setCompanySectorFilter(p.sector);
+    if (p.q) setCompanySearch(p.q);
+    setMounted(true);
+  }, []);
+
+  // Listen to popstate
+  useEffect(() => {
+    const onPopState = () => {
+      const p = parseSubpageParams(window.location.search, {
+        tab: "overview",
+        muni: "all",
+        sector: "all",
+        q: "",
+      });
+      if (["overview", "companies", "taxes", "registrations", "industry", "startups"].includes(p.tab)) {
+        setActiveTab(p.tab as any);
+      }
+      setCompanyMuniFilter(p.muni || "all");
+      setCompanySectorFilter(p.sector || "all");
+      setCompanySearch(p.q || "");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // Sync to URL
+  useEffect(() => {
+    if (!mounted) return;
+    const query = serializeSubpageParams(
+      {
+        tab: activeTab,
+        muni: companyMuniFilter,
+        sector: companySectorFilter,
+        q: companySearch,
+      },
+      { tab: "overview", muni: "all", sector: "all", q: "" }
+    );
+    updateUrlDebounced(query);
+  }, [mounted, activeTab, companyMuniFilter, companySectorFilter, companySearch]);
 
   // Filter states for Taxes
   const [taxRegionFilter, setTaxRegionFilter] = useState<"all" | "ried" | "bergstrasse" | "odenwald">("all");

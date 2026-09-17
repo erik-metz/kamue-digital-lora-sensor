@@ -38,7 +38,12 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  parseSubpageParams,
+  serializeSubpageParams,
+  updateUrlDebounced,
+} from "@/lib/urlState";
 
 interface Props {
   summaries: RealEstateSummary[];
@@ -61,6 +66,60 @@ export default function BauenWohnenClient({
   const [activeTab, setActiveTab] = useState<"stock" | "energy" | "prices" | "construction">("stock");
   const [borisSearch, setBorisSearch] = useState<string>("");
   const [borisTypeFilter, setBorisTypeFilter] = useState<string>("all");
+  const [mounted, setMounted] = useState(false);
+
+  // Initial read from URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const p = parseSubpageParams(window.location.search, {
+      tab: "stock",
+      muni: "all",
+      q: "",
+      boris_type: "all",
+    });
+    if (["stock", "energy", "prices", "construction"].includes(p.tab)) {
+      setActiveTab(p.tab as any);
+    }
+    if (p.muni) setSelectedMuni(p.muni);
+    if (p.q) setBorisSearch(p.q);
+    if (p.boris_type) setBorisTypeFilter(p.boris_type);
+    setMounted(true);
+  }, []);
+
+  // Listen to popstate
+  useEffect(() => {
+    const onPopState = () => {
+      const p = parseSubpageParams(window.location.search, {
+        tab: "stock",
+        muni: "all",
+        q: "",
+        boris_type: "all",
+      });
+      if (["stock", "energy", "prices", "construction"].includes(p.tab)) {
+        setActiveTab(p.tab as any);
+      }
+      setSelectedMuni(p.muni || "all");
+      setBorisSearch(p.q || "");
+      setBorisTypeFilter(p.boris_type || "all");
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  // Sync to URL
+  useEffect(() => {
+    if (!mounted) return;
+    const query = serializeSubpageParams(
+      {
+        tab: activeTab,
+        muni: selectedMuni,
+        q: borisSearch,
+        boris_type: borisTypeFilter,
+      },
+      { tab: "stock", muni: "all", q: "", boris_type: "all" }
+    );
+    updateUrlDebounced(query);
+  }, [mounted, activeTab, selectedMuni, borisSearch, borisTypeFilter]);
 
   const municipalities = useMemo(() => {
     return summaries.map(s => s.municipality);

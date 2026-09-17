@@ -12,12 +12,28 @@ type Telemetry = { readings: Reading[]; history: Bucket[]; start: string; end: s
 const number = (value: number) => value.toLocaleString("de-DE", { maximumFractionDigits: 2 });
 const time = (value: string) => new Date(value).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
-export default function TelemetryCharts({ node, nodes, onSelectNode }: {
-  node: StationNode; nodes: StationNode[]; onSelectNode: (id: string) => void;
+export default function TelemetryCharts({
+  node,
+  nodes,
+  onSelectNode,
+  selectedMetric,
+  onSelectMetric,
+}: {
+  node: StationNode;
+  nodes: StationNode[];
+  onSelectNode: (id: string) => void;
+  selectedMetric?: string;
+  onSelectMetric?: (metric: string) => void;
 }) {
   const [data, setData] = useState<Telemetry | null>(null);
   const [error, setError] = useState(false);
-  const [selectedSeries, setSelectedSeries] = useState("");
+  const [selectedSeries, setSelectedSeries] = useState(selectedMetric ?? "");
+
+  useEffect(() => {
+    if (selectedMetric !== undefined && selectedMetric !== selectedSeries) {
+      setSelectedSeries(selectedMetric);
+    }
+  }, [selectedMetric]);
   const snapshots = node.categories.some(c => c === "parking" || c === "traffic" || c === "bikes");
   useEffect(() => {
     const controller = new AbortController();
@@ -139,7 +155,11 @@ export default function TelemetryCharts({ node, nodes, onSelectNode }: {
       })()}
       {readings.length > 0 && <>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-          {readings.map(reading => <button key={seriesKey(reading)} type="button" aria-pressed={seriesKey(reading) === (active && seriesKey(active))} onClick={() => setSelectedSeries(seriesKey(reading))} className="min-w-0 text-left rounded-xl border border-slate-700 bg-slate-950/60 p-4 aria-pressed:border-emerald-400 focus-visible:outline-2 focus-visible:outline-emerald-400">
+          {readings.map(reading => <button key={seriesKey(reading)} type="button" aria-pressed={seriesKey(reading) === (active && seriesKey(active))} onClick={() => {
+            const k = seriesKey(reading);
+            setSelectedSeries(k);
+            onSelectMetric?.(k);
+          }} className="min-w-0 text-left rounded-xl border border-slate-700 bg-slate-950/60 p-4 aria-pressed:border-emerald-400 focus-visible:outline-2 focus-visible:outline-emerald-400">
             <span className="block text-sm text-slate-400">{metricLabel(reading)}</span>
             <span className="block mt-2 text-2xl font-bold break-words">
               {reading.metric === "crossing_state" ? (
