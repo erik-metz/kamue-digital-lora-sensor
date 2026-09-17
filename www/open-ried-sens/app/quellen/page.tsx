@@ -227,14 +227,14 @@ const TELEMETRY_SOURCES: TelemetrySourceItem[] = [
     id: "lorawan-community",
     category: "Bürger-LoRaWAN & IoT-Hardware",
     name: "Open Ried Sens DIY Sensor-Stationen",
-    provider: "The Things Network (TTN Community v3) & KAMÜ",
+    provider: "The Things Network (TTN Community v3) & Bürger-Hardware",
     endpointUrl: "https://open-ried-sens.duckdns.org/api/v1/telemetry/batch",
     protocol: "LoRaWAN / Webhook",
-    pollIntervalSec: "30 – 60",
-    pollRateText: "Ereignisgesteuerter Uplink alle 30–60 Sek.",
-    callsPerDay: "~1.440 – 2.880 je Station",
-    metricsPerCycle: "8 Umweltparameter",
-    estimatedRowsPerDay: "~11.500 – 23.000 je Station",
+    pollIntervalSec: "Inaktiv (0 Stationen)",
+    pollRateText: "Aktuell keine aktiven Bürger-Knoten im Feld",
+    callsPerDay: "0 (Schnittstelle bereit)",
+    metricsPerCycle: "8 Umweltparameter (prozessierbar)",
+    estimatedRowsPerDay: "0 (Hardware im Aufbau)",
     dbTables: ["sensor_metadata", "sensor_data", "sensor_latest", "telemetry_ingest_batches"],
     metrics: [
       "Temperatur (°C) & Relative Luftfeuchte (% r.F.)",
@@ -245,7 +245,7 @@ const TELEMETRY_SOURCES: TelemetrySourceItem[] = [
       "UV-Index (Sonneneinstrahlung)",
     ],
     notes:
-      "Stationen senden energieeffizient über 868 MHz LoRaWAN. TTN Webhook liefert JSON-Payload transaktional an das FastAPI Ingestion-Backend.",
+      "Status: Das Ingestion-Schema in TimescaleDB und der FastAPI-Endpunkt (/api/v1/telemetry/batch) sind vollständig implementiert. Aktuell sind jedoch keine physischen DIY-Stationen live am Netz, sodass hierfür derzeit 0 Zeilen/Tag in die Datenbank fließen.",
     license: "Creative Commons Namensnennung 4.0 International (CC BY 4.0)",
   },
   {
@@ -764,6 +764,30 @@ export default function SourcesPage() {
               Ämtern und Kommunalverwaltungen für Wirtschaft, Haushalt, Soziales,
               Umwelt, Infrastruktur, Wohnen und Demografie.
             </p>
+
+            {/* Architectural Banner: Zero-Mock & DB-Sovereignty */}
+            <div className="mt-4 p-4 rounded-2xl bg-slate-900/90 border border-teal-500/30 space-y-2 text-xs text-slate-300">
+              <div className="flex items-center gap-2 text-teal-400 font-bold uppercase tracking-wider text-[11px]">
+                <Cpu className="w-4 h-4" /> Autonomer Hintergrunddienst: <code>registry-sync-worker</code>
+              </div>
+              <p className="leading-relaxed">
+                <strong>Strikte Datenhoheit der Datenbank:</strong> Das Frontend führt <em>keine eigenständigen Drittanbieter-Aufrufe</em> durch und zeigt <em>keine fixen Dummy-Daten</em> an.
+                Sämtliche auf den Karten und Fachseiten dargestellten Fachinhalte stammen ausnahmslos aus <strong>PostgreSQL / TimescaleDB</strong>.
+                Die periodische Datenbeschaffung erfolgt über den containerisierten <code>registry-sync-worker</code> (gestaffelt nach täglichen, wöchentlichen, monatlichen und jährlichen Cron-Läufen).
+                Zur Schonung des Servers nutzt das Frontend serverseitiges Next.js Caching mit kontrollierten TTLs (30s bis 24h).
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1 font-mono text-[10px] text-slate-400">
+                <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-emerald-400">
+                  Audit-Tabelle: collector_sync_logs
+                </span>
+                <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-teal-400">
+                  Slow-Changing Dimensions (SCD)
+                </span>
+                <span className="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-blue-400">
+                  Zero External Client Requests
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

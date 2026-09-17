@@ -177,6 +177,25 @@ services:
     depends_on:
       timescaledb:
         condition: service_healthy
+  registry-sync-worker:
+    build:
+      context: ./registry-sync-worker
+      dockerfile: Dockerfile
+    image: ghcr.io/erik-metz/open-ried-sens-registry-sync-worker:latest
+    restart: unless-stopped
+    stop_grace_period: 60s
+    volumes:
+      - sync_state:/data
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SYNC_TIMEZONE: Europe/Berlin
+    depends_on:
+      timescaledb:
+        condition: service_healthy
       backend-api:
         condition: service_healthy
 
@@ -214,6 +233,7 @@ services:
 volumes:
   shake_state:
   archive_state:
+  sync_state:
   smartcity_state:
   nextbike_state:
   traffic_state:

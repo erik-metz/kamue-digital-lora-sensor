@@ -80,4 +80,9 @@ test("Quellen page covers all real-time collectors and domain registries", () =>
   assert.ok(quellenSource.includes("Infrastruktur & Vernetzung"), "Must cover infrastructure/energy/broadband domain");
   assert.ok(quellenSource.includes("Bauen, Wohnen & Boden"), "Must cover real estate/housing/BORIS domain");
   assert.ok(quellenSource.includes("Demografie & Pendler"), "Must cover demographic domain");
+
+  // Scheduled background sync worker & audit logging
+  assert.ok(quellenSource.includes("registry-sync-worker"), "Must document registry-sync-worker");
+  assert.ok(quellenSource.includes("collector_sync_logs"), "Must document collector_sync_logs audit table");
+  assert.ok(quellenSource.includes("Inaktiv (0 Stationen)"), "Must honestly indicate 0 active DIY LoRaWAN nodes");
 });

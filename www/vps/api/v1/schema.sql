@@ -2892,3 +2892,27 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO collector_schema_versions(version) VALUES (20260924) ON CONFLICT DO NOTHING;
 
+-- 16. Audit & History Sync Logging for Scheduled Fetch Services (registry-sync-worker)
+CREATE TABLE IF NOT EXISTS collector_sync_logs (
+    id BIGSERIAL PRIMARY KEY,
+    job_name VARCHAR(64) NOT NULL,
+    status VARCHAR(16) NOT NULL, -- 'running', 'success', 'warning', 'failed'
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finished_at TIMESTAMPTZ,
+    rows_ingested INT NOT NULL DEFAULT 0,
+    rows_updated INT NOT NULL DEFAULT 0,
+    source_url TEXT,
+    error_message TEXT,
+    metadata JSONB DEFAULT '{}'::jsonb
+);
+
+CREATE INDEX IF NOT EXISTS idx_sync_logs_job ON collector_sync_logs (job_name, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sync_logs_status ON collector_sync_logs (status, started_at DESC);
+
+-- Historical indexes and time-range query support for master registries
+CREATE INDEX IF NOT EXISTS idx_boris_historical_zone ON boris_land_value_zones (municipality, valid_date DESC, id);
+CREATE INDEX IF NOT EXISTS idx_broadband_survey_time ON broadband_coverage (municipality, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_wifi_verification_time ON public_wifi_hotspots (municipality, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_permits_historical ON construction_permits (municipality, year DESC, month);
+
+INSERT INTO collector_schema_versions(version) VALUES (20260925) ON CONFLICT DO NOTHING;
