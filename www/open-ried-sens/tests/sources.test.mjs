@@ -68,11 +68,16 @@ test("Quellen page covers all real-time collectors and domain registries", () =>
   assert.ok(quellenSource.includes("475.000"), "Must show ~475.000 overall rows");
   assert.ok(quellenSource.includes("14.500"), "Must show > 14.500 daily calls");
 
-  // Newly added domains
-  assert.ok(quellenSource.includes("Wirtschaft"), "Must cover economic domain");
-  assert.ok(quellenSource.includes("Kommunalpolitik"), "Must cover municipal/budget domain");
-  assert.ok(quellenSource.includes("Soziales & Leben"), "Must cover social/waste domain");
-  assert.ok(quellenSource.includes("Umwelt & Agrar"), "Must cover environmental/groundwater/agro domain");
-  assert.ok(quellenSource.includes("Infrastruktur"), "Must cover infrastructure/energy/broadband domain");
-  assert.ok(quellenSource.includes("Bauen & Wohnen"), "Must cover real estate/housing/BORIS domain");
+  // Newly added domains and collectors
+  assert.ok(quellenSource.includes("VRN Bus"), "Must cover VRN bus mobility");
+  assert.ok(quellenSource.includes("ZAKB Abfuhrkalender"), "Must cover ZAKB waste fleet");
+  assert.ok(quellenSource.includes("Bahnübergänge"), "Must cover rail crossings");
+  assert.ok(quellenSource.includes("Straßensperrungen"), "Must cover street closures");
+  assert.ok(quellenSource.includes("Wirtschaft & Gewerbe"), "Must cover economic domain");
+  assert.ok(quellenSource.includes("Kommunalhaushalte"), "Must cover municipal/budget domain");
+  assert.ok(quellenSource.includes("Soziales, Leben & Abfall"), "Must cover social/waste domain");
+  assert.ok(quellenSource.includes("Umwelt, Schutzgebiete & Agrar"), "Must cover environmental/groundwater/agro domain");
+  assert.ok(quellenSource.includes("Infrastruktur & Vernetzung"), "Must cover infrastructure/energy/broadband domain");
+  assert.ok(quellenSource.includes("Bauen, Wohnen & Boden"), "Must cover real estate/housing/BORIS domain");
+  assert.ok(quellenSource.includes("Demografie & Pendler"), "Must cover demographic domain");
 });
