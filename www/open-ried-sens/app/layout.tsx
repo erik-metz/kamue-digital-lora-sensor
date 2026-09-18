@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "Open Ried Sens | Umweltsensornetzwerk Bürstadt & Lampertheim",
-  description: "Digitales Umweltsensornetzwerk & LoRaWAN-Infrastruktur für Bürstadt, Lampertheim und das Hessische Ried – eine Initiative des Kulturzentrums KAMÜ & Bürgerinnen/Bürger.",
+  title: "Open Ried | Das offene Daten- & Smart-Region-Portal für das Hessische Ried",
+  description: "Zentrales Regional- und Datenportal für Bürstadt, Lampertheim & das Hessische Ried: Echtzeit-Umweltsensorik, vernetzte Mobilität, Demografie, Kommunalhaushalt, Bauen, Wohnen & freie Open-Data-APIs.",
 };
 
 export default function RootLayout({

@@ -1,21 +1,28 @@
 import { fetchMapData } from "@/lib/mapBackend";
 import {
   Activity,
+  ArrowRight,
   AudioWaveform,
+  BarChart3,
+  Briefcase,
   Building2,
   CarFront,
   CheckCircle2,
   CircleParking,
   CloudSun,
+  Coins,
   Database,
   Droplets,
+  FileText,
   HeartHandshake,
   Layers,
+  Radio,
   Sprout,
-  Terminal,
+  Users,
   Volume2,
   Wifi,
 } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
 import DashboardClient from "./components/DashboardClient.tsx";
 import SiteHeader from "./components/SiteHeader";
@@ -24,8 +31,13 @@ import BroadbandTrackerWidget from "./components/BroadbandTrackerWidget";
 import EnvironmentAgricultureWidget from "./components/EnvironmentAgricultureWidget";
 import SiteFooter from "./components/SiteFooter";
 
-
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Open Ried | Das offene Daten- & Smart-Region-Portal für das Hessische Ried",
+  description:
+    "Zentrales Regional- und Datenportal für Bürstadt, Lampertheim & das Hessische Ried: Echtzeit-Umweltsensorik, vernetzte Mobilität, Demografie, Kommunalhaushalt, Bauen, Wohnen & freie Open-Data-APIs.",
+};
 
 async function fetchSensors() {
   try { return await fetchMapData(); }
@@ -35,7 +47,6 @@ async function fetchSensors() {
 export default async function Home() {
   const sensors = await fetchSensors();
   const nodes = sensors?.nodes ?? [];
-  const liveLogs = [];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -54,22 +65,20 @@ export default async function Home() {
 
           <div className="relative z-10 max-w-3xl space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold">
-              <HeartHandshake className="w-3.5 h-3.5" /> Bürgerinitiative für
-              ein digitales Ried
+              <HeartHandshake className="w-3.5 h-3.5" /> Bürgerinitiative &amp; Open Data für das Ried
             </div>
 
             <h1 className="text-3xl sm:text-5xl font-extrabold text-slate-100 leading-tight tracking-tight">
-              Digitale Umweltdaten für den regionalen{" "}
+              Das offene Datenportal für{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
-                Hackathon
+                Bürstadt, Lampertheim &amp; das Hessische Ried
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-              <strong>Open Ried Sens</strong> ist ein privates Mitmach-Projekt
-              zur Digitalisierung der Städte
-              <strong> Bürstadt</strong> und <strong>Lampertheim</strong> in
-              Kooperation mit dem Kulturzentrum{" "}
+              <strong>Open Ried</strong> ist das unabhängige Smart-Region- und
+              Open-Data-Portal für das Hessische Ried – initiiert als bürgerschaftliches
+              Mitmach-Projekt in Kooperation mit dem Kulturzentrum{" "}
               <a
                 href="https://kamue.me"
                 target="_blank"
@@ -78,33 +87,57 @@ export default async function Home() {
               >
                 KAMÜ
               </a>{" "}
-              in Bürstadt. Wir bauen ein kontinuierliches, historisches
-              Multisensor-Netzwerk auf, um eine verlässliche Datenbasis für
-              künftige regionale Hackathons zu schaffen.
+              in Bürstadt. Wir verknüpfen kontinuierliche Live-Sensorik (Klima,
+              Luftqualität, Lärm, Pegel und Bodenfeuchte) und vernetzte Mobilität
+              (ÖPNV-Echtzeit, Bikesharing, Bahnübergänge, Baustellen) mit
+              transparenten Kommunaldaten wie Demografie, Haushalten, Wirtschaft und
+              Bauen – vollkommen frei zugänglich über interaktive Karten und offene REST-APIs.
             </p>
+
+            {/* Quick Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <a
+                href="#dashboard"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-colors shadow-lg shadow-emerald-500/10"
+              >
+                <Radio className="w-4 h-4" /> Zur interaktiven Regionalkarte
+              </a>
+              <a
+                href="#themen"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-colors border border-slate-700"
+              >
+                <Layers className="w-4 h-4" /> Themenportale entdecken
+              </a>
+              <Link
+                href="/daten"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-slate-400 hover:text-emerald-400 font-medium text-sm transition-colors"
+              >
+                <Database className="w-4 h-4" /> Offene Daten &amp; API
+              </Link>
+            </div>
 
             {/* Feature Highlights Badges */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                <Building2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                <Wifi className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-bold text-slate-200">
-                    5 Privatsensoren
+                    Echtzeit-Sensorik &amp; IoT
                   </h4>
-                  <p className="text-sm text-slate-400">
-                    Montiert auf privaten Grundstücken für reale Langzeitdaten.
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    LoRaWAN-Sensoren, Seismometer, Wetter, Feinstaub, Pegel &amp; Bodenfeuchte.
                   </p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800">
-                <Wifi className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
+                <CarFront className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-bold text-slate-200">
-                    LoRaWAN & TTN
+                    Mobilität &amp; Infrastruktur
                   </h4>
-                  <p className="text-sm text-slate-400">
-                    Eigene Gateways für freie IoT-Funkabdeckung in der Region.
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Live-Busse, Bahnübergänge, VRNnextbike, Straßensperrungen &amp; Parkraum.
                   </p>
                 </div>
               </div>
@@ -113,10 +146,10 @@ export default async function Home() {
                 <Database className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="text-sm font-bold text-slate-200">
-                    Open-Data Basis
+                    Offene Kommunaldaten
                   </h4>
-                  <p className="text-sm text-slate-400">
-                    Offene Umweltdaten für Ideen, Analysen & Smart City Apps.
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Demografie, Haushalte, Gewerbe, Bauen &amp; standardisierte REST-APIs.
                   </p>
                 </div>
               </div>
@@ -124,15 +157,216 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* THEMEN & BEREICHE DER PLATTFORM */}
+        <section id="themen" className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-4">
+            <div>
+              <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
+                <Layers className="size-3.5" /> Regionales Daten-Ökosystem
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
+                Themenbereiche &amp; Fachportale
+              </h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Erkunde alle Facetten unserer Region – von Echtzeit-Messwerten bis zu amtlichen Statistiken.
+              </p>
+            </div>
+            <Link
+              href="/quellen"
+              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition-colors shrink-0"
+            >
+              <FileText className="size-3.5" /> Alle 14 Datenquellen ansehen &rarr;
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: Sensorik & Umwelt */}
+            <a
+              href="#sensorik"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-emerald-300 transition-colors flex items-center justify-between">
+                  <span>Sensorik &amp; Umwelt</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Live-Wetter, Feinstaub, Ozon, Lärm, Erschütterungen, Bodenfeuchte und Pegelstände im Hessischen Ried.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-emerald-400/80 pt-2 border-t border-slate-800/60">
+                Echtzeit-Messung &bull; 9 Parameter
+              </span>
+            </a>
+
+            {/* Card 2: Mobilität & Verkehr */}
+            <a
+              href="#dashboard"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <CarFront className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-cyan-300 transition-colors flex items-center justify-between">
+                  <span>Mobilität &amp; Verkehr</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Echtzeit-ÖPNV, Bahnübergangsmonitoring, VRNnextbike, ZAKB-Touren, Baustellen und Parkplatzbelegung.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-cyan-400/80 pt-2 border-t border-slate-800/60">
+                Live-Flotten &bull; Kartenebenen
+              </span>
+            </a>
+
+            {/* Card 3: Bauen & Wohnen */}
+            <Link
+              href="/bauen-wohnen"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-amber-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-amber-300 transition-colors flex items-center justify-between">
+                  <span>Bauen &amp; Wohnen</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Bodenrichtwertzonen (BORIS Hessen), Baugenehmigungen, Wohnungsbestand und Bebauungspläne.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-amber-400/80 pt-2 border-t border-slate-800/60">
+                Immobilienmarkt &bull; Bauland
+              </span>
+            </Link>
+
+            {/* Card 4: Demografie & Soziales */}
+            <Link
+              href="/demografie"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-purple-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Users className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-purple-300 transition-colors flex items-center justify-between">
+                  <span>Demografie &amp; Bildung</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Einwohnerentwicklung, Altersstruktur, Wanderungssalden sowie Kita- und Schulstandorte.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-purple-400/80 pt-2 border-t border-slate-800/60">
+                Bevölkerung &bull; Infrastruktur
+              </span>
+            </Link>
+
+            {/* Card 5: Finanzen & Haushalt */}
+            <Link
+              href="/haushalt"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Coins className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-emerald-300 transition-colors flex items-center justify-between">
+                  <span>Finanzen &amp; Haushalt</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Kommunalhaushalte von Bürstadt und Lampertheim, Hebesätze, Einnahmen, Ausgaben und Schuldenentwicklung.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-emerald-400/80 pt-2 border-t border-slate-800/60">
+                Haushaltstransparenz &bull; Hebesätze
+              </span>
+            </Link>
+
+            {/* Card 6: Wirtschaft & Gewerbe */}
+            <Link
+              href="/wirtschaft"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-blue-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Briefcase className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-blue-300 transition-colors flex items-center justify-between">
+                  <span>Wirtschaft &amp; Gewerbe</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Gewerbebetriebe, Industriezonen, Beschäftigungszahlen und wirtschaftliche Eckdaten der Ried-Kommunen.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-blue-400/80 pt-2 border-t border-slate-800/60">
+                Gewerbe &bull; Arbeitsplätze
+              </span>
+            </Link>
+
+            {/* Card 7: Regionalstatistik & Kultur */}
+            <Link
+              href="/statistik"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-pink-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-pink-300 transition-colors flex items-center justify-between">
+                  <span>Statistik &amp; Kultur</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Vereinsleben, Abfallmengen, Wertstoffhöfe, Kulturveranstaltungen und Events des Kulturzentrums KAMÜ.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-pink-400/80 pt-2 border-t border-slate-800/60">
+                Gemeinwesen &bull; Kulturkalender
+              </span>
+            </Link>
+
+            {/* Card 8: Offene Daten & API */}
+            <Link
+              href="/daten"
+              className="group p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-teal-500/50 hover:bg-slate-900/80 transition-all flex flex-col justify-between space-y-3"
+            >
+              <div className="space-y-2.5">
+                <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center group-hover:scale-105 transition-transform">
+                  <Database className="w-4 h-4" />
+                </div>
+                <h3 className="text-base font-bold text-slate-100 group-hover:text-teal-300 transition-colors flex items-center justify-between">
+                  <span>Offene Daten &amp; API</span>
+                  <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Freie CSV- und JSON-Exporte aller Daten sowie offene REST-Programmierschnittstelle für Entwickler.
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-teal-400/80 pt-2 border-t border-slate-800/60">
+                REST-API &bull; Downloads
+              </span>
+            </Link>
+          </div>
+        </section>
+
         {/* MULTISENSORIK & SMART-CITY SPEZIFIKATIONEN SECTION */}
         <section id="sensorik" className="space-y-6">
           <div className="text-center max-w-3xl mx-auto space-y-2">
             <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
-              Erfasste Sensordaten & Messgrößen
+              Echtzeit-Telemetrie &amp; Smarte Sensorik
             </h2>
             <p className="text-base text-slate-400">
-              Unser offenes Netzwerk bündelt hochpräzise Umwelt-, Mobilitäts- und Geodaten aus
-              Multisensor-Stationen, Smart-City-Systemen und Seismometern.
+              Unser offenes Netzwerk bündelt kontinuierliche Umwelt-, Mobilitäts-, Boden- und Geodaten aus
+              Multisensor-Stationen, Smart-City-Systemen, Pegelsonden und Seismometern.
             </p>
           </div>
 
@@ -386,105 +620,43 @@ export default async function Home() {
           <BroadbandTrackerWidget />
         </section>
 
-        {/* TELEMETRIE & LORAWAN TTN LOGS SECTION */}
-        {false && (
-          <section
-            id="telemetrie"
-            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-          >
-            {/* LoRaWAN & TTN Infrastructure Overview (1 Col) */}
-            <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-2xl space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center">
-                  <Wifi className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-100">
-                    LoRaWAN & TTN Aufbau
-                  </h3>
-                  <p className="text-sm text-slate-400">
-                    Regionale Funkabdeckung
-                  </p>
-                </div>
+        {/* OPEN DATA & MITMACHEN SECTION */}
+        <section
+          id="mitmachen"
+          className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 p-8 sm:p-10 space-y-6 shadow-xl"
+        >
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
+                <HeartHandshake className="size-3.5" /> Gemeinwohl, Open Source &amp; Partizipation
               </div>
-
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Da in Bürstadt und Lampertheim bisher keine flächendeckenden
-                LoRaWAN-Gateways existieren, installieren wir im Rahmen dieser
-                Initiative eigene LoRaWAN-Gateways mit Anbindung an{" "}
-                <a
-                  href="https://www.thethingsindustries.com"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-emerald-400 underline font-medium hover:text-emerald-300 transition-colors"
-                >
-                  The Things Network (TTN)
-                </a>
-                .
+              <h3 className="text-2xl sm:text-3xl font-bold text-slate-100">
+                Offene Daten &amp; Transparenz für die Bürgerschaft
+              </h3>
+              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                Open Ried ist ein ehrenamtliches Projekt mit klarem Gemeinwohlfokus in Partnerschaft mit dem Kulturzentrum KAMÜ in Bürstadt. Alle
+                gesammelten Messwerte, statistischen Aggregationen, Hardware-Baupläne
+                und Programmquelltexte stehen als Open Data und Open Source der gesamten
+                Öffentlichkeit frei zur Verfügung – für Bürgerinnen und Bürger, Kommunen,
+                Schulen, regionale Hackathons und wissenschaftliche Forschung.
               </p>
-
-              <div className="space-y-2 text-sm text-slate-300">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>
-                    Standard: <strong>EU868 (868 MHz)</strong>
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>
-                    Aktivierung: <strong>OTAA (Over-The-Air)</strong>
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>
-                    Payload: <strong>Kompakte 9-Byte Binärkodierung</strong>
-                  </span>
-                </div>
-              </div>
             </div>
-
-            {/* Live TTN Packet Log Viewer (2 Cols) */}
-            <div className="lg:col-span-2 bg-slate-900/80 border border-slate-800 p-6 rounded-2xl space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-4 h-4 text-emerald-400" />
-                  <h3 className="text-sm font-bold text-slate-100">
-                    Live-Uplink Datenstream (TTN Feed)
-                  </h3>
-                </div>
-                <span className="text-sm font-mono text-slate-500">
-                  FPort: 1 | Payload Format: Binary
-                </span>
-              </div>
-
-              {/* Log Output Box */}
-              <div className="bg-slate-950 font-mono text-sm p-4 rounded-xl border border-slate-800/80 space-y-2.5 max-h-56 overflow-y-auto">
-                {liveLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-slate-300 border-b border-slate-900/80 pb-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-500">[{log.timestamp}]</span>
-                      <span className="text-emerald-400 font-bold">
-                        {log.node}
-                      </span>
-                      <span className="text-slate-400 text-xs">→ Payload:</span>
-                      <span className="text-amber-300 font-bold tracking-wider">
-                        {log.payload}
-                      </span>
-                    </div>
-                    <span className="text-slate-500 text-xs">
-                      RSSI: {log.rssi} dBm
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full md:w-auto shrink-0">
+              <Link
+                href="/daten"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm transition-colors shadow-lg shadow-emerald-500/10"
+              >
+                <Database className="size-4" /> Open Data API
+              </Link>
+              <Link
+                href="/quellen"
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-sm transition-colors border border-slate-700"
+              >
+                <FileText className="size-4" /> Datenquellen &amp; Takte
+              </Link>
             </div>
-          </section>
-        )}
+          </div>
+        </section>
       </main>
 
       {/* Footer */}
