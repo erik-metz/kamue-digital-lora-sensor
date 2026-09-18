@@ -45,7 +45,7 @@ Keep this directory private: `.env` contains credentials. Copy any deployment-sp
 Preserve each existing service image under a local rollback tag **before pulling `latest`**:
 
 ```bash
-for service in backend-api shake-collector smartcity-collector nextbike-collector traffic-collector archive-worker; do
+for service in backend-api shake-collector smartcity-collector nextbike-collector traffic-collector environment-collector registry-sync-worker archive-worker; do
   container_id=$(docker compose --profile archives ps -a -q "$service")
   if [ -n "$container_id" ]; then
     image_id=$(docker inspect --format '{{.Image}}' "$container_id")
@@ -87,6 +87,8 @@ Wait for the entire image build/push job to finish, not merely the API image ste
 - `ghcr.io/erik-metz/open-ried-sens-smartcity-collector:latest`
 - `ghcr.io/erik-metz/open-ried-sens-nextbike-collector:latest`
 - `ghcr.io/erik-metz/open-ried-sens-traffic-collector:latest`
+- `ghcr.io/erik-metz/open-ried-sens-environment-collector:latest`
+- `ghcr.io/erik-metz/open-ried-sens-registry-sync-worker:latest`
 - `ghcr.io/erik-metz/open-ried-sens-archive-worker:latest`
 
 Compose references the `erik-metz` namespace. If deploying from a fork, the workflow publishes under the fork owner's namespace; update Compose accordingly.
@@ -96,7 +98,7 @@ The CI workflow currently uses mutable `latest` tags. Avoid overlapping deployme
 From the existing VPS Compose directory:
 
 ```bash
-docker compose pull backend-api shake-collector smartcity-collector nextbike-collector traffic-collector
+docker compose pull backend-api shake-collector smartcity-collector nextbike-collector traffic-collector environment-collector registry-sync-worker
 ```
 
 If using archives:

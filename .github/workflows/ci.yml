@@ -274,3 +274,19 @@ jobs:
           file: ./www/vps/archive-worker/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-archive-worker:latest
+
+      - name: Build and Push Docker Image Environment Collector
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/environment-collector
+          file: ./www/vps/environment-collector/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-environment-collector:latest
+
+      - name: Build and Push Docker Image Registry Sync Worker
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/registry-sync-worker
+          file: ./www/vps/registry-sync-worker/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-registry-sync-worker:latest
