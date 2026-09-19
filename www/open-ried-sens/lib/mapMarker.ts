@@ -64,6 +64,7 @@ export interface TrainMarkerProps {
   destination: string;
   status: "moving" | "stopped";
   speedKmh: number;
+  trainType?: "regional" | "sbahn" | "ice" | "cargo";
   currentStationName?: string;
   dwellTimeRemainingSec?: number;
   dwellProgress?: number; // 1.0 (just arrived) -> 0.0 (departing)
@@ -71,7 +72,9 @@ export interface TrainMarkerProps {
 
 export function createTrainMarkerContent(props: TrainMarkerProps): HTMLElement {
   const isStopped = props.status === "stopped";
-  const color = isStopped ? "#f59e0b" : props.line.includes("ICE") ? "#a855f7" : "#0284c7";
+  const isIce = props.trainType === "ice" || props.line.includes("ICE") || props.line.includes("TGV") || props.line.includes("IC") || props.line.includes("EC");
+  const isCargo = props.trainType === "cargo" || props.line.includes("Cargo") || props.line.includes("TX Logistik");
+  const color = isStopped ? "#f59e0b" : isIce ? "#a855f7" : isCargo ? "#10b981" : "#0284c7";
 
   const content = document.createElement("div");
   content.className = `train-marker ${isStopped ? "train-marker-stopped" : "train-marker-moving"}`;

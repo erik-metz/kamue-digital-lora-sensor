@@ -121,6 +121,61 @@ test("level crossings transition to closing_soon or closed when train is nearby"
   assert.ok(foundClosedOrClosing, "Level crossings must transition to closing or closed during train passages");
 });
 
+test("non-stopping ICE, TGV, IC and Cargo trains traverse corridors without station stops and trigger Bahnübergänge", () => {
+  let foundIce = false;
+  let foundTgv = false;
+  let foundIc = false;
+  let foundRiedCargo = false;
+  let foundNibCargo = false;
+  let iceTriggeredBiblis = false;
+  let nibCargoTriggeredCrossing = false;
+
+  // Scan through a 60-minute window
+  for (let s = 0; s < 3600; s += 15) {
+    const timeMs = Date.parse("2026-09-15T08:00:00Z") + s * 1000;
+    const { trains, crossings } = mobility.calculateRiedMobility(timeMs);
+
+    for (const t of trains) {
+      if (t.trainType === "ice") {
+        foundIce = true;
+        assert.equal(t.status, "moving", "Long-distance train must never stop at local Ried stations");
+        assert.equal(t.currentStationName, undefined, "Express train must not dwell at any station");
+        assert.ok(t.speedKmh >= 160, "Express train must travel at high speed >= 160 km/h");
+        if (t.line.includes("TGV")) foundTgv = true;
+        if (t.line.includes("IC") || t.line.includes("EC")) foundIc = true;
+      }
+      if (t.trainType === "cargo") {
+        assert.equal(t.status, "moving", "Cargo train must never stop at passenger stations");
+        assert.equal(t.currentStationName, undefined);
+        if (t.corridor === "Riedbahn") foundRiedCargo = true;
+        if (t.corridor === "Nibelungenbahn") foundNibCargo = true;
+      }
+    }
+
+    const biblisCrossing = crossings.find((c) => c.id === "bu-biblis-kirchstr");
+    if (biblisCrossing && (biblisCrossing.status === "closed" || biblisCrossing.status === "closing_soon")) {
+      if (biblisCrossing.nextTrainLine?.includes("ICE")) {
+        iceTriggeredBiblis = true;
+      }
+    }
+
+    const buerstadtMainCrossing = crossings.find((c) => c.id === "bu-buerstadt-mainstr");
+    if (buerstadtMainCrossing && (buerstadtMainCrossing.status === "closed" || buerstadtMainCrossing.status === "closing_soon")) {
+      if (buerstadtMainCrossing.nextTrainLine?.includes("Cargo")) {
+        nibCargoTriggeredCrossing = true;
+      }
+    }
+  }
+
+  assert.ok(foundIce, "Simulation must contain active ICE trains");
+  assert.ok(foundTgv, "Simulation must contain international TGV trains");
+  assert.ok(foundIc, "Simulation must contain IC/EC trains");
+  assert.ok(foundRiedCargo, "Simulation must contain Riedbahn freight trains");
+  assert.ok(foundNibCargo, "Simulation must contain Nibelungenbahn freight trains");
+  assert.ok(iceTriggeredBiblis, "Non-stopping ICE train must trigger BÜ Kirchstraße closure/warning in Biblis");
+  assert.ok(nibCargoTriggeredCrossing, "Non-stopping Nibelungenbahn Cargo train must trigger BÜ Mainstraße closure in Bürstadt");
+});
+
 test("polyline interpolation returns exact boundary points and valid headings", () => {
   const points = [
     [49.6, 8.4],

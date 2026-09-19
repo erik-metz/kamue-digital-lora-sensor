@@ -770,6 +770,7 @@ export default function MapComponent({
             destination: train.destination,
             status: train.status,
             speedKmh: train.speedKmh,
+            trainType: train.trainType,
             currentStationName: train.currentStationName,
             dwellTimeRemainingSec: train.dwellTimeRemainingSec,
             dwellProgress: train.dwellProgress,
@@ -786,11 +787,19 @@ export default function MapComponent({
           marker.bindPopup(() => {
             const container = document.createElement("div");
             container.className = "train-popup-details";
+            const trainIcon = train.trainType === 'cargo' ? '📦' : train.trainType === 'ice' ? '🚅' : '🚆';
+            const statusText = train.status === 'stopped'
+              ? `🚉 Halt am Bahnsteig ${train.currentStationName} (Abfahrt in ${train.dwellTimeRemainingSec ?? 0}s)`
+              : train.trainType === 'ice'
+              ? `🚅 ${train.line.startsWith('TGV') ? 'TGV' : train.line.startsWith('IC') || train.line.startsWith('EC') ? 'Fernverkehr' : 'ICE'} Expressfahrt (${train.speedKmh} km/h · ohne Halt im Ried)`
+              : train.trainType === 'cargo'
+              ? `📦 Güterzug-Durchfahrt (${train.speedKmh} km/h · ohne Halt im Ried)`
+              : `⚡ In Fahrt (${train.speedKmh} km/h)`;
             container.innerHTML = `
-              <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">🚅 ${train.line} nach ${train.destination}</div>
+              <div style="font-weight: 700; font-size: 14px; margin-bottom: 4px;">${trainIcon} ${train.line} nach ${train.destination}</div>
               <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">Von: ${train.origin} · Strecke: ${train.corridor}</div>
-              <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: ${train.status === 'stopped' ? '#f59e0b' : '#38bdf8'};">
-                ${train.status === 'stopped' ? `🚉 Halt am Bahnsteig ${train.currentStationName} (Abfahrt in ${train.dwellTimeRemainingSec ?? 0}s)` : `⚡ In Fahrt (${train.speedKmh} km/h)`}
+              <div style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: ${train.status === 'stopped' ? '#f59e0b' : train.trainType === 'ice' ? '#c084fc' : train.trainType === 'cargo' ? '#34d399' : '#38bdf8'};">
+                ${statusText}
               </div>
               ${train.approachingCrossingName ? `<div style="font-size: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; padding: 4px 6px; border-radius: 4px; margin-top: 6px;">⚠️ Nähert sich <strong>${train.approachingCrossingName}</strong></div>` : ''}
             `;

@@ -381,6 +381,274 @@ export function calculateRiedMobility(timestampMs: number = Date.now()): {
       ],
       totalTransitSec: 720,
     },
+
+    // 4. Long-Distance High-Speed Trains (Fernverkehr: ICE / TGV / IC / EC)
+    // Non-stopping express transits on the Riedbahn corridor
+    {
+      idPrefix: "ice271-south",
+      line: "ICE 271",
+      type: "ice" as const,
+      origin: "Frankfurt (Main) Hbf",
+      destination: "Basel SBB",
+      corridor: "Riedbahn" as const,
+      direction: "south" as const,
+      periodSec: 3600,
+      offsetSec: 480,
+      speedKmh: 180,
+      track: RIEDBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "ice593-south",
+      line: "ICE 593",
+      type: "ice" as const,
+      origin: "Hamburg-Altona",
+      destination: "München Hbf",
+      corridor: "Riedbahn" as const,
+      direction: "south" as const,
+      periodSec: 3600,
+      offsetSec: 1080,
+      speedKmh: 180,
+      track: RIEDBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "ice611-south",
+      line: "ICE 611",
+      type: "ice" as const,
+      origin: "Dortmund Hbf",
+      destination: "Stuttgart Hbf",
+      corridor: "Riedbahn" as const,
+      direction: "south" as const,
+      periodSec: 3600,
+      offsetSec: 1680,
+      speedKmh: 180,
+      track: RIEDBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "tgv9556-south",
+      line: "TGV 9556",
+      type: "ice" as const,
+      origin: "Frankfurt (Main) Hbf",
+      destination: "Paris Est",
+      corridor: "Riedbahn" as const,
+      direction: "south" as const,
+      periodSec: 3600,
+      offsetSec: 2280,
+      speedKmh: 180,
+      track: RIEDBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "ic2013-south",
+      line: "IC 2013",
+      type: "ice" as const,
+      origin: "Dortmund Hbf",
+      destination: "Oberstdorf / Innsbruck",
+      corridor: "Riedbahn" as const,
+      direction: "south" as const,
+      periodSec: 3600,
+      offsetSec: 2880,
+      speedKmh: 160,
+      track: RIEDBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 450,
+    },
+
+    // Northbound long-distance express
+    {
+      idPrefix: "ice372-north",
+      line: "ICE 372",
+      type: "ice" as const,
+      origin: "Interlaken Ost / Basel",
+      destination: "Berlin Hbf",
+      corridor: "Riedbahn" as const,
+      direction: "north" as const,
+      periodSec: 3600,
+      offsetSec: 180,
+      speedKmh: 180,
+      track: [...RIEDBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "ice792-north",
+      line: "ICE 792",
+      type: "ice" as const,
+      origin: "München Hbf",
+      destination: "Hamburg-Altona",
+      corridor: "Riedbahn" as const,
+      direction: "north" as const,
+      periodSec: 3600,
+      offsetSec: 780,
+      speedKmh: 180,
+      track: [...RIEDBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "ice512-north",
+      line: "ICE 512",
+      type: "ice" as const,
+      origin: "Stuttgart Hbf",
+      destination: "Dortmund Hbf",
+      corridor: "Riedbahn" as const,
+      direction: "north" as const,
+      periodSec: 3600,
+      offsetSec: 1380,
+      speedKmh: 180,
+      track: [...RIEDBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "tgv9555-north",
+      line: "TGV 9555",
+      type: "ice" as const,
+      origin: "Paris Est",
+      destination: "Frankfurt (Main) Hbf",
+      corridor: "Riedbahn" as const,
+      direction: "north" as const,
+      periodSec: 3600,
+      offsetSec: 1980,
+      speedKmh: 180,
+      track: [...RIEDBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 420,
+    },
+    {
+      idPrefix: "ec8-north",
+      line: "EC 8",
+      type: "ice" as const,
+      origin: "Zürich HB",
+      destination: "Hamburg-Altona",
+      corridor: "Riedbahn" as const,
+      direction: "north" as const,
+      periodSec: 3600,
+      offsetSec: 2580,
+      speedKmh: 160,
+      track: [...RIEDBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 450,
+    },
+
+    // 5. Heavy Freight Trains (Güterverkehr / Cargo)
+    // Southbound Riedbahn freight arterial
+    {
+      idPrefix: "cargo48721-south",
+      line: "DB Cargo 48721",
+      type: "cargo" as const,
+      origin: "Köln Eifeltor",
+      destination: "Mannheim Rbf",
+      corridor: "Riedbahn" as const,
+      direction: "south" as const,
+      periodSec: 3600,
+      offsetSec: 1380,
+      speedKmh: 100,
+      track: RIEDBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 750,
+    },
+    {
+      idPrefix: "txlog40183-south",
+      line: "TX Logistik 40183",
+      type: "cargo" as const,
+      origin: "Lübeck Skandinavienkai",
+      destination: "Verona Quadrante Europa",
+      corridor: "Riedbahn" as const,
+      direction: "south" as const,
+      periodSec: 3600,
+      offsetSec: 3180,
+      speedKmh: 100,
+      track: RIEDBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 750,
+    },
+
+    // Northbound Riedbahn freight arterial
+    {
+      idPrefix: "cargo51342-north",
+      line: "DB Cargo 51342",
+      type: "cargo" as const,
+      origin: "Mannheim Rbf",
+      destination: "Frankfurt (Main) Ost",
+      corridor: "Riedbahn" as const,
+      direction: "north" as const,
+      periodSec: 3600,
+      offsetSec: 480,
+      speedKmh: 100,
+      track: [...RIEDBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 750,
+    },
+    {
+      idPrefix: "sbb43105-north",
+      line: "SBB Cargo Int 43105",
+      type: "cargo" as const,
+      origin: "Basel Kleinhüningen",
+      destination: "Rotterdam Kijfhoek",
+      corridor: "Riedbahn" as const,
+      direction: "north" as const,
+      periodSec: 3600,
+      offsetSec: 2280,
+      speedKmh: 100,
+      track: [...RIEDBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 750,
+    },
+
+    // 6. Nibelungenbahn Freight & Transfer Runs (non-stopping through Hofheim & Bürstadt)
+    {
+      idPrefix: "nib-cargo-east",
+      line: "DB Cargo 54890",
+      type: "cargo" as const,
+      origin: "Worms Gbf",
+      destination: "Bensheim",
+      corridor: "Nibelungenbahn" as const,
+      direction: "east" as const,
+      periodSec: 3600,
+      offsetSec: 900,
+      speedKmh: 70,
+      track: NIBELUNGENBAHN_TRACK,
+      reverseTrack: false,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 820,
+    },
+    {
+      idPrefix: "nib-cargo-west",
+      line: "DB Cargo 54891",
+      type: "cargo" as const,
+      origin: "Bensheim",
+      destination: "Worms Gbf",
+      corridor: "Nibelungenbahn" as const,
+      direction: "west" as const,
+      periodSec: 3600,
+      offsetSec: 2700,
+      speedKmh: 70,
+      track: [...NIBELUNGENBAHN_TRACK].reverse(),
+      reverseTrack: true,
+      stops: [] as { stationId: string; stopProg: number; dwellSec: number }[],
+      totalTransitSec: 820,
+    },
   ];
 
   const nowSec = timestampMs / 1000;
@@ -494,9 +762,12 @@ export function calculateRiedMobility(timestampMs: number = Date.now()): {
       const estSecToCrossing = Math.round(dist / speedMs);
 
       // Check if train is approaching or currently traversing the crossing:
-      // Crossing is CLOSED if train is within 150m (approx 10-15s before and during passage)
-      // Crossing is CLOSING_SOON if train is within 150m-900m (~15s to 60s away)
-      if (dist <= 160) {
+      // Crossing is CLOSED if train is within closeDist (approx 5-15s before and during passage)
+      // Crossing is CLOSING_SOON if train is within warningDist (~30s to 60s away)
+      const warningDist = Math.max(950, speedMs * 30);
+      const closeDist = Math.max(160, speedMs * 4);
+
+      if (dist <= closeDist) {
         crossing.status = "closed";
         crossing.nextTrainLine = s.line;
         crossing.nextTrainDestination = s.destination;
@@ -504,12 +775,14 @@ export function calculateRiedMobility(timestampMs: number = Date.now()): {
         crossing.secondsUntilClearance = Math.max(15, Math.round(dist / speedMs) + 15);
         liveTrain.approachingCrossingId = crossing.id;
         liveTrain.approachingCrossingName = crossing.name;
-      } else if (dist <= 950 && crossing.status !== "closed") {
-        crossing.status = "closing_soon";
-        crossing.nextTrainLine = s.line;
-        crossing.nextTrainDestination = s.destination;
-        crossing.secondsUntilClosure = estSecToCrossing;
-        crossing.secondsUntilClearance = estSecToCrossing + 30;
+      } else if (dist <= warningDist && crossing.status !== "closed") {
+        if (crossing.status !== "closing_soon" || estSecToCrossing < (crossing.secondsUntilClosure ?? Infinity)) {
+          crossing.status = "closing_soon";
+          crossing.nextTrainLine = s.line;
+          crossing.nextTrainDestination = s.destination;
+          crossing.secondsUntilClosure = estSecToCrossing;
+          crossing.secondsUntilClearance = estSecToCrossing + 30;
+        }
         liveTrain.approachingCrossingId = crossing.id;
         liveTrain.approachingCrossingName = crossing.name;
       }
