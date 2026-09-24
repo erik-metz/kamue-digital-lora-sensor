@@ -1,0 +1,4077 @@
+{
+  "notice": "Static declared-field inventory, including inactive legacy contracts. Cross-reference ui-data-coverage.md for active publications and gaps. Types are not runtime validation or proof of source coverage.",
+  "fields": [
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 5
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "ags",
+      "optional": false,
+      "type": "string",
+      "line": 6
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 7
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "county",
+      "optional": false,
+      "type": "string",
+      "line": 8
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "state",
+      "optional": false,
+      "type": "string",
+      "line": 9
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "area_sqkm",
+      "optional": false,
+      "type": "number",
+      "line": 10
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "center_lat",
+      "optional": false,
+      "type": "number",
+      "line": 11
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "Municipality",
+      "field": "center_lng",
+      "optional": false,
+      "type": "number",
+      "line": 12
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "municipality_id",
+      "optional": false,
+      "type": "string",
+      "line": 16
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 17
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "total_population",
+      "optional": false,
+      "type": "number",
+      "line": 18
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "population_density",
+      "optional": false,
+      "type": "number",
+      "line": 19
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "foreign_share_pct",
+      "optional": false,
+      "type": "number",
+      "line": 20
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "births",
+      "optional": false,
+      "type": "number",
+      "line": 21
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "deaths",
+      "optional": false,
+      "type": "number",
+      "line": 22
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "inflow",
+      "optional": false,
+      "type": "number",
+      "line": 23
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "outflow",
+      "optional": false,
+      "type": "number",
+      "line": 24
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "net_migration",
+      "optional": false,
+      "type": "number",
+      "line": 25
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "avg_household_size",
+      "optional": false,
+      "type": "number",
+      "line": 26
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "schools_count",
+      "optional": false,
+      "type": "number",
+      "line": 27
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "kitas_count",
+      "optional": false,
+      "type": "number",
+      "line": 28
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "DemographicSummary",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 29
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "AgeStructure",
+      "field": "cohort",
+      "optional": false,
+      "type": "string",
+      "line": 33
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "AgeStructure",
+      "field": "label",
+      "optional": false,
+      "type": "string",
+      "line": 34
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "AgeStructure",
+      "field": "count",
+      "optional": false,
+      "type": "number",
+      "line": 35
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "AgeStructure",
+      "field": "percentage",
+      "optional": false,
+      "type": "number",
+      "line": 36
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "AgeStructure",
+      "field": "description",
+      "optional": false,
+      "type": "string",
+      "line": 37
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "CommuterFlow",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 41
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "CommuterFlow",
+      "field": "home_municipality_id",
+      "optional": false,
+      "type": "string",
+      "line": 42
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "CommuterFlow",
+      "field": "partner_ags",
+      "optional": false,
+      "type": "string",
+      "line": 43
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "CommuterFlow",
+      "field": "partner_name",
+      "optional": false,
+      "type": "string",
+      "line": 44
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "CommuterFlow",
+      "field": "direction",
+      "optional": false,
+      "type": "\"inbound\" | \"outbound\"",
+      "line": 45
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "CommuterFlow",
+      "field": "commuter_count",
+      "optional": false,
+      "type": "number",
+      "line": 46
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "CommuterFlow",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 47
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 51
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 52
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "facility_type",
+      "optional": false,
+      "type": "\"kita\" | \"krippe\" | \"grundschule\" | \"gesamtschule\" | \"gymnasium\" | \"foerderschule\"",
+      "line": 53
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "municipality_id",
+      "optional": false,
+      "type": "string",
+      "line": 54
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "district",
+      "optional": true,
+      "type": "string | null",
+      "line": 55
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "address",
+      "optional": false,
+      "type": "string",
+      "line": 56
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "latitude",
+      "optional": false,
+      "type": "number",
+      "line": 57
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "longitude",
+      "optional": false,
+      "type": "number",
+      "line": 58
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "operator",
+      "optional": false,
+      "type": "string",
+      "line": 59
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "operator_name",
+      "optional": true,
+      "type": "string | null",
+      "line": 60
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "capacity",
+      "optional": true,
+      "type": "number | null",
+      "line": 61
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "current_enrollment",
+      "optional": true,
+      "type": "number | null",
+      "line": 62
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "utilization_rate",
+      "optional": true,
+      "type": "number | null",
+      "line": 63
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "min_age_years",
+      "optional": true,
+      "type": "number | null",
+      "line": 64
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "max_age_years",
+      "optional": true,
+      "type": "number | null",
+      "line": 65
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "opening_hours",
+      "optional": true,
+      "type": "string | null",
+      "line": 66
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "website_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 67
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "reporting_year",
+      "optional": false,
+      "type": "number",
+      "line": 68
+    },
+    {
+      "file": "lib/demographicsData.ts",
+      "contract": "EducationalFacility",
+      "field": "is_active",
+      "optional": false,
+      "type": "boolean",
+      "line": 69
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 5
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 6
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "fiscal_year",
+      "optional": false,
+      "type": "number",
+      "line": 7
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "record_type",
+      "optional": false,
+      "type": "\"plan\" | \"actual\"",
+      "line": 8
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "total_revenue_eur",
+      "optional": false,
+      "type": "number",
+      "line": 9
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "total_expense_eur",
+      "optional": false,
+      "type": "number",
+      "line": 10
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "net_result_eur",
+      "optional": false,
+      "type": "number",
+      "line": 11
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "tax_gewerbesteuer_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 12
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "tax_grundsteuer_a_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 13
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "tax_grundsteuer_b_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 14
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "tax_income_share_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 15
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "tax_vat_share_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 16
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "hebesatz_gewerbesteuer",
+      "optional": true,
+      "type": "number | null",
+      "line": 17
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "hebesatz_grundsteuer_a",
+      "optional": true,
+      "type": "number | null",
+      "line": 18
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "hebesatz_grundsteuer_b",
+      "optional": true,
+      "type": "number | null",
+      "line": 19
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "total_debt_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 20
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "debt_per_capita_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 21
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "reserves_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 22
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceBudget",
+      "field": "source_document_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 23
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "id",
+      "optional": false,
+      "type": "number",
+      "line": 27
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "budget_id",
+      "optional": false,
+      "type": "string",
+      "line": 28
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 29
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "fiscal_year",
+      "optional": false,
+      "type": "number",
+      "line": 30
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "product_area_code",
+      "optional": false,
+      "type": "string",
+      "line": 31
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "category_name",
+      "optional": false,
+      "type": "\"administration\" | \"public_order\" | \"schools\" | \"social_childcare\" | \"culture_sport\" | \"roads_transport\" | \"utilities\"",
+      "line": 32
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "title",
+      "optional": false,
+      "type": "string",
+      "line": 33
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "expense_budgeted_eur",
+      "optional": false,
+      "type": "number",
+      "line": 34
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "expense_actual_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 35
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "investments_eur",
+      "optional": false,
+      "type": "number",
+      "line": 36
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "FinanceExpenditure",
+      "field": "notes",
+      "optional": true,
+      "type": "string | null",
+      "line": 37
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 41
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "fiscal_year",
+      "optional": false,
+      "type": "number",
+      "line": 42
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "total_revenue_eur",
+      "optional": false,
+      "type": "number",
+      "line": 43
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "total_expense_eur",
+      "optional": false,
+      "type": "number",
+      "line": 44
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "net_result_eur",
+      "optional": false,
+      "type": "number",
+      "line": 45
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "tax_gewerbesteuer_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 46
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "tax_grundsteuer_b_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 47
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "hebesatz_gewerbesteuer",
+      "optional": true,
+      "type": "number | null",
+      "line": 48
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "hebesatz_grundsteuer_b",
+      "optional": true,
+      "type": "number | null",
+      "line": 49
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "total_debt_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 50
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "debt_per_capita_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 51
+    },
+    {
+      "file": "lib/financeData.ts",
+      "contract": "MunicipalFinanceComparison",
+      "field": "reserves_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 52
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 5
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "total_dwellings",
+      "optional": false,
+      "type": "number",
+      "line": 6
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "vacancy_rate_pct",
+      "optional": false,
+      "type": "number",
+      "line": 7
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "avg_living_space_sqm",
+      "optional": false,
+      "type": "number",
+      "line": 8
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "avg_land_value_residential",
+      "optional": false,
+      "type": "number",
+      "line": 9
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "avg_rent_cold_sqm",
+      "optional": false,
+      "type": "number",
+      "line": 10
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "avg_apartment_buy_sqm",
+      "optional": true,
+      "type": "number | null",
+      "line": 11
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "recent_permits_dwellings",
+      "optional": false,
+      "type": "number",
+      "line": 12
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "recent_completions_dwellings",
+      "optional": false,
+      "type": "number",
+      "line": 13
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "RealEstateSummary",
+      "field": "active_bplaene_count",
+      "optional": false,
+      "type": "number",
+      "line": 14
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 18
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 19
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "district",
+      "optional": true,
+      "type": "string | null",
+      "line": 20
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "reference_year",
+      "optional": false,
+      "type": "number",
+      "line": 21
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "total_buildings",
+      "optional": false,
+      "type": "number",
+      "line": 22
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "residential_buildings",
+      "optional": false,
+      "type": "number",
+      "line": 23
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "total_dwellings",
+      "optional": false,
+      "type": "number",
+      "line": 24
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "avg_living_space_sqm",
+      "optional": false,
+      "type": "number",
+      "line": 25
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "vacant_dwellings",
+      "optional": false,
+      "type": "number",
+      "line": 26
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "vacancy_rate_pct",
+      "optional": false,
+      "type": "number",
+      "line": 27
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "age_distribution",
+      "optional": false,
+      "type": "Record<string, number>",
+      "line": 28
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "building_types",
+      "optional": false,
+      "type": "Record<string, number>",
+      "line": 29
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "heating_energy",
+      "optional": false,
+      "type": "Record<string, number>",
+      "line": 30
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "HousingStock",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 31
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 35
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "zone_code",
+      "optional": false,
+      "type": "string",
+      "line": 36
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 37
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "district",
+      "optional": true,
+      "type": "string | null",
+      "line": 38
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "stichtag",
+      "optional": false,
+      "type": "string",
+      "line": 39
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "land_value_eur_sqm",
+      "optional": false,
+      "type": "number",
+      "line": 40
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "zone_type",
+      "optional": false,
+      "type": "string",
+      "line": 41
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "development_status",
+      "optional": false,
+      "type": "string",
+      "line": 42
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "floor_space_index",
+      "optional": true,
+      "type": "number | null",
+      "line": 43
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "center_lat",
+      "optional": false,
+      "type": "number",
+      "line": 44
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "center_lng",
+      "optional": false,
+      "type": "number",
+      "line": 45
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "geometry",
+      "optional": false,
+      "type": "{\n    type: string;\n    coordinates: number[][][] | number[][][][];\n  }",
+      "line": 46
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "BorisZone",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 50
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 54
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 55
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "district",
+      "optional": true,
+      "type": "string | null",
+      "line": 56
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "category",
+      "optional": false,
+      "type": "\"agriculture\" | \"forest\" | \"settlement\" | \"industrial\" | \"water\" | \"traffic\"",
+      "line": 57
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "category_detail",
+      "optional": false,
+      "type": "string",
+      "line": 58
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "area_sqm",
+      "optional": true,
+      "type": "number | null",
+      "line": 59
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "area_hectares",
+      "optional": true,
+      "type": "number | null",
+      "line": 60
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "center_lat",
+      "optional": false,
+      "type": "number",
+      "line": 61
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "center_lng",
+      "optional": false,
+      "type": "number",
+      "line": 62
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "geometry",
+      "optional": false,
+      "type": "{\n    type: string;\n    coordinates: number[][][] | number[][][][];\n  }",
+      "line": 63
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "LandUsePolygon",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 67
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 71
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 72
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 73
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "residential_permits_count",
+      "optional": false,
+      "type": "number",
+      "line": 74
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "residential_dwellings_count",
+      "optional": false,
+      "type": "number",
+      "line": 75
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "residential_living_space_sqm",
+      "optional": true,
+      "type": "number | null",
+      "line": 76
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "non_residential_volume_m3",
+      "optional": true,
+      "type": "number | null",
+      "line": 77
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "completions_buildings_count",
+      "optional": false,
+      "type": "number",
+      "line": 78
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "completions_dwellings_count",
+      "optional": false,
+      "type": "number",
+      "line": 79
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "ConstructionPermit",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 80
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 84
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 85
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 86
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "metric_type",
+      "optional": false,
+      "type": "string",
+      "line": 87
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "median_val",
+      "optional": true,
+      "type": "number | null",
+      "line": 88
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "avg_val",
+      "optional": false,
+      "type": "number",
+      "line": 89
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "min_val",
+      "optional": true,
+      "type": "number | null",
+      "line": 90
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "max_val",
+      "optional": true,
+      "type": "number | null",
+      "line": 91
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "unit",
+      "optional": false,
+      "type": "string",
+      "line": 92
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "transaction_count",
+      "optional": true,
+      "type": "number | null",
+      "line": 93
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 94
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "MarketBenchmark",
+      "field": "source_title",
+      "optional": true,
+      "type": "string | null",
+      "line": 95
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 99
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 100
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "district",
+      "optional": true,
+      "type": "string | null",
+      "line": 101
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "plan_name",
+      "optional": false,
+      "type": "string",
+      "line": 102
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "plan_number",
+      "optional": true,
+      "type": "string | null",
+      "line": 103
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "status",
+      "optional": false,
+      "type": "\"rechtskraeftig\" | \"in_aufstellung\" | \"im_verfahren\"",
+      "line": 104
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "target_use",
+      "optional": false,
+      "type": "\"Wohnen\" | \"Gewerbe\" | \"Mischgebiet\" | \"Sondergebiet\"",
+      "line": 105
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "area_hectares",
+      "optional": true,
+      "type": "number | null",
+      "line": 106
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "resolution_year",
+      "optional": true,
+      "type": "number | null",
+      "line": 107
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "document_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 108
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "center_lat",
+      "optional": false,
+      "type": "number",
+      "line": 109
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "center_lng",
+      "optional": false,
+      "type": "number",
+      "line": 110
+    },
+    {
+      "file": "lib/realestateData.ts",
+      "contract": "DevelopmentPlan",
+      "field": "geometry",
+      "optional": true,
+      "type": "{\n    type: string;\n    coordinates: number[][][] | number[][][][];\n  } | null",
+      "line": 111
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 5
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 6
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "legal_form",
+      "optional": true,
+      "type": "string | null",
+      "line": 7
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "municipality_id",
+      "optional": false,
+      "type": "string",
+      "line": 8
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "municipality_name",
+      "optional": true,
+      "type": "string | null",
+      "line": 9
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "district",
+      "optional": true,
+      "type": "string | null",
+      "line": 10
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "street_address",
+      "optional": false,
+      "type": "string",
+      "line": 11
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "postal_code",
+      "optional": false,
+      "type": "string",
+      "line": 12
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "latitude",
+      "optional": false,
+      "type": "number",
+      "line": 13
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "longitude",
+      "optional": false,
+      "type": "number",
+      "line": 14
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "industry_sector",
+      "optional": false,
+      "type": "string",
+      "line": 15
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "wz_code",
+      "optional": true,
+      "type": "string | null",
+      "line": 16
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "employee_range",
+      "optional": false,
+      "type": "string",
+      "line": 17
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "turnover_estimated_range",
+      "optional": true,
+      "type": "string | null",
+      "line": 18
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "description",
+      "optional": true,
+      "type": "string | null",
+      "line": 19
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "website",
+      "optional": true,
+      "type": "string | null",
+      "line": 20
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "is_headquarters",
+      "optional": false,
+      "type": "boolean",
+      "line": 21
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 22
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "Company",
+      "field": "source_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 23
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "id",
+      "optional": false,
+      "type": "number",
+      "line": 27
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "municipality_id",
+      "optional": false,
+      "type": "string",
+      "line": 28
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "municipality_name",
+      "optional": false,
+      "type": "string",
+      "line": 29
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 30
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "hebesatz_gewerbesteuer",
+      "optional": false,
+      "type": "number",
+      "line": 31
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "hebesatz_grundsteuer_a",
+      "optional": false,
+      "type": "number",
+      "line": 32
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "hebesatz_grundsteuer_b",
+      "optional": false,
+      "type": "number",
+      "line": 33
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "revenue_gewerbesteuer_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 34
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "revenue_grundsteuer_a_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 35
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "revenue_grundsteuer_b_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 36
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "tax_revenue_per_capita_eur",
+      "optional": true,
+      "type": "number | null",
+      "line": 37
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "MunicipalityTaxRate",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 38
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "id",
+      "optional": false,
+      "type": "number",
+      "line": 42
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "region_code",
+      "optional": false,
+      "type": "string",
+      "line": 43
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "region_type",
+      "optional": false,
+      "type": "\"municipality\" | \"county\"",
+      "line": 44
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 45
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "registrations_total",
+      "optional": false,
+      "type": "number",
+      "line": 46
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "new_foundations",
+      "optional": false,
+      "type": "number",
+      "line": 47
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "relocations_in",
+      "optional": false,
+      "type": "number",
+      "line": 48
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "deregistrations_total",
+      "optional": false,
+      "type": "number",
+      "line": 49
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "liquidations",
+      "optional": false,
+      "type": "number",
+      "line": 50
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "relocations_out",
+      "optional": false,
+      "type": "number",
+      "line": 51
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "net_balance",
+      "optional": false,
+      "type": "number",
+      "line": 52
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "BusinessRegistration",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 53
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "id",
+      "optional": false,
+      "type": "number",
+      "line": 57
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "region_code",
+      "optional": false,
+      "type": "string",
+      "line": 58
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 59
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "sector_code",
+      "optional": false,
+      "type": "string",
+      "line": 60
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "sector_name",
+      "optional": false,
+      "type": "string",
+      "line": 61
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "employees_count",
+      "optional": false,
+      "type": "number",
+      "line": 62
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "share_percent",
+      "optional": false,
+      "type": "number",
+      "line": 63
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "IndustryEmployment",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 64
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 68
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 69
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "category",
+      "optional": false,
+      "type": "\"grant\" | \"consulting\" | \"competition\" | \"hub\" | string",
+      "line": 70
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "organizer",
+      "optional": false,
+      "type": "string",
+      "line": 71
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "description",
+      "optional": false,
+      "type": "string",
+      "line": 72
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "url",
+      "optional": true,
+      "type": "string | null",
+      "line": 73
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "funding_bracket",
+      "optional": true,
+      "type": "string | null",
+      "line": 74
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "StartupInitiative",
+      "field": "target_group",
+      "optional": true,
+      "type": "string | null",
+      "line": 75
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 79
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "county_registrations_total",
+      "optional": false,
+      "type": "number",
+      "line": 80
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "county_deregistrations_total",
+      "optional": false,
+      "type": "number",
+      "line": 81
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "county_net_balance",
+      "optional": false,
+      "type": "number",
+      "line": 82
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "county_total_employees",
+      "optional": false,
+      "type": "number",
+      "line": 83
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "total_companies_cataloged",
+      "optional": false,
+      "type": "number",
+      "line": 84
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "average_hebesatz_gewerbesteuer",
+      "optional": false,
+      "type": "number",
+      "line": 85
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "min_hebesatz_gewerbesteuer",
+      "optional": false,
+      "type": "number",
+      "line": 86
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "max_hebesatz_gewerbesteuer",
+      "optional": false,
+      "type": "number",
+      "line": 87
+    },
+    {
+      "file": "lib/economyData.ts",
+      "contract": "EconomyOverview",
+      "field": "key_municipalities",
+      "optional": false,
+      "type": "{\n    municipality_id: string;\n    name: string;\n    hebesatz_gewerbesteuer: number;\n    hebesatz_grundsteuer_b: number;\n    revenue_gewerbesteuer_eur: number;\n    tax_revenue_per_capita_eur: number;\n    registrations_total: number;\n    net_balance: number;\n  }[]",
+      "line": 88
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionPartyResult",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 5
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionPartyResult",
+      "field": "color",
+      "optional": false,
+      "type": "string",
+      "line": 6
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionPartyResult",
+      "field": "votes",
+      "optional": false,
+      "type": "number",
+      "line": 7
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionPartyResult",
+      "field": "percent",
+      "optional": false,
+      "type": "number",
+      "line": 8
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionPartyResult",
+      "field": "seats",
+      "optional": true,
+      "type": "number",
+      "line": 9
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionCandidateResult",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 13
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionCandidateResult",
+      "field": "votes",
+      "optional": false,
+      "type": "number",
+      "line": 14
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionCandidateResult",
+      "field": "percent",
+      "optional": false,
+      "type": "number",
+      "line": 15
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionCandidateResult",
+      "field": "elected",
+      "optional": false,
+      "type": "boolean",
+      "line": 16
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 20
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 21
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "election_type",
+      "optional": false,
+      "type": "\"kommunalwahl\" | \"buergermeister\" | \"landtag\" | \"bundestag\" | \"europawahl\"",
+      "line": 22
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "title",
+      "optional": false,
+      "type": "string",
+      "line": 23
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "election_date",
+      "optional": false,
+      "type": "string",
+      "line": 24
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "eligible_voters",
+      "optional": false,
+      "type": "number",
+      "line": 25
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "total_voters",
+      "optional": false,
+      "type": "number",
+      "line": 26
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "turnout_percent",
+      "optional": false,
+      "type": "number",
+      "line": 27
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "valid_votes",
+      "optional": false,
+      "type": "number",
+      "line": 28
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "invalid_votes",
+      "optional": false,
+      "type": "number",
+      "line": 29
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "seats_total",
+      "optional": true,
+      "type": "number | null",
+      "line": 30
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "results_summary",
+      "optional": false,
+      "type": "{\n    parties?: ElectionPartyResult[];\n    candidates?: ElectionCandidateResult[];\n  }",
+      "line": 31
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "source",
+      "optional": true,
+      "type": "string | null",
+      "line": 35
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionEvent",
+      "field": "source_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 36
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictFeature",
+      "field": "type",
+      "optional": false,
+      "type": "\"Feature\"",
+      "line": 40
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictFeature",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 41
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictFeature",
+      "field": "geometry",
+      "optional": false,
+      "type": "{\n    type: \"Polygon\" | \"Point\";\n    coordinates: number[][][] | number[];\n  }",
+      "line": 42
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictFeature",
+      "field": "properties",
+      "optional": false,
+      "type": "{\n    district_id: string;\n    district_number: string;\n    name: string;\n    polling_station_name?: string | null;\n    polling_station_address?: string | null;\n    center_lat: number;\n    center_lng: number;\n    eligible_voters?: number;\n    total_voters?: number;\n    turnout_percent?: number;\n    valid_votes?: number;\n    invalid_votes?: number;\n    party_results?: Record<string, number>;\n    winning_party?: string | null;\n  }",
+      "line": 46
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictsGeoJSON",
+      "field": "type",
+      "optional": false,
+      "type": "\"FeatureCollection\"",
+      "line": 65
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictsGeoJSON",
+      "field": "election_id",
+      "optional": false,
+      "type": "string",
+      "line": 66
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictsGeoJSON",
+      "field": "election_title",
+      "optional": false,
+      "type": "string",
+      "line": 67
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictsGeoJSON",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 68
+    },
+    {
+      "file": "lib/electionsData.ts",
+      "contract": "ElectionDistrictsGeoJSON",
+      "field": "features",
+      "optional": false,
+      "type": "ElectionDistrictFeature[]",
+      "line": 69
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 19
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "roadName",
+      "optional": false,
+      "type": "string",
+      "line": 20
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "roadClass",
+      "optional": false,
+      "type": "\"bundesstrasse\" | \"landesstrasse\" | \"kreisstrasse\" | \"gemeindestrasse\"",
+      "line": 21
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 22
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "district",
+      "optional": false,
+      "type": "string",
+      "line": 23
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "conditionGrade",
+      "optional": false,
+      "type": "number",
+      "line": 24
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "conditionCategory",
+      "optional": false,
+      "type": "RoadConditionCategory",
+      "line": 25
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "potholesCount",
+      "optional": false,
+      "type": "number",
+      "line": 26
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "crackingSeverity",
+      "optional": false,
+      "type": "\"none\" | \"minor\" | \"moderate\" | \"severe\"",
+      "line": 27
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "surfaceType",
+      "optional": false,
+      "type": "\"asphalt\" | \"cobblestone\" | \"concrete\"",
+      "line": 28
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "lastInspectedAt",
+      "optional": false,
+      "type": "string",
+      "line": 29
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "inspectedBy",
+      "optional": false,
+      "type": "string",
+      "line": 30
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "RoadSegment",
+      "field": "coordinates",
+      "optional": false,
+      "type": "[number, number][]",
+      "line": 31
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 212
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 213
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "facilityType",
+      "optional": false,
+      "type": "EnergyFacilityType",
+      "line": 214
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "operator",
+      "optional": false,
+      "type": "string",
+      "line": 215
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 216
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "address",
+      "optional": false,
+      "type": "string",
+      "line": 217
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "lat",
+      "optional": false,
+      "type": "number",
+      "line": 218
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "lng",
+      "optional": false,
+      "type": "number",
+      "line": 219
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "installedCapacityKw",
+      "optional": false,
+      "type": "number",
+      "line": 220
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "annualGenerationMwhEst",
+      "optional": true,
+      "type": "number",
+      "line": 221
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "commissionedDate",
+      "optional": true,
+      "type": "string",
+      "line": 222
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "mastrId",
+      "optional": true,
+      "type": "string",
+      "line": 223
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EnergyFacility",
+      "field": "description",
+      "optional": false,
+      "type": "string",
+      "line": 224
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergyFacility",
+      "field": "lat",
+      "optional": true,
+      "type": "number",
+      "line": 228
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergyFacility",
+      "field": "lng",
+      "optional": true,
+      "type": "number",
+      "line": 229
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergyFacility",
+      "field": "installedCapacityKw",
+      "optional": false,
+      "type": "number | null",
+      "line": 230
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergyFacility",
+      "field": "currentPowerKw",
+      "optional": false,
+      "type": "number | null",
+      "line": 231
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergyFacility",
+      "field": "todayYieldKwh",
+      "optional": false,
+      "type": "number | null",
+      "line": 232
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "timestamp",
+      "optional": false,
+      "type": "string",
+      "line": 236
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "totalInstalledCapacityKw",
+      "optional": false,
+      "type": "number | null",
+      "line": 237
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "currentTotalPowerKw",
+      "optional": false,
+      "type": "number | null",
+      "line": 238
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "currentTotalPowerMw",
+      "optional": false,
+      "type": "number | null",
+      "line": 239
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "todayTotalEnergyKwh",
+      "optional": false,
+      "type": "number | null",
+      "line": 240
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "todayCo2AvoidedKg",
+      "optional": false,
+      "type": "number | null",
+      "line": 241
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "co2Method",
+      "optional": true,
+      "type": "string | null",
+      "line": 242
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "byTypeKw",
+      "optional": false,
+      "type": "Record<string, number | null>",
+      "line": 243
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "LiveEnergySummary",
+      "field": "facilities",
+      "optional": false,
+      "type": "LiveEnergyFacility[]",
+      "line": 244
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 332
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 333
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "district",
+      "optional": false,
+      "type": "string",
+      "line": 334
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "areaName",
+      "optional": false,
+      "type": "string",
+      "line": 335
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "techType",
+      "optional": false,
+      "type": "BroadbandTech",
+      "line": 336
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "maxDownloadMbps",
+      "optional": false,
+      "type": "number",
+      "line": 337
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "maxUploadMbps",
+      "optional": false,
+      "type": "number",
+      "line": 338
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "rolloutStatus",
+      "optional": false,
+      "type": "BroadbandRolloutStatus",
+      "line": 339
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "contractQuotaPct",
+      "optional": true,
+      "type": "number",
+      "line": 340
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "primaryProvider",
+      "optional": false,
+      "type": "string",
+      "line": 341
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "completionTargetDate",
+      "optional": true,
+      "type": "string",
+      "line": 342
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "BroadbandArea",
+      "field": "coordinates",
+      "optional": true,
+      "type": "[number, number][]",
+      "line": 343
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 479
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "bnetzaId",
+      "optional": true,
+      "type": "string",
+      "line": 480
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 481
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "operator",
+      "optional": false,
+      "type": "string",
+      "line": 482
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "address",
+      "optional": false,
+      "type": "string",
+      "line": 483
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 484
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "district",
+      "optional": true,
+      "type": "string",
+      "line": 485
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "lat",
+      "optional": false,
+      "type": "number",
+      "line": 486
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "lng",
+      "optional": false,
+      "type": "number",
+      "line": 487
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "totalPoints",
+      "optional": false,
+      "type": "number",
+      "line": 488
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "maxPowerKw",
+      "optional": false,
+      "type": "number",
+      "line": 489
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "isFastCharger",
+      "optional": false,
+      "type": "boolean",
+      "line": 490
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "connectorTypes",
+      "optional": false,
+      "type": "string[]",
+      "line": 491
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "isPublic",
+      "optional": false,
+      "type": "boolean",
+      "line": 492
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "availablePoints",
+      "optional": false,
+      "type": "number | null",
+      "line": 493
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "occupiedPoints",
+      "optional": false,
+      "type": "number | null",
+      "line": 494
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "EvChargingStation",
+      "field": "statusSource",
+      "optional": false,
+      "type": "string",
+      "line": 495
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 638
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 639
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "ssid",
+      "optional": false,
+      "type": "string",
+      "line": 640
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "operator",
+      "optional": false,
+      "type": "string",
+      "line": 641
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "locationType",
+      "optional": false,
+      "type": "\"sports_park\" | \"market_square\" | \"community_center\" | \"sports_facility\" | \"town_hall\" | \"station\"",
+      "line": 642
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "address",
+      "optional": false,
+      "type": "string",
+      "line": 643
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 644
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "lat",
+      "optional": false,
+      "type": "number",
+      "line": 645
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "lng",
+      "optional": false,
+      "type": "number",
+      "line": 646
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "indoorOutdoor",
+      "optional": false,
+      "type": "\"indoor\" | \"outdoor\" | \"both\"",
+      "line": 647
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "authMode",
+      "optional": false,
+      "type": "string",
+      "line": 648
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "bandwidthMbps",
+      "optional": false,
+      "type": "number",
+      "line": 649
+    },
+    {
+      "file": "lib/infrastructureData.ts",
+      "contract": "WifiHotspot",
+      "field": "isActive",
+      "optional": false,
+      "type": "boolean",
+      "line": 650
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "id",
+      "optional": false,
+      "type": "number",
+      "line": 6
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 7
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "category",
+      "optional": false,
+      "type": "\"employment\" | \"social\" | \"healthcare_density\" | \"associations\" | \"tourism\"",
+      "line": 8
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "metric_key",
+      "optional": false,
+      "type": "string",
+      "line": 9
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "period",
+      "optional": false,
+      "type": "string",
+      "line": 10
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "period_date",
+      "optional": false,
+      "type": "string",
+      "line": 11
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "value",
+      "optional": false,
+      "type": "number",
+      "line": 12
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "unit",
+      "optional": false,
+      "type": "string",
+      "line": 13
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "benchmark_value",
+      "optional": true,
+      "type": "number | null",
+      "line": 14
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "dimension",
+      "optional": false,
+      "type": "string",
+      "line": 15
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 16
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "MunicipalIndicator",
+      "field": "source_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 17
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 21
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "unemployment_rate",
+      "optional": false,
+      "type": "number | null",
+      "line": 22
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "unemployed_count",
+      "optional": false,
+      "type": "number | null",
+      "line": 23
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "sgb2_recipients",
+      "optional": false,
+      "type": "number | null",
+      "line": 24
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "sgb2_quota_pct",
+      "optional": false,
+      "type": "number | null",
+      "line": 25
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "gp_doctors_per_10k",
+      "optional": false,
+      "type": "number | null",
+      "line": 26
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "specialists_per_10k",
+      "optional": false,
+      "type": "number | null",
+      "line": 27
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "pharmacies_count",
+      "optional": false,
+      "type": "number | null",
+      "line": 28
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "versorgungsgrad_pct",
+      "optional": false,
+      "type": "number | null",
+      "line": 29
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "total_clubs_count",
+      "optional": false,
+      "type": "number | null",
+      "line": 30
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "sports_clubs_count",
+      "optional": false,
+      "type": "number | null",
+      "line": 31
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "cultural_clubs_count",
+      "optional": false,
+      "type": "number | null",
+      "line": 32
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "recycling_rate_percent",
+      "optional": false,
+      "type": "number | null",
+      "line": 33
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "SocialKpiSummary",
+      "field": "waste_kg_per_capita",
+      "optional": false,
+      "type": "number | null",
+      "line": 34
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "id",
+      "optional": false,
+      "type": "number",
+      "line": 38
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 39
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 40
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "fraction",
+      "optional": false,
+      "type": "\"restmuell\" | \"biomuell\" | \"papier\" | \"wertstoffe\" | \"sperrmuell\" | \"schadstoffe\" | \"total\"",
+      "line": 41
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "weight_tons",
+      "optional": false,
+      "type": "number",
+      "line": 42
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "kg_per_capita",
+      "optional": false,
+      "type": "number",
+      "line": 43
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "recycling_rate_percent",
+      "optional": false,
+      "type": "number | null",
+      "line": 44
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "ZakbWasteStat",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 45
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 49
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 50
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "category",
+      "optional": false,
+      "type": "\"healthcare\" | \"culture_sports\" | \"tourism\"",
+      "line": 51
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "facility_type",
+      "optional": false,
+      "type": "\"pharmacy\" | \"doctor_gp\" | \"doctor_specialist\" | \"sports_complex\" | \"culture_center\" | \"attraction\"",
+      "line": 52
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 53
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "district",
+      "optional": true,
+      "type": "string | null",
+      "line": 54
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "street_address",
+      "optional": false,
+      "type": "string",
+      "line": 55
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "postal_code",
+      "optional": false,
+      "type": "string",
+      "line": 56
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "latitude",
+      "optional": false,
+      "type": "number",
+      "line": 57
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "longitude",
+      "optional": false,
+      "type": "number",
+      "line": 58
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "phone",
+      "optional": true,
+      "type": "string | null",
+      "line": 59
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "website",
+      "optional": true,
+      "type": "string | null",
+      "line": 60
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "description",
+      "optional": true,
+      "type": "string | null",
+      "line": 61
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "opening_hours",
+      "optional": true,
+      "type": "Record<string, string> | null",
+      "line": 62
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "extra_attributes",
+      "optional": true,
+      "type": "Record<string, any> | null",
+      "line": 63
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "RegionalFacility",
+      "field": "is_active",
+      "optional": false,
+      "type": "boolean",
+      "line": 64
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 68
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "title",
+      "optional": false,
+      "type": "string",
+      "line": 69
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "organizer",
+      "optional": false,
+      "type": "string",
+      "line": 70
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "venue_id",
+      "optional": true,
+      "type": "string | null",
+      "line": 71
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "venue_name",
+      "optional": false,
+      "type": "string",
+      "line": 72
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 73
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "start_time",
+      "optional": false,
+      "type": "string",
+      "line": 74
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "end_time",
+      "optional": true,
+      "type": "string | null",
+      "line": 75
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "category",
+      "optional": false,
+      "type": "\"concert\" | \"exhibition\" | \"workshop\" | \"festival\" | \"sports\" | \"civic\" | \"market\" | \"theater\"",
+      "line": 76
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "description",
+      "optional": true,
+      "type": "string | null",
+      "line": 77
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "ticket_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 78
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "event_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 79
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "image_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 80
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "street_address",
+      "optional": true,
+      "type": "string | null",
+      "line": 81
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "postal_code",
+      "optional": true,
+      "type": "string | null",
+      "line": 82
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "status",
+      "optional": true,
+      "type": "\"scheduled\" | \"cancelled\" | \"postponed\" | \"past\"",
+      "line": 83
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "is_free",
+      "optional": false,
+      "type": "boolean | null",
+      "line": 84
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "is_archived",
+      "optional": true,
+      "type": "boolean",
+      "line": 85
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "CulturalEvent",
+      "field": "source",
+      "optional": true,
+      "type": "string",
+      "line": 86
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "FetchCulturalEventsOptions",
+      "field": "municipality",
+      "optional": true,
+      "type": "string",
+      "line": 792
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "FetchCulturalEventsOptions",
+      "field": "category",
+      "optional": true,
+      "type": "string",
+      "line": 793
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "FetchCulturalEventsOptions",
+      "field": "search",
+      "optional": true,
+      "type": "string",
+      "line": 794
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "FetchCulturalEventsOptions",
+      "field": "includePast",
+      "optional": true,
+      "type": "boolean",
+      "line": 795
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "FetchCulturalEventsOptions",
+      "field": "fromDate",
+      "optional": true,
+      "type": "string",
+      "line": 796
+    },
+    {
+      "file": "lib/regionalStats.ts",
+      "contract": "FetchCulturalEventsOptions",
+      "field": "toDate",
+      "optional": true,
+      "type": "string",
+      "line": 797
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "Reading",
+      "field": "metric",
+      "optional": false,
+      "type": "string",
+      "line": 18
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "Reading",
+      "field": "value",
+      "optional": false,
+      "type": "number",
+      "line": 18
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "Reading",
+      "field": "unit",
+      "optional": false,
+      "type": "string",
+      "line": 18
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "Reading",
+      "field": "timestamp",
+      "optional": false,
+      "type": "string",
+      "line": 18
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 22
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "friendly_name",
+      "optional": false,
+      "type": "string",
+      "line": 22
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "latitude",
+      "optional": false,
+      "type": "number | null",
+      "line": 22
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "longitude",
+      "optional": false,
+      "type": "number | null",
+      "line": 22
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "description",
+      "optional": true,
+      "type": "string | null",
+      "line": 23
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "is_hidden",
+      "optional": true,
+      "type": "boolean",
+      "line": 23
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "entity_type",
+      "optional": true,
+      "type": "string | null",
+      "line": 23
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "source_entity_id",
+      "optional": true,
+      "type": "string | null",
+      "line": 24
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "ApiMapSensor",
+      "field": "readings",
+      "optional": true,
+      "type": "Reading[]",
+      "line": 24
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 27
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 27
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "locationName",
+      "optional": false,
+      "type": "string",
+      "line": 27
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "address",
+      "optional": false,
+      "type": "string",
+      "line": 27
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "lat",
+      "optional": false,
+      "type": "number | null",
+      "line": 27
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "lng",
+      "optional": false,
+      "type": "number | null",
+      "line": 27
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "categories",
+      "optional": false,
+      "type": "Category[]",
+      "line": 28
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "readings",
+      "optional": false,
+      "type": "Reading[]",
+      "line": 28
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "StationNode",
+      "field": "isAggregate",
+      "optional": true,
+      "type": "boolean",
+      "line": 29
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "SensorNode",
+      "field": "lat",
+      "optional": false,
+      "type": "number",
+      "line": 32
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "SensorNode",
+      "field": "lng",
+      "optional": false,
+      "type": "number",
+      "line": 32
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 1031
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 1032
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "designation",
+      "optional": false,
+      "type": "string",
+      "line": 1033
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 1034
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "area_hectares",
+      "optional": true,
+      "type": "number | null",
+      "line": 1035
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "legal_ordinance_year",
+      "optional": true,
+      "type": "number | null",
+      "line": 1036
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "conservation_aims",
+      "optional": true,
+      "type": "string | null",
+      "line": 1037
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "visiting_rules",
+      "optional": true,
+      "type": "Record<string, any> | null",
+      "line": 1038
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "geojson",
+      "optional": false,
+      "type": "any",
+      "line": 1039
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "NatureArea",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 1040
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 1044
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 1045
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "crop_name",
+      "optional": false,
+      "type": "string",
+      "line": 1046
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "crop_family",
+      "optional": false,
+      "type": "string",
+      "line": 1047
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 1048
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "area_hectares",
+      "optional": true,
+      "type": "number | null",
+      "line": 1049
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "irrigation_demand_class",
+      "optional": true,
+      "type": "string | null",
+      "line": 1050
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "CropZone",
+      "field": "geojson",
+      "optional": false,
+      "type": "any",
+      "line": 1051
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "AgriculturalStat",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 1055
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "AgriculturalStat",
+      "field": "year",
+      "optional": false,
+      "type": "number",
+      "line": 1056
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "AgriculturalStat",
+      "field": "crop_family",
+      "optional": false,
+      "type": "string",
+      "line": 1057
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "AgriculturalStat",
+      "field": "crop_name",
+      "optional": false,
+      "type": "string",
+      "line": 1058
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "AgriculturalStat",
+      "field": "area_hectares",
+      "optional": false,
+      "type": "number",
+      "line": 1059
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "AgriculturalStat",
+      "field": "percentage_of_agricultural_land",
+      "optional": false,
+      "type": "number",
+      "line": 1060
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 1064
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "name",
+      "optional": false,
+      "type": "string",
+      "line": 1065
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "water_body",
+      "optional": false,
+      "type": "string",
+      "line": 1066
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "municipality",
+      "optional": false,
+      "type": "string",
+      "line": 1067
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "latitude",
+      "optional": false,
+      "type": "number",
+      "line": 1068
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "longitude",
+      "optional": false,
+      "type": "number",
+      "line": 1069
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "current_level_m",
+      "optional": false,
+      "type": "number",
+      "line": 1070
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "discharge_m3_s",
+      "optional": true,
+      "type": "number | null",
+      "line": 1071
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "alarm_level_1_m",
+      "optional": false,
+      "type": "number",
+      "line": 1072
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "alarm_level_2_m",
+      "optional": false,
+      "type": "number",
+      "line": 1073
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "alarm_level_3_m",
+      "optional": false,
+      "type": "number",
+      "line": 1074
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "status",
+      "optional": false,
+      "type": "string",
+      "line": 1075
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "source",
+      "optional": false,
+      "type": "string",
+      "line": 1076
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "FloodGauge",
+      "field": "updated_at",
+      "optional": false,
+      "type": "string",
+      "line": 1077
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "id",
+      "optional": false,
+      "type": "string",
+      "line": 1081
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "title",
+      "optional": false,
+      "type": "string",
+      "line": 1082
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "category",
+      "optional": false,
+      "type": "string",
+      "line": 1083
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "service_type",
+      "optional": false,
+      "type": "string",
+      "line": 1084
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "wms_url",
+      "optional": false,
+      "type": "string",
+      "line": 1085
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "layer_name",
+      "optional": false,
+      "type": "string",
+      "line": 1086
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "legend_url",
+      "optional": true,
+      "type": "string | null",
+      "line": 1087
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "attribution",
+      "optional": false,
+      "type": "string",
+      "line": 1088
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "default_opacity",
+      "optional": false,
+      "type": "number",
+      "line": 1089
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "min_zoom",
+      "optional": false,
+      "type": "number",
+      "line": 1090
+    },
+    {
+      "file": "lib/mapData.ts",
+      "contract": "MapServiceLayer",
+      "field": "max_zoom",
+      "optional": false,
+      "type": "number",
+      "line": 1091
+    }
+  ]
+}

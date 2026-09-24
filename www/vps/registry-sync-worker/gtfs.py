@@ -299,6 +299,18 @@ async def import_gtfs(conn, client, source):
                     Jsonb(item["metadata"]),
                 ),
             )
+        async with conn.cursor() as cursor:
+            await cursor.executemany(
+                """INSERT INTO movement_stop_times
+                (source_id,trip_id,service_date,sequence,stop_id,arrival_at,departure_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                [
+                    (source["id"], item["trip_id"], item["service_date"], stop["sequence"],
+                     stop["stop_id"], datetime.fromtimestamp(stop["arrival"], UTC),
+                     datetime.fromtimestamp(stop["departure"], UTC))
+                    for item in schedules for stop in item["metadata"]["stop_times"]
+                ],
+            )
         await publish(
             conn, source, f"transport/stops/{source['id']}", stops, digest, now, now
         )

@@ -209,7 +209,7 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         if r["dataset"].startswith("map/layers/")
     }
     stops = [
-        stop
+        {**stop, "source_id": row["dataset"].removeprefix("transport/stops/")}
         for row in rows
         if row["dataset"].startswith("transport/stops/")
         for stop in row["data"]
@@ -224,7 +224,7 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
                         "type": "Point",
                         "coordinates": [s["longitude"], s["latitude"]],
                     },
-                    "properties": {"name": s["name"], "stop_id": s["id"]},
+                    "properties": {"name": s["name"], "stop_id": s["id"], "source_id": s["source_id"]},
                 }
                 for s in stops
             ],
@@ -290,17 +290,17 @@ async def departures(stop_id: str, request: Request, pool=Depends(get_db_pool)):
     async with pool.connection() as conn:
         cursor = await conn.execute(
             """SELECT s.source_id,s.trip_id,s.metadata->>'line' AS line,
-            s.metadata->>'destination' AS destination,to_timestamp((t->>'departure')::double precision) AS scheduled_at,
-            to_timestamp((t->>'departure')::double precision) + make_interval(secs => COALESCE(u.delay_seconds,0)) AS expected_at,
+            s.metadata->>'destination' AS destination,t.departure_at AS scheduled_at,
+            t.departure_at + make_interval(secs => COALESCE(u.delay_seconds,0)) AS expected_at,
             COALESCE(u.delay_basis,'schedule_only') AS delay_basis
-            FROM movement_schedules s CROSS JOIN LATERAL jsonb_array_elements(s.metadata->'stop_times') t
+            FROM movement_stop_times t JOIN movement_schedules s USING(source_id,trip_id,service_date)
             LEFT JOIN movement_trip_updates u ON u.source_id=s.source_id AND u.trip_id=s.trip_id
                 AND u.service_date=s.service_date AND u.valid_until>NOW()
-            WHERE t->>'stop_id'=%s AND s.fetched_at>NOW()-INTERVAL '48 hours'
+            WHERE t.stop_id=%s AND (%s::text IS NULL OR t.source_id=%s) AND s.fetched_at>NOW()-INTERVAL '48 hours'
             AND NOT COALESCE(u.cancelled,FALSE)
-            AND to_timestamp((t->>'departure')::double precision)+make_interval(secs => COALESCE(u.delay_seconds,0))>NOW()
+            AND t.departure_at+make_interval(secs => COALESCE(u.delay_seconds,0))>NOW()
             ORDER BY expected_at LIMIT 12""",
-            (stop_id,),
+            (stop_id, request.query_params.get("source"), request.query_params.get("source")),
         )
         rows = await cursor.fetchall()
     return cached_response(

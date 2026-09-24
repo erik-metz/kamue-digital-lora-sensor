@@ -347,13 +347,8 @@
         "infrastructure/energy": {
           "type": "object",
           "required": [
-            "timestamp",
-            "facilities",
-            "currentTotalPowerMw",
-            "totalInstalledCapacityKw",
-            "todayTotalEnergyKwh",
-            "todayCo2AvoidedKg",
-            "byTypeKw"
+            "contract_version",
+            "timestamp"
           ]
         }
       }

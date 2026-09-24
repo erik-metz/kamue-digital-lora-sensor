@@ -76,3 +76,11 @@ test('shared header has no invented sensor-count default', () => {
  const source=fs.readFileSync(new URL('../app/components/SiteHeader.tsx',import.meta.url),'utf8');
  assert.doesNotMatch(source,/sensorCount\s*\?\?\s*\d/);
 });
+
+test('departure proxy preserves stop namespace and bounds cache', async () => {
+ let seen;
+ const lib=load('../app/api/buses/stops/[stopId]/departures/route.ts',{'@/lib/collectedBackend':{proxyBackend:(path,ttl)=>{seen={path,ttl};return Response.json({departures:[]});}}});
+ await lib.GET({url:'https://site.example/api/buses/stops/shared/departures?source=rail%26other'}, {params:Promise.resolve({stopId:'shared'})});
+ assert.equal(seen.path,'transport/stops/shared/departures?source=rail%26other');
+ assert.equal(seen.ttl,10);
+});

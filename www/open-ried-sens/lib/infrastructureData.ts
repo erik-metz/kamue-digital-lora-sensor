@@ -224,19 +224,23 @@ export interface EnergyFacility {
   description: string;
 }
 
-export interface LiveEnergyFacility extends EnergyFacility {
-  currentPowerKw: number;
-  todayYieldKwh: number;
+export interface LiveEnergyFacility extends Pick<EnergyFacility, "id" | "name" | "facilityType" | "operator" | "municipality"> {
+  lat?: number;
+  lng?: number;
+  installedCapacityKw: number | null;
+  currentPowerKw: number | null;
+  todayYieldKwh: number | null;
 }
 
 export interface LiveEnergySummary {
   timestamp: string;
-  totalInstalledCapacityKw: number;
-  currentTotalPowerKw: number;
-  currentTotalPowerMw: number;
-  todayTotalEnergyKwh: number;
-  todayCo2AvoidedKg: number;
-  byTypeKw: Record<string, number>;
+  totalInstalledCapacityKw: number | null;
+  currentTotalPowerKw: number | null;
+  currentTotalPowerMw: number | null;
+  todayTotalEnergyKwh: number | null;
+  todayCo2AvoidedKg: number | null;
+  co2Method?: string | null;
+  byTypeKw: Record<string, number | null>;
   facilities: LiveEnergyFacility[];
 }
 
@@ -317,59 +321,6 @@ export const VERIFIED_ENERGY_FACILITIES: EnergyFacility[] = [
     description: "Eigenverbrauchs- und Einspeise-PV der Kläranlage Lampertheim",
   },
 ];
-
-export function calculateLiveEnergyGeneration(nowMs: number = Date.now()): LiveEnergySummary {
-  const date = new Date(nowMs);
-  const hour = date.getUTCHours() + date.getUTCMinutes() / 60.0;
-
-  // Diurnal solar curve (peaking at solar noon ~13h UTC in summertime)
-  let solarFactor = 0.0;
-  if (hour >= 6.0 && hour <= 20.0) {
-    solarFactor = Math.max(0.0, Math.sin(((hour - 6.0) / 14.0) * Math.PI)) * 0.78;
-  }
-
-  let totalCap = 0;
-  let totalPower = 0;
-  const byType: Record<string, number> = {};
-
-  const facilities: LiveEnergyFacility[] = VERIFIED_ENERGY_FACILITIES.map((fac) => {
-    totalCap += fac.installedCapacityKw;
-    let power = 0;
-    let yieldKwh = 0;
-
-    if (fac.facilityType === "biogas" || fac.facilityType === "landfill_gas") {
-      // Continuous baseload ~90%
-      power = Math.round(fac.installedCapacityKw * 0.9);
-      yieldKwh = Math.round(power * hour);
-    } else if (fac.facilityType === "solar_pv") {
-      power = Math.round(fac.installedCapacityKw * solarFactor);
-      yieldKwh = Math.round(fac.installedCapacityKw * 4.2 * Math.min(1.0, Math.max(0.1, hour / 18.0)));
-    }
-
-    totalPower += power;
-    byType[fac.facilityType] = (byType[fac.facilityType] || 0) + power;
-
-    return {
-      ...fac,
-      currentPowerKw: power,
-      todayYieldKwh: yieldKwh,
-    };
-  });
-
-  const todayTotalKwh = facilities.reduce((sum, f) => sum + f.todayYieldKwh, 0);
-  const todayCo2 = Math.round(todayTotalKwh * 0.4); // 0.40 kg CO2 / kWh green mix
-
-  return {
-    timestamp: new Date(nowMs).toISOString(),
-    totalInstalledCapacityKw: Math.round(totalCap),
-    currentTotalPowerKw: Math.round(totalPower),
-    currentTotalPowerMw: Math.round((totalPower / 1000) * 100) / 100,
-    todayTotalEnergyKwh: Math.round(todayTotalKwh),
-    todayCo2AvoidedKg: todayCo2,
-    byTypeKw: byType,
-    facilities,
-  };
-}
 
 // ==========================================
 // 3. BROADBAND & FIBRE ROLLOUT STATUS
@@ -540,7 +491,7 @@ export interface EvChargingStation {
   connectorTypes: string[];
   isPublic: boolean;
   availablePoints: number | null;
-  occupiedPoints: number;
+  occupiedPoints: number | null;
   statusSource: string;
 }
 

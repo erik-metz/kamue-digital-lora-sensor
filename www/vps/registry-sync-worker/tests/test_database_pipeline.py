@@ -2,13 +2,14 @@
 import hashlib
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tests"))
 from datetime import UTC, datetime, timedelta
 
 from db_support import DatabaseCase
+from prediction import predict_tick, store_position
 from psycopg.types.json import Jsonb
 from publications import publish
-from prediction import predict_tick, store_position
 
 
 class PipelineDatabaseTests(DatabaseCase):
@@ -36,3 +37,28 @@ class PipelineDatabaseTests(DatabaseCase):
         await predict_tick(self.conn,now+timedelta(seconds=120))
         self.assertEqual(await self.scalar('SELECT COUNT(*) FROM movement_latest'),0)
         self.assertEqual(await self.scalar('SELECT COUNT(*) FROM movement_positions'),2)
+
+    async def test_gtfs_import_replaces_indexed_stop_times_atomically(self):
+        from unittest.mock import patch
+
+        import httpx
+        from gtfs import import_gtfs
+        from test_collected_pipeline import feed_fixture
+        now = datetime(2026, 9, 22, 12, tzinfo=UTC)
+        source = {'id':'test-gtfs','url':'https://example.org/gtfs','bbox':[49.55,8.3,49.8,8.65]}
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200,content=feed_fixture()))) as client:
+            with patch('gtfs.datetime', wraps=datetime) as clock:
+                clock.now.return_value = now
+                clock.fromtimestamp = datetime.fromtimestamp
+                await import_gtfs(self.conn,client,source)
+                count = await self.scalar('SELECT COUNT(*) FROM movement_stop_times')
+                self.assertGreater(count,0)
+                await import_gtfs(self.conn,client,source)
+                self.assertEqual(await self.scalar('SELECT COUNT(*) FROM movement_stop_times'),count)
+        # Rehearse the upgrade from existing JSON-only schedules and repeat initialization.
+        await self.conn.execute('DELETE FROM movement_stop_times')
+        await self.conn.execute('DELETE FROM collector_schema_versions WHERE version=20260927')
+        schema = (Path(__file__).resolve().parents[2] / 'api/v1/schema.sql').read_text()
+        await self.conn.execute(schema)
+        await self.conn.execute(schema)
+        self.assertEqual(await self.scalar('SELECT COUNT(*) FROM movement_stop_times'),count)

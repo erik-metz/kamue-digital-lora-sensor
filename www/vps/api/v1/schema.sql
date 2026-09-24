@@ -1536,3 +1536,29 @@ CREATE TABLE IF NOT EXISTS collection_sources (
 );
 
 INSERT INTO collector_schema_versions(version) VALUES (20260926) ON CONFLICT DO NOTHING;
+
+-- Indexed stop projection: departure reads must not expand every trip's JSON.
+CREATE TABLE IF NOT EXISTS movement_stop_times (
+    source_id TEXT NOT NULL,
+    trip_id TEXT NOT NULL,
+    service_date DATE NOT NULL,
+    sequence INTEGER NOT NULL,
+    stop_id TEXT NOT NULL,
+    arrival_at TIMESTAMPTZ NOT NULL,
+    departure_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY(source_id,trip_id,service_date,sequence),
+    FOREIGN KEY(source_id,trip_id,service_date)
+        REFERENCES movement_schedules(source_id,trip_id,service_date) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS movement_stop_times_departures
+    ON movement_stop_times(stop_id,departure_at,source_id);
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM collector_schema_versions WHERE version=20260927) THEN
+        INSERT INTO movement_stop_times
+        SELECT s.source_id,s.trip_id,s.service_date,(t->>'sequence')::integer,t->>'stop_id',
+            to_timestamp((t->>'arrival')::double precision),to_timestamp((t->>'departure')::double precision)
+        FROM movement_schedules s CROSS JOIN LATERAL jsonb_array_elements(s.metadata->'stop_times') t
+        ON CONFLICT DO NOTHING;
+        INSERT INTO collector_schema_versions(version) VALUES (20260927);
+    END IF;
+END $$;

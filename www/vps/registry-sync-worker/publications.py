@@ -6,6 +6,7 @@ import os
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit, urlunsplit
 
+from contracts import energy_publication
 from psycopg.types.json import Jsonb
 
 
@@ -112,6 +113,8 @@ async def import_json(conn, client, source):
         if set(datasets) != set(expected):
             raise ValueError("Publication does not match configured dataset contract")
         for key, contract in expected.items():
+            if key == "infrastructure/energy":
+                datasets[key] = energy_publication(datasets[key], source_time)
             value = datasets[key]
             is_list = contract["type"] == "array"
             if not isinstance(value, list if is_list else dict):

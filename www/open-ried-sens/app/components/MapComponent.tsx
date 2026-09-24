@@ -190,12 +190,39 @@ export default function MapComponent(props: MapProps) {
     if (!instance || !ready) return;
     const group = L.layerGroup().addTo(instance);
     let closures = 0;
+    const requests = new Set<AbortController>();
     for (const [id, geometry] of Object.entries(publication.layers)) {
       if (!layers[id as MapLayerId]) continue;
       L.geoJSON(geometry as GeoJsonObject, {
         pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 6, color: "#34d399" }),
         onEachFeature: (feature, layer) => {
           const values = feature.properties ?? {};
+          if (id === "stops" && typeof values.stop_id === "string" && typeof values.source_id === "string") {
+            layer.bindPopup(textPopup([String(values.name ?? "Haltestelle"), "Abfahrten werden geladen …"]));
+            let pending: AbortController | undefined;
+            layer.on("popupopen", async () => {
+              pending?.abort();
+              const controller = new AbortController();
+              pending = controller;
+              requests.add(controller);
+              try {
+                const response = await fetch(`/api/buses/stops/${encodeURIComponent(values.stop_id)}/departures?source=${encodeURIComponent(values.source_id)}`, { signal: controller.signal });
+                if (!response.ok) throw new Error("Unavailable");
+                const body = await response.json();
+                if (!Array.isArray(body.departures)) throw new Error("Invalid departures");
+                if (!controller.signal.aborted) layer.setPopupContent(textPopup([
+                  String(values.name ?? "Haltestelle"), "Gespeicherter Fahrplan / gemeldete Verspätungen",
+                  ...body.departures.map((departure: { line: string; destination: string; expected_at: string; delay_basis: string }) =>
+                    `${new Date(departure.expected_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" })} · ${departure.line} → ${departure.destination}${departure.delay_basis === "schedule_only" ? " (Fahrplan)" : " (Prognose)"}`),
+                  ...(body.departures.length ? [] : ["Keine bevorstehenden Abfahrten im gespeicherten Fahrplan."]),
+                ]));
+              } catch {
+                if (!controller.signal.aborted) layer.setPopupContent(textPopup([String(values.name ?? "Haltestelle"), "Abfahrten nicht verfügbar."]));
+              } finally { requests.delete(controller); }
+            });
+            layer.on("popupclose", () => pending?.abort());
+            return;
+          }
           layer.bindPopup(textPopup(Object.entries(values).filter(([,v]) => typeof v === "string" || typeof v === "number")
             .map(([k,v]) => `${k}: ${v}`)));
           if (id === "closures") closures++;
@@ -204,7 +231,7 @@ export default function MapComponent(props: MapProps) {
     }
     if (layers.starkregen) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
     callbacks.current.onActiveClosuresCountChange?.(closures);
-    return () => { group.remove(); };
+    return () => { requests.forEach(controller => controller.abort()); group.remove(); };
   }, [ready, publication, layers]);
 
   const missing = publication.unavailable.filter(id => layers[id as MapLayerId]);

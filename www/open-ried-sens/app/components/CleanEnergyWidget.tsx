@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Zap, Sun, Leaf, Flame, ShieldAlert } from "lucide-react";
+import { Zap, Sun, Leaf, Flame } from "lucide-react";
 import { type LiveEnergySummary } from "@/lib/infrastructureData";
 
 export default function CleanEnergyWidget() {
@@ -16,7 +16,8 @@ export default function CleanEnergyWidget() {
         if (!res.ok) throw new Error("Unavailable");
         if (res.ok) {
           const json = await res.json();
-          if (!cancelled && json.facilities) {
+          if (!Array.isArray(json.facilities)) throw new Error("Invalid energy data");
+          if (!cancelled) {
             setData(json);
             setSourceTime(res.headers.get("x-source-updated-at"));
           }
@@ -41,8 +42,9 @@ export default function CleanEnergyWidget() {
   const currentMw = data.currentTotalPowerMw;
   const todayKwh = data.todayTotalEnergyKwh;
   const todayCo2Kg = data.todayCo2AvoidedKg;
-  const solarKw = data.byTypeKw["solar_pv"] || 0;
-  const biogasKw = (data.byTypeKw["biogas"] || 0) + (data.byTypeKw["landfill_gas"] || 0);
+  const solarKw = data.byTypeKw["solar_pv"] ?? null;
+  const biogasKw = data.byTypeKw["biogas"] != null && data.byTypeKw["landfill_gas"] != null
+    ? data.byTypeKw["biogas"] + data.byTypeKw["landfill_gas"] : null;
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900/90 to-slate-950 p-6 sm:p-8 space-y-6 shadow-xl">
@@ -75,10 +77,10 @@ export default function CleanEnergyWidget() {
             <Zap className="size-4 text-amber-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-amber-400">
-            {currentMw.toFixed(2)} <span className="text-sm font-normal text-slate-400">MW</span>
+            {currentMw == null ? "—" : currentMw.toFixed(2)} <span className="text-sm font-normal text-slate-400">MW</span>
           </div>
           <div className="text-[11px] text-slate-500">
-            von {(totalCapKw / 1000).toFixed(1)} MWp installiert
+            {totalCapKw == null ? "Installierte Leistung unbekannt" : `${(totalCapKw / 1000).toFixed(1)} MW installiert`}
           </div>
         </div>
 
@@ -89,7 +91,7 @@ export default function CleanEnergyWidget() {
             <Sun className="size-4 text-amber-300" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-100">
-            {solarKw >= 1000 ? `${(solarKw / 1000).toFixed(2)} MW` : `${Math.round(solarKw)} kW`}
+            {solarKw == null ? "—" : solarKw >= 1000 ? `${(solarKw / 1000).toFixed(2)} MW` : `${Math.round(solarKw)} kW`}
           </div>
           <div className="text-[11px] text-amber-400/80">
             Leistung aus gespeicherten Messwerten
@@ -99,14 +101,14 @@ export default function CleanEnergyWidget() {
         {/* KPI 3: Biogas & Deponiegas Baseload */}
         <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1">
           <div className="flex items-center justify-between text-xs text-slate-400">
-            <span>Biogas / ZAKB Grundlast</span>
+            <span>Biogas / Deponiegas</span>
             <Flame className="size-4 text-emerald-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
-            {biogasKw >= 1000 ? `${(biogasKw / 1000).toFixed(2)} MW` : `${Math.round(biogasKw)} kW`}
+            {biogasKw == null ? "—" : biogasKw >= 1000 ? `${(biogasKw / 1000).toFixed(2)} MW` : `${Math.round(biogasKw)} kW`}
           </div>
           <div className="text-[11px] text-emerald-400/80">
-            24/7 kontinuierliche Einspeisung
+            Leistung aus gespeicherten Messwerten
           </div>
         </div>
 
@@ -117,10 +119,11 @@ export default function CleanEnergyWidget() {
             <Leaf className="size-4 text-teal-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-teal-400">
-            {todayCo2Kg >= 1000 ? `${(todayCo2Kg / 1000).toFixed(1)} t` : `${todayCo2Kg} kg`}
+            {todayCo2Kg == null || !data.co2Method ? "—" : todayCo2Kg >= 1000 ? `${(todayCo2Kg / 1000).toFixed(1)} t` : `${todayCo2Kg} kg`}
           </div>
           <div className="text-[11px] text-slate-500">
-            ~{todayKwh.toLocaleString("de-DE")} kWh Ökostrom heute
+            {todayKwh == null ? "Tagesertrag unbekannt" : `${todayKwh.toLocaleString("de-DE")} kWh Ökostrom heute`}
+            {data.co2Method && <p>Berechnung: {data.co2Method}</p>}
           </div>
         </div>
       </div>
@@ -149,12 +152,12 @@ export default function CleanEnergyWidget() {
                 </div>
                 <div className="text-right shrink-0">
                   <div className={`text-xs font-bold ${isBio ? "text-emerald-400" : "text-amber-400"}`}>
-                    {fac.currentPowerKw >= 1000
+                    {fac.currentPowerKw == null ? "—" : fac.currentPowerKw >= 1000
                       ? `${(fac.currentPowerKw / 1000).toFixed(2)} MW`
                       : `${Math.round(fac.currentPowerKw)} kW`}
                   </div>
                   <div className="text-[10px] text-slate-500">
-                    Kap: {fac.installedCapacityKw >= 1000 ? `${(fac.installedCapacityKw / 1000).toFixed(1)} MWp` : `${fac.installedCapacityKw} kWp`}
+                    Kap: {fac.installedCapacityKw == null ? "—" : fac.installedCapacityKw >= 1000 ? `${(fac.installedCapacityKw / 1000).toFixed(1)} MW` : `${fac.installedCapacityKw} kW`}
                   </div>
                 </div>
               </div>
