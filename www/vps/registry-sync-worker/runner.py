@@ -1,0 +1,203 @@
+"""Independently scheduled acquisition, and one shared persisted prediction worker."""
+
+import argparse
+import asyncio
+import json
+import logging
+import os
+import signal
+from datetime import UTC, datetime
+from pathlib import Path
+
+import httpx
+import psycopg
+from adapters import import_cross7, import_tiles
+from chargers import import_chargers
+from config import Settings
+from elections import import_elections
+from gtfs import import_gtfs
+from hessen import import_hessen
+from map_tiles import import_wms
+from prediction import predict_tick
+from publications import import_json, public_url
+from realtime import import_realtime
+from zakb import import_zakb
+
+LOG = logging.getLogger(__name__)
+ADAPTERS = {
+    "json": import_json,
+    "wms": import_wms,
+    "hessen": import_hessen,
+    "election-precincts": import_elections,
+    "bnetza": import_chargers,
+    "gtfs": import_gtfs,
+    "cross7": import_cross7,
+    "tiles": import_tiles,
+    "gtfs-rt": import_realtime,
+    "zakb": import_zakb,
+}
+
+
+def sources():
+    path = Path(
+        os.getenv("SOURCE_MANIFEST", str(Path(__file__).with_name("sources.json")))
+    )
+    result = json.loads(path.read_text())["sources"]
+    ids = [s["id"] for s in result]
+    if len(ids) != len(set(ids)):
+        raise ValueError("Duplicate source identifiers")
+    for source in result:
+        if source["adapter"] not in ADAPTERS or source.get("interval_seconds", 0) < 30:
+            raise ValueError("Invalid adapter/cadence")
+        if source.get("enabled") and not source.get("url"):
+            raise ValueError("Enabled source has no URL")
+    return result
+
+
+async def register_source(conn, source):
+    await conn.execute(
+        """INSERT INTO collection_sources(id,source_url,adapter,enabled,interval_seconds,description)
+        VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT(id) DO UPDATE SET source_url=EXCLUDED.source_url,
+        adapter=EXCLUDED.adapter,enabled=EXCLUDED.enabled,interval_seconds=EXCLUDED.interval_seconds,
+        description=EXCLUDED.description,updated_at=NOW()""",
+        (
+            source["id"],
+            public_url(source.get("url", "")),
+            source["adapter"],
+            source.get("enabled", False),
+            source["interval_seconds"],
+            source.get("reason"),
+        ),
+    )
+    await conn.commit()
+
+
+async def collect(source, settings):
+    if not source.get("enabled"):
+        async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+            await register_source(conn, source)
+            await conn.execute(
+                "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'not_configured',%s)",
+                (source["id"], source.get("reason", "Source not configured")),
+            )
+        return {"source_id": source["id"], "status": "not_configured"}
+    async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+        await register_source(conn, source)
+        cursor = await conn.execute(
+            "SELECT pg_try_advisory_lock(hashtext(%s))", (source["id"],)
+        )
+        if not (await cursor.fetchone())[0]:
+            return {"source_id": source["id"], "status": "already_running"}
+        await conn.commit()
+        try:
+            async with httpx.AsyncClient(
+                timeout=120,
+                follow_redirects=True,
+                headers={"User-Agent": "OpenRiedSens-Collector/2.0"},
+            ) as client:
+                status = await ADAPTERS[source["adapter"]](conn, client, source)
+            return {"source_id": source["id"], "status": status or "success"}
+        except Exception as exc:  # noqa: BLE001 - isolate source jobs; record failure without secret URLs
+            await conn.rollback()
+            await conn.execute(
+                "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'failed',%s)",
+                (source["id"], type(exc).__name__),
+            )
+            await conn.commit()
+            # Do not log a credential-bearing request URL from the exception.
+            LOG.error("Source %s failed (%s)", source["id"], type(exc).__name__)
+            return {"source_id": source["id"], "status": "failed"}
+        finally:
+            await conn.execute(
+                "SELECT pg_advisory_unlock(hashtext(%s))", (source["id"],)
+            )
+            await conn.commit()
+
+
+async def run_group(group, settings, dry_run=False):
+    selected = [s for s in sources() if s.get("group") == group]
+    if dry_run:
+        # Offline manifest validation; never fetch or claim imported rows.
+        return {
+            "job_name": group,
+            "status": "validated",
+            "rows_ingested": 0,
+            "sources": len(selected),
+        }
+    results = [await collect(source, settings) for source in selected]
+    status = (
+        "success"
+        if results and all(r["status"] == "success" for r in results)
+        else "not_configured"
+        if not results or all(r["status"] == "not_configured" for r in results)
+        else "partial"
+    )
+    return {"job_name": group, "status": status, "sources": results}
+
+
+async def sleep_until_stop(stop, seconds):
+    try:
+        await asyncio.wait_for(stop.wait(), timeout=seconds)
+    except TimeoutError:
+        pass
+
+
+async def source_loop(source, settings, stop):
+    failures = 0
+    while not stop.is_set():
+        try:
+            result = await collect(source, settings)
+        except Exception as exc:  # noqa: BLE001 - isolate source jobs; record failure without secret URLs
+            LOG.error(
+                "Source connection failed: %s (%s)", source["id"], type(exc).__name__
+            )
+            result = {"status": "failed"}
+        failures = failures + 1 if result["status"] == "failed" else 0
+        interval = source["interval_seconds"]
+        if failures:
+            interval = min(interval, 300) * min(2**failures, 12)
+        await sleep_until_stop(stop, interval)
+
+
+async def prediction_loop(settings, stop):
+    while not stop.is_set():
+        try:
+            async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+                await predict_tick(conn)
+        except Exception as exc:  # noqa: BLE001 - isolate source jobs; record failure without secret URLs
+            LOG.error("Prediction tick failed (%s)", type(exc).__name__)
+        await sleep_until_stop(stop, 10 - datetime.now(UTC).timestamp() % 10)
+
+
+async def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--all", action="store_true")
+    parser.add_argument("--job")
+    parser.add_argument("--dry-run", action="store_true")
+    args = parser.parse_args()
+    manifest = sources()
+    settings = Settings.from_env()
+    if args.dry_run:
+        print(
+            json.dumps(
+                {"status": "validated", "sources": len(manifest), "rows_ingested": 0}
+            )
+        )
+        return
+    if args.all or args.job:
+        selected = [
+            s for s in manifest if not args.job or args.job in (s["id"], s.get("group"))
+        ]
+        if not selected:
+            raise SystemExit("Unknown source/group")
+        results = [await collect(s, settings) for s in selected]
+        print(json.dumps(results))
+        raise SystemExit(0 if all(r["status"] == "success" for r in results) else 1)
+    stop = asyncio.Event()
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, stop.set)
+    await asyncio.gather(
+        prediction_loop(settings, stop),
+        *(source_loop(s, settings, stop) for s in manifest),
+    )

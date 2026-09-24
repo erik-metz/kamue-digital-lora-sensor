@@ -32,6 +32,7 @@ class DatabaseCase(unittest.IsolatedAsyncioTestCase):
                 "SELECT create_hypertable('sensor_data', 'timestamp', if_not_exists => TRUE);",
                 "",
             )
+            schema = schema.replace("SELECT create_hypertable('movement_positions','timestamp',if_not_exists => TRUE);", "")
         await self.conn.execute(schema)
         await self.conn.execute(schema)
         self.db = {"conninfo": DSN, "options": f"-c search_path={self.schema},public"}

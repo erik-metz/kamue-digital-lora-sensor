@@ -265,11 +265,7 @@ test("createBusStopMarkerContent renders German Haltestellenschild with H and sc
   assert.ok(stopElement.className.includes("bus-stop-school"));
 });
 
-test("GET /api/buses route handles requests and returns operator and bus fleet", async () => {
-  const routeSource = fs.readFileSync(new URL("../app/api/buses/route.ts", import.meta.url), "utf8");
-  assert.ok(routeSource.includes("calculateBusMobility"), "API route must call calculateBusMobility");
-  assert.ok(routeSource.includes("Verkehrsverbund Rhein-Neckar"), "API route must mention VRN");
-});
+// Production routes are covered by collectedData.test.mjs; local simulation utilities are legacy fixtures.
 
 test("bus route tracks use high-density road polylines from OpenStreetMap/OSRM", () => {
   assert.ok(busMobility.ROUTE_641_TRACK.length > 200, "Route 641 track must have >200 dense road points");

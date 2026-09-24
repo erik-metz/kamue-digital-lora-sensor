@@ -1,3 +1,4 @@
+import { collectedFetch as fetch } from "./collectedBackend";
 import { env } from "@/env";
 
 export interface Company {
@@ -398,102 +399,67 @@ export const BASELINE_STARTUPS: StartupInitiative[] = [
 ];
 
 export async function fetchEconomyOverview(year = 2024): Promise<EconomyOverview> {
-  try {
+
     const res = await fetch(new URL(`/api/v1/economy/overview?year=${year}`, env.BACKEND_API_URL), {
       signal: AbortSignal.timeout(6000),
       cache: "no-store",
     });
     if (!res.ok) throw new Error("Backend response not ok");
     return await res.json();
-  } catch {
-    return {
-      year,
-      county_registrations_total: 2640,
-      county_deregistrations_total: 2380,
-      county_net_balance: 260,
-      county_total_employees: 82500,
-      total_companies_cataloged: BASELINE_COMPANIES.length,
-      average_hebesatz_gewerbesteuer: 392.5,
-      min_hebesatz_gewerbesteuer: 380,
-      max_hebesatz_gewerbesteuer: 420,
-      key_municipalities: [
-        { municipality_id: "buerstadt", name: "Bürstadt", hebesatz_gewerbesteuer: 380, hebesatz_grundsteuer_b: 480, revenue_gewerbesteuer_eur: 9450000, tax_revenue_per_capita_eur: 1085.50, registrations_total: 184, net_balance: 26 },
-        { municipality_id: "lampertheim", name: "Lampertheim", hebesatz_gewerbesteuer: 400, hebesatz_grundsteuer_b: 520, revenue_gewerbesteuer_eur: 22800000, tax_revenue_per_capita_eur: 1265.40, registrations_total: 324, net_balance: 26 },
-        { municipality_id: "biblis", name: "Biblis", hebesatz_gewerbesteuer: 400, hebesatz_grundsteuer_b: 450, revenue_gewerbesteuer_eur: 4950000, tax_revenue_per_capita_eur: 1020.30, registrations_total: 88, net_balance: 12 },
-        { municipality_id: "gross-rohrheim", name: "Groß-Rohrheim", hebesatz_gewerbesteuer: 380, hebesatz_grundsteuer_b: 450, revenue_gewerbesteuer_eur: 2210000, tax_revenue_per_capita_eur: 948.20, registrations_total: 38, net_balance: 4 },
-        { municipality_id: "bensheim", name: "Bensheim", hebesatz_gewerbesteuer: 380, hebesatz_grundsteuer_b: 495, revenue_gewerbesteuer_eur: 34500000, tax_revenue_per_capita_eur: 1420.00, registrations_total: 442, net_balance: 47 },
-        { municipality_id: "viernheim", name: "Viernheim", hebesatz_gewerbesteuer: 410, hebesatz_grundsteuer_b: 550, revenue_gewerbesteuer_eur: 25600000, tax_revenue_per_capita_eur: 1340.20, registrations_total: 365, net_balance: 25 },
-      ],
-    };
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchCompanies(filter?: { municipality_id?: string; industry_sector?: string }): Promise<Company[]> {
-  try {
+
     const url = new URL("/api/v1/economy/companies", env.BACKEND_API_URL);
     if (filter?.municipality_id) url.searchParams.set("municipality_id", filter.municipality_id);
     if (filter?.industry_sector) url.searchParams.set("industry_sector", filter.industry_sector);
     const res = await fetch(url, { signal: AbortSignal.timeout(6000), cache: "no-store" });
     if (!res.ok) throw new Error("Backend response not ok");
     return await res.json();
-  } catch {
-    let result = [...BASELINE_COMPANIES];
-    if (filter?.municipality_id) {
-      result = result.filter((c) => c.municipality_id === filter.municipality_id);
-    }
-    if (filter?.industry_sector) {
-      const q = filter.industry_sector.toLowerCase();
-      result = result.filter((c) => c.industry_sector.toLowerCase().includes(q));
-    }
-    return result;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchTaxRates(year?: number): Promise<MunicipalityTaxRate[]> {
-  try {
+
     const url = new URL("/api/v1/economy/taxes", env.BACKEND_API_URL);
     if (year) url.searchParams.set("year", year.toString());
     const res = await fetch(url, { signal: AbortSignal.timeout(6000), cache: "no-store" });
     if (!res.ok) throw new Error("Backend response not ok");
     return await res.json();
-  } catch {
-    return BASELINE_TAX_RATES;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchBusinessRegistrations(regionCode?: string): Promise<BusinessRegistration[]> {
-  try {
+
     const url = new URL("/api/v1/economy/registrations", env.BACKEND_API_URL);
     if (regionCode) url.searchParams.set("region_code", regionCode);
     const res = await fetch(url, { signal: AbortSignal.timeout(6000), cache: "no-store" });
     if (!res.ok) throw new Error("Backend response not ok");
     return await res.json();
-  } catch {
-    if (regionCode) {
-      return BASELINE_REGISTRATIONS.filter((r) => r.region_code === regionCode);
-    }
-    return BASELINE_REGISTRATIONS;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchIndustryStructure(regionCode = "kreis-bergstrasse", year = 2024): Promise<IndustryEmployment[]> {
-  try {
+
     const url = new URL(`/api/v1/economy/industry-structure?region_code=${regionCode}&year=${year}`, env.BACKEND_API_URL);
     const res = await fetch(url, { signal: AbortSignal.timeout(6000), cache: "no-store" });
     if (!res.ok) throw new Error("Backend response not ok");
     return await res.json();
-  } catch {
-    return BASELINE_INDUSTRY_EMPLOYMENT;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchStartupInitiatives(): Promise<StartupInitiative[]> {
-  try {
+
     const url = new URL("/api/v1/economy/startups", env.BACKEND_API_URL);
     const res = await fetch(url, { signal: AbortSignal.timeout(6000), cache: "no-store" });
     if (!res.ok) throw new Error("Backend response not ok");
     return await res.json();
-  } catch {
-    return BASELINE_STARTUPS;
-  }
+
+  throw new Error("Collected data unavailable");
 }

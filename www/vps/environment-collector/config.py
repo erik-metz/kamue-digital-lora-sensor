@@ -10,8 +10,8 @@ class Settings:
     db: dict[str, str | int]
     poll_seconds: int = 300
     state_dir: Path = Path("/data")
-    pegelonline_url: str = "https://pegelonline.wsv.de/webservices/rest-api/v2/stations/WORMS/W.json"
-    weather_url: str = "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=49.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=Europe%2FBerlin"
+    pegelonline_url: str = "https://pegelonline.wsv.de/webservices/rest-api/v2/stations/WORMS.json?includeTimeseries=true&includeCurrentMeasurement=true"
+    weather_url: str = "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=8.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=UTC"
     request_timeout: float = 30.0
 
     @classmethod
@@ -32,10 +32,10 @@ class Settings:
             state_dir=state_dir,
             pegelonline_url=os.getenv(
                 "PEGELONLINE_URL",
-                "https://pegelonline.wsv.de/webservices/rest-api/v2/stations/WORMS/W.json",
+                "https://pegelonline.wsv.de/webservices/rest-api/v2/stations/WORMS.json?includeTimeseries=true&includeCurrentMeasurement=true",
             ),
             weather_url=os.getenv(
                 "WEATHER_URL",
-                "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=8.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=Europe%2FBerlin",
+                "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=8.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=UTC",
             ),
         )

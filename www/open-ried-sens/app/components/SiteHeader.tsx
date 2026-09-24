@@ -129,7 +129,7 @@ export default function SiteHeader({
   }, [mobileOpen]);
 
   // Determine status badge display count
-  const displayCount = sensorCount ?? 450;
+  const displayCount = sensorCount ?? "–";
   const hasStationFraction =
     activeStations !== undefined && totalStations !== undefined;
 
@@ -185,7 +185,7 @@ export default function SiteHeader({
               title={
                 hasStationFraction
                   ? `${activeStations} von ${totalStations} Stationen aktiv`
-                  : `${displayCount} aktive Sensorstandorte im Ried`
+                  : sensorCount === undefined ? "Sensoranzahl hier nicht geladen" : `${displayCount} gespeicherte Sensorstandorte im Ried`
               }
             >
               <span className="relative flex h-2 w-2 shrink-0">
@@ -348,7 +348,7 @@ export default function SiteHeader({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             <span className="text-xs font-medium text-emerald-400">
-              {displayCount} Sensorstandorte aktiv
+              {displayCount} Sensorstandorte
             </span>
           </div>
           <div className="text-[11px] text-slate-500 leading-relaxed px-1">

@@ -1,3 +1,4 @@
+import { collectedFetch as fetch } from "./collectedBackend";
 import { env } from "@/env";
 
 export interface ElectionPartyResult {
@@ -336,26 +337,20 @@ export const BASELINE_DISTRICTS_GEOJSON: Record<string, ElectionDistrictsGeoJSON
 };
 
 export async function fetchElections(municipality?: string): Promise<ElectionEvent[]> {
-  try {
+
     const url = new URL("/api/v1/elections", env.BACKEND_API_URL);
     if (municipality) url.searchParams.set("municipality", municipality);
     const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (res.ok) return await res.json();
-  } catch {
-    // fallback
-  }
-  let filtered = BASELINE_ELECTIONS;
-  if (municipality) filtered = filtered.filter(e => e.municipality.toLowerCase() === municipality.toLowerCase());
-  return filtered;
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchElectionDistricts(electionId: string): Promise<ElectionDistrictsGeoJSON | null> {
-  try {
+
     const url = new URL(`/api/v1/elections/${electionId}/districts`, env.BACKEND_API_URL);
     const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (res.ok) return await res.json();
-  } catch {
-    // fallback
-  }
-  return BASELINE_DISTRICTS_GEOJSON[electionId] ?? null;
+
+  throw new Error("Collected data unavailable");
 }

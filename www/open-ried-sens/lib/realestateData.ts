@@ -1,3 +1,4 @@
+import { collectedFetch as fetch } from "./collectedBackend";
 import { env } from "@/env";
 
 export interface RealEstateSummary {
@@ -877,6 +878,7 @@ export function getLandUseColor(category: string): string {
 }
 
 export function formatEuro(value: number, isPerSqm = false): string {
+  if (!Number.isFinite(value)) return "–";
   const formatted = new Intl.NumberFormat("de-DE", {
     maximumFractionDigits: isPerSqm ? 2 : 0,
   }).format(value);
@@ -884,20 +886,19 @@ export function formatEuro(value: number, isPerSqm = false): string {
 }
 
 export async function fetchRealEstateSummary(): Promise<RealEstateSummary[]> {
-  try {
+
     const res = await fetch(new URL("/api/v1/realestate/summary", env.BACKEND_API_URL), {
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error("Realestate summary failed");
     return await res.json();
-  } catch {
-    return BASELINE_REALESTATE_SUMMARIES;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchHousingStock(municipality?: string): Promise<HousingStock[]> {
-  try {
+
     const url = new URL("/api/v1/realestate/housing-stock", env.BACKEND_API_URL);
     if (municipality && municipality !== "all") {
       url.searchParams.set("municipality", municipality);
@@ -908,16 +909,12 @@ export async function fetchHousingStock(municipality?: string): Promise<HousingS
     });
     if (!res.ok) throw new Error("Housing stock failed");
     return await res.json();
-  } catch {
-    if (municipality && municipality !== "all") {
-      return BASELINE_HOUSING_STOCK.filter(h => h.municipality.toLowerCase() === municipality.toLowerCase());
-    }
-    return BASELINE_HOUSING_STOCK;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchBorisZones(municipality?: string): Promise<BorisZone[]> {
-  try {
+
     const url = new URL("/api/v1/realestate/boris", env.BACKEND_API_URL);
     if (municipality && municipality !== "all") {
       url.searchParams.set("municipality", municipality);
@@ -928,16 +925,12 @@ export async function fetchBorisZones(municipality?: string): Promise<BorisZone[
     });
     if (!res.ok) throw new Error("BORIS request failed");
     return await res.json();
-  } catch {
-    if (municipality && municipality !== "all") {
-      return BASELINE_BORIS_ZONES.filter(b => b.municipality.toLowerCase() === municipality.toLowerCase());
-    }
-    return BASELINE_BORIS_ZONES;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchConstructionActivity(municipality?: string): Promise<ConstructionPermit[]> {
-  try {
+
     const url = new URL("/api/v1/realestate/construction-activity", env.BACKEND_API_URL);
     if (municipality && municipality !== "all") {
       url.searchParams.set("municipality", municipality);
@@ -948,16 +941,12 @@ export async function fetchConstructionActivity(municipality?: string): Promise<
     });
     if (!res.ok) throw new Error("Construction request failed");
     return await res.json();
-  } catch {
-    if (municipality && municipality !== "all") {
-      return BASELINE_CONSTRUCTION_PERMITS.filter(c => c.municipality.toLowerCase() === municipality.toLowerCase());
-    }
-    return BASELINE_CONSTRUCTION_PERMITS;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchMarketBenchmarks(municipality?: string): Promise<MarketBenchmark[]> {
-  try {
+
     const url = new URL("/api/v1/realestate/market-benchmarks", env.BACKEND_API_URL);
     if (municipality && municipality !== "all") {
       url.searchParams.set("municipality", municipality);
@@ -968,16 +957,12 @@ export async function fetchMarketBenchmarks(municipality?: string): Promise<Mark
     });
     if (!res.ok) throw new Error("Market benchmarks failed");
     return await res.json();
-  } catch {
-    if (municipality && municipality !== "all") {
-      return BASELINE_MARKET_BENCHMARKS.filter(m => m.municipality.toLowerCase() === municipality.toLowerCase());
-    }
-    return BASELINE_MARKET_BENCHMARKS;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchDevelopmentPlans(municipality?: string): Promise<DevelopmentPlan[]> {
-  try {
+
     const url = new URL("/api/v1/realestate/development-plans", env.BACKEND_API_URL);
     if (municipality && municipality !== "all") {
       url.searchParams.set("municipality", municipality);
@@ -988,10 +973,6 @@ export async function fetchDevelopmentPlans(municipality?: string): Promise<Deve
     });
     if (!res.ok) throw new Error("Dev plans request failed");
     return await res.json();
-  } catch {
-    if (municipality && municipality !== "all") {
-      return BASELINE_DEVELOPMENT_PLANS.filter(d => d.municipality.toLowerCase() === municipality.toLowerCase());
-    }
-    return BASELINE_DEVELOPMENT_PLANS;
-  }
+
+  throw new Error("Collected data unavailable");
 }

@@ -1,3 +1,4 @@
+import { collectedFetch as fetch } from "./collectedBackend";
 import { env } from "@/env";
 
 export interface FinanceBudget {
@@ -388,58 +389,33 @@ export const BASELINE_SPENDING: FinanceExpenditure[] = [
 ];
 
 export async function fetchBudgets(municipality?: string, year?: number): Promise<FinanceBudget[]> {
-  try {
+
     const url = new URL("/api/v1/finance/budgets", env.BACKEND_API_URL);
     if (municipality) url.searchParams.set("municipality", municipality);
     if (year) url.searchParams.set("year", year.toString());
     const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (res.ok) return await res.json();
-  } catch {
-    // fallback to baseline
-  }
-  let filtered = BASELINE_BUDGETS;
-  if (municipality) filtered = filtered.filter(b => b.municipality.toLowerCase() === municipality.toLowerCase());
-  if (year) filtered = filtered.filter(b => b.fiscal_year === year);
-  return filtered;
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchSpending(municipality?: string, year?: number): Promise<FinanceExpenditure[]> {
-  try {
+
     const url = new URL("/api/v1/finance/spending", env.BACKEND_API_URL);
     if (municipality) url.searchParams.set("municipality", municipality);
     if (year) url.searchParams.set("year", year.toString());
     const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (res.ok) return await res.json();
-  } catch {
-    // fallback
-  }
-  let filtered = BASELINE_SPENDING;
-  if (municipality) filtered = filtered.filter(s => s.municipality.toLowerCase() === municipality.toLowerCase());
-  if (year) filtered = filtered.filter(s => s.fiscal_year === year);
-  return filtered;
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchFinanceComparison(year = 2024): Promise<MunicipalFinanceComparison[]> {
-  try {
+
     const url = new URL("/api/v1/finance/compare", env.BACKEND_API_URL);
     url.searchParams.set("year", year.toString());
     const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(4000) });
     if (res.ok) return await res.json();
-  } catch {
-    // fallback
-  }
-  return BASELINE_BUDGETS.filter(b => b.fiscal_year === year && b.record_type === "plan").map(b => ({
-    municipality: b.municipality,
-    fiscal_year: b.fiscal_year,
-    total_revenue_eur: b.total_revenue_eur,
-    total_expense_eur: b.total_expense_eur,
-    net_result_eur: b.net_result_eur,
-    tax_gewerbesteuer_eur: b.tax_gewerbesteuer_eur,
-    tax_grundsteuer_b_eur: b.tax_grundsteuer_b_eur,
-    hebesatz_gewerbesteuer: b.hebesatz_gewerbesteuer,
-    hebesatz_grundsteuer_b: b.hebesatz_grundsteuer_b,
-    total_debt_eur: b.total_debt_eur,
-    debt_per_capita_eur: b.debt_per_capita_eur,
-    reserves_eur: b.reserves_eur,
-  }));
+
+  throw new Error("Collected data unavailable");
 }

@@ -1,3 +1,4 @@
+import { collectedFetch as fetch } from "./collectedBackend";
 import { env } from "@/env";
 import type { Reading, StationNode } from "./mapData";
 
@@ -80,7 +81,7 @@ export interface CulturalEvent {
   street_address?: string | null;
   postal_code?: string | null;
   status?: "scheduled" | "cancelled" | "postponed" | "past";
-  is_free: boolean;
+  is_free: boolean | null;
   is_archived?: boolean;
   source?: string;
 }
@@ -746,20 +747,19 @@ export const BASELINE_EVENTS: CulturalEvent[] = [
 // --- Data Fetchers ---
 
 export async function fetchSocialSummary(): Promise<SocialKpiSummary[]> {
-  try {
+
     const res = await fetch(new URL("/api/v1/social/indicators/summary", env.BACKEND_API_URL), {
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error("Social summary request failed");
     return await res.json();
-  } catch {
-    return BASELINE_SOCIAL_SUMMARIES;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchWasteStatistics(municipality?: string, year?: number): Promise<ZakbWasteStat[]> {
-  try {
+
     const url = new URL("/api/v1/social/waste-statistics", env.BACKEND_API_URL);
     if (municipality && municipality !== "all") url.searchParams.set("municipality", municipality);
     if (year) url.searchParams.set("year", year.toString());
@@ -769,20 +769,12 @@ export async function fetchWasteStatistics(municipality?: string, year?: number)
     });
     if (!res.ok) throw new Error("Waste stats request failed");
     return await res.json();
-  } catch {
-    let filtered = BASELINE_WASTE_STATS;
-    if (municipality && municipality !== "all") {
-      filtered = filtered.filter(w => w.municipality.toLowerCase() === municipality.toLowerCase());
-    }
-    if (year) {
-      filtered = filtered.filter(w => w.year === year);
-    }
-    return filtered;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchRegionalFacilities(category?: string, municipality?: string): Promise<RegionalFacility[]> {
-  try {
+
     const url = new URL("/api/v1/social/facilities", env.BACKEND_API_URL);
     if (category && category !== "all") url.searchParams.set("category", category);
     if (municipality && municipality !== "all") url.searchParams.set("municipality", municipality);
@@ -792,16 +784,8 @@ export async function fetchRegionalFacilities(category?: string, municipality?: 
     });
     if (!res.ok) throw new Error("Facilities request failed");
     return await res.json();
-  } catch {
-    let filtered = BASELINE_FACILITIES;
-    if (category && category !== "all") {
-      filtered = filtered.filter(f => f.category === category);
-    }
-    if (municipality && municipality !== "all") {
-      filtered = filtered.filter(f => f.municipality.toLowerCase() === municipality.toLowerCase());
-    }
-    return filtered;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export interface FetchCulturalEventsOptions {
@@ -815,7 +799,7 @@ export interface FetchCulturalEventsOptions {
 
 export async function fetchCulturalEvents(options?: string | FetchCulturalEventsOptions): Promise<CulturalEvent[]> {
   const opts: FetchCulturalEventsOptions = typeof options === "string" ? { municipality: options } : (options || {});
-  try {
+
     const url = new URL("/api/v1/social/events", env.BACKEND_API_URL);
     if (opts.municipality && opts.municipality !== "all") url.searchParams.set("municipality", opts.municipality);
     if (opts.category && opts.category !== "all") url.searchParams.set("category", opts.category);
@@ -830,34 +814,8 @@ export async function fetchCulturalEvents(options?: string | FetchCulturalEvents
     });
     if (!res.ok) throw new Error("Events request failed");
     return await res.json();
-  } catch {
-    let events = BASELINE_EVENTS;
-    if (opts.municipality && opts.municipality !== "all") {
-      events = events.filter(e => e.municipality.toLowerCase() === opts.municipality!.toLowerCase());
-    }
-    if (opts.category && opts.category !== "all") {
-      events = events.filter(e => e.category === opts.category);
-    }
-    if (opts.search) {
-      const q = opts.search.toLowerCase();
-      events = events.filter(e =>
-        e.title.toLowerCase().includes(q) ||
-        (e.description && e.description.toLowerCase().includes(q)) ||
-        e.organizer.toLowerCase().includes(q) ||
-        e.venue_name.toLowerCase().includes(q)
-      );
-    }
-    if (!opts.includePast) {
-      // Default: exclude past events (status past or ended before today)
-      const now = new Date("2026-09-17T00:00:00Z").getTime();
-      events = events.filter(e => {
-        if (e.status === "past") return false;
-        const end = e.end_time ? new Date(e.end_time).getTime() : new Date(e.start_time).getTime();
-        return end >= now - 86400000;
-      });
-    }
-    return events;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 /**

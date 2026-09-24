@@ -1,3 +1,4 @@
+import OfficialStatisticsPage from "../components/OfficialStatisticsPage";
 import {
   fetchCulturalEvents,
   fetchRegionalFacilities,
@@ -25,12 +26,14 @@ import StatistikClient from "./StatistikClient";
 export const dynamic = "force-dynamic";
 
 export default async function RegionalStatistikPage() {
-  const [summaries, wasteStats, facilities, events] = await Promise.all([
+  const collected = await Promise.all([
     fetchSocialSummary(),
     fetchWasteStatistics(),
     fetchRegionalFacilities(),
     fetchCulturalEvents(),
-  ]);
+  ]).catch(() => null);
+  if (!collected || !collected[0].length) return <OfficialStatisticsPage domain="social" title="Regionale Statistik" />;
+  const [summaries, wasteStats, facilities, events] = collected;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">

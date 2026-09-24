@@ -1,0 +1,412 @@
+{
+  "sources": [
+    {
+      "id": "bnetza-chargers",
+      "group": "infrastructure",
+      "adapter": "bnetza",
+      "enabled": true,
+      "url": "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/DownloadundKontakt.html",
+      "interval_seconds": 86400,
+      "max_age_seconds": 7776000,
+      "bbox": [
+        49.55,
+        8.3,
+        49.8,
+        8.65
+      ]
+    },
+    {
+      "id": "vrn",
+      "group": "transport",
+      "adapter": "gtfs",
+      "enabled": true,
+      "url": "https://geoportal.vrn.de/services/sharing/rest/content/items/4ec4b1d131eb46a6bb8e216ce9b90eff/data",
+      "interval_seconds": 86400,
+      "max_age_seconds": 172800,
+      "bbox": [
+        49.55,
+        8.3,
+        49.8,
+        8.65
+      ]
+    },
+    {
+      "id": "vrn-realtime",
+      "group": "transport",
+      "adapter": "gtfs-rt",
+      "enabled": true,
+      "url": "https://www.vrn.de/service/entwickler/gtfs-realtime/",
+      "schedule_source": "vrn",
+      "interval_seconds": 30,
+      "bbox": [
+        49.55,
+        8.3,
+        49.8,
+        8.65
+      ]
+    },
+    {
+      "id": "delfi-regional-gtfsde",
+      "group": "transport",
+      "adapter": "gtfs",
+      "enabled": true,
+      "url": "https://download.gtfs.de/germany/rv_free/latest.zip",
+      "interval_seconds": 86400,
+      "max_age_seconds": 172800,
+      "bbox": [
+        49.55,
+        8.3,
+        49.8,
+        8.65
+      ]
+    },
+    {
+      "id": "zakb-calendar",
+      "group": "waste",
+      "adapter": "zakb",
+      "enabled": true,
+      "url": "https://www.zakb.de/abfallkalender",
+      "address_url": "https://overpass-api.de/api/interpreter",
+      "municipalities": [
+        "B\u00fcrstadt",
+        "Lampertheim",
+        "Biblis",
+        "Gro\u00df-Rohrheim"
+      ],
+      "bbox": [
+        49.55,
+        8.3,
+        49.8,
+        8.65
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 172800,
+      "request_spacing_seconds": 1,
+      "coverage": "One actual OSM address per street; no claim of complete address coverage."
+    },
+    {
+      "id": "cross7-buerstadt",
+      "group": "social",
+      "adapter": "cross7",
+      "enabled": true,
+      "url": "https://api.cross-7.de/public/calendar/667/events",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "headers": {
+        "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender",
+        "Origin": "https://www.buerstadt.de",
+        "Referer": "https://www.buerstadt.de/"
+      }
+    },
+    {
+      "id": "demographics-published-source",
+      "group": "demographics",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "demographics/summary": {
+          "type": "array",
+          "required": []
+        },
+        "demographics/facilities": {
+          "type": "array",
+          "required": []
+        },
+        "demographics/commuters": {
+          "type": "array",
+          "required": []
+        },
+        "demographics/municipalities": {
+          "type": "array",
+          "required": []
+        },
+        "demographics/age-structure": {
+          "type": "object",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "realestate-published-source",
+      "group": "realestate",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "realestate/summary": {
+          "type": "array",
+          "required": []
+        },
+        "realestate/housing-stock": {
+          "type": "array",
+          "required": []
+        },
+        "realestate/boris": {
+          "type": "array",
+          "required": []
+        },
+        "realestate/construction-activity": {
+          "type": "array",
+          "required": []
+        },
+        "realestate/market-benchmarks": {
+          "type": "array",
+          "required": []
+        },
+        "realestate/development-plans": {
+          "type": "array",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "economy-published-source",
+      "group": "economy",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "economy/overview": {
+          "type": "object",
+          "required": []
+        },
+        "economy/companies": {
+          "type": "array",
+          "required": []
+        },
+        "economy/taxes": {
+          "type": "array",
+          "required": []
+        },
+        "economy/registrations": {
+          "type": "array",
+          "required": []
+        },
+        "economy/industry-structure": {
+          "type": "array",
+          "required": []
+        },
+        "economy/startups": {
+          "type": "array",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "finance-published-source",
+      "group": "finance",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "finance/budgets": {
+          "type": "array",
+          "required": []
+        },
+        "finance/spending": {
+          "type": "array",
+          "required": []
+        },
+        "finance/compare": {
+          "type": "array",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "elections-published-source",
+      "group": "elections",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "elections": {
+          "type": "array",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "environment-published-source",
+      "group": "environment",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "environment/protected-areas": {
+          "type": "array",
+          "required": []
+        },
+        "environment/agriculture/stats": {
+          "type": "array",
+          "required": []
+        },
+        "environment/crop-zones": {
+          "type": "array",
+          "required": []
+        },
+        "environment/groundwater": {
+          "type": "array",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "social-published-source",
+      "group": "social",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "social/indicators/summary": {
+          "type": "array",
+          "required": []
+        },
+        "social/waste-statistics": {
+          "type": "array",
+          "required": []
+        },
+        "social/facilities": {
+          "type": "array",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "infrastructure-published-source",
+      "group": "infrastructure",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "infrastructure/broadband": {
+          "type": "object",
+          "required": []
+        },
+        "infrastructure/road-conditions": {
+          "type": "object",
+          "required": []
+        },
+        "infrastructure/wifi": {
+          "type": "object",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "traffic-published-source",
+      "group": "traffic",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 86400,
+      "max_age_seconds": 31622400,
+      "reason": "Verified machine-readable source/export and field mapping required; no synthetic replacement.",
+      "datasets": {
+        "traffic/street-closures": {
+          "type": "object",
+          "required": []
+        }
+      }
+    },
+    {
+      "id": "energy-meter-feed",
+      "group": "infrastructure",
+      "adapter": "json",
+      "enabled": false,
+      "url": "",
+      "interval_seconds": 60,
+      "max_age_seconds": 180,
+      "reason": "A verified metered generation endpoint is required; nameplate capacity is not current output.",
+      "datasets": {
+        "infrastructure/energy": {
+          "type": "object",
+          "required": [
+            "timestamp",
+            "facilities",
+            "currentTotalPowerMw",
+            "totalInstalledCapacityKw",
+            "todayTotalEnergyKwh",
+            "todayCo2AvoidedKg",
+            "byTypeKw"
+          ]
+        }
+      }
+    },
+    {
+      "id": "bkg-topplus",
+      "group": "maps",
+      "adapter": "wms",
+      "enabled": true,
+      "url": "https://sgx.geodatenzentrum.de/wms_topplus_open",
+      "interval_seconds": 604800,
+      "bbox": [
+        49.55,
+        8.3,
+        49.8,
+        8.65
+      ],
+      "min_zoom": 8,
+      "max_zoom": 14,
+      "wms_layer": "web",
+      "layer": "base",
+      "request_interval_seconds": 0.25
+    },
+    {
+      "id": "hessen-municipal-statistics",
+      "group": "statistics",
+      "adapter": "hessen",
+      "enabled": true,
+      "url": "https://statistik.hessen.de/publikationen/hessiche-gemeindestatistik",
+      "interval_seconds": 86400,
+      "max_age_seconds": 63072000,
+      "municipalities": {
+        "431003": "biblis",
+        "431005": "buerstadt",
+        "431010": "gross-rohrheim",
+        "431013": "lampertheim"
+      }
+    },
+    {
+      "id": "bundeswahlleiterin-2025",
+      "group": "elections",
+      "adapter": "election-precincts",
+      "enabled": true,
+      "url": "https://www.bundeswahlleiterin.de/dam/jcr/e79a7bd3-0607-4e87-9752-8e601e299e00/btw25_wbz.zip",
+      "published_at": "2025-04-30T00:00:00+00:00",
+      "interval_seconds": 86400,
+      "max_age_seconds": 315360000,
+      "municipalities": {
+        "06431003": "biblis",
+        "06431005": "buerstadt",
+        "06431010": "gross-rohrheim",
+        "06431013": "lampertheim"
+      }
+    }
+  ]
+}

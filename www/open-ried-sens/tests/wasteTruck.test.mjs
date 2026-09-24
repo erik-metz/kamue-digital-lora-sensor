@@ -254,40 +254,7 @@ test("createWasteTruckMarkerContent renders beacon, badge, truck icon, and count
   assert.equal(gaugeText.textContent, "28s");
 });
 
-test("GET /api/waste-trucks returns JSON with live trucks, tours, and ZAKB operator info", async () => {
-  const routeSource = fs.readFileSync(new URL("../app/api/waste-trucks/route.ts", import.meta.url), "utf8");
-  const routeContext = {
-    exports: {},
-    require: (id) => {
-      if (id === "@/lib/wasteTruckMobility") return wasteTruckMobility;
-      if (id === "@/env") return { env: { BACKEND_API_URL: "https://backend.example" } };
-      throw new Error(`Unknown require in route test: ${id}`);
-    },
-    Response: {
-      json: (data, init) => ({ data, init }),
-    },
-    URL,
-    fetch: async () => ({ ok: false }),
-    AbortSignal,
-    Date,
-    Object,
-    Array,
-  };
-  vm.runInNewContext(
-    ts.transpileModule(routeSource, {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
-    }).outputText,
-    routeContext
-  );
-
-  const res = await routeContext.exports.GET();
-  assert.ok(res.data.generated_at);
-  assert.equal(res.data.operator.name, "Zweckverband Abfallwirtschaft Kreis Bergstraße (ZAKB)");
-  assert.ok(Array.isArray(res.data.trucks) && res.data.trucks.length > 0);
-  assert.ok(Array.isArray(res.data.tours) && res.data.tours.length > 0);
-  assert.ok(Array.isArray(res.data.depots) && res.data.depots.length > 0);
-  assert.equal(res.init.headers["Cache-Control"], "no-store");
-});
+// Production routes are covered by collectedData.test.mjs; local simulation utilities are legacy fixtures.
 
 test("waste truck route tracks use high-density road polylines from OpenStreetMap/OSRM", () => {
   assert.ok(wasteTruckMobility.ROUTE_BUERSTADT.length > 200, "Bürstadt track must have >200 dense road points");

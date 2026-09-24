@@ -1,3 +1,4 @@
+import OfficialStatisticsPage from "../components/OfficialStatisticsPage";
 import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Briefcase, Database, MapPin } from "lucide-react";
@@ -22,6 +23,15 @@ export const metadata: Metadata = {
 };
 
 export default async function WirtschaftPage() {
+  const collected = await Promise.all([
+    fetchEconomyOverview(2024),
+    fetchCompanies(),
+    fetchTaxRates(2024),
+    fetchBusinessRegistrations(),
+    fetchIndustryStructure("kreis-bergstrasse", 2024),
+    fetchStartupInitiatives(),
+  ]).catch(() => null);
+  if (!collected) return <OfficialStatisticsPage domain="economy" title="Wirtschaft" />;
   const [
     overview,
     companies,
@@ -29,14 +39,7 @@ export default async function WirtschaftPage() {
     registrations,
     industryEmployment,
     startupInitiatives,
-  ] = await Promise.all([
-    fetchEconomyOverview(2024),
-    fetchCompanies(),
-    fetchTaxRates(2024),
-    fetchBusinessRegistrations(),
-    fetchIndustryStructure("kreis-bergstrasse", 2024),
-    fetchStartupInitiatives(),
-  ]);
+  ] = collected;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">

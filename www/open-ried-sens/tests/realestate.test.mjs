@@ -9,6 +9,7 @@ const reSource = fs.readFileSync(new URL("../lib/realestateData.ts", import.meta
 const reContext = {
   exports: {},
   require: (id) => {
+    if (id === "./collectedBackend") return { collectedFetch: globalThis.fetch };
     if (id === "@/env") return { env: { BACKEND_API_URL: "http://localhost:8000" } };
     throw new Error(`Unknown require in test context: ${id}`);
   },

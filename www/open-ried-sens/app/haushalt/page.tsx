@@ -1,3 +1,4 @@
+import OfficialStatisticsPage from "../components/OfficialStatisticsPage";
 import { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Landmark, Database } from "lucide-react";
@@ -17,14 +18,16 @@ export const metadata: Metadata = {
 };
 
 export default async function HaushaltPage() {
-  const [budgets, spending, comparisons, elections, devPlans, permits] = await Promise.all([
+  const collected = await Promise.all([
     fetchBudgets(),
     fetchSpending(),
     fetchFinanceComparison(2024),
     fetchElections(),
     fetchDevelopmentPlans(),
     fetchConstructionActivity(),
-  ]);
+  ]).catch(() => null);
+  if (!collected || !collected[0].length) return <OfficialStatisticsPage domain="finance" title="Haushalt & Finanzen" />;
+  const [budgets, spending, comparisons, elections, devPlans, permits] = collected;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">

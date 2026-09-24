@@ -1,3 +1,6 @@
+import OfficialStatisticsPage from "../components/OfficialStatisticsPage";
+import { readCollected } from "@/lib/collectedBackend";
+import type { AgeStructure, CommuterFlow, Municipality } from "@/lib/demographicsData";
 import {
   fetchDemographicSummary,
   fetchEducationalFacilities,
@@ -22,8 +25,14 @@ import DemographicsClient from "./DemographicsClient";
 export const dynamic = "force-dynamic";
 
 export default async function DemographicsPage() {
-  const summaries = await fetchDemographicSummary();
-  const facilities = await fetchEducationalFacilities();
+  const collected = await Promise.all([
+    fetchDemographicSummary(), fetchEducationalFacilities(),
+    readCollected<Record<string, AgeStructure[]>>("demographics/age-structure"),
+    readCollected<CommuterFlow[]>("demographics/commuters"),
+    readCollected<Municipality[]>("demographics/municipalities"),
+  ]).catch(() => null);
+  if (!collected || !collected[0].length) return <OfficialStatisticsPage domain="demographics" title="Demografie" />;
+  const [summaries, facilities, ageStructure, commuters, municipalities] = collected;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -73,7 +82,7 @@ export default async function DemographicsPage() {
         </section>
 
         {/* INTERACTIVE DEMOGRAPHICS CLIENT COMPONENT */}
-        <DemographicsClient summaries={summaries} facilities={facilities} />
+        <DemographicsClient ageStructure={ageStructure} commuters={commuters} municipalities={municipalities} summaries={summaries} facilities={facilities} />
 
         {/* OPEN DATA / DEVELOPER CALLOUT */}
         <section className="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 to-slate-950 p-6 sm:p-8 space-y-4">

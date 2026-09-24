@@ -316,7 +316,7 @@ export default function StatistikClient({
             </div>
             <p className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
               <TrendingDown className="w-3.5 h-3.5" />
-              Unter Hessen-Schnitt ({hessenBenchmark?.unemployment_rate ?? 5.2}%)
+              Unter Hessen-Schnitt ({hessenBenchmark?.unemployment_rate ?? "–"}%)
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
@@ -346,7 +346,7 @@ export default function StatistikClient({
             </div>
             <p className="text-xs text-cyan-400 flex items-center gap-1 font-medium">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Versorgungsgrad: {currentSummary.versorgungsgrad_pct?.toFixed(1) ?? 100}%
+              Versorgungsgrad: {currentSummary.versorgungsgrad_pct?.toFixed(1) ?? "–"}%
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
@@ -407,7 +407,7 @@ export default function StatistikClient({
             </div>
             <p className="text-xs text-purple-300 flex items-center gap-1 font-medium">
               <Sparkles className="w-3.5 h-3.5" />
-              {currentSummary.sports_clubs_count ?? 24} Sport · {currentSummary.cultural_clubs_count ?? 18} Kultur
+              {currentSummary.sports_clubs_count ?? "–"} Sport · {currentSummary.cultural_clubs_count ?? "–"} Kultur
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
@@ -439,7 +439,7 @@ export default function StatistikClient({
           Das Hessische Ried zeichnet sich durch eine traditionell überdurchschnittlich robuste
           Beschäftigungslage aus. Durch die Lage im Wirtschaftsraum Rhein-Neckar / Rhein-Main
           liegt die Arbeitslosenquote in Bürstadt und Biblis spürbar unter dem Landesdurchschnitt
-          von Hessen ({hessenBenchmark?.unemployment_rate ?? 5.2}%).
+          von Hessen ({hessenBenchmark?.unemployment_rate ?? "–"}%).
         </p>
 
         {/* Comparison Bars */}
@@ -566,8 +566,8 @@ export default function StatistikClient({
                     label: w.fraction,
                     color: "bg-teal-500",
                   };
-                  const totalKg = totalWasteFraction?.kg_per_capita || 380;
-                  const pct = Math.round((w.kg_per_capita / totalKg) * 100);
+                  const totalKg = totalWasteFraction?.kg_per_capita ?? Number.NaN;
+                  const pct = totalKg > 0 ? Math.round((w.kg_per_capita / totalKg) * 100) : null;
 
                   return (
                     <div
@@ -586,7 +586,7 @@ export default function StatistikClient({
                       <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                         <div
                           className={`h-full rounded-full ${fInfo.color}`}
-                          style={{ width: `${pct}%` }}
+                          style={{ width: `${pct ?? 0}%` }}
                         />
                       </div>
                     </div>

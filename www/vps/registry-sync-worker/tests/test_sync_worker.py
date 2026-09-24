@@ -16,6 +16,11 @@ def test_registered_jobs_completeness():
         "economy",
         "finance",
         "social",
+        "transport",
+        "waste",
+        "statistics",
+        "elections",
+        "maps",
     }
     assert set(REGISTERED_JOBS.keys()) == expected_jobs
 
@@ -41,5 +46,5 @@ async def test_dry_run_all_jobs(tmp_path: Path):
     results = await run_all_jobs(settings, dry_run=True)
     assert len(results) == len(REGISTERED_JOBS)
     for res in results:
-        assert res["status"] == "success"
-        assert res["rows_ingested"] > 0
+        assert res["status"] == "validated"
+        assert res["rows_ingested"] == 0

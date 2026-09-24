@@ -137,7 +137,7 @@ export default async function Home() {
                     Mobilität &amp; Infrastruktur
                   </h4>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Live-Busse, Bahnübergänge, VRNnextbike, Straßensperrungen &amp; Parkraum.
+                    Fahrpläne, Positionsprognosen, VRNnextbike, Straßensperrungen &amp; Parkraum.
                   </p>
                 </div>
               </div>
@@ -175,7 +175,7 @@ export default async function Home() {
               href="/quellen"
               className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition-colors shrink-0"
             >
-              <FileText className="size-3.5" /> Alle 14 Datenquellen ansehen &rarr;
+              <FileText className="size-3.5" /> Datenquellen und Erfassungsstatus ansehen &rarr;
             </Link>
           </div>
 
@@ -220,7 +220,7 @@ export default async function Home() {
                 </p>
               </div>
               <span className="text-[11px] font-medium text-cyan-400/80 pt-2 border-t border-slate-800/60">
-                Live-Flotten &bull; Kartenebenen
+                Fahrplanprognosen &bull; Kartenebenen
               </span>
             </a>
 

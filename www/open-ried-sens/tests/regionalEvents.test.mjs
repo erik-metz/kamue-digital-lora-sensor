@@ -20,6 +20,7 @@ const statsSource = fs.readFileSync(new URL("../lib/regionalStats.ts", import.me
 const statsContext = {
   exports: {},
   require: (id) => {
+    if (id === "./collectedBackend") return { collectedFetch: globalThis.fetch };
     if (id === "@/env") return { env: { BACKEND_API_URL: "http://localhost:8000" } };
     if (id === "./mapData") return mapData;
     throw new Error(`Unknown require in test context: ${id}`);
@@ -99,32 +100,7 @@ test("all event URLs are valid and do not have broken placeholder subpaths", () 
   }
 });
 
-test("fetchCulturalEvents filters by search query and category", async () => {
-  const kerweEvents = await regionalStats.fetchCulturalEvents({ search: "Kerwe" });
-  assert.ok(kerweEvents.length >= 2, "Expected Bürstädter Kerwe and Rohremer Kerb");
-  for (const e of kerweEvents) {
-    const text = `${e.title} ${e.description}`.toLowerCase();
-    assert.ok(text.includes("kerwe") || text.includes("kerb"));
-  }
-
-  const sportsEvents = await regionalStats.fetchCulturalEvents({ category: "sports" });
-  assert.ok(sportsEvents.length >= 1, "Expected sports events like Stadtlauf");
-  assert.equal(sportsEvents[0].category, "sports");
-});
-
-test("fetchCulturalEvents respects historical past vs upcoming filtering", async () => {
-  // Upcoming only
-  const upcoming = await regionalStats.fetchCulturalEvents({ includePast: false });
-  for (const e of upcoming) {
-    assert.notEqual(e.status, "past", `Event ${e.title} should not be past in upcoming filter`);
-  }
-
-  // Include past
-  const allEvents = await regionalStats.fetchCulturalEvents({ includePast: true });
-  const hasSpargelfest = allEvents.some((e) => e.title.includes("Spargelfest"));
-  assert.ok(hasSpargelfest, "All events must include past events like Spargelfest");
-  assert.ok(allEvents.length > upcoming.length, "Total events with archive must exceed upcoming count");
-});
+// Fetch failure and empty-state contracts are tested in collectedData.test.mjs.
 
 test("generateIcsCalendar produces valid RFC 5545 calendar format", () => {
   const event = regionalStats.BASELINE_EVENTS.find((e) => e.title.includes("Bürstädter Kerwe"));

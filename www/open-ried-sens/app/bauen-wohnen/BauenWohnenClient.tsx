@@ -669,7 +669,7 @@ export default function BauenWohnenClient({
                   <span className="text-emerald-400 font-mono">Ø Kaufpreis</span>
                 </div>
                 <div className="text-2xl font-extrabold text-slate-100 font-mono">
-                  {formatEuro(activeSummary.avg_apartment_buy_sqm ?? 3100, true)}
+                  {formatEuro(activeSummary.avg_apartment_buy_sqm ?? NaN, true)}
                 </div>
                 <p className="text-[11px] text-slate-500">
                   Bestand: ca. 2.450 – 3.350 €/m² · Neubau Erstbezug bis 4.450 €/m²
@@ -683,7 +683,7 @@ export default function BauenWohnenClient({
                 </div>
                 <div className="text-2xl font-extrabold text-slate-100 font-mono">
                   {formatEuro(
-                    filteredBenchmarks.find(b => b.metric_type === "house_buy_avg")?.avg_val ?? 450000
+                    filteredBenchmarks.find(b => b.metric_type === "house_buy_avg")?.avg_val ?? NaN
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500">

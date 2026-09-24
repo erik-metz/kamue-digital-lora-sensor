@@ -15,10 +15,20 @@ from storage import persist_environment_data
 
 async def poll_cycle(client, settings, *, raw=None, dry_run=False):
     started = monotonic()
-    payload = await fetch(client, settings) if raw is None else raw
+    if dry_run and raw is None:
+        raise ValueError(
+            "Dry-run requires --input; provider acquisition must be archived"
+        )
+    if raw is None:
+        async with await psycopg.AsyncConnection.connect(**settings.db) as archive_conn:
+            payload = await fetch(client, settings, archive_conn)
+    else:
+        payload = raw
     fetched_at = datetime.now(UTC)
     fetched = monotonic()
     gauges, weather_list = normalize(payload, settings)
+    if not gauges or not weather_list:
+        raise ValueError("Incomplete environment source data")
     normalized = monotonic()
     summary = {
         "fetched_at": fetched_at.isoformat(),
@@ -35,7 +45,12 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
         }
     async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
         summary["ingestion"] = await persist_environment_data(
-            conn, gauges, weather_list, fetched_at
+            conn,
+            gauges,
+            weather_list,
+            fetched_at,
+            payload=payload,
+            source_url=settings.pegelonline_url,
         )
     summary["durations_seconds"] = {
         "fetch": fetched - started,

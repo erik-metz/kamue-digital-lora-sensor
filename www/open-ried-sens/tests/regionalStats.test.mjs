@@ -20,6 +20,7 @@ const statsSource = fs.readFileSync(new URL("../lib/regionalStats.ts", import.me
 const statsContext = {
   exports: {},
   require: (id) => {
+    if (id === "./collectedBackend") return { collectedFetch: globalThis.fetch };
     if (id === "@/env") return { env: { BACKEND_API_URL: "http://localhost:8000" } };
     if (id === "./mapData") return mapData;
     throw new Error(`Unknown require in test context: ${id}`);

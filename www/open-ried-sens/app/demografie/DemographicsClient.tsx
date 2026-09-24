@@ -16,9 +16,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
-  BASELINE_AGE_STRUCTURE,
-  BASELINE_COMMUTER_FLOWS,
-  BASELINE_MUNICIPALITIES,
   type DemographicSummary,
   type EducationalFacility,
 } from "@/lib/demographicsData";
@@ -31,9 +28,12 @@ import {
 interface Props {
   summaries: DemographicSummary[];
   facilities: EducationalFacility[];
+  ageStructure: Record<string, import("@/lib/demographicsData").AgeStructure[]>;
+  commuters: import("@/lib/demographicsData").CommuterFlow[];
+  municipalities: import("@/lib/demographicsData").Municipality[];
 }
 
-export default function DemographicsClient({ summaries, facilities }: Props) {
+export default function DemographicsClient({ summaries, facilities, ageStructure, commuters, municipalities }: Props) {
   const [selectedMuni, setSelectedMuni] = useState<string>("all");
   const [facilitySearch, setFacilitySearch] = useState<string>("");
   const [facilityTypeFilter, setFacilityTypeFilter] = useState<string>("all");
@@ -131,8 +131,8 @@ export default function DemographicsClient({ summaries, facilities }: Props) {
   }, [selectedMuni, summaries]);
 
   const activeAgeCohorts = useMemo(() => {
-    if (selectedMuni !== "all" && BASELINE_AGE_STRUCTURE[selectedMuni]) {
-      return BASELINE_AGE_STRUCTURE[selectedMuni];
+    if (selectedMuni !== "all" && ageStructure[selectedMuni]) {
+      return ageStructure[selectedMuni];
     }
     // Aggregate age structure across all
     const keys = ["under_6", "6_to_18", "19_to_29", "30_to_49", "50_to_64", "65_plus"];
@@ -148,8 +148,8 @@ export default function DemographicsClient({ summaries, facilities }: Props) {
     let grandTotal = 0;
     for (const key of keys) totals[key] = 0;
 
-    for (const muniKey in BASELINE_AGE_STRUCTURE) {
-      for (const item of BASELINE_AGE_STRUCTURE[muniKey]) {
+    for (const muniKey in ageStructure) {
+      for (const item of ageStructure[muniKey]) {
         totals[item.cohort] = (totals[item.cohort] || 0) + item.count;
         grandTotal += item.count;
       }
@@ -162,14 +162,14 @@ export default function DemographicsClient({ summaries, facilities }: Props) {
       percentage: Number(((totals[k] / (grandTotal || 1)) * 100).toFixed(1)),
       description: labels[k].desc,
     }));
-  }, [selectedMuni]);
+  }, [selectedMuni, ageStructure, commuters]);
 
   const activeCommuters = useMemo(() => {
     if (selectedMuni === "all") {
-      return BASELINE_COMMUTER_FLOWS;
+      return commuters;
     }
-    return BASELINE_COMMUTER_FLOWS.filter((c) => c.home_municipality_id === selectedMuni);
-  }, [selectedMuni]);
+    return commuters.filter((c) => c.home_municipality_id === selectedMuni);
+  }, [selectedMuni, ageStructure, commuters]);
 
   const outboundCommuters = useMemo(
     () => activeCommuters.filter((c) => c.direction === "outbound"),
@@ -265,7 +265,7 @@ export default function DemographicsClient({ summaries, facilities }: Props) {
           >
             Alle Kommunen (Ried gesamt)
           </button>
-          {BASELINE_MUNICIPALITIES.map((m) => (
+          {municipalities.map((m) => (
             <button
               key={m.id}
               type="button"
@@ -581,9 +581,9 @@ export default function DemographicsClient({ summaries, facilities }: Props) {
         {/* Facilities Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredFacilities.map((f) => {
-            const cap = f.capacity ?? 0;
-            const enr = f.current_enrollment ?? 0;
-            const rate = f.utilization_rate ?? (cap > 0 ? Math.round((enr / cap) * 100) : 0);
+            const cap = f.capacity ?? null;
+            const enr = f.current_enrollment ?? null;
+            const rate = f.utilization_rate ?? (cap !== null && cap > 0 && enr !== null ? Math.round((enr / cap) * 100) : null);
             return (
               <div
                 key={f.id}
@@ -610,19 +610,19 @@ export default function DemographicsClient({ summaries, facilities }: Props) {
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-400 font-medium">Auslastung / Belegung</span>
                     <span className="font-mono font-bold text-slate-200">
-                      {enr} / {cap} Plätze ({rate}%)
+                      {enr ?? "–"} / {cap ?? "–"} Plätze ({rate === null ? "–" : `${rate}%`})
                     </span>
                   </div>
                   <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden border border-slate-800">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
-                        rate >= 98
+                        (rate ?? 0) >= 98
                           ? "bg-rose-500"
-                          : rate >= 93
+                          : (rate ?? 0) >= 93
                           ? "bg-amber-400"
                           : "bg-emerald-400"
                       }`}
-                      style={{ width: `${Math.min(rate, 100)}%` }}
+                      style={{ width: `${Math.min(rate ?? 0, 100)}%` }}
                     />
                   </div>
                   <div className="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">

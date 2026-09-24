@@ -19,6 +19,11 @@ class TestSyncWorker(unittest.TestCase):
             "economy",
             "finance",
             "social",
+        "transport",
+        "waste",
+        "statistics",
+        "elections",
+        "maps",
         }
         self.assertEqual(set(REGISTERED_JOBS.keys()), expected_jobs)
 
@@ -42,8 +47,8 @@ class TestSyncWorker(unittest.TestCase):
             results = asyncio.run(run_all_jobs(settings, dry_run=True))
             self.assertEqual(len(results), len(REGISTERED_JOBS))
             for res in results:
-                self.assertEqual(res["status"], "success")
-                self.assertGreater(res["rows_ingested"], 0)
+                self.assertEqual(res["status"], "validated")
+                self.assertEqual(res["rows_ingested"], 0)
 
 
 if __name__ == "__main__":

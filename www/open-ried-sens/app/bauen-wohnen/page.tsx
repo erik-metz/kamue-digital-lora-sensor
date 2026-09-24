@@ -1,3 +1,4 @@
+import OfficialStatisticsPage from "../components/OfficialStatisticsPage";
 import {
   fetchBorisZones,
   fetchConstructionActivity,
@@ -26,15 +27,16 @@ import BauenWohnenClient from "./BauenWohnenClient";
 export const dynamic = "force-dynamic";
 
 export default async function BauenWohnenPage() {
-  const [summaries, housingStock, borisZones, permits, benchmarks, developmentPlans] =
-    await Promise.all([
+  const collected = await Promise.all([
       fetchRealEstateSummary(),
       fetchHousingStock(),
       fetchBorisZones(),
       fetchConstructionActivity(),
       fetchMarketBenchmarks(),
       fetchDevelopmentPlans(),
-    ]);
+    ]).catch(() => null);
+  if (!collected || !collected[0].length) return <OfficialStatisticsPage domain="realestate" title="Bauen & Wohnen" />;
+  const [summaries, housingStock, borisZones, permits, benchmarks, developmentPlans] = collected;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">

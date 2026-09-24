@@ -539,7 +539,7 @@ export interface EvChargingStation {
   isFastCharger: boolean;
   connectorTypes: string[];
   isPublic: boolean;
-  availablePoints: number;
+  availablePoints: number | null;
   occupiedPoints: number;
   statusSource: string;
 }

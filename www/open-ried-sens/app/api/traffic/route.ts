@@ -1,7 +1,5 @@
 import { env } from "@/env";
 import {
-  calculateLocalTraffic,
-  RIED_CORRIDOR_METADATA,
   type TrafficCorridor,
   type TrafficIncident,
 } from "@/lib/trafficData";
@@ -39,10 +37,9 @@ interface DbCorridorStatus {
 }
 
 export async function GET() {
-  const localTraffic = calculateLocalTraffic(Date.now());
-  let incidents: TrafficIncident[] = localTraffic.incidents;
-  let corridors: TrafficCorridor[] = localTraffic.corridors;
-  let sourceMode = "local_open_data_model";
+  let incidents: TrafficIncident[] = [];
+  let corridors: TrafficCorridor[] = [];
+  let sourceMode = "database_timescaledb";
 
   // Try to query VPS TimescaleDB backend API if configured
   try {
@@ -58,7 +55,7 @@ export async function GET() {
       const dbIncidents = (await incidentsRes.json()) as DbTrafficIncident[];
       const dbCorridors = (await corridorsRes.json()) as DbCorridorStatus[];
 
-      if (Array.isArray(dbIncidents) && dbIncidents.length > 0) {
+      if (Array.isArray(dbIncidents) && Array.isArray(dbCorridors)) {
         incidents = dbIncidents.map((i) => ({
           id: i.id,
           roadName: i.road_name,
@@ -80,22 +77,17 @@ export async function GET() {
           source: i.source,
         }));
 
-        corridors = RIED_CORRIDOR_METADATA.map((meta) => {
-          const dbC = dbCorridors.find((c) => c.road_name.toUpperCase() === meta.roadName.toUpperCase());
-          return {
-            ...meta,
-            status: dbC ? dbC.status : "clear",
-            delayMinutes: dbC ? dbC.delay_minutes : 0,
-            activeIncidentsCount: dbC ? dbC.active_incidents_count : 0,
-            description: dbC ? dbC.description : "Freie Fahrt",
-          };
-        });
+        // Corridor geometry is collected separately; never merge bundled routes.
+        corridors = dbCorridors.map((c) => ({ id: c.corridor_id, roadName: c.road_name,
+          name: c.name, status: c.status, delayMinutes: c.delay_minutes,
+          activeIncidentsCount: c.active_incidents_count, description: c.description,
+          track: [], direction: "", lengthKm: 0 } as unknown as TrafficCorridor));
 
         sourceMode = "database_timescaledb";
       }
-    }
+    } else { throw new Error("Unavailable"); }
   } catch {
-    // Graceful fallback to deterministic local model
+    return Response.json({ error: "Traffic data unavailable" }, { status: 503 });
   }
 
   return Response.json(

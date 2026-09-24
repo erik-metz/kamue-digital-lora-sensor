@@ -2,39 +2,40 @@
 
 import { useEffect, useState } from "react";
 import { Zap, Sun, Leaf, Flame, ShieldAlert } from "lucide-react";
-import { calculateLiveEnergyGeneration, type LiveEnergySummary } from "@/lib/infrastructureData";
+import { type LiveEnergySummary } from "@/lib/infrastructureData";
 
 export default function CleanEnergyWidget() {
-  const [data, setData] = useState<LiveEnergySummary>(() => calculateLiveEnergyGeneration(Date.now()));
-  const [isLive, setIsLive] = useState(false);
+  const [data, setData] = useState<LiveEnergySummary | null>(null);
+  const [sourceTime, setSourceTime] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     async function fetchEnergy() {
       try {
         const res = await fetch("/api/infrastructure/energy", { cache: "no-store" });
+        if (!res.ok) throw new Error("Unavailable");
         if (res.ok) {
           const json = await res.json();
           if (!cancelled && json.facilities) {
             setData(json);
-            setIsLive(true);
+            setSourceTime(res.headers.get("x-source-updated-at"));
           }
         }
       } catch {
-        // Fallback already loaded
+        if (!cancelled) { setData(null); setSourceTime(null); }
       }
     }
 
     void fetchEnergy();
-    const timer = setInterval(() => {
-      setData(calculateLiveEnergyGeneration(Date.now()));
-    }, 60000);
+    const timer = setInterval(() => { if (!document.hidden) void fetchEnergy(); }, 60000);
 
     return () => {
       cancelled = true;
       clearInterval(timer);
     };
   }, []);
+
+  if (!data) return <p role="status" className="p-6 text-slate-400">Energie: keine aktuellen gespeicherten Messwerte verfügbar.</p>;
 
   const totalCapKw = data.totalInstalledCapacityKw;
   const currentMw = data.currentTotalPowerMw;
@@ -54,13 +55,13 @@ export default function CleanEnergyWidget() {
             Regionale Ökostrom- & Biogaserzeugung
           </h3>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Echtzeit-Berechnung lokaler Erzeugung: ZAKB Energiepark Hüttenfeld, Biogasanlage Bürstadt und Bürgersolarparks.
+            Gespeicherte Erzeugungsmessungen aus den angebundenen Quellen.
           </p>
         </div>
         <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-3.5 py-1.5 rounded-full text-xs self-start sm:self-auto">
           <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-slate-300 font-medium">
-            {isLive ? "Live Telemetrie aktiv" : "Modell-Echtzeitberechnung"}
+            {sourceTime ? `Messstand: ${new Date(sourceTime).toLocaleString("de-DE")}` : "Gespeicherte Messwerte"}
           </span>
         </div>
       </div>
@@ -91,7 +92,7 @@ export default function CleanEnergyWidget() {
             {solarKw >= 1000 ? `${(solarKw / 1000).toFixed(2)} MW` : `${Math.round(solarKw)} kW`}
           </div>
           <div className="text-[11px] text-amber-400/80">
-            Tagesgang nach Sonnenstand
+            Leistung aus gespeicherten Messwerten
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+import { collectedFetch as fetch } from "./collectedBackend";
 import { env } from "@/env";
 
 export interface Municipality {
@@ -665,20 +666,19 @@ export const BASELINE_FACILITIES: EducationalFacility[] = [
 ];
 
 export async function fetchDemographicSummary(): Promise<DemographicSummary[]> {
-  try {
+
     const res = await fetch(new URL("/api/v1/demographics/summary", env.BACKEND_API_URL), {
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error("Summary request failed");
     return await res.json();
-  } catch {
-    return BASELINE_SUMMARIES;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchEducationalFacilities(municipalityId?: string): Promise<EducationalFacility[]> {
-  try {
+
     const url = new URL("/api/v1/demographics/facilities", env.BACKEND_API_URL);
     if (municipalityId && municipalityId !== "all") {
       url.searchParams.set("municipality_id", municipalityId);
@@ -689,23 +689,18 @@ export async function fetchEducationalFacilities(municipalityId?: string): Promi
     });
     if (!res.ok) throw new Error("Facilities request failed");
     return await res.json();
-  } catch {
-    if (municipalityId && municipalityId !== "all") {
-      return BASELINE_FACILITIES.filter(f => f.municipality_id === municipalityId);
-    }
-    return BASELINE_FACILITIES;
-  }
+
+  throw new Error("Collected data unavailable");
 }
 
 export async function fetchCommuterFlows(municipalityId: string): Promise<CommuterFlow[]> {
-  try {
+
     const res = await fetch(new URL(`/api/v1/demographics/${municipalityId}/commuters`, env.BACKEND_API_URL), {
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
     if (!res.ok) throw new Error("Commuters request failed");
     return await res.json();
-  } catch {
-    return BASELINE_COMMUTER_FLOWS.filter(c => c.home_municipality_id === municipalityId);
-  }
+
+  throw new Error("Collected data unavailable");
 }

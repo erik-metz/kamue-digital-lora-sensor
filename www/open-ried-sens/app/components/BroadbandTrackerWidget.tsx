@@ -12,10 +12,6 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import {
-  VERIFIED_BROADBAND_AREAS,
-  VERIFIED_EV_CHARGERS,
-  VERIFIED_ROAD_SEGMENTS,
-  VERIFIED_WIFI_HOTSPOTS,
   getRoadConditionColor,
   getRoadConditionLabel,
   type BroadbandArea,
@@ -25,10 +21,11 @@ import {
 } from "@/lib/infrastructureData";
 
 export default function BroadbandTrackerWidget() {
-  const [broadbandAreas, setBroadbandAreas] = useState<BroadbandArea[]>(VERIFIED_BROADBAND_AREAS);
-  const [evChargers, setEvChargers] = useState<EvChargingStation[]>(VERIFIED_EV_CHARGERS);
-  const [roadSegments, setRoadSegments] = useState<RoadSegment[]>(VERIFIED_ROAD_SEGMENTS);
-  const [wifiHotspots, setWifiHotspots] = useState<WifiHotspot[]>(VERIFIED_WIFI_HOTSPOTS);
+  const [broadbandAreas, setBroadbandAreas] = useState<BroadbandArea[]>([]);
+  const [evChargers, setEvChargers] = useState<EvChargingStation[]>([]);
+  const [roadSegments, setRoadSegments] = useState<RoadSegment[]>([]);
+  const [wifiHotspots, setWifiHotspots] = useState<WifiHotspot[]>([]);
+  const [wifiAvailable, setWifiAvailable] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,42 +42,47 @@ export default function BroadbandTrackerWidget() {
         if (!cancelled) {
           if (bbRes.ok) {
             const d = await bbRes.json();
-            if (Array.isArray(d.areas)) setBroadbandAreas(d.areas);
-          }
+            setBroadbandAreas(Array.isArray(d.areas) ? d.areas : []);
+          } else { setBroadbandAreas([]); }
           if (evRes.ok) {
             const d = await evRes.json();
-            if (Array.isArray(d.stations)) setEvChargers(d.stations);
-          }
+            setEvChargers(Array.isArray(d.stations) ? d.stations : []);
+          } else { setEvChargers([]); }
           if (roadRes.ok) {
             const d = await roadRes.json();
-            if (Array.isArray(d.segments)) setRoadSegments(d.segments);
-          }
+            setRoadSegments(Array.isArray(d.segments) ? d.segments : []);
+          } else { setRoadSegments([]); }
+          setWifiAvailable(wifiRes.ok);
           if (wifiRes.ok) {
             const d = await wifiRes.json();
-            if (Array.isArray(d.hotspots)) setWifiHotspots(d.hotspots);
-          }
+            setWifiHotspots(Array.isArray(d.hotspots) ? d.hotspots : []);
+          } else { setWifiHotspots([]); }
         }
       } catch {
-        // Local fallbacks already set
+        if (!cancelled) { setBroadbandAreas([]); setEvChargers([]); setRoadSegments([]); setWifiHotspots([]); setWifiAvailable(false); }
       }
     }
 
     void loadData();
+    const timer = setInterval(() => { if (!document.hidden) void loadData(); }, 60000);
     return () => {
+      clearInterval(timer);
       cancelled = true;
     };
   }, []);
 
+  if (!broadbandAreas.length && !evChargers.length && !roadSegments.length && !wifiHotspots.length) return <p role="status" className="p-6 text-slate-400">Infrastruktur: noch keine gespeicherten Daten verfügbar.</p>;
+
   const totalSockets = evChargers.reduce((sum, e) => sum + e.totalPoints, 0);
-  const freeSockets = evChargers.reduce((sum, e) => sum + e.availablePoints, 0);
+  const freeSockets = evChargers.reduce((sum, e) => sum + (e.availablePoints ?? 0), 0);
   const fastChargers = evChargers.filter((e) => e.isFastCharger).length;
 
   const avgRoadGrade = roadSegments.length > 0
     ? roadSegments.reduce((sum, r) => sum + r.conditionGrade, 0) / roadSegments.length
-    : 2.2;
+    : 0;
   const goodRoadPct = roadSegments.length > 0
     ? Math.round((roadSegments.filter((r) => r.conditionGrade <= 2.5).length / roadSegments.length) * 100)
-    : 75;
+    : 0;
 
   return (
     <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6 sm:p-8 space-y-6">
@@ -155,14 +157,14 @@ export default function BroadbandTrackerWidget() {
                 <span>Öffentliche E-Ladesäulen</span>
               </div>
               <span className="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                BNetzA & OCPI
+                BNetzA
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-1">
               <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
                 <div className="text-xl font-extrabold text-emerald-400">
-                  {freeSockets} <span className="text-xs font-normal text-slate-400">/ {totalSockets}</span>
+                  {evChargers.some(e => e.availablePoints === null) ? "–" : freeSockets} <span className="text-xs font-normal text-slate-400">/ {totalSockets}</span>
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">Freie Ladepunkte</div>
               </div>
@@ -170,7 +172,7 @@ export default function BroadbandTrackerWidget() {
                 <div className="text-xl font-extrabold text-sky-400">
                   {fastChargers}
                 </div>
-                <div className="text-[11px] text-slate-400 mt-0.5">DC Schnelllader (≥50kW)</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Registrierte Schnellladeeinrichtungen</div>
               </div>
             </div>
 
@@ -179,15 +181,15 @@ export default function BroadbandTrackerWidget() {
                 <div key={ev.id} className="flex items-center justify-between p-1.5 rounded-lg bg-slate-900/40">
                   <span className="truncate max-w-[150px] font-medium">{ev.name.replace(/^(Entega|Stadtwerke|Pfalzwerke|EnBW)\s+Ladesäule\s+/i, "")}</span>
                   <span className="shrink-0 flex items-center gap-1">
-                    <span className={`size-1.5 rounded-full ${ev.availablePoints > 0 ? "bg-emerald-400" : "bg-red-400"}`} />
-                    <span className="text-[11px] font-mono text-slate-400">{ev.availablePoints}/{ev.totalPoints} frei</span>
+                    <span className={`size-1.5 rounded-full ${(ev.availablePoints ?? 0) > 0 ? "bg-emerald-400" : "bg-red-400"}`} />
+                    <span className="text-[11px] font-mono text-slate-400">{ev.availablePoints === null ? "Belegung unbekannt" : `${ev.availablePoints}/${ev.totalPoints} frei`}</span>
                   </span>
                 </div>
               ))}
             </div>
           </div>
           <div className="text-[11px] text-slate-500 border-t border-slate-800/80 pt-2 flex items-center justify-between">
-            <span>Standorte in Bürstadt, Lampertheim & Biblis</span>
+            <span>Gespeicherte Standorte im Kartengebiet</span>
             <span className="text-emerald-400">Auf Karte aktiv</span>
           </div>
         </div>
@@ -212,13 +214,13 @@ export default function BroadbandTrackerWidget() {
             <div className="grid grid-cols-2 gap-2 pt-1">
               <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
                 <div className="text-xl font-extrabold text-lime-400">
-                  {avgRoadGrade.toFixed(1)}
+                  {roadSegments.length ? avgRoadGrade.toFixed(1) : "–"}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">Ø Zustandsnote</div>
               </div>
               <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-center">
                 <div className="text-xl font-extrabold text-emerald-400">
-                  {goodRoadPct}%
+                  {roadSegments.length ? `${goodRoadPct}%` : "–"}
                 </div>
                 <div className="text-[11px] text-slate-400 mt-0.5">Guter Zustand (≤2.5)</div>
               </div>
@@ -227,7 +229,7 @@ export default function BroadbandTrackerWidget() {
             <div className="flex items-center justify-between p-2 rounded-xl bg-slate-950/80 border border-slate-800 text-xs">
               <div className="flex items-center gap-1.5 text-slate-300">
                 <Wifi className="size-3.5 text-cyan-400" />
-                <span>Freies WLAN ({wifiHotspots.length} Hotspots)</span>
+                <span>Freies WLAN ({wifiAvailable ? wifiHotspots.length : "–"} Hotspots)</span>
               </div>
               <span className="text-[11px] text-cyan-400 font-medium">Hessen-WLAN & Freifunk</span>
             </div>
