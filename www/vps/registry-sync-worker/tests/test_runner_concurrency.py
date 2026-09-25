@@ -2,10 +2,26 @@ import asyncio
 import unittest
 from unittest.mock import patch
 
-from runner import bounded_collect
+from runner import bounded_collect, source_loop
 
 
 class ConcurrencyTests(unittest.IsolatedAsyncioTestCase):
+    async def test_budget_review_uses_daily_retry_but_partial_crawls_resume_quickly(self):
+        for override, expected in [(86400, 86400), (300, 300)]:
+            stop = asyncio.Event()
+            delays = []
+
+            async def sleep(event, seconds, delays=delays):
+                delays.append(seconds)
+                event.set()
+
+            with patch('runner.bounded_collect', return_value={'status': 'partial'}), \
+                 patch('runner.sleep_until_stop', side_effect=sleep), \
+                 patch('runner.random.uniform', return_value=1):
+                await source_loop({'interval_seconds': 86400, 'partial_retry_seconds': override},
+                                  None, stop, asyncio.Semaphore(1), asyncio.Semaphore(1))
+            self.assertEqual(delays, [expected])
+
     async def test_jobs_respect_connection_budget_and_gtfs_memory_gate(self):
         active = gtfs_active = peak = gtfs_peak = 0
 

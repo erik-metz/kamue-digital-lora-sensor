@@ -420,7 +420,8 @@
       "url": "https://www.biblis.eu/rathaus/ortsrecht/haushaltsplan/",
       "interval_seconds": 86400,
       "max_age_seconds": 63072000,
-      "http_retries": 2
+      "http_retries": 2,
+      "partial_retry_seconds": 86400
     }
   ]
 }

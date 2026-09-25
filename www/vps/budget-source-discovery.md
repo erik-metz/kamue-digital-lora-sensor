@@ -9,3 +9,9 @@ Verified discovery pages, not enabled budget adapters:
 The parser must distinguish accrual revenue/expenses from cash receipts/payments, current-year authorization from multiyear forecast columns, and plan from actual. No budget values were added from search snippets.
 
 Update: current listing now links `haushaltsplan-2026.pdf?cid=ha1`; the old indexed link returns 404. An implemented collector follows the listing and rejects inconsistent totals. See `continuation-validation.md` for the verified discrepancy and resulting review publication.
+
+### 2026-09-25 source recheck
+
+The current official notice at https://www.biblis.eu/rathaus/aktuelles/amtliche-bekanntmachungen/haushaltssatzung-und-bekanntmachung-der-haushaltssatzung-2026/bekanntmachung-2026.pdf?cid=h6a repeats the mismatch on page 1 (visually checked): ordinary revenue EUR 24,166,774, expense EUR 26,800,450, printed balance EUR -2,572,977. Arithmetic yields EUR -2,633,676, a EUR 60,699 discrepancy. This is not an extraction error.
+
+A search-indexed older document, haushaltsplan-2026-beschlussfassung-ohne-stellenplan.pdf?cid=h2v, shows reconciled figures but its actual URL returns HTTP 404. It is not a verified current replacement and must not override the accessible official notice. Keep the review gate until corrected authoritative evidence is available. The budget partial-result retry now uses its daily cadence, preventing repeated 43 MB downloads every five minutes; partial ZAKB crawls retain their short resume interval.

@@ -170,7 +170,7 @@ async def source_loop(source, settings, stop, slots, gtfs_slot):
         if failures:
             interval = min(interval, 300) * min(2**min(failures, 4), 12)
         elif result["status"] == "partial":
-            interval = min(interval, 300)
+            interval = min(interval, max(30, source.get("partial_retry_seconds", 300)))
         # Avoid synchronized provider bursts after simultaneous worker restarts.
         await sleep_until_stop(stop, interval * random.uniform(0.9, 1.1))
 
