@@ -467,6 +467,11 @@ CREATE TABLE IF NOT EXISTS traffic_incidents (
 );
 
 CREATE INDEX IF NOT EXISTS idx_traffic_active ON traffic_incidents (is_active, road_name);
+-- Provider direction/location labels exceed 128 characters; preserve them intact.
+ALTER TABLE traffic_incidents
+    ALTER COLUMN direction TYPE TEXT,
+    ALTER COLUMN location_from TYPE TEXT,
+    ALTER COLUMN location_to TYPE TEXT;
 CREATE INDEX IF NOT EXISTS idx_traffic_time_window ON traffic_incidents (start_time, end_time);
 CREATE INDEX IF NOT EXISTS idx_traffic_road_active ON traffic_incidents (road_name, is_active);
 

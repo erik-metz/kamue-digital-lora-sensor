@@ -131,6 +131,8 @@ class StorageTests(DatabaseCase):
         payload["A67"]["warning"]["warning"] = [incident()]
         records, _ = normalize(payload, settings())
         now = datetime.now(UTC)
+        records[0] = replace(records[0], direction='Direction ' * 30,
+                             location_from='Origin ' * 30, location_to='Destination ' * 30)
         other = replace(records[0], id="external", source="other")
         other_road = replace(records[0], id="a8", road_name="A8")
         await persist_traffic_incidents(
@@ -165,6 +167,11 @@ class StorageTests(DatabaseCase):
             )
         )
         await persist_traffic_incidents(self.conn, records, settings(), now)
+        cursor = await self.conn.execute(
+            'SELECT direction,location_from,location_to FROM traffic_incidents WHERE id=%s',
+            (records[0].id,))
+        self.assertEqual(await cursor.fetchone(),
+                         (records[0].direction, records[0].location_from, records[0].location_to))
         self.assertTrue(
             await self.scalar(
                 "SELECT is_active FROM traffic_incidents WHERE id=%s", (records[0].id,)
