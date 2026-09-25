@@ -1487,7 +1487,12 @@ CREATE TABLE IF NOT EXISTS movement_positions (
     metadata JSONB NOT NULL,
     PRIMARY KEY(timestamp, entity_id, basis)
 );
-SELECT create_hypertable('movement_positions','timestamp',if_not_exists => TRUE);
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+        PERFORM create_hypertable('movement_positions','timestamp',if_not_exists => TRUE);
+    END IF;
+END $$;
 CREATE TABLE IF NOT EXISTS movement_latest (
     entity_id TEXT NOT NULL,
     basis TEXT NOT NULL,
