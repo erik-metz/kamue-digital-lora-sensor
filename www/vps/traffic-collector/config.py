@@ -13,7 +13,7 @@ class Settings:
     poll_seconds: int
     state_dir: str
     db: dict
-    autobahn_api_base: str = "https://verkehr.autobahn.de/oapi/v1"
+    autobahn_api_base: str = "https://verkehr.autobahn.de/o"
     min_lat: float = 49.45
     max_lat: float = 49.90
     min_lon: float = 8.25
@@ -38,7 +38,7 @@ class Settings:
         if not 30 <= interval <= 86400:
             raise ValueError("TRAFFIC_POLL_SECONDS must be between 30 and 86400")
         base = os.getenv(
-            "AUTOBAHN_API_BASE", "https://verkehr.autobahn.de/oapi/v1"
+            "AUTOBAHN_API_BASE", "https://verkehr.autobahn.de/o"
         ).rstrip("/")
         url = urlsplit(base)
         if (
