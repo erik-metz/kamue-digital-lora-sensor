@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import openpyxl
 from google.transit import gtfs_realtime_pb2
-from hessen import parse_workbook, TABLES
+from hessen import TABLES, parse_workbook
 from map_tiles import tile_inventory
 from realtime import reported_delay
 

@@ -1,11 +1,13 @@
 """Durable acquisition and atomic publication. Only collectors import providers."""
 
+import asyncio
 import hashlib
 import json
 import os
 from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit, urlunsplit
 
+import httpx
 from contracts import energy_publication
 from psycopg.types.json import Jsonb
 
@@ -16,6 +18,26 @@ def public_url(url):
 
 
 async def acquire(conn, client, source, url=None, *, form=None):
+    """Bounded retries for safe reads; every attempted response remains archived."""
+    retries = min(3, max(0, int(source.get("http_retries", 0)))) if form is None else 0
+    for attempt in range(retries + 1):
+        try:
+            return await _acquire_once(conn, client, source, url, form=form)
+        except (httpx.TransportError, httpx.HTTPStatusError) as exc:
+            response = exc.response if isinstance(exc, httpx.HTTPStatusError) else None
+            retryable = response is None or response.status_code in {429, 500, 502, 503, 504}
+            if attempt == retries or not retryable:
+                raise
+            delay = min(60, max(0, source.get("retry_delay_seconds", 2)) * 2**attempt)
+            if response is not None:
+                try:
+                    delay = max(delay, min(60, max(0, float(response.headers.get("retry-after", 0)))))
+                except ValueError:
+                    pass
+            await asyncio.sleep(delay)
+
+
+async def _acquire_once(conn, client, source, url=None, *, form=None):
     """Archive every response before parsing. Secrets never enter receipt metadata."""
     target = url or source["url"]
     if urlsplit(target).scheme != "https":

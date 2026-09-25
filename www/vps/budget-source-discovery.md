@@ -7,3 +7,5 @@ Verified discovery pages, not enabled budget adapters:
 - Bürstadt and Groß-Rohrheim: current adopted source documents have not yet been verified in this discovery pass. Search snippets and secondary reporting are insufficient to enable an adapter.
 
 The parser must distinguish accrual revenue/expenses from cash receipts/payments, current-year authorization from multiyear forecast columns, and plan from actual. No budget values were added from search snippets.
+
+Update: current listing now links `haushaltsplan-2026.pdf?cid=ha1`; the old indexed link returns 404. An implemented collector follows the listing and rejects inconsistent totals. See `continuation-validation.md` for the verified discrepancy and resulting review publication.

@@ -1,6 +1,7 @@
 """Tests for EnvironmentCollector normalization and healthcheck."""
 
 import unittest
+
 from config import Settings
 from normalize import normalize
 

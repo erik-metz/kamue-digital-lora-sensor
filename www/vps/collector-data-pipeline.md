@@ -60,7 +60,7 @@ Storage is the longer-term concern: 100 continuously active entities at one samp
 
 ## Deployment
 
-Production has not been changed. Automatic demo-data INSERT statements have been removed from the schema, so startup cannot overwrite collected values with examples. Existing legacy rows are preserved and are not promoted into collector publications. Build the revised backend, registry worker, environment worker and frontend images. Back up the database; apply `api/v1/migrate.py` using the existing deployment environment, then verify `/health` requires schema version 20260927. Deploy the read API and Nginx cache configuration, start collectors, inspect `/api/v1/collection/status` and publication freshness, then deploy the frontend. Initial imports can take time, especially ZAKB and map tiles. Do not mark source acquisition complete merely because a container is running.
+The user reports deploying the earlier refactor; see `continuation-validation.md` for the public endpoint mismatch and follow-up changes. This task has not mutated production. Automatic demo-data INSERT statements have been removed from the schema, so startup cannot overwrite collected values with examples. Existing legacy rows are preserved and are not promoted into collector publications. Build the revised backend, registry worker, environment worker and frontend images. Back up the database; apply `api/v1/migrate.py` using the existing deployment environment, then verify `/health` requires schema version 20260928. Deploy the read API and Nginx cache configuration, start collectors, inspect `/api/v1/collection/status` and publication freshness, then deploy the frontend. Initial imports can take time, especially ZAKB and map tiles. Do not mark source acquisition complete merely because a container is running.
 
 The manifest is mounted read-only at `/app/sources.json` by Compose. An enabled `json` source must provide the declared normalized dataset contract, a timezone-aware `source_updated_at`, an HTTPS URL and any token through an environment variable. Validate its field meanings and types against consumers before enabling it. Never insert the old frontend baseline arrays into the publication tables.
 
@@ -68,8 +68,10 @@ The manifest is mounted read-only at `/app/sources.json` by Compose. An enabled 
 
 The declared-field inventory and active-path coverage matrix are in `ui-field-inventory.json` and `ui-data-coverage.md`. They explicitly distinguish active datasets from disabled legacy contracts.
 
-Schema 20260927 adds an indexed `movement_stop_times` projection, one-time backfill from stored GTFS schedules and cascading replacement on schedule refresh. Stops retain their source namespace through map layers and departure requests. Map popups fetch stored departures on open.
+Schema 20260928 adds an indexed `movement_stop_times` projection, one-time backfill from stored GTFS schedules and cascading replacement on schedule refresh. Stops retain their source namespace through map layers and departure requests. Map popups fetch stored departures on open.
 
 The energy JSON export now requires `contract_version: 1` and an observation timestamp matching the publication time. Missing measurements are normalized to null; kW/MW totals must agree; CO₂ figures require `co2Method`. At least one measured generation/yield value is required. Facility capacity and daily yield are optional. No live energy provider has been enabled.
 
 Follow-up verification: 105 frontend tests and TypeScript checks passed; 31 collector tests passed including real database import replay/backfill; 81 API tests and 6 subtests passed with 4 optional tests skipped. The production build passed with network access for build-time font downloads.
+
+Follow-up: resumable ZAKB/BKG acquisition, bounded retries and the Biblis adopted-budget summary/review adapter are documented in `continuation-validation.md`. The complete regional tile import was validated; full calendar coverage remains incomplete.

@@ -5,6 +5,7 @@ import asyncio
 import json
 import logging
 import os
+import random
 import signal
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,6 +13,7 @@ from pathlib import Path
 import httpx
 import psycopg
 from adapters import import_cross7, import_tiles
+from budgets import import_biblis_budget
 from chargers import import_chargers
 from config import Settings
 from elections import import_elections
@@ -25,6 +27,7 @@ from zakb import import_zakb
 
 LOG = logging.getLogger(__name__)
 ADAPTERS = {
+    "biblis-budget": import_biblis_budget,
     "json": import_json,
     "wms": import_wms,
     "hessen": import_hessen,
@@ -155,8 +158,11 @@ async def source_loop(source, settings, stop):
         failures = failures + 1 if result["status"] == "failed" else 0
         interval = source["interval_seconds"]
         if failures:
-            interval = min(interval, 300) * min(2**failures, 12)
-        await sleep_until_stop(stop, interval)
+            interval = min(interval, 300) * min(2**min(failures, 4), 12)
+        elif result["status"] == "partial":
+            interval = min(interval, 300)
+        # Avoid synchronized provider bursts after simultaneous worker restarts.
+        await sleep_until_stop(stop, interval * random.uniform(0.9, 1.1))
 
 
 async def prediction_loop(settings, stop):

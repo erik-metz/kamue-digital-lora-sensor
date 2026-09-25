@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AdoptedBudgetSection from "./AdoptedBudgetSection";
 import { readCollected } from "@/lib/collectedBackend";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
@@ -18,6 +19,7 @@ export default async function OfficialStatisticsPage({ domain, title }: { domain
     <SiteHeader />
     <main className="mx-auto max-w-7xl space-y-6 px-6 py-10">
       <h1 className="text-3xl font-bold">{title}</h1>
+      {domain === "finance" && <AdoptedBudgetSection />}
       <p className="text-slate-400">Zusätzliche Detaildaten sind noch nicht verfügbar. Hier erscheinen die bereits erhobenen amtlichen Statistiken mit ihrem jeweiligen Berichtszeitraum.</p>
       {!data ? <p role="status">Aktuell keine gespeicherte Veröffentlichung verfügbar.</p> : <>
         <p className="text-slate-300">{data.publisher ?? "Hessisches Statistisches Landesamt"}, {data.edition}. Veröffentlichung: {data.publication_month}. Die Zahlen beschreiben den in der Tabelle genannten Zeitraum.</p>

@@ -80,7 +80,8 @@ app.include_router(v1_router, prefix="/api/v1")
 @app.get("/health")
 async def health_check():
     async with app.state.pool.connection() as conn:
-        cursor = await conn.execute("SELECT 1 FROM collector_schema_versions WHERE version=20260927")
+        cursor = await conn.execute("SELECT 1 FROM collector_schema_versions WHERE version=20260928")
         if await cursor.fetchone() is None:
             raise HTTPException(503, "Collector schema migration is not ready")
-    return {"status": "healthy"}
+    return {"status": "healthy", "collector_schema_version": 20260928,
+            "capabilities": ["collected-publications", "persisted-movements", "indexed-departures"]}

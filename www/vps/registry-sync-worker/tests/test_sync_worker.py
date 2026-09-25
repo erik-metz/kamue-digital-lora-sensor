@@ -1,10 +1,11 @@
 """Unit tests for registry-sync-worker."""
 
-import pytest
 from pathlib import Path
+
+import pytest
 from config import Settings
 from health import read_status, record_job_status
-from scheduler import REGISTERED_JOBS, execute_job, run_all_jobs
+from scheduler import REGISTERED_JOBS, run_all_jobs
 
 
 def test_registered_jobs_completeness():

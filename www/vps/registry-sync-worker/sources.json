@@ -13,7 +13,8 @@
         8.3,
         49.8,
         8.65
-      ]
+      ],
+      "http_retries": 2
     },
     {
       "id": "vrn",
@@ -28,7 +29,8 @@
         8.3,
         49.8,
         8.65
-      ]
+      ],
+      "http_retries": 2
     },
     {
       "id": "vrn-realtime",
@@ -43,7 +45,8 @@
         8.3,
         49.8,
         8.65
-      ]
+      ],
+      "http_retries": 2
     },
     {
       "id": "delfi-regional-gtfsde",
@@ -58,7 +61,8 @@
         8.3,
         49.8,
         8.65
-      ]
+      ],
+      "http_retries": 2
     },
     {
       "id": "zakb-calendar",
@@ -82,7 +86,8 @@
       "interval_seconds": 86400,
       "max_age_seconds": 172800,
       "request_spacing_seconds": 1,
-      "coverage": "One actual OSM address per street; no claim of complete address coverage."
+      "coverage": "One actual OSM address per street; no claim of complete address coverage.",
+      "http_retries": 2
     },
     {
       "id": "cross7-buerstadt",
@@ -96,7 +101,8 @@
         "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender",
         "Origin": "https://www.buerstadt.de",
         "Referer": "https://www.buerstadt.de/"
-      }
+      },
+      "http_retries": 2
     },
     {
       "id": "demographics-published-source",
@@ -370,7 +376,8 @@
       "max_zoom": 14,
       "wms_layer": "web",
       "layer": "base",
-      "request_interval_seconds": 0.25
+      "request_interval_seconds": 0.25,
+      "http_retries": 2
     },
     {
       "id": "hessen-municipal-statistics",
@@ -385,7 +392,8 @@
         "431005": "buerstadt",
         "431010": "gross-rohrheim",
         "431013": "lampertheim"
-      }
+      },
+      "http_retries": 2
     },
     {
       "id": "bundeswahlleiterin-2025",
@@ -401,7 +409,18 @@
         "06431005": "buerstadt",
         "06431010": "gross-rohrheim",
         "06431013": "lampertheim"
-      }
+      },
+      "http_retries": 2
+    },
+    {
+      "id": "biblis-adopted-budget",
+      "group": "finance",
+      "adapter": "biblis-budget",
+      "enabled": true,
+      "url": "https://www.biblis.eu/rathaus/ortsrecht/haushaltsplan/",
+      "interval_seconds": 86400,
+      "max_age_seconds": 63072000,
+      "http_retries": 2
     }
   ]
 }

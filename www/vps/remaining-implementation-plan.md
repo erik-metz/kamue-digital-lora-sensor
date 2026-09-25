@@ -103,3 +103,11 @@ No firm completion estimate is assigned before the inventory and source-access c
 - Verified official budget discovery pages for Biblis and Lampertheim; documented adopted-versus-draft status. No budget parser or live energy integration was enabled.
 - Validation: 105 frontend tests; 31 collector tests; 81 API tests plus 6 subtests, 4 optional skips; TypeScript and production build passed. Tests used a disposable database, now removed.
 - Remaining next work: complete regional ZAKB/basemap staging collection, implement reviewed budget extraction and other detailed contracts, integrate native-worker status, then full-stack browser/load validation. Production remains unchanged.
+
+## Second implementation increment (24–25 September 2026)
+
+- Implemented checkpointed calendar collection, cached address inventory, bounded runs, rejection deferral, fair municipality ordering and per-municipality coverage reports. Full successful calendar coverage is still unverified.
+- Validated all 460 regional basemap tiles; retries reuse fresh tiles.
+- Implemented the Biblis adopted-budget summary collector and reconciliation gate. The current official document has inconsistent totals; its source figures are retained for review and budget KPIs are withheld. The UI explains that concrete source issue.
+- Added a read-only deployment checker and version/capability-bearing health response. Public checks on both dates found the new backend routes missing at the configured VPS origin. This mismatch must be resolved before production end-to-end testing.
+- New checkpoint schema requires version 20260928. This increment has not been deployed by this task.

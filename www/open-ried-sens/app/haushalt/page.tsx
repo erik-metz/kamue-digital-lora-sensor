@@ -1,3 +1,4 @@
+import AdoptedBudgetSection from "../components/AdoptedBudgetSection";
 import OfficialStatisticsPage from "../components/OfficialStatisticsPage";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -59,6 +60,7 @@ export default async function HaushaltPage() {
           </div>
         </section>
 
+        <AdoptedBudgetSection />
         {/* INTERACTIVE CLIENT DASHBOARD */}
         <HaushaltClient
           budgets={budgets}

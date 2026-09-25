@@ -1562,3 +1562,22 @@ DO $$ BEGIN
         INSERT INTO collector_schema_versions(version) VALUES (20260927);
     END IF;
 END $$;
+
+-- Durable per-address acquisition progress, separate from published calendar data.
+CREATE TABLE IF NOT EXISTS collection_checkpoints (
+    source_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    payload_sha256 TEXT NOT NULL REFERENCES collected_payloads(sha256),
+    fetched_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY(source_id,item_key)
+);
+
+CREATE TABLE IF NOT EXISTS collection_item_failures (
+    source_id TEXT NOT NULL,
+    item_key TEXT NOT NULL,
+    retry_after TIMESTAMPTZ NOT NULL,
+    error TEXT NOT NULL,
+    PRIMARY KEY(source_id,item_key)
+);
+
+INSERT INTO collector_schema_versions(version) VALUES (20260928) ON CONFLICT DO NOTHING;

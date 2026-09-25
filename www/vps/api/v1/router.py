@@ -1,8 +1,8 @@
 from endpoints import (
     archives,
-    collected,
     bikes,
     buses,
+    collected,
     map_sensors,
     sensors,
     street_closures,

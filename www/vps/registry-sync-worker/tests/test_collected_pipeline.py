@@ -1,8 +1,7 @@
 import io
-import json
 import unittest
 import zipfile
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -104,3 +103,21 @@ class AcquisitionTests(unittest.IsolatedAsyncioTestCase):
 
     def test_provenance_removes_query_and_credentials(self):
         self.assertEqual(public_url('https://user:password@example.org/source?key=secret'),'https://example.org/source')
+
+    async def test_transient_get_retries_are_bounded_and_archived(self):
+        conn=self.connection()
+        calls=[]
+        def provider(request):
+            calls.append(request)
+            return httpx.Response(503 if len(calls)==1 else 200,content=b'body')
+        source={'id':'example','url':'https://example.org/data','http_retries':1,'retry_delay_seconds':0}
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            response,_,_=await acquire(conn,client,source)
+        self.assertEqual(response.status_code,200)
+        self.assertEqual(len(calls),2)
+        self.assertEqual(sum('INSERT INTO collected_payloads' in call.args[0] for call in conn.execute.call_args_list),2)
+        calls.clear()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            with self.assertRaises(httpx.HTTPStatusError):
+                await acquire(conn,client,source,form={'step':'calendar'})
+        self.assertEqual(len(calls),1)

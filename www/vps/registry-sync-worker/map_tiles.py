@@ -2,6 +2,7 @@
 
 import asyncio
 import math
+from datetime import UTC, datetime, timedelta
 
 from publications import acquire
 
@@ -52,9 +53,17 @@ def mercator_bbox(z, x, y):
 async def import_wms(conn, client, source):
     from urllib.parse import urlencode
 
-    for z, x, y in tile_inventory(
-        source["bbox"], source["min_zoom"], source["max_zoom"]
-    ):
+    cutoff = datetime.now(UTC) - timedelta(seconds=source["interval_seconds"])
+    cursor = await conn.execute(
+        "SELECT z,x,y FROM collected_map_tiles WHERE layer=%s AND fetched_at>%s",
+        (source["layer"], cutoff),
+    )
+    fresh = set(await cursor.fetchall())
+    await conn.commit()
+    inventory = tile_inventory(source["bbox"], source["min_zoom"], source["max_zoom"])
+    for z, x, y in inventory:
+        if (z, x, y) in fresh:
+            continue
         query = urlencode(
             {
                 "SERVICE": "WMS",
@@ -87,3 +96,8 @@ async def import_wms(conn, client, source):
             )
         await conn.commit()
         await asyncio.sleep(source.get("request_interval_seconds", 0.25))
+    await conn.execute(
+        "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'success',%s)",
+        (source["id"], f"{len(inventory)} regional tiles ready; {len(set(inventory) & fresh)} reused"),
+    )
+    await conn.commit()
