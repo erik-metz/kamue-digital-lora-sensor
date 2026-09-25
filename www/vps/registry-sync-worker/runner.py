@@ -145,11 +145,21 @@ async def sleep_until_stop(stop, seconds):
         pass
 
 
-async def source_loop(source, settings, stop):
+async def bounded_collect(source, settings, slots, gtfs_slot):
+    # Acquire the GTFS gate first so a second large import cannot occupy a
+    # general slot while waiting. National feeds are expensive to parse.
+    if source["adapter"] == "gtfs":
+        async with gtfs_slot, slots:
+            return await collect(source, settings)
+    async with slots:
+        return await collect(source, settings)
+
+
+async def source_loop(source, settings, stop, slots, gtfs_slot):
     failures = 0
     while not stop.is_set():
         try:
-            result = await collect(source, settings)
+            result = await bounded_collect(source, settings, slots, gtfs_slot)
         except Exception as exc:  # noqa: BLE001 - isolate source jobs; record failure without secret URLs
             LOG.error(
                 "Source connection failed: %s (%s)", source["id"], type(exc).__name__
@@ -200,10 +210,20 @@ async def main():
         print(json.dumps(results))
         raise SystemExit(0 if all(r["status"] == "success" for r in results) else 1)
     stop = asyncio.Event()
+    concurrency = int(os.getenv("COLLECTOR_CONCURRENCY", "2"))
+    if not 1 <= concurrency <= 8:
+        raise ValueError("COLLECTOR_CONCURRENCY must be between 1 and 8")
+    slots = asyncio.Semaphore(concurrency)
+    gtfs_slot = asyncio.Semaphore(1)
+    # Reserve a separate connection for short realtime jobs; a daily import
+    # must not delay these or the independent prediction loop.
+    realtime_slot = asyncio.Semaphore(1)
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, stop.set)
     await asyncio.gather(
         prediction_loop(settings, stop),
-        *(source_loop(s, settings, stop) for s in manifest),
+        *(source_loop(s, settings, stop,
+                      realtime_slot if s["adapter"] == "gtfs-rt" else slots,
+                      gtfs_slot) for s in manifest),
     )
