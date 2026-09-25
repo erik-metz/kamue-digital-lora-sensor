@@ -13,6 +13,19 @@ from publications import publish
 
 
 class PipelineDatabaseTests(DatabaseCase):
+    async def test_disk_archive_preserves_bytes_and_deduplicates(self):
+        import tempfile
+
+        from streamed_archive import archive_file
+        body = bytes(range(256)) * 4097
+        digest = hashlib.sha256(body).hexdigest()
+        with tempfile.TemporaryFile() as file:
+            file.write(body)
+            await archive_file(self.conn, file, digest, 'application/zip')
+            await archive_file(self.conn, file, digest, 'application/zip')
+        self.assertEqual(await self.scalar('SELECT body FROM collected_payloads'), body)
+        self.assertEqual(await self.scalar('SELECT count(*) FROM collected_payloads'), 1)
+
     async def test_publication_and_shared_prediction_are_replay_safe(self):
         now = datetime.fromtimestamp(int(datetime.now(UTC).timestamp()) // 10 * 10, UTC)
         digest = hashlib.sha256(b'fixture').hexdigest()

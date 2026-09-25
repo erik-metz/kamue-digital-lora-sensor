@@ -28,6 +28,16 @@ def feed_fixture():
 
 
 class PredictionTests(unittest.TestCase):
+    def test_disk_parser_emits_identical_schedules_without_accumulating_them(self):
+        now = datetime(2026, 9, 22, 12, tzinfo=UTC)
+        bbox = [49.55, 8.3, 49.8, 8.65]
+        expected, stops = parse_gtfs(feed_fixture(), bbox, now)
+        emitted = []
+        retained, actual_stops = parse_gtfs(io.BytesIO(feed_fixture()), bbox, now, emitted.append)
+        self.assertEqual(retained, [])
+        self.assertEqual(emitted, expected)
+        self.assertEqual(actual_stops, stops)
+
     def test_interpolation_dwell_and_no_extrapolation(self):
         path=[[10,49.6,8.4],[20,49.6,8.4],[30,49.7,8.5]]
         self.assertIsNone(position_at(path,9))

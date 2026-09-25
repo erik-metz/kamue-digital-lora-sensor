@@ -53,3 +53,9 @@ Calendar publication now includes all fresh checkpoints before the network budge
 Collector tests: **45 passed**, including database replay, retry deferral, bounded execution and preservation of fresh cached records. Frontend: **108 tests passed**, TypeScript and production build passed. Repository-wide Python lint passes after import cleanup. Source integrations and production validation listed above remain incomplete.
 
 Final API regression: 81 passed, 4 optional tests skipped, 6 subtests passed. Environment regression: 3 passed. The disposable validation database was archived to `/tmp/ried-collector-validation-20260925.dump` before cleanup; a restore of this archive has not been rehearsed. This is a local test archive, not a production backup.
+
+### VRN collector memory recovery (2026-09-25)
+
+Production evidence: registry worker exited 137 with OOMKilled=true and 11 restarts on a roughly 2 GiB, no-swap VPS. Concurrency limits alone were insufficient. GTFS now streams downloads into temporary files, archives raw bytes using chunked PostgreSQL binary COPY, spools generated schedules to disk, and inserts stop times per trip. Full raw archives remain in collected_payloads; publication replacement remains atomic. Temporary files are automatically removed on normal completion/failure. The 512 MiB compressed download ceiling and existing 2 GB expanded ZIP ceiling reject oversized feeds.
+
+Local public VRN ZIP: 160,806,966 bytes. Binary archival round-trip verified its full SHA-256 with 49,086,464 bytes peak client RSS. Disk-backed parsing emitted 8,239 trip-day schedules and 1,020 regional stops, spooling 150,924,652 bytes with 291,340,288 bytes peak process RSS. These are macOS process measurements, not a guarantee of whole-VPS memory use; PostgreSQL still needs memory for the individual BYTEA value. Production stability remains to be verified after the image update. No production database was modified by these tests.

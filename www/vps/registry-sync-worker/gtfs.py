@@ -3,6 +3,8 @@
 import asyncio
 import csv
 import io
+import pickle
+import tempfile
 import zipfile
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
@@ -10,7 +12,8 @@ from itertools import pairwise
 from zoneinfo import ZoneInfo
 
 from psycopg.types.json import Jsonb
-from publications import acquire, publish
+from publications import publish
+from streamed_archive import acquire_archive
 
 DAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
 
@@ -114,8 +117,8 @@ def trajectory(stops, shape, epoch):
     return output
 
 
-def parse_gtfs(body, bbox, now):
-    with zipfile.ZipFile(io.BytesIO(body)) as archive:
+def parse_gtfs(body, bbox, now, emit=None):
+    with zipfile.ZipFile(io.BytesIO(body) if isinstance(body, bytes) else body) as archive:
         if sum(f.file_size for f in archive.infolist()) > 2_000_000_000:
             raise ValueError("GTFS archive exceeds expanded size limit")
         required = {
@@ -224,7 +227,7 @@ def parse_gtfs(body, bbox, now):
                 path = trajectory(points, shape, service_epoch(day, timezone))
                 if len(path) < 2:
                     continue
-                schedules.append(
+                (emit or schedules.append)(
                     {
                         "trip_id": trip_id,
                         "service_date": day,
@@ -267,11 +270,28 @@ def parse_gtfs(body, bbox, now):
 
 
 async def import_gtfs(conn, client, source):
-    now = datetime.now(UTC)
-    response, digest, attempt = await acquire(conn, client, source)
-    schedules, stops = await asyncio.to_thread(
-        parse_gtfs, response.content, source["bbox"], now
-    )
+    # Both the raw ZIP and parsed schedules spill to disk, never full RAM copies.
+    with tempfile.TemporaryFile() as archive, tempfile.TemporaryFile() as spool:
+        digest, attempt = await acquire_archive(conn, client, source, archive)
+        now = datetime.now(UTC)
+        _, stops = await asyncio.to_thread(
+            parse_gtfs, archive, source["bbox"], now,
+            lambda item: pickle.dump(item, spool, protocol=pickle.HIGHEST_PROTOCOL),
+        )
+        spool.seek(0)
+        await store_schedules(conn, source, spool, stops, digest, attempt, now)
+
+
+def spooled_schedules(spool):
+    # This file is written only by this process, never supplied by a provider.
+    while True:
+        try:
+            yield pickle.load(spool)
+        except EOFError:
+            return
+
+
+async def store_schedules(conn, source, spool, stops, digest, attempt, now):
     async with conn.transaction():
         # Replace the active source projection atomically; raw inputs retain all revisions.
         await conn.execute(
@@ -281,7 +301,7 @@ async def import_gtfs(conn, client, source):
             "DELETE FROM movement_latest WHERE basis='schedule_prediction' AND data->>'source_id'=%s",
             (source["id"],),
         )
-        for item in schedules:
+        for item in spooled_schedules(spool):
             points = item["trajectory"]
             await conn.execute(
                 """INSERT INTO movement_schedules(source_id,trip_id,service_date,kind,starts_at,ends_at,
@@ -299,18 +319,18 @@ async def import_gtfs(conn, client, source):
                     Jsonb(item["metadata"]),
                 ),
             )
-        async with conn.cursor() as cursor:
-            await cursor.executemany(
-                """INSERT INTO movement_stop_times
-                (source_id,trip_id,service_date,sequence,stop_id,arrival_at,departure_at)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)""",
-                [
-                    (source["id"], item["trip_id"], item["service_date"], stop["sequence"],
-                     stop["stop_id"], datetime.fromtimestamp(stop["arrival"], UTC),
-                     datetime.fromtimestamp(stop["departure"], UTC))
-                    for item in schedules for stop in item["metadata"]["stop_times"]
-                ],
-            )
+            async with conn.cursor() as cursor:
+                await cursor.executemany(
+                    """INSERT INTO movement_stop_times
+                    (source_id,trip_id,service_date,sequence,stop_id,arrival_at,departure_at)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                    [
+                        (source["id"], item["trip_id"], item["service_date"], stop["sequence"],
+                         stop["stop_id"], datetime.fromtimestamp(stop["arrival"], UTC),
+                         datetime.fromtimestamp(stop["departure"], UTC))
+                        for stop in item["metadata"]["stop_times"]
+                    ],
+                )
         await publish(
             conn, source, f"transport/stops/{source['id']}", stops, digest, now, now
         )
