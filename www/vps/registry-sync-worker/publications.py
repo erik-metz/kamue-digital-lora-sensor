@@ -17,6 +17,21 @@ def public_url(url):
     return urlunsplit((parts.scheme, parts.hostname or "", parts.path, "", ""))
 
 
+def acquisition_error(exc):
+    """Identify the failing dependency without exposing tokens or address queries."""
+    label = type(exc).__name__
+    if isinstance(exc, httpx.HTTPError):
+        try:
+            host = exc.request.url.host
+        except RuntimeError:
+            host = None
+        if host:
+            label += f" host={host}"
+        if isinstance(exc, httpx.HTTPStatusError):
+            label += f" status={exc.response.status_code}"
+    return label
+
+
 async def acquire(conn, client, source, url=None, *, form=None):
     """Bounded retries for safe reads; every attempted response remains archived."""
     retries = min(3, max(0, int(source.get("http_retries", 0)))) if form is None else 0
@@ -55,7 +70,7 @@ async def _acquire_once(conn, client, source, url=None, *, form=None):
     except Exception as exc:
         await conn.execute(
             "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'failed',%s)",
-            (source["id"], type(exc).__name__),
+            (source["id"], acquisition_error(exc)),
         )
         await conn.commit()
         raise

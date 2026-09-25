@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 import httpx
 from gtfs import active_services, parse_gtfs, seconds, service_epoch
 from prediction import position_at
-from publications import acquire, import_json, public_url
+from publications import acquire, acquisition_error, import_json, public_url
 from zakb import CalendarForm, forecast_tours, parse_ical
 
 
@@ -28,6 +28,16 @@ def feed_fixture():
 
 
 class PredictionTests(unittest.TestCase):
+    def test_acquisition_errors_identify_host_without_request_secrets(self):
+        request = httpx.Request('GET', 'https://user:secret@example.org/private/token?key=secret')
+        error = httpx.ConnectTimeout('secret exception text', request=request)
+        self.assertEqual(acquisition_error(error), 'ConnectTimeout host=example.org')
+        response = httpx.Response(503, request=request)
+        error = httpx.HTTPStatusError('secret', request=request, response=response)
+        self.assertEqual(acquisition_error(error), 'HTTPStatusError host=example.org status=503')
+        self.assertEqual(acquisition_error(httpx.ConnectTimeout('secret')), 'ConnectTimeout')
+        self.assertEqual(acquisition_error(ValueError('secret')), 'ValueError')
+
     def test_disk_parser_emits_identical_schedules_without_accumulating_them(self):
         now = datetime(2026, 9, 22, 12, tzinfo=UTC)
         bbox = [49.55, 8.3, 49.8, 8.65]

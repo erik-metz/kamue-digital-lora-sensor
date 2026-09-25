@@ -21,7 +21,7 @@ from gtfs import import_gtfs
 from hessen import import_hessen
 from map_tiles import import_wms
 from prediction import predict_tick
-from publications import import_json, public_url
+from publications import acquisition_error, import_json, public_url
 from realtime import import_realtime
 from zakb import import_zakb
 
@@ -104,11 +104,11 @@ async def collect(source, settings):
             await conn.rollback()
             await conn.execute(
                 "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'failed',%s)",
-                (source["id"], type(exc).__name__),
+                (source["id"], acquisition_error(exc)),
             )
             await conn.commit()
             # Do not log a credential-bearing request URL from the exception.
-            LOG.error("Source %s failed (%s)", source["id"], type(exc).__name__)
+            LOG.error("Source %s failed (%s)", source["id"], acquisition_error(exc))
             return {"source_id": source["id"], "status": "failed"}
         finally:
             await conn.execute(
