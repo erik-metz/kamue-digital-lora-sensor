@@ -186,7 +186,6 @@ services:
     stop_grace_period: 60s
     volumes:
       - sync_state:/data
-      - ./registry-sync-worker/sources.json:/app/sources.json:ro
     environment:
       DB_HOST: timescaledb
       DB_PORT: 5432
