@@ -20,6 +20,7 @@ from elections import import_elections
 from gtfs import import_gtfs
 from hessen import import_hessen
 from map_tiles import import_wms
+from osm_addresses import import_addresses
 from prediction import predict_tick
 from publications import acquisition_error, import_json, public_url
 from realtime import import_realtime
@@ -27,6 +28,7 @@ from zakb import import_zakb
 
 LOG = logging.getLogger(__name__)
 ADAPTERS = {
+    "osm-addresses": import_addresses,
     "biblis-budget": import_biblis_budget,
     "json": import_json,
     "wms": import_wms,
@@ -148,7 +150,7 @@ async def sleep_until_stop(stop, seconds):
 async def bounded_collect(source, settings, slots, gtfs_slot):
     # Acquire the GTFS gate first so a second large import cannot occupy a
     # general slot while waiting. National feeds are expensive to parse.
-    if source["adapter"] == "gtfs":
+    if source["adapter"] in {"gtfs", "osm-addresses"}:
         async with gtfs_slot, slots:
             return await collect(source, settings)
     async with slots:

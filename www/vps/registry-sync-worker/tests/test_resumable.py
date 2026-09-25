@@ -26,6 +26,27 @@ def response(request):
 
 
 class ResumeTests(DatabaseCase):
+    async def test_calendar_uses_published_inventory_without_overpass(self):
+        from publications import publish
+        inventory = {'elements': [{'lat':49.6,'lon':8.4,'tags':{
+            'addr:city':'Biblis','addr:street':'Teststraße','addr:housenumber':'1'}}]}
+        digest = 'a' * 64
+        await self.conn.execute("INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,'test','application/json')", (digest,))
+        await publish(self.conn, SOURCE, 'waste/address-inventory', inventory, digest, datetime.now(UTC))
+        calls = []
+        def calendar_only(request):
+            calls.append(request.url.path)
+            self.assertEqual(request.url.path, '/calendar')
+            return response(request)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(calendar_only)) as client:
+            await import_zakb(self.conn, client, {**SOURCE, 'address_dataset':'waste/address-inventory'})
+        self.assertTrue(calls)
+        self.assertIsNotNone(await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'"))
+        await self.conn.execute("UPDATE collected_datasets SET expires_at=NOW()-INTERVAL '1 hour' WHERE dataset='waste/address-inventory'")
+        async with httpx.AsyncClient(transport=httpx.MockTransport(calendar_only)) as client:
+            with self.assertRaisesRegex(ValueError, 'fresh inventory'):
+                await import_zakb(self.conn, client, {**SOURCE, 'address_dataset':'waste/address-inventory'})
+
     async def test_address_checkpoint_survives_restart_but_expires(self):
         requests = []
         def provider(request):

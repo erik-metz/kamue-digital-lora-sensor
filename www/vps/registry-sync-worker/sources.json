@@ -1,6 +1,27 @@
 {
   "sources": [
     {
+      "id": "osm-regional-addresses",
+      "group": "waste",
+      "adapter": "osm-addresses",
+      "enabled": true,
+      "url": "https://download.geofabrik.de/europe/germany/hessen-latest.osm.pbf",
+      "municipalities": [
+        "Bürstadt",
+        "Lampertheim",
+        "Biblis",
+        "Groß-Rohrheim"
+      ],
+      "bbox": [
+        49.55,
+        8.3,
+        49.8,
+        8.65
+      ],
+      "interval_seconds": 604800,
+      "max_age_seconds": 1209600
+    },
+    {
       "id": "bnetza-chargers",
       "group": "infrastructure",
       "adapter": "bnetza",
@@ -70,12 +91,11 @@
       "adapter": "zakb",
       "enabled": true,
       "url": "https://www.zakb.de/abfallkalender",
-      "address_url": "https://overpass-api.de/api/interpreter",
       "municipalities": [
-        "B\u00fcrstadt",
+        "Bürstadt",
         "Lampertheim",
         "Biblis",
-        "Gro\u00df-Rohrheim"
+        "Groß-Rohrheim"
       ],
       "bbox": [
         49.55,
@@ -87,7 +107,8 @@
       "max_age_seconds": 172800,
       "request_spacing_seconds": 1,
       "coverage": "One actual OSM address per street; no claim of complete address coverage.",
-      "http_retries": 2
+      "http_retries": 2,
+      "address_dataset": "waste/address-inventory"
     },
     {
       "id": "cross7-buerstadt",

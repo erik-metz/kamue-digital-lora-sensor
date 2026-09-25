@@ -220,37 +220,47 @@ async def import_zakb(conn, client, source):
     now = datetime.now(UTC)
     loop = asyncio.get_running_loop()
     deadline = loop.time() + source.get("run_budget_seconds", 900)
-    # OSM is collected on the VPS, with the exact query response in the archive.
-    city_pattern = "|".join(source["municipalities"])
-    south, west, north, east = source["bbox"]
-    query = f'[out:json][timeout:90];nwr["addr:city"~"^({city_pattern})$"]["addr:street"]["addr:housenumber"]({south},{west},{north},{east});out center tags;'
-    inventory_key = "address-inventory:" + hashlib.sha256((source["address_url"] + query).encode()).hexdigest()
-    cursor = await conn.execute(
-        """SELECT p.body,c.payload_sha256 FROM collection_checkpoints c
-        JOIN collected_payloads p ON p.sha256=c.payload_sha256
-        WHERE c.source_id=%s AND c.item_key=%s AND c.fetched_at>%s""",
-        (source["id"], inventory_key, now-timedelta(seconds=source["interval_seconds"])),
-    )
-    cached_inventory = await cursor.fetchone()
-    await conn.commit()
-    if cached_inventory:
-        raw_inventory, geo_digest = cached_inventory
-        inventory = json.loads(bytes(raw_inventory))
-    else:
-        async with asyncio.timeout(max(1, deadline-loop.time())):
-            response, geo_digest, _ = await acquire(
-                conn, client, source, source["address_url"] + "?" + urlencode({"data": query})
-            )
-        inventory = response.json()
-        if not isinstance(inventory.get("elements"), list):
-            raise ValueError("Invalid address inventory")
-        await conn.execute(
-            """INSERT INTO collection_checkpoints(source_id,item_key,payload_sha256,fetched_at)
-            VALUES (%s,%s,%s,%s) ON CONFLICT(source_id,item_key) DO UPDATE
-            SET payload_sha256=EXCLUDED.payload_sha256,fetched_at=EXCLUDED.fetched_at""",
-            (source["id"], inventory_key, geo_digest, datetime.now(UTC)),
-        )
+    if source.get("address_dataset"):
+        cursor = await conn.execute(
+            "SELECT data,payload_sha256 FROM collected_datasets WHERE dataset=%s AND expires_at>NOW()",
+            (source["address_dataset"],))
+        stored = await cursor.fetchone()
         await conn.commit()
+        if not stored:
+            raise ValueError("Regional address collector has not published a fresh inventory")
+        inventory, geo_digest = stored
+    else:
+        # OSM is collected on the VPS, with the exact query response in the archive.
+        city_pattern = "|".join(source["municipalities"])
+        south, west, north, east = source["bbox"]
+        query = f'[out:json][timeout:90];nwr["addr:city"~"^({city_pattern})$"]["addr:street"]["addr:housenumber"]({south},{west},{north},{east});out center tags;'
+        inventory_key = "address-inventory:" + hashlib.sha256((source["address_url"] + query).encode()).hexdigest()
+        cursor = await conn.execute(
+            """SELECT p.body,c.payload_sha256 FROM collection_checkpoints c
+            JOIN collected_payloads p ON p.sha256=c.payload_sha256
+            WHERE c.source_id=%s AND c.item_key=%s AND c.fetched_at>%s""",
+            (source["id"], inventory_key, now-timedelta(seconds=source["interval_seconds"])),
+        )
+        cached_inventory = await cursor.fetchone()
+        await conn.commit()
+        if cached_inventory:
+            raw_inventory, geo_digest = cached_inventory
+            inventory = json.loads(bytes(raw_inventory))
+        else:
+            async with asyncio.timeout(max(1, deadline-loop.time())):
+                response, geo_digest, _ = await acquire(
+                    conn, client, source, source["address_url"] + "?" + urlencode({"data": query})
+                )
+            inventory = response.json()
+            if not isinstance(inventory.get("elements"), list):
+                raise ValueError("Invalid address inventory")
+            await conn.execute(
+                """INSERT INTO collection_checkpoints(source_id,item_key,payload_sha256,fetched_at)
+                VALUES (%s,%s,%s,%s) ON CONFLICT(source_id,item_key) DO UPDATE
+                SET payload_sha256=EXCLUDED.payload_sha256,fetched_at=EXCLUDED.fetched_at""",
+                (source["id"], inventory_key, geo_digest, datetime.now(UTC)),
+            )
+            await conn.commit()
     addresses = {}
     for item in inventory["elements"]:
         tags = item["tags"]
