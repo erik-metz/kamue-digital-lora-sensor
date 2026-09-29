@@ -5,9 +5,10 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import { createMarkerContent, createClusterContent } from "@/lib/mapMarker";
 import "./map.css";
+import { detailCard, featureCard, mapSymbol, placeMarker } from "@/lib/mapPresentation";
 import { useEffect, useRef, useState } from "react";
 import type { GeoJsonObject } from "geojson";
-import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer } from "@/lib/temperatureHeatmap";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, DEFAULT_MAP_LAYERS, type MapLayerId } from "@/lib/urlState";
 
@@ -38,18 +39,14 @@ interface LayerPublication {
 }
 
 function textPopup(lines: string[]) {
-  const element = document.createElement("div");
-  for (const line of lines) {
-    const row = document.createElement("div");
-    row.textContent = line;
-    element.append(row);
-  }
-  return element;
+  return detailCard(lines[0] ?? "Details", lines[1] ?? "", lines.slice(2));
 }
 
 export default function MapComponent(props: MapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  const vehicleGroup = useRef<L.LayerGroup | null>(null);
+  const vehicleMarkers = useRef(new Map<string, L.Marker>());
   const callbacks = useRef(props);
   useEffect(() => { callbacks.current = props; });
   const [ready, setReady] = useState(false);
@@ -73,7 +70,7 @@ export default function MapComponent(props: MapProps) {
     const instance = L.map(container.current, {
       center: callbacks.current.initialCenter ?? DEFAULT_MAP_CENTER,
       zoom: callbacks.current.initialZoom ?? DEFAULT_MAP_ZOOM,
-      minZoom: 8, maxBounds: [[49.55, 8.30], [49.80, 8.65]], maxBoundsViscosity: 1,
+      minZoom: 8, maxBounds: [[49.40, 8.10], [49.95, 8.85]], maxBoundsViscosity: .5,
     });
     map.current = instance;
     const base = L.tileLayer("/api/map-tiles/base/{z}/{x}/{y}.png", {
@@ -137,7 +134,7 @@ export default function MapComponent(props: MapProps) {
     if (!ready || !instance) return;
     const group = L.layerGroup().addTo(instance);
     const cluster = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 55, showCoverageOnHover: false,
-      iconCreateFunction: item => L.divIcon({ html: createClusterContent(["#34d399"], item.getChildCount()), className: "map-cluster-icon", iconSize: [44, 44] }),
+      iconCreateFunction: item => L.divIcon({ html: createClusterContent(item.getAllChildMarkers().map(marker => (marker.options as L.MarkerOptions & { categoryColor?: string }).categoryColor ?? "#94a3b8"), item.getChildCount()), className: "map-cluster-icon", iconSize: [44, 44] }),
     }).addTo(group) : group;
     const points: { lat: number; lng: number; temp: number }[] = [];
     for (const node of props.nodes) {
@@ -151,12 +148,19 @@ export default function MapComponent(props: MapProps) {
       }
       const marker = L.marker([node.lat, node.lng], {
         title: node.name, alt: node.name, keyboard: true,
+        ...{ categoryColor: CATEGORIES[category].color },
         icon: L.divIcon({ html: createMarkerContent(category, CATEGORIES[category].color, !fresh),
           className: `map-sensor-icon${node.id === props.selectedNodeId ? " map-sensor-selected" : ""}`,
           iconSize: [32,32], iconAnchor: [16,16] }),
       }).addTo(cluster);
       marker.bindTooltip(textPopup([node.name, ...(reading ? [valueLabel(reading, node.readings)] : ["Keine Messwerte"])]));
+      marker.bindPopup(detailCard(node.name, node.categories.map(id => CATEGORIES[id].label).join(" · "), [
+        ...(node.address ? [node.address] : []),
+        ...node.readings.map(item => `${valueLabel(item, node.readings)} · ${observationLabel(item, freshnessMinute * 60000)}`),
+        ...(!node.readings.length ? ["Keine Messwerte verfügbar."] : []),
+      ]), { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
       marker.on("click", () => callbacks.current.onSelectNode(node.id));
+      if (node.id === props.selectedNodeId) marker.openPopup();
     }
     const heatmap = props.mode === "temperature" ? new TemperatureHeatmapLayer().addTo(instance) : null;
     heatmap?.setPoints(points);
@@ -164,26 +168,83 @@ export default function MapComponent(props: MapProps) {
   }, [ready, clusteringReady, props.nodes, props.categories, props.mode, props.selectedNodeId, freshnessMinute]);
 
   useEffect(() => {
+    if (!ready || !map.current) return;
+    const group = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 35, disableClusteringAtZoom: 14, showCoverageOnHover: false,
+      iconCreateFunction: cluster => L.divIcon({ html: placeMarker("vehicles", String(cluster.getChildCount())), className: "map-vehicle-icon", iconSize: [36, 36] }),
+    }) : L.layerGroup();
+    group.addTo(map.current);
+    vehicleGroup.current = group;
+    const markers = vehicleMarkers.current;
+    return () => { group.remove(); markers.clear(); vehicleGroup.current = null; };
+  }, [ready, clusteringReady]);
+
+  // Retain marker instances and open dialogs across backend snapshots.
+  // Animate only between received coordinates; never extrapolate a route in the browser.
+  useEffect(() => {
     const instance = map.current;
     if (!instance || !ready) return;
-    const group = L.layerGroup().addTo(instance);
+    const retained = new Set<string>();
+    const transitions: { marker: L.Marker; from: L.LatLng; to: L.LatLng }[] = [];
     for (const position of positions) {
       const enabled = layers[position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : "waste"];
-      if (!enabled || Date.parse(position.valid_until) <= props.now) continue;
+      if (!enabled || !(Date.parse(position.valid_until) > Date.now()) ||
+          !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) continue;
+      const key = `${position.kind}:${position.id}`;
+      retained.add(key);
       const predicted = position.basis === "schedule_prediction";
-      L.circleMarker([position.latitude, position.longitude], {
-        color: predicted ? "#fbbf24" : "#38bdf8", radius: 8, fillOpacity: .9,
-        dashArray: predicted ? "3 2" : undefined,
-      }).bindPopup(textPopup([
-        `${position.kind === "bus" ? "Bus" : position.kind === "train" ? "Zug" : "Abfallsammlung"} ${position.line ?? ""} ${position.destination ?? ""}`,
-        predicted ? (position.kind === "waste" ? "Modell aus Abfuhrtagen: Straßenstichprobe, angenommene Reihenfolge und Zeiten (07–17 Uhr). Kein identifiziertes Müllfahrzeug." : "Prognose aus gespeichertem Fahrplan – keine GPS-Messung") : "Beobachtete Position",
-        ...(position.delay_basis === "next_reported_stop_approximation" ? [`Mit gemeldeter Haltestellenverspätung (${Math.round((position.delay_seconds ?? 0) / 60)} Min.), auf die Fahrt angenähert`] : []),
-        `Stand: ${new Date(position.timestamp).toLocaleString("de-DE")}`,
-        ...(position.geometry_basis === "stop_to_stop" ? ["Geradlinige Näherung zwischen Orten; keine Streckengeometrie verfügbar"] : []),
-      ])).addTo(group);
+      const style = mapSymbol(position.kind);
+      const title = `${style.label} ${position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
+      const target = L.latLng(position.latitude, position.longitude);
+      let marker = vehicleMarkers.current.get(key);
+      const icon = L.divIcon({ html: placeMarker(position.kind, position.line || style.label, predicted),
+        className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22] });
+      if (!marker) {
+        marker = L.marker(target, { icon, title, alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
+        vehicleMarkers.current.set(key, marker);
+      } else {
+        marker.setIcon(icon);
+        transitions.push({ marker, from: marker.getLatLng(), to: target });
+      }
+      const popup = detailCard(`${style.symbol} ${title}`, predicted ? "Fahrplanprognose · keine GPS-Messung" : "Beobachtete Position", [
+        ...(position.kind === "waste" && predicted ? ["Modell aus Abfuhrtagen: Straßenstichprobe, angenommene Reihenfolge und Zeiten (07–17 Uhr). Kein identifiziertes Müllfahrzeug."] : []),
+        ...(typeof position.speed_kmh === "number" ? [`${predicted ? "Modellierte Geschwindigkeit" : "Geschwindigkeit"}: ${Math.round(position.speed_kmh)} km/h`] : []),
+        ...(position.delay_basis === "next_reported_stop_approximation" ? [`Gemeldete Haltestellenverspätung: ${Math.round((position.delay_seconds ?? 0) / 60)} Min. (auf die Fahrt angenähert)`] : []),
+        `Stand: ${new Date(position.timestamp).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
+        ...(position.geometry_basis === "stop_to_stop" ? ["Geradlinige Näherung zwischen Haltestellen; keine Streckengeometrie verfügbar."] : []),
+      ]);
+      if (marker.getPopup()) marker.setPopupContent(popup);
+      else marker.bindPopup(popup, { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
+      const tooltip = detailCard(title, predicted ? "Prognose" : "Beobachtet", []);
+      if (marker.getTooltip()) marker.setTooltipContent(tooltip);
+      else marker.bindTooltip(tooltip, { direction: "top", offset: [0, -22] });
     }
-    return () => { group.remove(); };
-  }, [ready, positions, layers, props.now]);
+    for (const [key, marker] of vehicleMarkers.current) {
+      if (!retained.has(key)) { vehicleGroup.current?.removeLayer(marker); vehicleMarkers.current.delete(key); }
+    }
+    let frame = 0;
+    const start = performance.now();
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    function animate(time: number) {
+      const progress = reducedMotion || document.hidden ? 1 : Math.min(1, (time - start) / 1000);
+      for (const { marker, from, to } of transitions) {
+        marker.setLatLng([from.lat + (to.lat - from.lat) * progress, from.lng + (to.lng - from.lng) * progress]);
+      }
+      if (progress < 1) frame = requestAnimationFrame(animate);
+    }
+    if (transitions.length) frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [ready, clusteringReady, positions, layers]);
+
+  useEffect(() => {
+    for (const position of positions) {
+      if (!(Date.parse(position.valid_until) > props.now)) {
+        const key = `${position.kind}:${position.id}`;
+        const marker = vehicleMarkers.current.get(key);
+        if (marker) vehicleGroup.current?.removeLayer(marker);
+        vehicleMarkers.current.delete(key);
+      }
+    }
+  }, [positions, props.now]);
 
   useEffect(() => {
     const instance = map.current;
@@ -193,8 +254,16 @@ export default function MapComponent(props: MapProps) {
     const requests = new Set<AbortController>();
     for (const [id, geometry] of Object.entries(publication.layers)) {
       if (!layers[id as MapLayerId]) continue;
+      const pointGroup = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 45, disableClusteringAtZoom: 16, showCoverageOnHover: false,
+        iconCreateFunction: cluster => L.divIcon({ html: placeMarker(id, String(cluster.getChildCount())), className: "map-place-icon", iconSize: [36, 36] }),
+      }).addTo(group) : group;
       L.geoJSON(geometry as GeoJsonObject, {
-        pointToLayer: (_feature, latlng) => L.circleMarker(latlng, { radius: 6, color: "#34d399" }),
+        style: { color: mapSymbol(id).color, weight: 3, fillOpacity: .15 },
+        pointToLayer: (feature, latlng) => L.marker(latlng, {
+          title: String(feature.properties?.name ?? mapSymbol(id).label),
+          keyboard: true,
+          icon: L.divIcon({ html: placeMarker(id), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20] }),
+        }),
         onEachFeature: (feature, layer) => {
           const values = feature.properties ?? {};
           if (id === "stops" && typeof values.stop_id === "string" && typeof values.source_id === "string") {
@@ -223,22 +292,27 @@ export default function MapComponent(props: MapProps) {
             layer.on("popupclose", () => pending?.abort());
             return;
           }
-          layer.bindPopup(textPopup(Object.entries(values).filter(([,v]) => typeof v === "string" || typeof v === "number")
-            .map(([k,v]) => `${k}: ${v}`)));
+          layer.bindPopup(featureCard(id, values), { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
+          layer.bindTooltip(detailCard(String(values.name ?? values.title ?? mapSymbol(id).label), mapSymbol(id).label, []));
           if (id === "closures") closures++;
         },
-      }).addTo(group);
+      }).addTo(pointGroup);
     }
     if (layers.starkregen) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
     callbacks.current.onActiveClosuresCountChange?.(closures);
     return () => { requests.forEach(controller => controller.abort()); group.remove(); };
-  }, [ready, publication, layers]);
+  }, [ready, clusteringReady, publication, layers]);
 
   const missing = publication.unavailable.filter(id => layers[id as MapLayerId]);
   return <div className="relative h-full min-h-[500px] w-full">
-    <div ref={container} className="h-full min-h-[500px] w-full" aria-label="Karte mit gespeicherten Quelldaten" />
+    <div ref={container} className="sensor-map h-full min-h-[500px] w-full" aria-label="Karte mit gespeicherten Quelldaten" />
     <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
-      <p>Gelb gestrichelt: Fahrplanprognose · Blau: beobachtete Position</p>
+      <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
+      <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung</p>
+      <p>Ⓗ Haltestelle · ⚡ Ladestation</p>
+      <p className="mt-1">Symbol anklicken für Details und Abfahrten.</p>
+      <p className="mt-1 text-slate-400">Gestrichelter Rand: Prognose · Durchgehend: beobachtet (Fahrzeuge)</p>
+      </details>
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
       {(layersFailed || missing.length > 0) && <p role="status">Einige Kartenebenen sind noch nicht verfügbar.</p>}
       {tilesMissing && <p role="status">Hintergrundkarten sind noch nicht verfügbar.</p>}

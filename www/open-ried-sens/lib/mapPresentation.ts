@@ -1,0 +1,89 @@
+/** Presentation only: all locations and values are supplied by the backend. */
+export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color: string }> = {
+  vehicles: { label: "Fahrzeuge · zum Vergrößern anklicken", symbol: "↔", color: "#38bdf8" },
+  bus: { label: "Bus", symbol: "🚌", color: "#38bdf8" },
+  train: { label: "Zug", symbol: "🚆", color: "#c084fc" },
+  waste: { label: "Abfallsammlung", symbol: "🚛", color: "#fb923c" },
+  stops: { label: "Haltestelle", symbol: "H", color: "#facc15" },
+  charging: { label: "Ladestation", symbol: "⚡", color: "#34d399" },
+  energy: { label: "Energieanlage", symbol: "☀", color: "#fbbf24" },
+  traffic: { label: "Verkehrsmeldung", symbol: "⚠", color: "#fb923c" },
+  closures: { label: "Sperrung", symbol: "⛔", color: "#f87171" },
+  wifi: { label: "WLAN", symbol: "📶", color: "#22d3ee" },
+  companies: { label: "Unternehmen", symbol: "🏭", color: "#a78bfa" },
+  nature: { label: "Schutzgebiet", symbol: "🌳", color: "#4ade80" },
+  crops: { label: "Landwirtschaft", symbol: "🌾", color: "#a3e635" },
+  floods: { label: "Gewässer / Pegel", symbol: "≈", color: "#38bdf8" },
+  road: { label: "Straße", symbol: "↔", color: "#94a3b8" },
+  broadband: { label: "Breitband", symbol: "⌁", color: "#22d3ee" },
+  boris: { label: "Bodenrichtwert", symbol: "€", color: "#fbbf24" },
+  devplans: { label: "Bebauungsplan", symbol: "▤", color: "#a78bfa" },
+  elections: { label: "Wahlbezirk", symbol: "✓", color: "#c084fc" },
+};
+
+export function mapSymbol(kind: string) {
+  return MAP_SYMBOLS[kind] ?? { label: "Standort", symbol: "⌖", color: "#94a3b8" };
+}
+
+export function placeMarker(kind: string, label = "", predicted = false): HTMLElement {
+  const style = mapSymbol(kind);
+  const root = document.createElement("div");
+  root.className = `map-place-marker${predicted ? " map-place-predicted" : ""}${kind === "stops" ? " map-place-stop" : ""}`;
+  root.style.setProperty("--place-color", style.color);
+  root.title = `${style.label}${label ? ` · ${label}` : ""}`;
+  const icon = document.createElement("span");
+  icon.textContent = style.symbol;
+  icon.setAttribute("aria-hidden", "true");
+  root.append(icon);
+  if (label) {
+    const badge = document.createElement("span");
+    badge.className = "map-place-label";
+    badge.textContent = label;
+    root.append(badge);
+  }
+  return root;
+}
+
+export function detailCard(title: string, subtitle: string, rows: string[]): HTMLElement {
+  const root = document.createElement("section");
+  root.className = "map-detail-card";
+  const heading = document.createElement("strong");
+  heading.textContent = title;
+  const description = document.createElement("p");
+  description.className = "map-detail-subtitle";
+  description.textContent = subtitle;
+  root.append(heading, description);
+  for (const value of rows) {
+    const row = document.createElement("p");
+    row.textContent = value;
+    root.append(row);
+  }
+  return root;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  totalPoints: "Ladepunkte", maxPowerKw: "Max. Ladeleistung (kW)", availablePoints: "Freie Ladepunkte",
+  installedCapacityKw: "Installierte Leistung (kW)", currentPowerKw: "Aktuelle Leistung (kW)",
+  sourceUpdatedAt: "Quellenstand",
+  operator: "Betreiber", address: "Adresse", street: "Straße", house_number: "Hausnummer",
+  municipality: "Gemeinde", city: "Ort", postcode: "Postleitzahl", postal_code: "Postleitzahl",
+  total_points: "Ladepunkte", charging_points: "Ladepunkte", available_points: "Freie Ladepunkte",
+  max_power_kw: "Max. Ladeleistung (kW)", power_kw: "Leistung (kW)", installed_capacity_kw: "Installierte Leistung (kW)",
+  current_power_kw: "Aktuelle Leistung (kW)", connector_type: "Anschluss", industry: "Branche",
+  ssid: "Netzwerk", description: "Beschreibung", road_name: "Straße", road: "Straße",
+  direction: "Richtung", location_from: "Von", location_to: "Bis", title: "Meldung",
+  start_time: "Beginn", end_time: "Ende", valid_from: "Gültig ab", valid_until: "Gültig bis",
+  delay_minutes: "Verzögerung (Min.)", length_km: "Länge (km)", name: "Name",
+};
+export function featureCard(kind: string, values: Record<string, unknown>): HTMLElement {
+  const style = mapSymbol(kind);
+  const title = String(values.name ?? values.title ?? style.label);
+  const rows = Object.entries(FIELD_LABELS).flatMap(([key, label]) => {
+    const value = values[key];
+    return (typeof value === "string" || typeof value === "number") && value !== title
+      ? [`${label}: ${value}`] : [];
+  });
+  if (kind === "charging" && values.available_points == null && values.availablePoints == null) rows.push("Live-Belegung nicht verfügbar.");
+  if (Array.isArray(values.connectorTypes)) rows.push(`Anschlüsse: ${values.connectorTypes.filter(v => typeof v === "string").join(", ")}`);
+  return detailCard(`${style.symbol} ${title}`, style.label, rows.length ? rows : ["Für weitere Details liegen noch keine Daten vor."]);
+}

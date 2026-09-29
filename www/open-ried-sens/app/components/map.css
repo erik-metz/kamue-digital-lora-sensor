@@ -856,3 +856,14 @@
   border-radius: 4px;
   pointer-events: none;
 }
+
+/* Recognizable collected-data markers, matching the original dark Leaflet cards. */
+.map-vehicle-icon, .map-place-icon { background: transparent; border: 0; }
+.map-place-marker { position: relative; display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid var(--place-color); border-radius: 12px; background: #0f172a; color: var(--place-color); font: 700 21px system-ui; box-shadow: 0 3px 12px #0009; cursor: pointer; }
+.map-place-marker:hover { box-shadow: 0 0 14px var(--place-color); }
+.map-place-predicted { border-style: dashed; }
+.map-place-stop { border-radius: 50%; background: #fde047; color: #166534; border-color: #166534; width: 26px; height: 26px; margin: 5px; font-size: 18px; }
+.map-place-label { position: absolute; top: 32px; left: 50%; transform: translateX(-50%); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid var(--place-color); border-radius: 5px; padding: 2px 6px; background: #0f172af5; color: #f8fafc; font: 700 11px system-ui; }
+.map-detail-card { min-width: 180px; max-width: 270px; line-height: 1.5; }
+.map-detail-card > strong { display: block; font-size: 15px; }
+.map-detail-card .map-detail-subtitle { color: #94a3b8; font-size: 11px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
