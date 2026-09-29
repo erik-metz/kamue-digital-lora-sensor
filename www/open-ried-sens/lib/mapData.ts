@@ -87,7 +87,11 @@ export function isParkingPuckTemperature(sensor: ApiMapSensor): boolean {
   const desc = (sensor.description ?? "").toLowerCase();
   const src = (sensor.source_entity_id ?? "").toLowerCase();
   const id = sensor.id.toLowerCase();
-  const isPuck = desc.includes("nwave") || desc.includes("parking") || src.includes("nwave") || src.includes("parking") || id.includes("parking");
+  // Source descriptions may contain generic notes about *other* sensor types.
+  // Prefer the actual entity identity, never boilerplate, when it is available.
+  const identity = src || desc.match(/urn:ngsi-ld:[^;\s]+/)?.[0] || id;
+  const isPuck = /nwave|parking/.test(identity) ||
+    (!src && !sensor.entity_type && !desc.includes("urn:ngsi-ld:") && /nwave|parking/.test(desc));
   const isTemp = name.includes("bodentemperatur") || name.includes("temperatur") ||
     sensor.entity_type === "WeatherObserved" ||
     (sensor.readings ?? []).some(r => ["temperature", "soil_temperature"].includes(r.metric));

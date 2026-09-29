@@ -71,3 +71,22 @@ class CollectedDatabaseTests(DatabaseCase):
         await self.conn.execute("DELETE FROM movement_schedules WHERE source_id='one'")
         cursor = await self.conn.execute("SELECT COUNT(*) AS count FROM movement_stop_times WHERE source_id='one'")
         self.assertEqual((await cursor.fetchone())['count'], 0)
+
+    async def test_map_reads_real_traffic_rows_and_excludes_stale_incidents(self):
+        from endpoints.collected import map_layers
+        for identity, age in [('current', 0), ('stale', 3)]:
+            await self.conn.execute("""INSERT INTO traffic_incidents
+                (id,road_name,direction,location_from,location_to,start_time,last_seen_at,coordinates,cause_type)
+                VALUES (%s,'A67','Nord','A','B',NOW(),NOW()-%s*INTERVAL '1 hour','[[49.6,8.4],[49.61,8.41]]','closure')""", (identity, age))
+        self.conn.row_factory = dict_row
+        connection = self.conn
+
+        class Pool:
+            @asynccontextmanager
+            async def connection(self):
+                yield connection
+
+        request = Request({'type':'http','method':'GET','path':'/', 'headers':[], 'query_string':b''})
+        body = json.loads((await map_layers(request, Pool())).body)
+        self.assertEqual([f['properties']['id'] for f in body['layers']['traffic']['features']], ['current'])
+        self.assertEqual(len(body['layers']['closures']['features']), 1)

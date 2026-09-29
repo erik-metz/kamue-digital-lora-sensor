@@ -55,7 +55,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [isLayersDrawerOpen, setIsLayersDrawerOpen] = useState(false);
-  const [activeClosuresCount, setActiveClosuresCount] = useState(7);
+  const [activeClosuresCount, setActiveClosuresCount] = useState(0);
 
   const stored = useSyncExternalStore(subscribe, preferences, () => DEFAULT_SELECTION);
   const categories = useMemo(() => parseStoredCategories(stored), [stored]);
@@ -269,8 +269,8 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
           <span>Flächige Temperatur-Interpolation</span>
           <span>Punkte = Stationen (Klick / Hover für Details)</span>
         </> : <>
-          <span>Symbol & Farbe = Thema · Farbring am Cluster = enthaltene Themen</span>
-          <span>Zahl im Kreis = Standorte</span>
+          <span>Symbol & Farbe = Thema · Gruppen zeigen dasselbe Sensorthema</span>
+          <span>Zahl am Symbol = Standorte</span>
         </>}
         <span>Gestrichelt / blass = älterer Messwert oder keine Daten</span>
       </div>

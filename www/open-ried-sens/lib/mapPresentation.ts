@@ -1,6 +1,11 @@
 /** Presentation only: all locations and values are supplied by the backend. */
 export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color: string }> = {
   vehicles: { label: "Fahrzeuge · zum Vergrößern anklicken", symbol: "↔", color: "#38bdf8" },
+  education: { label: "Schule / Bildung", symbol: "🏫", color: "#38bdf8" },
+  healthcare: { label: "Gesundheit", symbol: "✚", color: "#34d399" },
+  culture: { label: "Kultur & Freizeit", symbol: "🎭", color: "#f472b6" },
+  places: { label: "Öffentlicher Ort", symbol: "🏫", color: "#38bdf8" },
+  crossings: { label: "Bahnübergang", symbol: "⛩", color: "#fbbf24" },
   bus: { label: "Bus", symbol: "🚌", color: "#38bdf8" },
   train: { label: "Zug", symbol: "🚆", color: "#c084fc" },
   waste: { label: "Abfallsammlung", symbol: "🚛", color: "#fb923c" },
@@ -62,6 +67,7 @@ export function detailCard(title: string, subtitle: string, rows: string[]): HTM
 }
 
 const FIELD_LABELS: Record<string, string> = {
+  level_m: "Wasserstand (m)", measured_at: "Messzeitpunkt", source: "Quelle", barrier: "Schrankenanlage",
   totalPoints: "Ladepunkte", maxPowerKw: "Max. Ladeleistung (kW)", availablePoints: "Freie Ladepunkte",
   installedCapacityKw: "Installierte Leistung (kW)", currentPowerKw: "Aktuelle Leistung (kW)",
   sourceUpdatedAt: "Quellenstand",
@@ -75,14 +81,22 @@ const FIELD_LABELS: Record<string, string> = {
   start_time: "Beginn", end_time: "Ende", valid_from: "Gültig ab", valid_until: "Gültig bis",
   delay_minutes: "Verzögerung (Min.)", length_km: "Länge (km)", name: "Name",
 };
+export function featureKind(kind: string, values: Record<string, unknown>): string {
+  if (kind !== "places") return kind;
+  if (["school", "kindergarten", "university", "college"].includes(String(values.place_type))) return "education";
+  if (["hospital", "clinic", "doctors", "pharmacy"].includes(String(values.place_type))) return "healthcare";
+  return "culture";
+}
 export function featureCard(kind: string, values: Record<string, unknown>): HTMLElement {
-  const style = mapSymbol(kind);
+  const style = mapSymbol(featureKind(kind, values));
   const title = String(values.name ?? values.title ?? style.label);
   const rows = Object.entries(FIELD_LABELS).flatMap(([key, label]) => {
     const value = values[key];
     return (typeof value === "string" || typeof value === "number") && value !== title
       ? [`${label}: ${value}`] : [];
   });
+  if (kind === "places") rows.push("Öffnungs- und Notdienststatus nicht verfügbar.");
+  if (kind === "crossings") rows.push("Schrankenstatus unbekannt – keine Live-Meldung verfügbar.");
   if (kind === "charging" && values.available_points == null && values.availablePoints == null) rows.push("Live-Belegung nicht verfügbar.");
   if (Array.isArray(values.connectorTypes)) rows.push(`Anschlüsse: ${values.connectorTypes.filter(v => typeof v === "string").join(", ")}`);
   return detailCard(`${style.symbol} ${title}`, style.label, rows.length ? rows : ["Für weitere Details liegen noch keine Daten vor."]);

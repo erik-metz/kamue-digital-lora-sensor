@@ -45,3 +45,22 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
         sql=conn.execute.call_args.args[0]
         self.assertIn('valid_until > NOW()',sql)
         self.assertIn("basis='observed'",sql)
+
+    async def test_map_includes_collected_traffic_without_provider_requests(self):
+        from endpoints.collected import map_layers
+        pool, conn = pool_for()
+        publications = MagicMock()
+        publications.fetchall = AsyncMock(return_value=[])
+        traffic = MagicMock()
+        traffic.fetchall = AsyncMock(return_value=[{
+            'id': 'closure-1', 'road_name': 'A67', 'cause_type': 'closure',
+            'coordinates': [[49.6, 8.4], [49.61, 8.41]],
+        }])
+        conn.execute.side_effect = [publications, traffic]
+        response = await map_layers(request(), pool)
+        data = json.loads(response.body)
+        feature = data['layers']['traffic']['features'][0]
+        self.assertEqual(feature['geometry']['coordinates'], [[8.4, 49.6], [8.41, 49.61]])
+        self.assertEqual(data['layers']['closures']['features'], [feature])
+        self.assertIn("last_seen_at>NOW()-INTERVAL '2 hours'", conn.execute.call_args.args[0])
+        self.assertIn('crossings', data['unavailable'])

@@ -1,15 +1,16 @@
 "use client";
 
 import L from "leaflet";
+import { metricLabel } from "@/lib/telemetryData";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
-import { createMarkerContent, createClusterContent } from "@/lib/mapMarker";
+import { createMarkerContent, createTempPinContent } from "@/lib/mapMarker";
 import "./map.css";
 import { motionPoint, nextMotion, MOVEMENT_POLL_MS, type MarkerMotion } from "@/lib/mapMotion";
-import { detailCard, featureCard, mapSymbol, placeMarker } from "@/lib/mapPresentation";
+import { detailCard, featureCard, featureKind, mapSymbol, placeMarker } from "@/lib/mapPresentation";
 import { useEffect, useRef, useState } from "react";
 import type { GeoJsonObject } from "geojson";
-import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer } from "@/lib/temperatureHeatmap";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, DEFAULT_MAP_LAYERS, type MapLayerId } from "@/lib/urlState";
 
@@ -52,6 +53,7 @@ export default function MapComponent(props: MapProps) {
   const vehicleMarkers = useRef(new Map<string, L.Marker>());
   const callbacks = useRef(props);
   useEffect(() => { callbacks.current = props; });
+  const [zoom, setZoom] = useState(props.initialZoom ?? DEFAULT_MAP_ZOOM);
   const [ready, setReady] = useState(false);
   const [clusteringReady, setClusteringReady] = useState(false);
   const freshnessMinute = Math.floor(props.now / 60000);
@@ -73,9 +75,11 @@ export default function MapComponent(props: MapProps) {
     const instance = L.map(container.current, {
       center: callbacks.current.initialCenter ?? DEFAULT_MAP_CENTER,
       zoom: callbacks.current.initialZoom ?? DEFAULT_MAP_ZOOM,
-      minZoom: 8, maxBounds: [[49.40, 8.10], [49.95, 8.85]], maxBoundsViscosity: .5,
+      minZoom: 8,
     });
     map.current = instance;
+    const resize = new ResizeObserver(() => instance.invalidateSize({ pan: false }));
+    resize.observe(container.current);
     const base = L.tileLayer("/api/map-tiles/base/{z}/{x}/{y}.png", {
       maxZoom: 19, maxNativeZoom: 14, minZoom: 8, bounds: [[49.55, 8.30], [49.80, 8.65]],
       attribution: '© <a href="https://www.bkg.bund.de">BKG</a> · <a href="https://www.govdata.de/dl-de/by-2-0">dl-de/by-2-0</a> · <a href="https://sgx.geodatenzentrum.de/web_public/Datenquellen_TopPlus_Open.pdf">Datenquellen</a> · © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap-Mitwirkende</a>',
@@ -85,8 +89,9 @@ export default function MapComponent(props: MapProps) {
       const center = instance.getCenter();
       callbacks.current.onViewportChange?.([center.lat, center.lng], instance.getZoom());
     });
+    instance.on("zoomend", () => setZoom(instance.getZoom()));
     setReady(true);
-    return () => { instance.remove(); map.current = null; };
+    return () => { resize.disconnect(); instance.remove(); map.current = null; };
   }, []);
 
   // One batch for all vehicles, no browser simulator and no per-vehicle requests.
@@ -136,30 +141,47 @@ export default function MapComponent(props: MapProps) {
     const instance = map.current;
     if (!ready || !instance) return;
     const group = L.layerGroup().addTo(instance);
-    const cluster = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 55, showCoverageOnHover: false,
-      iconCreateFunction: item => L.divIcon({ html: createClusterContent(item.getAllChildMarkers().map(marker => (marker.options as L.MarkerOptions & { categoryColor?: string }).categoryColor ?? "#94a3b8"), item.getChildCount()), className: "map-cluster-icon", iconSize: [44, 44] }),
-    }).addTo(group) : group;
+    // Keep rare categories visible instead of swallowing them in large soil clusters.
+    const categoryGroups = new Map<Category, L.LayerGroup>();
+    function groupFor(category: Category) {
+      let target = categoryGroups.get(category);
+      if (!target) {
+        target = clusteringReady && props.mode !== "temperature" ? L.markerClusterGroup({
+          maxClusterRadius: 38, disableClusteringAtZoom: 16, showCoverageOnHover: false,
+          iconCreateFunction: item => L.divIcon({
+            html: createMarkerContent(category, CATEGORIES[category].color, false, `${item.getChildCount()} ${CATEGORIES[category].label}`),
+            className: "map-sensor-icon", iconSize: [32, 32],
+          }),
+        }).addTo(group) : group;
+        categoryGroups.set(category, target);
+      }
+      return target;
+    }
     const points: { lat: number; lng: number; temp: number }[] = [];
     for (const node of props.nodes) {
       const category = markerCategory(node, props.categories);
       if (!category || !props.categories.includes(category)) continue;
       const reading = primaryReading(node, category, props.mode);
-      const fresh = readingFreshness(reading, freshnessMinute * 60000) === "fresh";
+      const freshness = readingFreshness(reading, freshnessMinute * 60000);
+      const fresh = freshness === "fresh";
+      const muted = freshness === "stale" || freshness === "unknown";
       if (props.mode === "temperature") {
-        if (!reading || !["temperature", "soil_temperature"].includes(reading.metric)) continue;
+        if (!reading) continue;
         if (fresh) points.push({ lat: node.lat, lng: node.lng, temp: reading.value });
       }
+      const color = props.mode === "temperature" && reading ? (muted ? "#94a3b8" : temperatureColor(reading.value)) : CATEGORIES[category].color;
+      const label = zoom >= (props.mode === "temperature" ? 15 : 16) ? valueLabel(reading, node.readings) : "";
       const marker = L.marker([node.lat, node.lng], {
         title: node.name, alt: node.name, keyboard: true,
         ...{ categoryColor: CATEGORIES[category].color },
-        icon: L.divIcon({ html: createMarkerContent(category, CATEGORIES[category].color, !fresh),
+        icon: L.divIcon({ html: props.mode === "temperature" ? createTempPinContent(color, muted, label) : createMarkerContent(category, color, muted, label),
           className: `map-sensor-icon${node.id === props.selectedNodeId ? " map-sensor-selected" : ""}`,
-          iconSize: [32,32], iconAnchor: [16,16] }),
-      }).addTo(cluster);
+          iconSize: props.mode === "temperature" ? [14,14] : [32,32], iconAnchor: props.mode === "temperature" ? [7,7] : [16,16], popupAnchor: [0,-18] }),
+      }).addTo(groupFor(category));
       marker.bindTooltip(textPopup([node.name, ...(reading ? [valueLabel(reading, node.readings)] : ["Keine Messwerte"])]));
       marker.bindPopup(detailCard(node.name, node.categories.map(id => CATEGORIES[id].label).join(" · "), [
         ...(node.address ? [node.address] : []),
-        ...node.readings.map(item => `${valueLabel(item, node.readings)} · ${observationLabel(item, freshnessMinute * 60000)}`),
+        ...node.readings.map(item => `${metricLabel(item)}: ${valueLabel(item, node.readings)} · ${observationLabel(item, freshnessMinute * 60000)}`),
         ...(!node.readings.length ? ["Keine Messwerte verfügbar."] : []),
       ]), { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
       marker.on("click", () => callbacks.current.onSelectNode(node.id));
@@ -168,7 +190,7 @@ export default function MapComponent(props: MapProps) {
     const heatmap = props.mode === "temperature" ? new TemperatureHeatmapLayer().addTo(instance) : null;
     heatmap?.setPoints(points);
     return () => { group.remove(); heatmap?.remove(); };
-  }, [ready, clusteringReady, props.nodes, props.categories, props.mode, props.selectedNodeId, freshnessMinute]);
+  }, [ready, clusteringReady, props.nodes, props.categories, props.mode, props.selectedNodeId, freshnessMinute, zoom]);
 
   useEffect(() => {
     if (!ready || !map.current) return;
@@ -295,7 +317,7 @@ export default function MapComponent(props: MapProps) {
         pointToLayer: (feature, latlng) => L.marker(latlng, {
           title: String(feature.properties?.name ?? mapSymbol(id).label),
           keyboard: true,
-          icon: L.divIcon({ html: placeMarker(id), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20] }),
+          icon: L.divIcon({ html: placeMarker(featureKind(id, feature.properties ?? {})), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20] }),
         }),
         onEachFeature: (feature, layer) => {
           const values = feature.properties ?? {};
@@ -345,10 +367,14 @@ export default function MapComponent(props: MapProps) {
       <p>Ⓗ Haltestelle · ⚡ Ladestation</p>
       <p className="mt-1">Symbol anklicken für Details und Abfahrten.</p>
       <p className="mt-1 text-slate-400">Gestrichelter Rand: Prognose · Durchgehend: beobachtet (Fahrzeuge)</p>
+      {(missing.length > 0) && <p>Ohne aktuelle Quelle: {missing.map(id => mapSymbol(id).label).join(", ")}.</p>}
       </details>
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
-      {(layersFailed || missing.length > 0) && <p role="status">Einige Kartenebenen sind noch nicht verfügbar.</p>}
+      {(layersFailed || missing.length > 0) && <p role="status">{missing.length || "Einige"} Ebenen ohne aktuelle Quelldaten – siehe Hinweise.</p>}
       {tilesMissing && <p role="status">Hintergrundkarten sind noch nicht verfügbar.</p>}
+      <button className="mt-2 mr-3 underline" onClick={() => {
+        if (props.nodes.length) map.current?.fitBounds(L.latLngBounds(props.nodes.map(node => L.latLng(node.lat, node.lng))), { padding: [40, 40], maxZoom: 16 });
+      }}>Sensoren im Überblick</button>
       <button className="mt-2 underline" onClick={() => callbacks.current.onOpenLayersDrawer?.()}>Kartenebenen</button>
     </div>
   </div>;

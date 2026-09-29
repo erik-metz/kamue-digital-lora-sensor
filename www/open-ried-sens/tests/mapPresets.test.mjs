@@ -69,8 +69,8 @@ vm.runInNewContext(
 );
 const mapPresets = mapPresetsContext.exports;
 
-test("mapPresets covers all 19 MAP_LAYER_IDS with definitions and categories", () => {
-  assert.equal(urlState.MAP_LAYER_IDS.length, 19);
+test("mapPresets covers all 21 MAP_LAYER_IDS with definitions and categories", () => {
+  assert.equal(urlState.MAP_LAYER_IDS.length, 21);
   for (const layerId of urlState.MAP_LAYER_IDS) {
     const def = mapPresets.LAYER_DEFINITIONS[layerId];
     assert.ok(def, `Layer definition missing for ${layerId}`);
@@ -88,11 +88,11 @@ test("mapPresets covers 4 categories with valid items", () => {
   const infrastructure = mapPresets.getLayersByCategory("infrastructure");
   const planning = mapPresets.getLayersByCategory("planning");
 
-  assert.equal(mobility.length, 6);
+  assert.equal(mobility.length, 7);
   assert.equal(environment.length, 4);
   assert.equal(infrastructure.length, 4);
-  assert.equal(planning.length, 5);
-  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 19);
+  assert.equal(planning.length, 6);
+  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 21);
 });
 
 test("mapPresets defines all presets with full layer dictionaries", () => {
@@ -122,12 +122,12 @@ test("detectActivePreset identifies default and custom states", () => {
 
 test("countActiveLayers and countCategoryActiveLayers compute accurate numbers", () => {
   const allActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, true]));
-  assert.equal(mapPresets.countActiveLayers(allActive), 19);
+  assert.equal(mapPresets.countActiveLayers(allActive), 21);
 
   const noneActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, false]));
   assert.equal(mapPresets.countActiveLayers(noneActive), 0);
 
   const mobilityCounts = mapPresets.countCategoryActiveLayers("mobility", mapPresets.LAYER_PRESETS.mobility.layers);
-  assert.equal(mobilityCounts.total, 6);
-  assert.equal(mobilityCounts.active, 6);
+  assert.equal(mobilityCounts.total, 7);
+  assert.equal(mobilityCounts.active, 7);
 });

@@ -16,6 +16,33 @@ def extract_addresses(path, source):
     needed = set()
     coordinates = {}
     elements = []
+    crossings = []
+    regional_nodes = {}
+    map_layers = {key: {'type': 'FeatureCollection', 'features': []} for key in ('nature', 'crops', 'wifi', 'energy', 'companies', 'places')}
+
+    def map_kind(tags):
+        if tags.get('amenity') in ('school', 'kindergarten', 'college', 'university', 'hospital', 'clinic', 'doctors', 'pharmacy', 'library', 'community_centre', 'theatre') or tags.get('tourism') in ('museum', 'attraction', 'information') or tags.get('leisure') in ('sports_centre', 'stadium'):
+            return 'places'
+        if tags.get('leisure') == 'nature_reserve' or tags.get('boundary') == 'protected_area':
+            return 'nature'
+        if tags.get('landuse') in ('farmland', 'orchard', 'vineyard'):
+            return 'crops'
+        if tags.get('internet_access') == 'wlan' and tags.get('internet_access:access') in ('yes', 'public', 'customers'):
+            return 'wifi'
+        if tags.get('power') in ('plant', 'generator'):
+            return 'energy'
+        if tags.get('name') and (tags.get('office') == 'company' or tags.get('industrial')):
+            return 'companies'
+        return None
+
+    def add_feature(kind, identity, tags, geometry):
+        map_layers[kind]['features'].append({'type': 'Feature', 'geometry': geometry, 'properties': {
+            'id': identity, 'name': tags.get('name') or {'nature': 'Schutzgebiet', 'crops': 'Landwirtschaftliche Fläche',
+                'energy': 'Energieanlage', 'wifi': 'WLAN-Standort', 'companies': 'Unternehmen', 'places': 'Öffentlicher Ort'}[kind],
+            'operator': tags.get('operator'), 'place_type': tags.get('amenity') or tags.get('tourism') or tags.get('leisure'),
+            'address': ' '.join(filter(None, [tags.get('addr:street'), tags.get('addr:housenumber')])), 'source': 'OpenStreetMap / Geofabrik',
+            'description': 'Kartierter Standort bzw. Fläche; keine Live-Messung und kein vollständiges amtliches Register.',
+        }})
 
     def tags_for(obj):
         tags = dict(obj.tags)
@@ -42,14 +69,44 @@ def extract_addresses(path, source):
             if obj.id in needed:
                 coordinates[obj.id] = (lat, lon)
             if inside(lat, lon):
+                regional_nodes[obj.id] = (lon, lat)
+                raw = dict(obj.tags)
+                kind = map_kind(raw)
+                if kind:
+                    add_feature(kind, f"osm-node-{obj.id}", raw, {"type": "Point", "coordinates": [lon, lat]})
+                if raw.get('railway') in ('level_crossing', 'crossing'):
+                    crossings.append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': [lon, lat]},
+                        'properties': {'id': f'osm-node-{obj.id}', 'name': raw.get('name') or raw.get('ref') or 'Bahnübergang',
+                                       'barrier': raw.get('crossing:barrier', 'nicht erfasst'),
+                                       'source': 'OpenStreetMap / Geofabrik', 'status': 'unknown'}})
                 tags = tags_for(obj)
                 if tags:
                     elements.append({'type': 'node', 'id': obj.id, 'lat': lat, 'lon': lon, 'tags': tags})
+
+    class MapWays(osmium.SimpleHandler):
+        def way(self, obj):
+            tags = dict(obj.tags)
+            kind = map_kind(tags)
+            if not kind:
+                return
+            refs = [node.ref for node in obj.nodes]
+            if not refs or any(ref not in regional_nodes for ref in refs):
+                return
+            points = [regional_nodes[ref] for ref in refs]
+            if kind in ('nature', 'crops'):
+                if len(points) < 4 or refs[0] != refs[-1]:
+                    return
+                geometry = {'type': 'Polygon', 'coordinates': [points]}
+            else:
+                geometry = {'type': 'Point', 'coordinates': [sum(p[0] for p in points)/len(points), sum(p[1] for p in points)/len(points)]}
+            add_feature(kind, f'osm-way-{obj.id}', tags, geometry)
 
     # Two streaming passes retain only nodes used by address-tagged local ways.
     # No all-Hessen node-location index is needed.
     Ways().apply_file(str(path))
     Nodes().apply_file(str(path))
+    MapWays().apply_file(str(path))
+    regional_nodes.clear()
     for identity, (tags, refs) in ways.items():
         if not refs or any(ref not in coordinates for ref in refs):
             continue
@@ -60,14 +117,16 @@ def extract_addresses(path, source):
             elements.append({'type': 'way', 'id': identity, 'center': {'lat': lat, 'lon': lon}, 'tags': tags})
     if not elements:
         raise ValueError('OSM extract contains no matching regional addresses')
-    return {'elements': elements, 'coverage': 'OSM address nodes and ways; not a complete address register'}
+    return {'elements': elements, 'map_layers': map_layers, 'crossings': {'type': 'FeatureCollection', 'features': crossings}, 'coverage': 'OSM address nodes and ways; not a complete address register'}
 
 
 async def import_addresses(conn, client, source):
     cursor = await conn.execute(
         """SELECT 1 FROM collected_datasets WHERE dataset='waste/address-inventory'
         AND source_id=%s AND source_url=%s AND expires_at>NOW()
-        AND fetched_at>NOW()-make_interval(secs => %s)""",
+        AND fetched_at>NOW()-make_interval(secs => %s)
+        AND EXISTS (SELECT 1 FROM collected_datasets c WHERE c.dataset='map/layers/crossings'
+                    AND c.source_id=collected_datasets.source_id AND c.expires_at>NOW())""",
         (source['id'], source['url'], source.get('interval_seconds', 604800)))
     fresh = await cursor.fetchone()
     await conn.commit()
@@ -96,5 +155,8 @@ async def import_addresses(conn, client, source):
         await conn.execute('INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING',
                            (digest, body, 'application/vnd.openriedsens.osm-address-extract+json'))
         await publish(conn, source, 'waste/address-inventory', inventory, digest, now)
+        await publish(conn, source, 'map/layers/crossings', inventory['crossings'], digest, now)
+        for layer, features in inventory['map_layers'].items():
+            await publish(conn, source, f'map/layers/{layer}', features, digest, now)
         await conn.execute("INSERT INTO collection_attempts(source_id,payload_sha256,status) VALUES (%s,%s,'success')", (source['id'], digest))
     await conn.commit()

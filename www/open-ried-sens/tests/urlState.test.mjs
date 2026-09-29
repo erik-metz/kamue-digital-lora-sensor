@@ -44,9 +44,9 @@ vm.runInNewContext(
 );
 const urlState = urlStateContext.exports;
 
-test("MAP_LAYER_IDS contains all 19 domain layers", () => {
+test("MAP_LAYER_IDS contains all 21 domain layers", () => {
   const ids = urlState.MAP_LAYER_IDS;
-  assert.equal(ids.length, 19);
+  assert.equal(ids.length, 21);
   assert.ok(ids.includes("nature"));
   assert.ok(ids.includes("crops"));
   assert.ok(ids.includes("floods"));

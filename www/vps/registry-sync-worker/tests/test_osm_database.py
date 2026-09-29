@@ -23,6 +23,8 @@ class AddressDatabaseTests(DatabaseCase):
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200,content=body))) as client:
             await import_addresses(self.conn, client, source)
         before = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/address-inventory'")
+        crossings = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='map/layers/crossings'")
+        self.assertEqual(crossings['type'], 'FeatureCollection')
         self.assertEqual(before['elements'][0]['tags']['addr:city'], 'Biblis')
         self.assertEqual(await self.scalar('SELECT count(*) FROM collected_payloads'), 1)
         self.assertEqual(await self.scalar('SELECT status FROM collection_attempts'), 'success')

@@ -40,6 +40,8 @@ export const LAYER_CATEGORIES: Record<LayerCategory, {
 };
 
 export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
+  places: { id: "places", label: "Öffentliche Orte", icon: "🏫", category: "planning", description: "Kartierte Schulen, Gesundheit, Kultur und Freizeit – ohne Live-Öffnungs- oder Notdienststatus" },
+  crossings: { id: "crossings", label: "Bahnübergänge", icon: "⛩", category: "mobility", description: "Gesammelte Bahnübergänge; Schrankenstatus nur bei verfügbarer Messung" },
   // Mobility & Traffic
   closures: {
     id: "closures",
@@ -79,7 +81,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Züge & BÜ",
     icon: "🚅",
     category: "mobility",
-    description: "Riedbahn & Nibelungenbahn Live-Züge und aktive Bahnübergänge mit Schrankenstatus",
+    description: "Riedbahn & Nibelungenbahn Zugpositionen aus gespeicherten Meldungen und Fahrplänen",
     highlightColor: "border-sky-500 text-sky-300",
   },
   charging: {
@@ -249,6 +251,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       stops: false,
       waste: false,
       trains: false,
+      crossings: false,
+      places: false,
     },
   },
   mobility: {
@@ -277,6 +281,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       stops: true,
       waste: true,
       trains: true,
+      crossings: true,
+      places: false,
     },
   },
   environment: {
@@ -305,6 +311,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       stops: false,
       waste: false,
       trains: false,
+      crossings: false,
+      places: false,
     },
   },
   planning: {
@@ -333,6 +341,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       stops: false,
       waste: true,
       trains: false,
+      crossings: false,
+      places: false,
     },
   },
 };

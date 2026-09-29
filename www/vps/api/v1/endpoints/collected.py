@@ -182,6 +182,8 @@ async def tile(
 @router.get("/map/collected-layers")
 async def map_layers(request: Request, pool=Depends(get_db_pool)):
     expected = {
+        "crossings",
+        "places",
         "nature",
         "crops",
         "floods",
@@ -203,11 +205,36 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
             "SELECT dataset,data,expires_at FROM collected_datasets WHERE (dataset LIKE 'map/layers/%%' OR dataset LIKE 'transport/stops/%%') AND expires_at > NOW()"
         )
         rows = await cursor.fetchall()
+        traffic_cursor = await conn.execute(
+            """SELECT id,road_name,direction,location_from,location_to,description,cause_type,
+                      coordinates,last_seen_at FROM traffic_incidents
+               WHERE is_active=TRUE AND last_seen_at>NOW()-INTERVAL '2 hours'""")
+        incidents = await traffic_cursor.fetchall()
     layers = {
         r["dataset"].removeprefix("map/layers/"): r["data"]
         for r in rows
         if r["dataset"].startswith("map/layers/")
     }
+    traffic_features = []
+    for incident in incidents:
+        coordinates = incident["coordinates"]
+        if isinstance(coordinates, str):
+            coordinates = json.loads(coordinates)
+        if not coordinates:
+            continue
+        # Collector stores [latitude, longitude]; GeoJSON uses the reverse order.
+        points = [[p[1], p[0]] for p in coordinates if isinstance(p, list) and len(p) >= 2]
+        if not points:
+            continue
+        properties = {k: v for k, v in incident.items() if k != "coordinates"}
+        properties["name"] = incident["road_name"]
+        traffic_features.append({"type": "Feature", "geometry": {
+            "type": "LineString" if len(points) > 1 else "Point",
+            "coordinates": points if len(points) > 1 else points[0],
+        }, "properties": properties})
+    if traffic_features:
+        layers["traffic"] = {"type": "FeatureCollection", "features": traffic_features}
+        layers["closures"] = {"type": "FeatureCollection", "features": [f for f in traffic_features if f["properties"]["cause_type"] == "closure"]}
     stops = [
         {**stop, "source_id": row["dataset"].removeprefix("transport/stops/")}
         for row in rows

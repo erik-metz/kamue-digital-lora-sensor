@@ -287,3 +287,11 @@ test("all measurements remain visible from inventory when history or latest requ
   assert.equal(telemetry.metricLabel(reading("traffic_cars_hourly", 2, "count")), "PKW · Stundensumme");
   assert.equal(telemetry.unitLabel("count"), "Anzahl");
 });
+
+test("weather identity is not overridden by generic parking notes in source descriptions", () => {
+  const nodes = model.toStationNodes([sensor([reading("temperature")], {
+    entity_type: "WeatherObserved", source_entity_id: "urn:ngsi-ld:WeatherObserved:wettermanufaktur-123",
+    description: "Smart City; Parking counts may describe a group; temperature may include soil sensors.",
+  })]);
+  assert.deepEqual([...nodes[0].categories], ["weather"]);
+});
