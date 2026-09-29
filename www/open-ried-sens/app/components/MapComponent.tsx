@@ -5,6 +5,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import { createMarkerContent, createClusterContent } from "@/lib/mapMarker";
 import "./map.css";
+import { motionPoint, nextMotion, MOVEMENT_POLL_MS, type MarkerMotion } from "@/lib/mapMotion";
 import { detailCard, featureCard, mapSymbol, placeMarker } from "@/lib/mapPresentation";
 import { useEffect, useRef, useState } from "react";
 import type { GeoJsonObject } from "geojson";
@@ -46,6 +47,8 @@ export default function MapComponent(props: MapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const vehicleGroup = useRef<L.LayerGroup | null>(null);
+  const vehicleMotions = useRef(new Map<string, MarkerMotion>());
+  const vehicleIcons = useRef(new Map<string, string>());
   const vehicleMarkers = useRef(new Map<string, L.Marker>());
   const callbacks = useRef(props);
   useEffect(() => { callbacks.current = props; });
@@ -102,7 +105,7 @@ export default function MapComponent(props: MapProps) {
           if (!controller.signal.aborted) { setPositions([]); setMovementFailed(true); }
         }
       }
-      if (!controller.signal.aborted) timer = setTimeout(poll, 10000);
+      if (!controller.signal.aborted) timer = setTimeout(poll, MOVEMENT_POLL_MS);
     }
     void poll();
     return () => { controller.abort(); clearTimeout(timer); };
@@ -175,7 +178,9 @@ export default function MapComponent(props: MapProps) {
     group.addTo(map.current);
     vehicleGroup.current = group;
     const markers = vehicleMarkers.current;
-    return () => { group.remove(); markers.clear(); vehicleGroup.current = null; };
+    const motions = vehicleMotions.current;
+    const icons = vehicleIcons.current;
+    return () => { group.remove(); markers.clear(); motions.clear(); icons.clear(); vehicleGroup.current = null; };
   }, [ready, clusteringReady]);
 
   // Retain marker instances and open dialogs across backend snapshots.
@@ -184,11 +189,13 @@ export default function MapComponent(props: MapProps) {
     const instance = map.current;
     if (!instance || !ready) return;
     const retained = new Set<string>();
-    const transitions: { marker: L.Marker; from: L.LatLng; to: L.LatLng }[] = [];
+    const motions = vehicleMotions.current;
+    const icons = vehicleIcons.current;
+    const receivedAt = performance.now();
     for (const position of positions) {
       const enabled = layers[position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : "waste"];
       if (!enabled || !(Date.parse(position.valid_until) > Date.now()) ||
-          !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) continue;
+          !Number.isFinite(Date.parse(position.timestamp)) || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) continue;
       const key = `${position.kind}:${position.id}`;
       retained.add(key);
       const predicted = position.basis === "schedule_prediction";
@@ -196,19 +203,22 @@ export default function MapComponent(props: MapProps) {
       const title = `${style.label} ${position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
       const target = L.latLng(position.latitude, position.longitude);
       let marker = vehicleMarkers.current.get(key);
-      const icon = L.divIcon({ html: placeMarker(position.kind, position.line || style.label, predicted),
+      const iconKey = `${position.kind}:${position.line ?? ""}:${predicted}`;
+      const icon = () => L.divIcon({ html: placeMarker(position.kind, position.line || style.label, predicted),
         className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22] });
       if (!marker) {
-        marker = L.marker(target, { icon, title, alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
+        marker = L.marker(target, { icon: icon(), title, alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
         vehicleMarkers.current.set(key, marker);
       } else {
-        marker.setIcon(icon);
-        transitions.push({ marker, from: marker.getLatLng(), to: target });
+        if (icons.get(key) !== iconKey) marker.setIcon(icon());
       }
+      icons.set(key, iconKey);
+      motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.timestamp), receivedAt));
       const popup = detailCard(`${style.symbol} ${title}`, predicted ? "Fahrplanprognose · keine GPS-Messung" : "Beobachtete Position", [
         ...(position.kind === "waste" && predicted ? ["Modell aus Abfuhrtagen: Straßenstichprobe, angenommene Reihenfolge und Zeiten (07–17 Uhr). Kein identifiziertes Müllfahrzeug."] : []),
         ...(typeof position.speed_kmh === "number" ? [`${predicted ? "Modellierte Geschwindigkeit" : "Geschwindigkeit"}: ${Math.round(position.speed_kmh)} km/h`] : []),
         ...(position.delay_basis === "next_reported_stop_approximation" ? [`Gemeldete Haltestellenverspätung: ${Math.round((position.delay_seconds ?? 0) / 60)} Min. (auf die Fahrt angenähert)`] : []),
+        "Darstellung geglättet zwischen empfangenen Positionen (leicht zeitversetzt).",
         `Stand: ${new Date(position.timestamp).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
         ...(position.geometry_basis === "stop_to_stop" ? ["Geradlinige Näherung zwischen Haltestellen; keine Streckengeometrie verfügbar."] : []),
       ]);
@@ -219,20 +229,41 @@ export default function MapComponent(props: MapProps) {
       else marker.bindTooltip(tooltip, { direction: "top", offset: [0, -22] });
     }
     for (const [key, marker] of vehicleMarkers.current) {
-      if (!retained.has(key)) { vehicleGroup.current?.removeLayer(marker); vehicleMarkers.current.delete(key); }
+      if (!retained.has(key)) { vehicleGroup.current?.removeLayer(marker); vehicleMarkers.current.delete(key); motions.delete(key); icons.delete(key); }
     }
     let frame = 0;
-    const start = performance.now();
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let lastFrame = -Infinity;
+    let lastClusterFrame = -Infinity;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     function animate(time: number) {
-      const progress = reducedMotion || document.hidden ? 1 : Math.min(1, (time - start) / 1000);
-      for (const { marker, from, to } of transitions) {
-        marker.setLatLng([from.lat + (to.lat - from.lat) * progress, from.lng + (to.lng - from.lng) * progress]);
+      if (document.hidden) return;
+      if (time - lastFrame < 1000 / 30) { frame = requestAnimationFrame(animate); return; }
+      lastFrame = time;
+      let moving = false;
+      const refreshClusters = time - lastClusterFrame >= 1000;
+      const bounds = instance!.getBounds().pad(.1);
+      for (const [key, motion] of motions) {
+        const marker = vehicleMarkers.current.get(key);
+        if (!marker) continue;
+        const complete = reducedMotion.matches || time >= motion.startedAt + motion.duration;
+        moving ||= !complete;
+        // Clustered/offscreen markers need only coarse updates; visible vehicles get 30 fps.
+        if (!complete && !refreshClusters && (!marker.getElement() || !bounds.contains(marker.getLatLng()))) continue;
+        const point = complete ? motion.to : motionPoint(motion, time);
+        if (!marker.getLatLng().equals(point)) marker.setLatLng(point);
       }
-      if (progress < 1) frame = requestAnimationFrame(animate);
+      if (refreshClusters) lastClusterFrame = time;
+      if (moving) frame = requestAnimationFrame(animate);
     }
-    if (transitions.length) frame = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(frame);
+    function resume() { cancelAnimationFrame(frame); if (!document.hidden) frame = requestAnimationFrame(animate); }
+    resume();
+    document.addEventListener("visibilitychange", resume);
+    reducedMotion.addEventListener("change", resume);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("visibilitychange", resume);
+      reducedMotion.removeEventListener("change", resume);
+    };
   }, [ready, clusteringReady, positions, layers]);
 
   useEffect(() => {
@@ -242,6 +273,8 @@ export default function MapComponent(props: MapProps) {
         const marker = vehicleMarkers.current.get(key);
         if (marker) vehicleGroup.current?.removeLayer(marker);
         vehicleMarkers.current.delete(key);
+        vehicleMotions.current.delete(key);
+        vehicleIcons.current.delete(key);
       }
     }
   }, [positions, props.now]);
