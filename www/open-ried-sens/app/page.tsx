@@ -171,12 +171,20 @@ export default async function Home() {
                 Erkunde alle Facetten unserer Region – von Echtzeit-Messwerten bis zu amtlichen Statistiken.
               </p>
             </div>
-            <Link
-              href="/quellen"
-              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition-colors shrink-0"
-            >
-              <FileText className="size-3.5" /> Datenquellen und Erfassungsstatus ansehen &rarr;
-            </Link>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <Link
+                href="/regionalatlas"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all shadow-sm"
+              >
+                <Layers className="size-3.5 text-emerald-400" /> Regionalatlas öffnen &rarr;
+              </Link>
+              <Link
+                href="/quellen"
+                className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-400 transition-colors"
+              >
+                <FileText className="size-3.5" /> Quellen &rarr;
+              </Link>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

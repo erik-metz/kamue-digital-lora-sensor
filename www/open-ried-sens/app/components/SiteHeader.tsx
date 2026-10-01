@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import HeaderLogo from "./HeaderLogo";
@@ -8,6 +8,8 @@ import {
   Menu,
   X,
   Radio,
+  Layers,
+  LayoutGrid,
   Building2,
   Users,
   BarChart3,
@@ -18,6 +20,7 @@ import {
   ShieldCheck,
   ExternalLink,
   Wrench,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +37,47 @@ interface NavItem {
   shortLabel: string;
   icon: React.ComponentType<{ className?: string }>;
   highlight?: boolean;
+  isRegionalatlas?: boolean;
 }
+
+export const REGIONALATLAS_NAV_SUBITEMS = [
+  {
+    href: "/regionalatlas",
+    label: "Übersicht & Hub",
+    description: "Zahlen, Fakten & alle Fachbereiche",
+    icon: LayoutGrid,
+  },
+  {
+    href: "/bauen-wohnen",
+    label: "Bauen & Wohnen",
+    description: "Bodenrichtwerte, Gebäudealter & B-Pläne",
+    icon: Building2,
+  },
+  {
+    href: "/demografie",
+    label: "Demografie & Bildung",
+    description: "Einwohner, Pendlerströme & Schulen",
+    icon: Users,
+  },
+  {
+    href: "/statistik",
+    label: "Regionalstatistik",
+    description: "Soziales, ZAKB-Recycling & Vereine",
+    icon: BarChart3,
+  },
+  {
+    href: "/haushalt",
+    label: "Finanzen & Haushalt",
+    description: "Kommunalhaushalte, Hebesätze & Wahlen",
+    icon: Coins,
+  },
+  {
+    href: "/wirtschaft",
+    label: "Wirtschaft & Gewerbe",
+    description: "Gewerbebetriebe, Hebesätze & Jobs",
+    icon: Briefcase,
+  },
+];
 
 const MAIN_NAV_ITEMS: NavItem[] = [
   {
@@ -44,34 +87,11 @@ const MAIN_NAV_ITEMS: NavItem[] = [
     icon: Radio,
   },
   {
-    href: "/bauen-wohnen",
-    label: "Bauen & Wohnen",
-    shortLabel: "Bauen",
-    icon: Building2,
-  },
-  {
-    href: "/demografie",
-    label: "Demografie & Bildung",
-    shortLabel: "Demografie",
-    icon: Users,
-  },
-  {
-    href: "/statistik",
-    label: "Regionalstatistik",
-    shortLabel: "Statistik",
-    icon: BarChart3,
-  },
-  {
-    href: "/haushalt",
-    label: "Finanzen & Haushalt",
-    shortLabel: "Haushalt",
-    icon: Coins,
-  },
-  {
-    href: "/wirtschaft",
-    label: "Wirtschaft & Gewerbe",
-    shortLabel: "Wirtschaft",
-    icon: Briefcase,
+    href: "/regionalatlas",
+    label: "Regionalatlas",
+    shortLabel: "Atlas",
+    icon: Layers,
+    isRegionalatlas: true,
   },
   {
     href: "/daten",
@@ -109,17 +129,46 @@ export default function SiteHeader({
   totalStations,
 }: SiteHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileAtlasOpen, setMobileAtlasOpen] = useState(true);
+  const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
-  // Close mobile drawer on route change
+  const isRegionalatlasActive =
+    pathname === "/regionalatlas" ||
+    pathname?.startsWith("/bauen-wohnen") ||
+    pathname?.startsWith("/demografie") ||
+    pathname?.startsWith("/haushalt") ||
+    pathname?.startsWith("/wirtschaft") ||
+    pathname?.startsWith("/statistik");
+
+  // Close mobile drawer & desktop dropdown on route change
   useEffect(() => {
     setMobileOpen(false);
+    setDesktopDropdownOpen(false);
   }, [pathname]);
+
+  // Handle click outside desktop dropdown
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDesktopDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Handle Escape key and disable background scrolling when drawer is open
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMobileOpen(false);
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        setDesktopDropdownOpen(false);
+      }
     };
 
     if (mobileOpen) {
@@ -155,10 +204,107 @@ export default function SiteHeader({
 
           {/* Desktop Navigation (>= lg / 1024px) */}
           <nav
-            className="hidden lg:flex items-center gap-1 xl:gap-1.5 text-xs xl:text-sm font-medium"
+            className="hidden lg:flex items-center gap-1 xl:gap-2 text-xs xl:text-sm font-medium"
             aria-label="Hauptnavigation"
           >
             {MAIN_NAV_ITEMS.map((item) => {
+              if (item.isRegionalatlas) {
+                return (
+                  <div
+                    key={item.href}
+                    ref={dropdownRef}
+                    className="relative"
+                    onMouseEnter={() => setDesktopDropdownOpen(true)}
+                    onMouseLeave={() => setDesktopDropdownOpen(false)}
+                  >
+                    <div className="flex items-center">
+                      <Link
+                        href="/regionalatlas"
+                        className={cn(
+                          "flex items-center gap-1.5 px-3 py-1.5 rounded-l-lg transition-all duration-150 whitespace-nowrap",
+                          isRegionalatlasActive
+                            ? "bg-emerald-500/15 text-emerald-300 font-semibold border-y border-l border-emerald-500/30 shadow-sm shadow-emerald-500/10"
+                            : "text-slate-300 hover:text-emerald-300 hover:bg-slate-800/60"
+                        )}
+                      >
+                        <Layers className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{item.label}</span>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setDesktopDropdownOpen((prev) => !prev)}
+                        aria-expanded={desktopDropdownOpen}
+                        aria-label="Regionalatlas Untermenü öffnen"
+                        className={cn(
+                          "px-1.5 py-1.5 rounded-r-lg transition-all duration-150 border-l border-slate-800/60",
+                          isRegionalatlasActive
+                            ? "bg-emerald-500/15 text-emerald-300 border-y border-r border-emerald-500/30"
+                            : "text-slate-400 hover:text-emerald-300 hover:bg-slate-800/60"
+                        )}
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "w-3.5 h-3.5 transition-transform duration-200",
+                            desktopDropdownOpen && "rotate-180 text-emerald-400"
+                          )}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Flyout Dropdown Menu */}
+                    {desktopDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-1 w-72 rounded-2xl bg-slate-900/95 border border-slate-800 p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                        <div className="px-2.5 py-1.5 border-b border-slate-800/80 mb-1">
+                          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                            Regionalatlas Fachbereiche
+                          </span>
+                        </div>
+                        <div className="space-y-0.5">
+                          {REGIONALATLAS_NAV_SUBITEMS.map((sub) => {
+                            const SubIcon = sub.icon;
+                            const isSubActive =
+                              sub.href === "/regionalatlas"
+                                ? pathname === "/regionalatlas"
+                                : pathname?.startsWith(sub.href);
+
+                            return (
+                              <Link
+                                key={sub.href}
+                                href={sub.href}
+                                onClick={() => setDesktopDropdownOpen(false)}
+                                className={cn(
+                                  "group flex items-start gap-2.5 p-2 rounded-xl transition-all",
+                                  isSubActive
+                                    ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
+                                    : "text-slate-300 hover:bg-slate-800/70 hover:text-emerald-300"
+                                )}
+                              >
+                                <SubIcon
+                                  className={cn(
+                                    "w-4 h-4 mt-0.5 shrink-0 transition-colors",
+                                    isSubActive
+                                      ? "text-emerald-400"
+                                      : "text-slate-400 group-hover:text-emerald-400"
+                                  )}
+                                />
+                                <div className="space-y-0.5">
+                                  <div className="font-semibold text-xs leading-none">
+                                    {sub.label}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 group-hover:text-slate-300 leading-tight">
+                                    {sub.description}
+                                  </div>
+                                </div>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               const isActive =
                 item.href === "/"
                   ? pathname === "/"
@@ -169,7 +315,7 @@ export default function SiteHeader({
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "px-2.5 xl:px-3 py-1.5 rounded-lg transition-all duration-150 whitespace-nowrap",
+                    "px-3 py-1.5 rounded-lg transition-all duration-150 whitespace-nowrap",
                     isActive
                       ? "bg-emerald-500/15 text-emerald-300 font-semibold border border-emerald-500/30 shadow-sm shadow-emerald-500/10"
                       : item.highlight
@@ -279,35 +425,135 @@ export default function SiteHeader({
               Themen &amp; Daten
             </span>
             <nav className="flex flex-col gap-1">
-              {MAIN_NAV_ITEMS.map((item) => {
-                const Icon = item.icon;
-                const isActive =
-                  item.href === "/"
-                    ? pathname === "/"
-                    : pathname?.startsWith(item.href);
+              {/* Sensor-Karte */}
+              <Link
+                href="/"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                  pathname === "/"
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-semibold"
+                    : "text-slate-300 hover:bg-slate-800/70 hover:text-emerald-300"
+                )}
+              >
+                <Radio
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    pathname === "/" ? "text-emerald-400" : "text-slate-400"
+                  )}
+                />
+                <span>Sensor-Karte</span>
+              </Link>
 
-                return (
+              {/* Regionalatlas with expandable sub-links */}
+              <div className="rounded-xl border border-slate-800/80 bg-slate-950/40 p-1 space-y-1">
+                <div className="flex items-center justify-between px-2.5 py-1.5">
                   <Link
-                    key={item.href}
-                    href={item.href}
+                    href="/regionalatlas"
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-semibold"
-                        : "text-slate-300 hover:bg-slate-800/70 hover:text-emerald-300"
+                      "flex items-center gap-2.5 text-sm font-semibold transition-colors flex-1",
+                      isRegionalatlasActive
+                        ? "text-emerald-300"
+                        : "text-slate-200 hover:text-emerald-400"
                     )}
                   >
-                    <Icon
+                    <Layers className="w-4 h-4 text-emerald-400" />
+                    <span>Regionalatlas</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setMobileAtlasOpen((prev) => !prev)}
+                    aria-label="Regionalatlas Untermenü ein-/ausklappen"
+                    className="p-1 text-slate-400 hover:text-slate-200"
+                  >
+                    <ChevronDown
                       className={cn(
-                        "w-4 h-4 shrink-0",
-                        isActive ? "text-emerald-400" : "text-slate-400"
+                        "w-4 h-4 transition-transform",
+                        mobileAtlasOpen && "rotate-180 text-emerald-400"
                       )}
                     />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+                  </button>
+                </div>
+
+                {mobileAtlasOpen && (
+                  <div className="pl-3 pr-1 py-1 space-y-0.5 border-t border-slate-800/60">
+                    {REGIONALATLAS_NAV_SUBITEMS.map((sub) => {
+                      const SubIcon = sub.icon;
+                      const isSubActive =
+                        sub.href === "/regionalatlas"
+                          ? pathname === "/regionalatlas"
+                          : pathname?.startsWith(sub.href);
+
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          onClick={() => setMobileOpen(false)}
+                          className={cn(
+                            "flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                            isSubActive
+                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/20 font-semibold"
+                              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                          )}
+                        >
+                          <SubIcon
+                            className={cn(
+                              "w-3.5 h-3.5 shrink-0",
+                              isSubActive ? "text-emerald-400" : "text-slate-500"
+                            )}
+                          />
+                          <span>{sub.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Offene Daten & API */}
+              <Link
+                href="/daten"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                  pathname?.startsWith("/daten")
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-semibold"
+                    : "text-slate-300 hover:bg-slate-800/70 hover:text-emerald-300"
+                )}
+              >
+                <Database
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    pathname?.startsWith("/daten")
+                      ? "text-emerald-400"
+                      : "text-slate-400"
+                  )}
+                />
+                <span>Offene Daten &amp; API</span>
+              </Link>
+
+              {/* Sensor bauen */}
+              <Link
+                href="/sensor-bauen"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                  pathname?.startsWith("/sensor-bauen")
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-semibold"
+                    : "text-emerald-400/95 hover:bg-slate-800/70 hover:text-emerald-300"
+                )}
+              >
+                <Wrench
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    pathname?.startsWith("/sensor-bauen")
+                      ? "text-emerald-400"
+                      : "text-emerald-500"
+                  )}
+                />
+                <span>Sensor bauen</span>
+              </Link>
             </nav>
           </div>
 

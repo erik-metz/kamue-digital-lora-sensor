@@ -30,6 +30,7 @@ test("All 8 public & admin pages render the unified SiteFooter", () => {
   const pages = [
     "../app/page.tsx",
     "../app/daten/page.tsx",
+    "../app/regionalatlas/page.tsx",
     "../app/demografie/page.tsx",
     "../app/wirtschaft/page.tsx",
     "../app/haushalt/page.tsx",

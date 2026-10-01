@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Landmark, Database } from "lucide-react";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
+import RegionalatlasTabs from "../components/RegionalatlasTabs";
 import HaushaltClient from "./HaushaltClient";
 import { fetchBudgets, fetchFinanceComparison, fetchSpending } from "@/lib/financeData";
 import { fetchElections } from "@/lib/electionsData";
@@ -36,7 +37,10 @@ export default async function HaushaltPage() {
       <SiteHeader />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-10">
+        {/* Regionalatlas Subnav Tabs */}
+        <RegionalatlasTabs activeTab="haushalt" />
+
         {/* HERO SECTION */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 p-8 sm:p-12 shadow-2xl">
           <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
