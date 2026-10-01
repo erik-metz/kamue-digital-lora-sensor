@@ -69,7 +69,7 @@ WHERE id = 'shake-r498e-rms'
 
 -- Published, versioned monthly export snapshots (UploadThing file keys stay private).
 CREATE TABLE IF NOT EXISTS data_archives (
-    month VARCHAR(7) PRIMARY KEY CHECK (month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'),
+    month VARCHAR(10) PRIMARY KEY CHECK (month ~ '^[0-9]{4}(-(0[1-9]|1[0-2])|-Q[1-4])?$'),
     generated_at TIMESTAMPTZ NOT NULL,
     is_complete BOOLEAN NOT NULL,
     reading_count BIGINT NOT NULL CHECK (reading_count >= 0),

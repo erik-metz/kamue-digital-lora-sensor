@@ -26,7 +26,7 @@ async function queueCleanup(client, keys) {
   if (keys.length) await client.query('INSERT INTO archive_cleanup(key) SELECT unnest($1::text[]) ON CONFLICT DO NOTHING', [keys]);
 }
 
-export async function runArchives({ storage, dbConfig, requestedMonth = null, refresh = false, partBytes = 64 * 1024 * 1024, signal = null }) {
+export async function runArchives({ storage, dbConfig, requestedMonth = null, requestedPeriod = null, refresh = false, partBytes = 64 * 1024 * 1024, signal = null }) {
   const client = new pg.Client(dbConfig);
   await client.connect();
   try {
@@ -43,7 +43,8 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
       await storage.remove(archive.files.map(file => file.key));
       await client.query('DELETE FROM data_archives WHERE month = $1', [archive.month]);
     }
-    const months = requestedMonth ? [requestedMonth] : (await client.query(measurementReadSql(`
+    const explicitPeriod = requestedPeriod || requestedMonth;
+    const months = explicitPeriod ? [explicitPeriod] : (await client.query(measurementReadSql(`
       SELECT to_char(months.month_start, 'YYYY-MM') AS month FROM generate_series(
         date_trunc('month', (SELECT min(timestamp) FROM sensor_data d JOIN sensor_metadata s ON s.id=d.sensor_id WHERE NOT s.is_hidden) AT TIME ZONE 'UTC'),
         date_trunc('month', now() AT TIME ZONE 'UTC') - interval '1 month', interval '1 month') AS months(month_start)
@@ -51,7 +52,7 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
     for (const month of months) {
       if (signal?.aborted) break;
       const { start, end } = monthRange(month);
-      if (start > new Date()) throw new Error('Cannot export a future month');
+      if (start > new Date()) throw new Error('Cannot export a future period');
       const previous = (await client.query('SELECT * FROM data_archives WHERE month=$1', [month])).rows[0];
       if (previous?.is_complete && !refresh) continue;
       const directory = await mkdtemp(path.join(tmpdir(), 'ried-archive-'));

@@ -6,12 +6,37 @@ import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
 import yazl from 'yazl';
 
+export function periodRange(period) {
+  if (!period || typeof period !== 'string') throw new Error('Use YYYY-MM, YYYY-Q1..Q4, or YYYY');
+  // 1. Month: YYYY-MM
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(period)) {
+    const start = new Date(`${period}-01T00:00:00Z`);
+    const end = new Date(start);
+    end.setUTCMonth(end.getUTCMonth() + 1);
+    return { start, end, type: 'month' };
+  }
+  // 2. Quarter: YYYY-Q[1-4]
+  const qMatch = period.match(/^(\d{4})-Q([1-4])$/);
+  if (qMatch) {
+    const year = Number(qMatch[1]);
+    const quarter = Number(qMatch[2]);
+    const startMonth = (quarter - 1) * 3;
+    const start = new Date(Date.UTC(year, startMonth, 1));
+    const end = new Date(Date.UTC(year, startMonth + 3, 1));
+    return { start, end, type: 'quarter' };
+  }
+  // 3. Year: YYYY
+  if (/^\d{4}$/.test(period)) {
+    const year = Number(period);
+    const start = new Date(Date.UTC(year, 0, 1));
+    const end = new Date(Date.UTC(year + 1, 0, 1));
+    return { start, end, type: 'year' };
+  }
+  throw new Error('Use YYYY-MM, YYYY-Q1..Q4, or YYYY');
+}
+
 export function monthRange(month) {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new Error('Use YYYY-MM');
-  const start = new Date(`${month}-01T00:00:00Z`);
-  const end = new Date(start);
-  end.setUTCMonth(end.getUTCMonth() + 1);
-  return { start, end };
+  return periodRange(month);
 }
 
 export function csvCell(value) {

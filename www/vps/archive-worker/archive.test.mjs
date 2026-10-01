@@ -4,12 +4,28 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { buildArchives, csvCell, monthRange } from './archive.mjs';
+import { buildArchives, csvCell, monthRange, periodRange } from './archive.mjs';
 
-test('month boundaries include leap February and December rollover', () => {
+test('month, quarter, and year boundaries calculate correct UTC intervals', () => {
   assert.equal(monthRange('2024-02').end.toISOString(), '2024-03-01T00:00:00.000Z');
   assert.equal(monthRange('2026-12').end.toISOString(), '2027-01-01T00:00:00.000Z');
   assert.throws(() => monthRange('2026-13'));
+
+  // Quarters
+  const q1 = periodRange('2026-Q1');
+  assert.equal(q1.start.toISOString(), '2026-01-01T00:00:00.000Z');
+  assert.equal(q1.end.toISOString(), '2026-04-01T00:00:00.000Z');
+  assert.equal(q1.type, 'quarter');
+
+  const q4 = periodRange('2026-Q4');
+  assert.equal(q4.start.toISOString(), '2026-10-01T00:00:00.000Z');
+  assert.equal(q4.end.toISOString(), '2027-01-01T00:00:00.000Z');
+
+  // Year
+  const yr = periodRange('2026');
+  assert.equal(yr.start.toISOString(), '2026-01-01T00:00:00.000Z');
+  assert.equal(yr.end.toISOString(), '2027-01-01T00:00:00.000Z');
+  assert.equal(yr.type, 'year');
 });
 
 test('CSV preserves negatives and escapes spreadsheet formulas and quotes', () => {
