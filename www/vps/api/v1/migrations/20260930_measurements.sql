@@ -117,6 +117,10 @@ BEGIN
             ON CONFLICT (measurement_id) DO NOTHING;
         END IF;
     ELSE
+        -- Historical inserts cannot improve an already newer cache entry. Avoid
+        -- taking its row lock at all while live collectors update other metrics.
+        IF EXISTS (SELECT 1 FROM latest_readings WHERE measurement_id=NEW.measurement_id
+            AND observed_at>NEW.observed_at) THEN RETURN NULL; END IF;
         INSERT INTO latest_readings VALUES
             (NEW.measurement_id, NEW.observed_at, NEW.value, NEW.quality, NEW.collected_at, NEW.provenance)
         ON CONFLICT (measurement_id) DO UPDATE SET observed_at = EXCLUDED.observed_at,

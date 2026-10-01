@@ -31,6 +31,7 @@ async def install(conn, shadow=False):
         await conn.execute((MIGRATIONS / "20261002_inventory.sql").read_text())
         await conn.execute((MIGRATIONS / "20261002_gauges.sql").read_text())
         await conn.execute((MIGRATIONS / "20261003_weather_reconciliation.sql").read_text())
+        await conn.execute((MIGRATIONS / "20261004_inventory_coordinates.sql").read_text())
         if shadow:
             paused = await (await conn.execute("""SELECT state->>'requires_reconciliation'
                 FROM measurement_migration_state WHERE name='shadow_writes'""")).fetchone()
@@ -86,6 +87,7 @@ async def disable_shadow(conn):
         await conn.execute("DROP TRIGGER IF EXISTS measurement_shadow_statistics ON collected_datasets")
         await conn.execute("DROP TRIGGER IF EXISTS measurement_shadow_chargers ON collected_datasets")
         await conn.execute("DROP TRIGGER IF EXISTS measurement_shadow_gauges ON collected_datasets")
+        await conn.execute("DROP TRIGGER IF EXISTS measurement_shadow_coordinates ON collected_datasets")
         await conn.execute("DROP TRIGGER IF EXISTS measurement_shadow_movement ON movement_positions")
         await conn.execute("""UPDATE measurement_migration_state
             SET state='{"enabled":false,"requires_reconciliation":true}',updated_at=NOW()
@@ -158,7 +160,7 @@ async def backfill(conn, family, batch_size=1000, max_batches=1):
     the batch for review; identical duplicates collapse to a single reading.
     Backfill never replaces a reading already written by the live path.
     """
-    if family not in {"metadata", "sensors", "movements", "statistics", "chargers", "gauges", "weather"}:
+    if family not in {"metadata", "sensors", "movements", "statistics", "chargers", "gauges", "weather", "coordinates"}:
         raise ValueError("Unsupported backfill family")
     if not 1 <= batch_size <= 10000 or not 1 <= max_batches <= 10000:
         raise ValueError("Batch limits must be between 1 and 10000")
@@ -187,6 +189,16 @@ async def backfill(conn, family, batch_size=1000, max_batches=1):
                 exhausted = len(rows) < batch_size
                 for (dataset,) in rows:
                     await conn.execute("SELECT mirror_gauge_publication(d) FROM collected_datasets d WHERE dataset=%s", (dataset,))
+                if rows:
+                    key = rows[-1][0]
+            elif family == "coordinates":
+                cursor = await conn.execute("""SELECT dataset FROM collected_datasets
+                    WHERE is_coordinate_publication(dataset) AND (%s::text IS NULL OR dataset > %s)
+                    ORDER BY dataset LIMIT %s FOR UPDATE""", (key,key,batch_size))
+                rows = await cursor.fetchall()
+                exhausted = len(rows) < batch_size
+                for (dataset,) in rows:
+                    await conn.execute("SELECT mirror_coordinate_publication(d) FROM collected_datasets d WHERE dataset=%s", (dataset,))
                 if rows:
                     key = rows[-1][0]
             elif family == "weather":
@@ -327,7 +339,7 @@ if __name__ == "__main__":
     audit_parser.add_argument("--start", required=True)
     audit_parser.add_argument("--end", required=True)
     backfill_parser = sub.add_parser("backfill")
-    backfill_parser.add_argument("family", choices=["metadata", "sensors", "movements", "statistics", "chargers", "gauges", "weather"])
+    backfill_parser.add_argument("family", choices=["metadata", "sensors", "movements", "statistics", "chargers", "gauges", "weather", "coordinates"])
     backfill_parser.add_argument("--batch-size", type=int, default=1000)
     backfill_parser.add_argument("--max-batches", type=int, default=1)
     backfill_parser.add_argument("--available-disk-gib", type=Decimal, required=True,

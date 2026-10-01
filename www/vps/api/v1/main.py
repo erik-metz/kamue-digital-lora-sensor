@@ -21,6 +21,17 @@ SCHEMA_SQL = SCHEMA_FILE.read_text(encoding="utf-8") if SCHEMA_FILE.exists() els
 
 async def init_db(pool: psycopg_pool.AsyncConnectionPool) -> None:
     """Initializes the database schema if schema.sql is available."""
+    async with pool.connection() as conn:
+        cursor = await conn.execute("SELECT to_regclass('public.measurement_migration_state') AS relation")
+        row = await cursor.fetchone()
+        if row['relation'] is not None:
+            cursor = await conn.execute("""SELECT 1 FROM measurement_migration_state
+                WHERE name='retired_unused_registries'""")
+            if await cursor.fetchone() is not None:
+                # Explicit versioned migrations own an upgraded database. The
+                # old bootstrap would recreate retired registries on restart.
+                logger.info("Canonical database: skipping legacy bootstrap DDL")
+                return
     if SCHEMA_SQL:
         try:
             async with pool.connection() as conn:

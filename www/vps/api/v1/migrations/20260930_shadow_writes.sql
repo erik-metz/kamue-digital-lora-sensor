@@ -200,3 +200,6 @@ BEGIN
 END $$;
 INSERT INTO measurement_migration_state(name,state) VALUES ('shadow_writes','{"enabled":true}')
 ON CONFLICT (name) DO UPDATE SET state=EXCLUDED.state, updated_at=NOW();
+
+CREATE OR REPLACE TRIGGER measurement_shadow_coordinates AFTER INSERT OR UPDATE ON collected_datasets
+FOR EACH ROW EXECUTE FUNCTION shadow_coordinate_publication();

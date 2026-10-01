@@ -96,6 +96,10 @@ async def dataset_publication(
              if core_reads() and dataset in {"infrastructure/ev-charging", "map/layers/charging"}
              else "SELECT * FROM core_gauge_datasets WHERE dataset=%s"
              if core_reads() and dataset in {"environment/flood/gauges", "map/layers/floods"}
+             else "SELECT * FROM core_coordinate_datasets WHERE dataset=%s"
+             if core_reads() and (dataset.startswith('transport/stops/') or dataset in {
+                 'map/layers/companies','map/layers/crops','map/layers/crossings','map/layers/energy',
+                 'map/layers/nature','map/layers/places','map/layers/wifi','waste/address-inventory','waste/calendar'})
              else "SELECT * FROM collected_datasets WHERE dataset=%s"), (dataset,)
         )
         row = await cursor.fetchone()

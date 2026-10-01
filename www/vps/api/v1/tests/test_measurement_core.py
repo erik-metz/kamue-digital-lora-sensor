@@ -316,7 +316,7 @@ class MeasurementCoreTests(DatabaseCase):
                 {'cell':'E17','label':'Einzahlungen / je Einwohner/-in / Euro','value':None,'source_marker':'.'}]}]}]}
         await self.conn.execute("""INSERT INTO collected_datasets VALUES
             ('statistics/finance','hessen-municipal-statistics','https://example.test',%s,%s,%s,%s,%s)""",
-            (self.now,self.now,self.now+timedelta(days=1),digest,Jsonb(data)))
+            (self.now,self.now,datetime.now(UTC)+timedelta(days=1),digest,Jsonb(data)))
         self.assertEqual(await self.scalar("SELECT data FROM core_statistical_datasets"), data)
         self.assertEqual(await self.scalar("SELECT COUNT(*) FROM readings"), 2)
         self.assertEqual(await self.scalar("SELECT value FROM readings WHERE quality='valid'"), Decimal('12345.67'))
