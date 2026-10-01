@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
+  ArrowRight,
   ChevronLeft,
   ChevronRight,
   Maximize2,
@@ -444,6 +445,54 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
           </div>
         ) : null;
 
+      case "coverage-plan":
+        return slide.coveragePlan ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+            {slide.coveragePlan.map((item, idx) => (
+              <div
+                key={idx}
+                className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-3 relative overflow-hidden shadow-xl"
+              >
+                <div className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <Radio className="w-4 h-4" />
+                  <span>{item.tag}</span>
+                </div>
+                <div className="text-2xl sm:text-3xl font-black text-slate-100 font-mono">
+                  {item.number}
+                </div>
+                <h4 className="text-base font-bold text-slate-100">
+                  {item.title}
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed font-light">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : null;
+
+      case "civic-alliance":
+        return slide.bullets ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+            {slide.bullets.map((b, idx) => (
+              <div
+                key={idx}
+                className="p-5 rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition-all space-y-3 flex flex-col justify-between shadow-lg"
+              >
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    {b.tag}
+                  </span>
+                  <h4 className="text-base font-bold text-slate-100">{b.title}</h4>
+                  <p className="text-xs text-slate-300 font-light leading-relaxed">
+                    {b.description}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null;
+
       case "unit-economics":
         return slide.costComparison ? (
           <div className="space-y-4 pt-2">
@@ -641,7 +690,56 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
         ) : null;
 
       case "team-showcase":
-        return (
+        return slide.teamMembers ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
+            {slide.teamMembers.map((m, idx) => (
+              <div
+                key={idx}
+                className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all space-y-4 flex flex-col justify-between shadow-xl"
+              >
+                <div className="space-y-3.5">
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-emerald-500/40 bg-slate-950 shrink-0 shadow-md">
+                      <Image
+                        src={m.imageSrc}
+                        alt={m.name}
+                        fill
+                        className="object-cover object-top"
+                        sizes="64px"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base font-bold text-slate-100">{m.name}</span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+                          {m.location}
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-emerald-400 leading-snug">
+                        {m.role}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-300 font-light leading-relaxed">
+                    {m.bio}
+                  </p>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {m.highlights.map((h, hIdx) => (
+                      <span
+                        key={hIdx}
+                        className="text-[10px] px-2 py-0.5 rounded-md bg-slate-950 border border-slate-800 text-slate-400 font-mono"
+                      >
+                        {h}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
             {slide.bullets?.map((b, idx) => (
               <div
@@ -761,27 +859,24 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
             </div>
           </div>
 
-          {/* Center: Live Regional Telemetry Ticker */}
-          <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-xs shadow-inner">
+          {/* Header Live Radar Badge */}
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs shrink-0 whitespace-nowrap shadow-sm">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
-            <span className="font-bold text-slate-300">Live im Ried:</span>
-            <span className="text-slate-400 font-mono text-[11px]">
-              🗑️ {liveMetrics.binsEmptied} Tonnen · 🚧 {liveMetrics.levelCrossingEvents} Schranken · 📡 {liveMetrics.telemetryPackets} LoRa
-            </span>
-            <span className="font-mono text-emerald-400 font-bold bg-slate-950 px-1.5 py-0.5 rounded text-[10px] border border-slate-800">
+            <span className="font-bold text-slate-300">Ried-Radar</span>
+            <span className="font-mono text-emerald-400 font-bold bg-slate-950 px-1.5 py-0.5 rounded text-[11px] border border-slate-800">
               {liveMetrics.formattedDuration}
             </span>
           </div>
 
           {/* Right: Controls & Mode Switcher */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Handout PDF Generator Button */}
             <button
               onClick={() => setShowHandoutModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all shadow-sm shrink-0 whitespace-nowrap"
               title="Druckbares Handout / One-Pager PDF erstellen (Shortcut: H)"
             >
               <FileText className="w-3.5 h-3.5" />
@@ -789,7 +884,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
             </button>
 
             {/* Mode Switcher */}
-            <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-xl p-1 text-xs">
+            <div className="flex items-center bg-slate-900/80 border border-slate-800 rounded-xl p-1 text-xs shrink-0">
               <button
                 onClick={() => setViewMode("slides")}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all ${
@@ -819,7 +914,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
             {/* Speaker Notes Toggle Button */}
             <button
               onClick={() => setShowSpeakerNotes((prev) => !prev)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all shrink-0 ${
                 showSpeakerNotes
                   ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 shadow-sm shadow-emerald-500/10"
                   : "bg-slate-900 border-slate-800 text-slate-300 hover:text-emerald-400 hover:border-slate-700"
@@ -836,7 +931,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
             {/* Share / Copy Link */}
             <button
               onClick={handleCopyLink}
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-all"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-all shrink-0"
               title="Link zu dieser Präsentation kopieren"
             >
               {copiedLink ? (
@@ -849,7 +944,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
             {/* Fullscreen Button */}
             <button
               onClick={toggleFullscreen}
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-all hidden sm:flex"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-all hidden sm:flex shrink-0"
               title="Vollbild umschalten (Shortcut: F)"
             >
               {isFullscreen ? (
@@ -873,6 +968,76 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
           </div>
         )}
       </header>
+
+      {/* Dedicated High-Tech Live Telemetry Strip */}
+      <div className="w-full bg-slate-900/95 border-b border-slate-800 px-4 sm:px-6 py-2 flex items-center justify-between text-xs overflow-x-auto whitespace-nowrap scrollbar-none gap-6 print:hidden shadow-inner">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+          </span>
+          <span className="font-black text-emerald-400 uppercase tracking-widest text-[11px] font-mono">
+            Live-Telemetrie im Ried:
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-xs text-slate-300 font-mono">
+          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-orange-400">🗑️</span>
+            <span className="text-slate-400 font-sans text-[11px]">ZAKB:</span>
+            <strong className="text-slate-100">
+              {liveMetrics.isDaytime ? liveMetrics.binsEmptied : "0"}
+            </strong>
+            <span className="text-slate-400 font-sans text-[11px]">
+              {liveMetrics.isDaytime ? "Tonnen" : "(Nachtruhe)"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-rose-400">🚧</span>
+            <span className="text-slate-400 font-sans text-[11px]">Riedbahn:</span>
+            <strong className="text-slate-100">{liveMetrics.levelCrossingEvents}</strong>
+            <span className="text-slate-400 font-sans text-[11px]">Schranken</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-sky-400">🚆</span>
+            <span className="text-slate-400 font-sans text-[11px]">Züge:</span>
+            <strong className="text-slate-100">{liveMetrics.trainsTraversed}</strong>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-emerald-400">📡</span>
+            <span className="text-slate-400 font-sans text-[11px]">LoRaWAN:</span>
+            <strong className="text-emerald-300">{liveMetrics.telemetryPackets}</strong>
+            <span className="text-slate-400 font-sans text-[11px]">Pakete</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-violet-400">🅿️</span>
+            <span className="text-slate-400 font-sans text-[11px]">Bürstadt:</span>
+            <strong className="text-slate-100">{liveMetrics.parkingStateChanges}</strong>
+            <span className="text-slate-400 font-sans text-[11px]">Park-Events</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
+            <span className="text-yellow-400">⚡</span>
+            <strong className="text-slate-100">{liveMetrics.solarKwhGenerated}</strong>
+            <span className="text-slate-400 font-sans text-[11px]">
+              {liveMetrics.isDaytime ? "kWh" : "kWh (Nacht)"}
+            </span>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setCurrentSlideIndex(totalSlides - 1)}
+          className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 shrink-0 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-xl border border-emerald-500/30 transition-all cursor-pointer"
+          title="Zur Live-Auswertungsfolie springen"
+        >
+          <span>Live-Folie ansehen</span>
+          <ArrowRight className="w-3 h-3" />
+        </button>
+      </div>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col justify-between max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">

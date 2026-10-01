@@ -43,6 +43,22 @@ export interface MarketFunnelData {
   som: { number: string; title: string; desc: string };
 }
 
+export interface CoveragePlanItem {
+  number: string;
+  title: string;
+  description: string;
+  tag: string;
+}
+
+export interface TeamMember {
+  name: string;
+  location: string;
+  role: string;
+  imageSrc: string;
+  bio: string;
+  highlights: string[];
+}
+
 export interface StemSkillItem {
   category: "handwerk" | "sensorik" | "informatik" | "multiplikator";
   title: string;
@@ -66,8 +82,10 @@ export type SlideLayout =
   | "value-prop-split"
   | "product-architecture"
   | "tam-sam-som"
+  | "coverage-plan"
   | "unit-economics"
   | "competitive-matrix"
+  | "civic-alliance"
   | "traction-timeline"
   | "stem-learning-matrix"
   | "team-showcase"
@@ -91,6 +109,8 @@ export interface PitchSlide {
   stats?: SlideStat[];
   mapEvidence?: MapEvidence[];
   marketFunnel?: MarketFunnelData;
+  coveragePlan?: CoveragePlanItem[];
+  teamMembers?: TeamMember[];
   costComparison?: CostComparisonItem[];
   competitivePoints?: CompetitiveMatrixPoint[];
   stemSkills?: StemSkillItem[];
@@ -114,9 +134,9 @@ export interface PitchDeck {
   title: string;
   subtitle: string;
   targetAudience: string;
-  category: "politik" | "bildung" | "community" | "wirtschaft" | "umwelt";
+  category: "politik" | "bildung" | "wirtschaft";
   badge: string;
-  accentColor: "emerald" | "sky" | "violet" | "amber" | "teal";
+  accentColor: "emerald" | "sky" | "violet" | "amber";
   estimatedMinutes: number;
   summary: string;
   slides: PitchSlide[];
@@ -139,325 +159,448 @@ export const MAP_EVIDENCE_ITEMS: MapEvidence[] = [
     imagePath: "/pitch/ttn-mapper-ried-map.png",
     headline: "Öffentliches LoRaWAN-Funknetzwerk",
     description:
-      "Das offene Funknetzwerk für Sensoren ohne SIM-Karten. Die Heatmap belegt: LoRaWAN existiert nur punktuell entlang Autobahnen (A67, B47) durch mobile Mapper. Ortskerne, Schulen, Ackerbauflächen und Industriegebiete im Ried sind unterversorgt.",
+      "Das offene Funknetzwerk für Sensoren ohne SIM-Karten. Die Heatmap belegt: LoRaWAN existiert nur punktuell entlang Autobahnen (A67, B47) durch mobile Mapper. Ortskerne, Schulen, Ackerbauflächen und Gewerbegebiete im Ried sind unterversorgt.",
     riedStatus: "Lückenhafte Abdeckung – kein flächendeckender Empfang für Bürger- & Schulsensoren vorhanden.",
     impactBadge: "Kritische Funklöcher im Innenbereich",
   },
   {
-    serviceName: "Raspberry Shake (Seismik & Vibration)",
+    serviceName: "Raspberry Shake (Seismograph für Erschütterungen & Geothermie)",
     serviceUrl: "https://raspberryshake.org/",
     imagePath: "/pitch/raspberry-shake-ried-map.png",
-    headline: "Bodenerschütterung, Geothermie & Riedbahn",
+    headline: "Seismik, Erschütterungen, Geothermie & Riedbahn",
     description:
-      "Globales Bürgernetzwerk für Seismometer. Im geothermisch hochaktiven Oberrheingraben und entlang der hochfrequentierten Riedbahn-Trasse gibt es im gesamten Altkreis nur eine einzige Station (Bürstadt/Lampertheim Grenze).",
+      "Globales Bürgernetzwerk für Seismometer. Im geothermisch sensiblen Oberrheingraben und entlang der hochfrequentierten Riedbahn-Trasse gibt es im gesamten Altkreis nur eine einzige Station (Bürstadt/Lampertheim Grenze).",
     riedStatus: "Praktisch ein Totalausfall für Bürgerwissenschaft im sensiblen Oberrheingraben.",
     impactBadge: "Nur 1 Station im Umkreis von 25 km",
   },
 ];
 
 // ============================================================================
-// 1. POLITIK PITCH DECK (10 Folien Startup-Storytelling)
+// 1. POLITIK PITCH DECK (Bürgermeister, Landräte, Fraktionen)
 // ============================================================================
 export const POLITIK_DECK: PitchDeck = {
   slug: "politik",
   title: "Smarte Daseinsvorsorge & Datenhoheit fürs Hessische Ried",
   subtitle:
-    "Wie Bürstadt & die Ried-Kommunen mit offenen LoRaWAN-Sensoren und einem 48h Bürger-Hackathon echte Unabhängigkeit schaffen",
+    "Kostenlos für die Kommunen: Wie Bürstadt mit Bürger-Sensoren und dem 48h-Hackathon im KAMÜ Daten-Silos bricht",
   targetAudience: "Bürgermeister, Landräte, Beigeordnete, Stadträte, Bauamtsleiter & Fraktionen",
   category: "politik",
   badge: "Kommunale Daseinsvorsorge",
   accentColor: "emerald",
   estimatedMinutes: 12,
   summary:
-    "10-teiliger Startup-Pitch für die Kommunalpolitik: Vom Daten-Blindfleck zur Daseinsvorsorge ohne Vendor Lock-in. Mit konkreten Bitten: Rohdaten-Zugriff, Gateway-Öffnung, Hackathon-Schirmherrschaft.",
+    "11-teiliger zielgerichteter Pitch für die Kommunalpolitik: 0 € Haushaltsbelastung, Bündelung aller Datenströme im Bürger-Cockpit, Verknüpfung von Sensorbau und KAMÜ-Hackathon, Vorstellung des Core-Teams und glasklarer Ask.",
   slides: [
     {
       id: "folie-1-title",
       stepNumber: 1,
-      stepLabel: "01 / One-Pager & Hook",
+      stepLabel: "01 / Hook & One-Pager",
       eyebrow: "Smarte Region Bergstraße · Hessen",
-      title: "Open Ried Sens: Daseinsvorsorge aus Bürgerhand statt teurer Konzerngutachten",
-      lead: "Wir vernetzen das Hessische Ried mit freiem LoRaWAN-Funk und offenen Umweltdaten. 10x günstiger, 100% datenschutzkonform und gemeinsam mit Bürgern und Schulen gebaut.",
+      title: "Open Ried Sens: Kostenlos für die Kommunen – Getragen von Bürgern & Fördermitteln",
+      lead: "0 € Belastung für den städtischen Haushalt: Wir bündeln alle regionalen Datenströme (Klima, Verkehr, Entsorgung, Parken) an einer zentralen, offenen Stelle im Kulturzentrum KAMÜ Bürstadt. Bürger finanzieren ihre Sensoren selbst, laufende Serverkosten minimal (~50 €/Jahr).",
       layout: "one-pager-hero",
       imageVisual: {
-        src: "/pitch/hackathon-kamue-community.jpg",
-        alt: "Hackathon im Kulturzentrum KAMÜ Bürstadt",
-        caption: "Das Kulturzentrum KAMÜ in Bürstadt als Innovations-Labor für das Hessische Ried",
+        src: "/pitch/kamue-cooperation.jpg",
+        alt: "Bürger, Verwaltung und Entwickler im Kulturzentrum KAMÜ",
+        caption: "Kooperation auf Augenhöhe: Bürger, Verwaltung & IT-Experten im Kulturzentrum KAMÜ Bürstadt",
       },
       bullets: [
-        { title: "Initiative", description: "Bürgerwissenschaftliches Open-Data-Netzwerk im Ried", tag: "Open Source" },
-        { title: "Zentrum", description: "Kulturzentrum KAMÜ in Bürstadt als Innovations-Labor", tag: "Bürstadt" },
-        { title: "Mission", description: "Echtzeit-Messung von Hitze, Trockenheit, Lärm & Hochwasser", tag: "Daseinsvorsorge" },
+        {
+          title: "0 € Kommunalkosten",
+          description: "Vollständig finanziert aus Bürgerinitiative, Fördermitteln & Spenden; Serverbetrieb ca. 50 €/Jahr.",
+          tag: "Haushaltsneutral",
+        },
+        {
+          title: "Zentrales Regional-Cockpit",
+          description: "Zusammenführung aller isolierten Datenströme an einem Ort im Kulturzentrum KAMÜ Bürstadt.",
+          tag: "Open Data",
+        },
+        {
+          title: "Bürger finanzieren Sensoren",
+          description: "Bürger & Schulen tragen ihre Stationen selbst – die Kommune profitiert von lückenloser Telemetrie.",
+          tag: "Bürgerbeteiligung",
+        },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Sehr geehrte Damen und Herren Bürgermeister und Landräte: Wir müssen Digitalisierung nicht für Millionenbeträge bei Konzernen einkaufen. Mit Open Ried Sens zeigen wir, wie Bürstadt und das Ried zum hessischen Vorbild für offene, bürgernahe Daseinsvorsorge werden.",
+          "Sehr geehrte Damen und Herren Bürgermeister und Landräte: Wir verlangen keine Steuermillionen für externe Berater. Open Ried Sens ist für Ihre Stadtkasse komplett kostenlos. Bürger, Schulen und Förderungen tragen die Hardware, der Serverbetrieb kostet 50 Euro im Jahr. Wir bringen die Daten ins KAMÜ Bürstadt.",
         talkingPoints: [
-          "Kommunen stehen vor der Pflicht zur Klimafolgenanpassung (§ 12 Hessisches Klimagesetz).",
-          "Bisher fehlen dafür kleinräumige, hochauflösende Messdaten aus den Wohnquartieren.",
-          "Wir bringen Hardware, Software, Bürger und Schulen zusammen.",
+          "0 € Haushaltsbelastung: Keine Beschaffungsanträge, kein finanzielles Risiko für den Kämmerer.",
+          "Kommunen stehen vor der Pflicht zur Klimafolgenanpassung (§ 12 Hessisches Klimagesetz) – wir liefern die Messwerte frei Haus.",
+          "Das Kulturzentrum KAMÜ in Bürstadt dient als offener Innovations- und Begegnungsort.",
         ],
         audienceEngagement:
-          "Frage in die Runde: Wissen Sie, wie heiß die Marktplätze in Bürstadt oder Lampertheim an Tropennächten wirklich bleiben?",
-        localHook: "Kulturzentrum KAMÜ in Bürstadt als offener Treffpunkt.",
+          "Frage in die Runde: Wie viel kostet Ihre Verwaltung aktuell die jährliche Lizenz für kommerzielle Fachanwendungen im Umweltbereich?",
+        localHook: "Kulturzentrum KAMÜ in Bürstadt (Industriestraße 11) als regionale Heimatbasis.",
       },
     },
     {
       id: "folie-2-problem",
       stepNumber: 2,
-      stepLabel: "02 / Das Problem & Pain Point",
-      eyebrow: "Beweislage · Der digitale Blindfleck",
-      title: "Das Hessische Ried existiert auf Weltkarten nicht",
-      lead: "Ein Blick auf Sensor.Community, TTN Mapper und Raspberry Shake belegt: Zwischen den Ballungsräumen Worms, Darmstadt und Mannheim klafft im Ried eine gravierende Datenlücke.",
+      stepLabel: "02 / Das Problem & Daten-Silos",
+      eyebrow: "Datenlücke · Isolierte Silos",
+      title: "Unmengen an Daten existieren – aber isoliert in Silos und ohne zentrale Heimat",
+      lead: "Von Parkleitsystemen über Bahnübergänge bis zu Mülltouren: Es gibt unzählige Rohdaten im Ried. Doch sie liegen isoliert in Silos, während engagierte Bürger und Digital Natives bisher keine Plattform hatten, um kostenlos für die Region und digitale Bildung anzupacken.",
       layout: "blindspot-evidence",
       mapEvidence: MAP_EVIDENCE_ITEMS,
       speakerNotes: {
         elevatorPitch:
-          "Schauen Sie sich diese drei Karten an. Das ist kein Zufall, das ist eine systematische Unterversorgung des ländlichen Raums im Ried. Während Heidelberg und Darmstadt grün vor Messpunkten sind, ist das Ried weiß.",
+          "Das eigentliche Problem im Ried ist nicht das Fehlen von Daten, sondern deren Zersplitterung: Sensoren stehen in geschlossenen Portalen, Bahnübergangsdaten versanden bei der Bahn, und globale Plattformen wie Sensor.Community oder Raspberry Shake zeigen im Ried weiße Flecken. Es fehlt die zentrale Bündelung vor Ort.",
         talkingPoints: [
-          "Sensor.Community: Keine Feinstaubdaten zwischen Worms und Lorsch.",
-          "TTN Mapper: LoRa-Funk gibt es nur sporadisch dort, wo LKWs mit Messgeräten über die Autobahn fuhren.",
-          "Raspberry Shake: Im seismisch aktiven Oberrheingraben gibt es nur 1 Station.",
-          "Fazit: Wenn wir es nicht selbst anpacken, liefert uns niemand diese Daten.",
+          "Unmengen an Daten existieren bereits, werden aber nicht für die Bevölkerung nutzbar gemacht.",
+          "Engagierte Digital Natives und Bürger wollen ehrenamtlich mit anpacken, brauchen aber die offizielle Unterstützung der Verwaltung.",
+          "Gleichzeitig belegen Sensor.Community, TTN Mapper und Raspberry Shake: Ohne Bürgerinitiative bleibt das Ried abgehängt.",
         ],
         audienceEngagement:
-          "Lassen Sie die Folie kurz wirken. Betonen Sie: 'Wir warten nicht auf Berlin oder Wiesbaden – wir lösen das hier vor Ort!'",
-        localHook: "Besonders Biblis, Groß-Rohrheim und Bürstadt-Ortsteile (Bobstadt, Riedrode) haben 0 Sensoren.",
+          "Zeigen Sie den Entscheidern: 'Wir wollen diese Silos aufbrechen – gemeinsam mit Ihnen!'",
+        localHook: "Besonders Bürstadt mit Kernstadt, Bobstadt und Riedrode hat das Potenzial zur Modellstadt.",
       },
     },
     {
       id: "folie-3-solution",
       stepNumber: 3,
-      stepLabel: "03 / Die Lösung & Value Proposition",
-      eyebrow: "Zwei Hebel mit Hebelwirkung",
-      title: "Säule A: Der Ried-Hackathon · Säule B: Das Bürger-Sensornetzwerk",
-      lead: "Wir verknüpfen ein innovatives 48h-Wochenend-Event mit dauerhafter, bürgerbetriebener Sensor-Infrastruktur im gesamten Altkreis.",
+      stepLabel: "03 / Die Lösung: Zwei komplementäre Hebel",
+      eyebrow: "Ursache & Wirkung · Zwei starke Säulen",
+      title: "Mehr lokale Messdaten & Der 48h Ried-Hackathon im KAMÜ",
+      lead: "Links: Dichte Messungen von CO2, Feinstaub, Stickoxiden & Hitzeinseln. Rechts: Der Ried-Hackathon als offenes Labor, um mit diesen Daten reale Probleme zu lösen.",
       layout: "value-prop-split",
       imageVisual: {
         src: "/pitch/hackathon-kamue-community.jpg",
-        alt: "Ried-Hackathon im KAMÜ",
-        caption: "Bürger, Schüler, IT-Profis & Verwaltung lösen an einem Wochenende echte Herausforderungen",
+        alt: "Ried-Hackathon im KAMÜ Bürstadt",
+        caption: "Der 48h Ried-Hackathon im KAMÜ: Aus gesammelten Umweltdaten entstehen greifbare Lösungen",
       },
       stats: [
-        { value: "10x", label: "Kostenvorteil", subtext: "< 100 € statt 3.000 € pro Station", color: "emerald" },
-        { value: "0 €", label: "Funkgebühren", subtext: "Freies The Things Network (TTN)", color: "sky" },
-        { value: "100%", label: "Open Data", subtext: "Volle Datenhoheit bei der Kommune", color: "violet" },
+        { value: "0 €", label: "Lizenzkosten", subtext: "Freie Open-Source Software", color: "emerald" },
+        { value: "1 Gateway", label: "Deckt Kernstadt", subtext: "Bis zu 10 km Funkreichweite", color: "sky" },
+        { value: "48 Std.", label: "Innovations-Sprint", subtext: "Ried-Hackathon im KAMÜ", color: "violet" },
       ],
       bullets: [
         {
-          title: "Hebel 1: Der 48h Ried-Hackathon",
-          description: "Entwickler, Schüler und Verwaltung programmieren Lösungen für echte lokale Herausforderungen.",
-          tag: "Event-Katalysator",
+          title: "Links: Feingranulare Messdaten (Sensor-BOM)",
+          description: "Wir bauen und verteilen standardisierte Stationen: CO2 (Sensirion SCD41), Feinstaub (SPS30 PM2.5/PM10), Stickoxide (NOx), Ozon, Lärm & Hitzeinseln in Wohnquartieren.",
+          tag: "Datengrundlage",
         },
         {
-          title: "Hebel 2: Bürger-Sensorbau",
-          description: "Schüler, Vereine und Bürger löten standardisierte Wetterstationen und montieren sie am Haus.",
-          tag: "Dauerhafte Infrastruktur",
+          title: "Rechts: Der 48h Ried-Hackathon im KAMÜ",
+          description: "Was machen wir mit den Daten? Schüler, Entwickler, Bürger und Fachämter programmieren an einem Wochenende smarte Anwendungen – von Schulwegsicherheit bis Schrankenwarnung.",
+          tag: "Innovationslabor",
         },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Unsere Lösung besteht aus zwei sich gegenseitig verstärkenden Elementen: Der Sensorbau bringt handfeste Messpunkte und bindet die Bürger ein. Der Hackathon nutzt genau diese Daten für smarte Anwendungen.",
+          "Unsere Lösung hat zwei Seiten einer Medaille: Links schaffen wir durch Sensorbau im Ried endlich dichte Rohdaten für CO2, Feinstaub und Hitze. Rechts bringen wir diese Daten in den 48h-Hackathon im KAMÜ, damit kreative Köpfe greifbare Lösungen daraus bauen.",
         talkingPoints: [
-          "Bürger sind keine passiven Konsumenten, sondern stolze Mitgestalter ihrer Heimat.",
-          "Die Plattform open-ried.de ist bereits live und visualisiert Telemetrie in Echtzeit.",
+          "Bürger bauen die Hardware selbst (siehe /sensor-bauen mit RAK3113 und Sensirion-Sensoren).",
+          "Der Hackathon im Kulturzentrum KAMÜ ist der Schmelztiegel, an dem Verwaltung, Jugend und Softwareprofis zusammenkommen.",
+          "Ergebnis: Fertige Bürger-Dashboards statt teurer Gutachten im Aktenschrank.",
         ],
-        audienceEngagement: "Stellen Sie die Frage: 'Wann hat Ihre Kommune das letzte Mal Bürger direkt an Technik mitbauen lassen?'",
-        localHook: "Kulturzentrum KAMÜ in Bürstadt bietet Werkstatt, Bühne und Glasfaser.",
+        audienceEngagement:
+          "Betonen Sie: 'Haben Sie konkrete Fragestellungen aus dem Bauamt? Der Hackathon löst genau Ihre Herausforderungen!'",
+        localHook: "Kulturzentrum KAMÜ in Bürstadt bietet Werkstatt, Bühne, Catering und Glasfaseranschluss.",
       },
     },
     {
       id: "folie-4-product",
       stepNumber: 4,
-      stepLabel: "04 / Das Produkt & Tech-Stack",
-      eyebrow: "Technologische Souveränität · Kein Vendor Lock-in",
-      title: "Industrielle Präzision zum Selbstkostenpreis",
-      lead: "Vom wetterfesten 3D-Druck-Gehäuse über den RAK3113 LoRaWAN-Mikrocontroller bis zum TimescaleDB-Backend – transparent und langlebig.",
+      stepLabel: "04 / Das Produkt: Zentrales Bürger-Cockpit",
+      eyebrow: "Souveränität & Transparenz · Kein Vendor Lock-in",
+      title: "Zentrales Bürger- & Regional-Cockpit: Alle Datenströme an einem Ort",
+      lead: "Ein modernes, interaktives Dashboard für Bürger und Verwaltung: Echtzeit-Karten für Luftqualität, Parkplätze, Bahnübergänge und Hitzeinseln – 100% DSGVO-konform und frei zugänglich.",
       layout: "product-architecture",
       imageVisual: {
-        src: "/pitch/sensor-hardware-kit.jpg",
-        alt: "Open Ried Sens Bausatz im 3D-Druck Stevenson Screen",
-        caption: "Modularer Aufbau: RAK3113, Sensirion SCD41 (CO2) & SPS30 (Feinstaub) im Lamellengehäuse",
+        src: "/pitch/ried-smart-cockpit.jpg",
+        alt: "Hessen Smart City Network Ried Monitor Dashboard",
+        caption: "Das Open-Ried Cockpit: Mobilität, Umwelt, Parken & Solardaten auf einen Blick vereint",
       },
       bullets: [
-        { title: "Sensorik", description: "Sensirion SPS30 (Feinstaub), SCD41 (CO2), SHT41 (Klima), BME688 (Luft)", tag: "Hardware" },
-        { title: "Funkstrecke", description: "LoRaWAN 868 MHz – bis zu 10 km Reichweite ohne SIM-Karte", tag: "Funknetz" },
-        { title: "Backend & Web", description: "TimescaleDB, Next.js, FastAPI & offene OpenAPI-Schnittstellen", tag: "Open Data" },
+        {
+          title: "Bürgernahe Visualisierung",
+          description: "Interaktive Karte mit aktuellen Luftwerten (PM2.5, CO2), Parkplatz-Auslastung und Bahnübergangs-Status für alle Bürger.",
+          tag: "Transparenz",
+        },
+        {
+          title: "Offene REST & GeoJSON Schnittstellen",
+          description: "Nahtlose Anbindung an städtische Geoinformationssysteme (GIS), Bauamts-Software und TimescaleDB-Langzeitarchive.",
+          tag: "Interoperabel",
+        },
+        {
+          title: "0 € Software-Lizenzen",
+          description: "Keine 48-Monats-Verträge, keine wiederkehrenden SaaS-Gebühren für die Stadtkasse. Das System gehört der Region.",
+          tag: "Unabhängigkeit",
+        },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Hier sehen Sie die Hardware: Ein professionelles Lamellengehäuse schützt Schweizer Präzisionssensoren. Die Station sendet per LoRaWAN über Kilometer hinweg direkt in unser regionales Dashboard.",
+          "Hier sehen Sie das Herzstück für Verwaltung und Bürger: Ein zentrales Regional-Cockpit. Ob Luftqualität, Parkleitsystem von smartcity-system.de oder Schrankenstatus der Riedbahn – alles fließt in eine transparente, offene Plattform.",
         talkingPoints: [
-          "Keine Batterien, die nach 6 Monaten leer sind: Betrieb über USB-C oder Solarzelle.",
-          "Vollständig Open Source: Baupläne und Quellcodes sind frei auf /sensor-bauen verfügbar.",
+          "Verwaltung und Bürger schauen auf dieselben verlässlichen Echtzeitdaten.",
+          "Ermöglicht faktenbasierte Bürgerdialoge bei Bauvorhaben, Verkehrsberuhigung oder Hitzeaktionsplänen.",
+          "Kein Konzern-Monopol: Quelloffen und erweiterbar.",
         ],
-        audienceEngagement: "Geben Sie ein Test-Gehäuse oder eine Platine durch die Reihen.",
-        localHook: "3D-Druck Gehäuse können in lokalen Schulen oder im KAMÜ gedruckt werden.",
+        audienceEngagement:
+          "Zeigen Sie auf die Karte: 'Genau so sieht moderne, bürgernahe Daseinsvorsorge im 21. Jahrhundert aus.'",
+        localHook: "Bereits live erreichbar über open-ried.de.",
       },
     },
     {
       id: "folie-5-market",
       stepNumber: 5,
-      stepLabel: "05 / Markt & Potenzial im Ried",
-      eyebrow: "TAM / SAM / SOM · Flächendeckendes Netz",
-      title: "100 % Abdeckung für das Hessische Ried ist greifbar",
-      lead: "Mit nur 12 strategischen LoRaWAN-Gateways und 150 Bürger-Sensoren schaffen wir das dichteste Umwelt- und Klimadatennetz Hessens.",
-      layout: "tam-sam-som",
-      marketFunnel: {
-        tam: { number: "185.000", title: "Gesamte Einwohner im Altkreis Bergstraße/Ried", desc: "Potenzial für Bürgerbeteiligung, Schulen & kommunale Daseinsvorsorge" },
-        sam: { number: "55.000", title: "Kern-Einzugsgebiet Ried", desc: "Bürstadt, Lampertheim, Biblis, Groß-Rohrheim, Einhausen & Lorsch" },
-        som: { number: "150 Stationen & 12 Gateways", title: "Unser 18-Monate-Fokus", desc: "Vollständige flächendeckende Netzabdeckung & 1 Station pro Schul- & Wohnquartier" },
-      },
+      stepLabel: "05 / Netzabdeckung: Vom Flickenteppich zur Fläche",
+      eyebrow: "Pragmatischer Ausbau · Bürstadt, Bobstadt & Riedrode",
+      title: "Vom Flickenteppich zur lückenlosen Abdeckung im Ried",
+      lead: "Keine theoretischen Funnels, sondern ein pragmatischer Rollout: 1 zentrales Gateway auf dem Rathaus Bürstadt oder Wasserturm + 30–50 Quartiers-Stationen versorgen Kernstadt, Bobstadt und Riedrode.",
+      layout: "coverage-plan",
+      coveragePlan: [
+        {
+          number: "1 Gateway",
+          title: "Zentrale LoRaWAN-Funkzelle",
+          description: "Standort auf Rathausdach oder Wasserturm Bürstadt: Bis zu 10 km Reichweite decken Bürstadt, Bobstadt und Riedrode zuverlässig ab – ohne monatliche SIM-Karten.",
+          tag: "Infrastruktur",
+        },
+        {
+          number: "30–50 Stationen",
+          title: "Dezentrale Quartiers-Messpunkte",
+          description: "Montiert an Schulen, Kitas, Bürgerhäusern, KAMÜ und privaten Wohnhäusern – finanziert von Bürgern, Fördervereinen und Sponsoren.",
+          tag: "Messdichte",
+        },
+        {
+          number: "Faktenbasiert",
+          title: "Verlässliche Stadtplanung",
+          description: "Objektive Entscheidungsgrundlage für Hitzeaktionspläne, Schulwegsicherheit, Bauleitplanung und Verkehrsfluss im gesamten Stadtgebiet.",
+          tag: "Nutzen",
+        },
+      ],
       speakerNotes: {
         elevatorPitch:
-          "Um das gesamte Ried abzudecken, brauchen wir keine Millionen. Mit 12 Gateways auf Rathäusern und 150 Sensoren haben wir 100% Empfang und ein lückenloses Sensornetz.",
+          "Vergessen wir abstrakte Kennzahlen: Wir brauchen genau 1 Antenne auf einem hohen Gebäude wie dem Rathaus oder Wasserturm und 30 bis 50 Stationen an Bürgerhäusern und Schulen. Damit haben wir Bürstadt, Bobstadt und Riedrode lückenlos abgedeckt!",
         talkingPoints: [
-          "Ein Gateway auf dem Bürstädter Wasserturm oder Rathaus hat 10 km Reichweite.",
-          "Damit versorgen wir nicht nur Bürstadt, sondern auch Bobstadt und Riedrode mit.",
+          "LoRaWAN sendet frei über Kilometer hinweg im lizenzfreien 868-MHz-Band.",
+          "Eine Antenne auf dem Rathausdach kostet einmalig wenige hundert Euro und versorgt das gesamte Stadtgebiet.",
+          "Die Sensoren selbst werden von engagierten Bürgern und Schülern gebaut und gepflegt.",
         ],
-        audienceEngagement: "Visualisieren Sie den Funkkreis auf einer mentalen Karte des Rieds.",
-        localHook: "Standorte: Rathaus Bürstadt, Wasserturm, Feuerwehrhäuser, KAMÜ.",
+        audienceEngagement:
+          "Fragen Sie die Bauamtsleitung: 'Haben Sie verlässliche Messdaten für Mikroklima und Hitze in Bobstadt oder Riedrode?'",
+        localHook: "Standorte: Rathaus Bürstadt, Wasserturm, Feuerwehrhäuser, Kulturzentrum KAMÜ.",
       },
     },
     {
       id: "folie-6-economics",
       stepNumber: 6,
-      stepLabel: "06 / Wirtschaftlichkeit & Unit Economics",
-      eyebrow: "Kostenvergleich · Kommunale Haushaltsdisziplin",
-      title: "< 100 € pro DIY-Station vs. 3.200 € Konzernerlöse",
-      lead: "Großkonzerne verkaufen Kommunen oft teure proprietäre Säulen mit 48-Monats-Wartungsverträgen. Unser Modell spart Steuergelder und stärkt das Ehrenamt.",
+      stepLabel: "06 / Wertschätzung & Synergien",
+      eyebrow: "Steuergelder veredeln · Keine Kritik an Vorprojekten",
+      title: "Bestehende Investitionen veredeln: Den 2,4-Mio.-€-Datenschatz heben!",
+      lead: "Bürstadt hat mit smartcity-system.de bereits ca. 2,4 Mio. € in moderne Parksensoren investiert. Wir kritisieren das nicht, sondern heben das volle Potenzial: Kostenlose Einbindung in das Bürger-Cockpit statt ungenutzter Daten-Silos.",
       layout: "unit-economics",
       costComparison: [
-        { feature: "Anschaffungskosten pro Sensor", openRiedSens: "ca. 94 € (Selbstkosten)", commercialSolution: "2.800 € – 3.500 €", advantage: "30x günstiger" },
-        { feature: "Monatliche Daten- & Cloud-Kosten", openRiedSens: "0 € (freies TTN Netz)", commercialSolution: "45 € / Monat / Station", advantage: "Kein Abo" },
-        { feature: "Software- & API-Lizenzen", openRiedSens: "0 € (Open Source)", commercialSolution: "5.000 € / Jahr Portal-Lizenz", advantage: "100% frei" },
-        { feature: "Wartung & Reparatur", openRiedSens: "Bürger & Schüler selbst", commercialSolution: "Teurer Techniker-Service", advantage: "Autark" },
+        {
+          feature: "smartcity-system.de Parkdaten",
+          openRiedSens: "Kostenlose API-Integration ins Dashboard",
+          commercialSolution: "Isolierte Silo-App / Insellösung",
+          advantage: "Volle Synergie",
+        },
+        {
+          feature: "Kommunale Software-Folgekosten",
+          openRiedSens: "0 € / Jahr (Bürger-Cockpit Open Source)",
+          commercialSolution: "Laufende Lizenz- & Updateverträge",
+          advantage: "Haushaltsneutral",
+        },
+        {
+          feature: "Erweiterung um Umwelt & Verkehr",
+          openRiedSens: "Bürger-Sensoren (CO2, Feinstaub, Lärm)",
+          commercialSolution: "Teure neue Ausschreibungen",
+          advantage: "Ganzheitlich",
+        },
+        {
+          feature: "Pflege & Weiterentwicklung",
+          openRiedSens: "Ehrenamtliche Digital Natives & KAMÜ",
+          commercialSolution: "Externe Beraterstundensätze",
+          advantage: "Direkt vor Ort",
+        },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Vergleichen Sie die Zahlen: Für das Budget einer einzigen kommerziellen Smart-City-Stele statten wir 30 Schulen und Bürgerhäuser mit Sensoren aus und haben 0 Euro monatliche Folgekosten.",
+          "In Bürstadt wurden mit smartcity-system.de rund 2,4 Millionen Euro an Förder- und Steuergeldern in smarte Parksensoren investiert. Das ist ein großartiger Datenschatz! Wir wollen diese Investition veredeln, indem wir die Daten per API kostenlos in das Bürger-Cockpit einbinden und mit Verkehr und Umwelt verknüpfen.",
         talkingPoints: [
-          "Kein Risiko von Preiserhöhungen durch Software-Anbieter.",
-          "Ersatzteile sind Standardbauteile, jederzeit bei Mouser oder Reichelt nachbestellbar.",
+          "Wertschätzung statt Vorwürfe: Bestehende Investitionen werden aufgewertet.",
+          "Die Bürger sehen endlich auf einer einzigen Seite, wo Parkplätze frei sind und wie die Luftqualität ist.",
+          "0 Euro Zusatzkosten für die städtische Kasse.",
         ],
-        audienceEngagement: "Fragen Sie den Kämmerer oder Bürgermeister: 'Klingt eine Ersparnis von 90% für Ihren Haushalt interessant?'",
-        localHook: "Kommunale Haushaltskonsolidierung im Kreis Bergstraße.",
+        audienceEngagement:
+          "Betonen Sie: 'Wir schaffen keine teuren Doppelstrukturen, sondern vernetzen das Bestehende.'",
+        localHook: "Parksensoren am Marktplatz und Bahnhof Bürstadt.",
       },
     },
     {
       id: "folie-7-competition",
       stepNumber: 7,
-      stepLabel: "07 / Wettbewerb & Burggraben",
-      eyebrow: "Differenzierung · Warum wir nicht kopierbar sind",
-      title: "Unser Burggraben: Echte Bürgerbeteiligung & Open Source",
-      lead: "Klassische IT-Dienstleister können Software liefern – aber sie haben keine Bürger, die mitlöten, keine Schulen im Boot und keinen lokalen Hackathon im KAMÜ.",
-      layout: "competitive-matrix",
-      competitivePoints: [
-        { name: "Große Telekom- & Smart-City-Konzerne", x: 20, y: 15, description: "Teuer, Closed Source, kein Bürgerbezug" },
-        { name: "Reine Hobby-Foren (Bastler)", x: 80, y: 40, description: "Gute Technik, aber keine Plattform für Verwaltungen" },
-        { name: "Offizielle Umweltämter (HLNUG)", x: 50, y: 25, description: "Sehr genaue Daten, aber nur alle 30 km eine Messstelle" },
-        { name: "Open Ried Sens & KAMÜ Bürstadt", x: 95, y: 92, description: "Offene Daten, bezahlbare Hardware, MINT-Schulprogramm & Hackathon", isSelf: true },
+      stepLabel: "07 / Das Bündnis: Bürger & Verwaltung",
+      eyebrow: "Echte Akzeptanz statt Top-Down · Lokale Kraft",
+      title: "Starke Allianz aus Bürgerengagement & Stadtverwaltung",
+      lead: "Reine Top-Down-Projekte scheitern oft an fehlender Akzeptanz. Wir kombinieren die Begeisterung von Bürgern, Schülern und lokalen Machern mit der verlässlichen Daseinsvorsorge der Kommune.",
+      layout: "civic-alliance",
+      bullets: [
+        {
+          title: "Bürger & Schüler am Lötkolben",
+          description: "Wer seinen Sensor selbst gebaut und montiert hat, versteht die Technik, schützt die Station und teilt die Daten mit Stolz.",
+          tag: "Hohe Akzeptanz",
+        },
+        {
+          title: "Kulturzentrum KAMÜ als Heimat",
+          description: "Fester physischer Treffpunkt im Ried für Workshops, Reparaturen, Bürgertreffen und den 48h-Hackathon.",
+          tag: "Lokal verankert",
+        },
+        {
+          title: "Verwaltung auf Augenhöhe",
+          description: "Die Kommune behält volle Datenhoheit, spart Lizenzgebühren und gewinnt engagierte Botschafter in der Stadtgesellschaft.",
+          tag: "Echte Partnerschaft",
+        },
+        {
+          title: "Regionale Digital Natives",
+          description: "Verfügbare IT- und Funk-Kompetenz direkt vor Ort, statt ständige Abhängigkeit von fernen Großkonzernen.",
+          tag: "Autonomie & Tempo",
+        },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Unser Moat – unser Alleinstellungsmerkmal – ist das Vertrauen und die Begeisterung der Bürger vor Ort. Ein Konzern kann keinen Löt-Workshop an der Bürstädter Schule veranstalten. Wir schon.",
+          "Vergessen wir das Wort 'Burggraben' – für eine Bürgerinitiative geht es um eine vertrauensvolle Allianz: Wenn Verwaltung und Bürger an einem Strang ziehen, schlagen wir jeden teuren Großkonzern um Längen in Akzeptanz, Schnelligkeit und Bürgernähe.",
         talkingPoints: [
-          "Wir kombinieren technische Exzellenz mit tiefem lokalem Ehrenamt.",
-          "Das Kulturzentrum KAMÜ gibt uns ein physisches Zuhause im Ried.",
+          "Kein Widerstand gegen Sensoren, weil die Bürger sie selbst an ihren Häusern anbringen.",
+          "Verbindung aus handwerklicher MINT-Bildung und professioneller Software-Infrastruktur.",
+          "KAMÜ Bürstadt als neutraler, kreativer Begegnungsort.",
         ],
-        audienceEngagement: "Betonen Sie die Symbiose aus Bürgernähe und professioneller Software-Architektur.",
-        localHook: "Verankerung in der lokalen Zivilgesellschaft in Bürstadt und Lampertheim.",
+        audienceEngagement:
+          "Fragen Sie die Stadträte: 'Wäre es nicht großartig, wenn Bürger mit Stolz über städtische Digitalisierung sprechen?'",
+        localHook: "Kulturzentrum KAMÜ in der Industriestraße 11, Bürstadt.",
       },
     },
     {
       id: "folie-8-traction",
       stepNumber: 8,
-      stepLabel: "08 / Traktion & Meilensteine",
-      eyebrow: "Beweis für Machbarkeit · Was bereits steht",
-      title: "Wir starten nicht bei Null: Die Plattform läuft bereits live",
-      lead: "Von der Live-Telemetrie über REST-APIs bis zur 3D-Bauanleitung – der Prototyp ist erprobt und einsatzbereit.",
+      stepLabel: "08 / Meilensteine & Roadmap",
+      eyebrow: "Verbindlicher Zeitplan · Realistisch & Ambitioniert",
+      title: "Verbindliche Roadmap: Vom Live-Prototyp zur Modellregion Bergstraße",
+      lead: "Ambitioniert, aber realistisch geplant: In vier klaren Phasen etablieren wir Bürstadt als Smart-Region-Vorreiter in Hessen.",
       layout: "traction-timeline",
       bullets: [
-        { title: "Meilenstein 1: Plattform open-ried.de live", description: "Next.js Web-Portal mit interaktiver Karte, Sensor-Verwaltung und Live-Telemetrie.", tag: "Erreicht" },
-        { title: "Meilenstein 2: Hardware-Design & Anleitung", description: "Bauanleitung, Schaltpläne, STL-Dateien und BOM auf /sensor-bauen veröffentlicht.", tag: "Erreicht" },
-        { title: "Meilenstein 3: Partnerschaft KAMÜ", description: "Kulturzentrum KAMÜ in Bürstadt als Veranstaltungsort für Workshops & Hackathon gesichert.", tag: "Erreicht" },
-        { title: "Nächster Schritt: Kommunaler Rollout", description: "Erste Gateways auf Rathäusern und 25 Sensoren an Schulen & Bürgerhäusern.", tag: "Jetzt anstehend" },
+        {
+          title: "Phase 1: Daten-Integration & Live-Cockpit (Q1/Q2)",
+          description: "TimescaleDB-Ingestion aller Silo-Rohdaten (smartcity-system, Bahn, ZAKB, Wetter) und offene REST-API.",
+          tag: "Erreicht",
+        },
+        {
+          title: "Phase 2: Kommunale Funkzelle & 25 Stationen (Q3)",
+          description: "Inbetriebnahme Gateway auf Rathaus/Wasserturm; Rollout der ersten 25 Bürger- und Schul-Sensoren im Ried.",
+          tag: "In Vorbereitung",
+        },
+        {
+          title: "Phase 3: 1. Ried-Hackathon im KAMÜ (Q4)",
+          description: "48h-Event mit Schirmherrschaft des Bürgermeisters, Prämierung von Bürger-Apps und öffentlicher Ergebnis-Showcase.",
+          tag: "Geplant",
+        },
+        {
+          title: "Phase 4: Modellregion Bergstraße (Folgejahr)",
+          description: "Skalierung als Blaupause auf Nachbarkommunen (Lampertheim, Biblis, Lorsch, Kreis Bergstraße).",
+          tag: "Zukunft",
+        },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Wir kommen nicht mit einer vagen Idee zu Ihnen, sondern mit funktionierender Realität: Die Website open-ried.de läuft, die Sensoren messen, die Bauanleitungen sind online.",
+          "Wir reden nicht über kleine Bastelprojekte: Phase 1 läuft bereits live. In Phase 2 errichten wir die Funkzelle und die ersten 25 Stationen. In Phase 3 folgt der große Hackathon im KAMÜ. Und im nächsten Schritt wird Bürstadt die Modellregion für den ganzen Kreis Bergstraße!",
         talkingPoints: [
-          "Sehen Sie sich die Live-Daten auf open-ried.de an.",
-          "Jetzt geht es um die Skalierung in die Breite der Region.",
+          "Verbindliche Meilensteine, an denen sich die Initiative messen lässt.",
+          "Klare Einbindung der Stadtverwaltung zu jedem Schritt.",
+          "Hohe Strahlkraft für Bürstadt auf Landes- und Kreisebene.",
         ],
-        audienceEngagement: "Öffnen Sie kurz das Live-Dashboard auf dem Beamer, um die Werte zu zeigen.",
-        localHook: "Erste Stationen laufen bereits im Testbetrieb in Bürstadt.",
+        audienceEngagement:
+          "Zeigen Sie den Zeitstrahl: 'Wir können noch dieses Quartal mit Phase 2 loslegen!'",
+        localHook: "Rollout in Bürstadt, Bobstadt und Riedrode.",
       },
     },
     {
       id: "folie-9-team",
       stepNumber: 9,
-      stepLabel: "09 / Das Team & Maker-Netzwerk",
-      eyebrow: "Köpfe hinter dem Projekt · Digital Natives vor Ort",
-      title: "Digital Natives, Ingenieure & das Bürgerlabor KAMÜ",
-      lead: "Ein eingespieltes Team aus Software-Architekten, Elektronik-Entwicklern, Pädagogen und engagierten Bürgern treibt Open Ried Sens voran.",
+      stepLabel: "09 / Das Team vor Ort",
+      eyebrow: "Macher aus der Region · Erfahrung & Leidenschaft",
+      title: "Das Kern-Team: Tief im Ried verwurzelt & technologisch erfahren",
+      lead: "Keine anonyme Beratungsfirma: Wir leben und arbeiten in Bürstadt und Nordheim, engagieren uns im Ehrenamt und bringen jahrzehntelange Erfahrung aus Groß-IT, Kultur und Open Source mit.",
       layout: "team-showcase",
-      bullets: [
-        { title: "Tech & Architecture Core", description: "Full-Stack Software-Entwickler, Embedded Firmware Spezialisten (C++/PlatformIO) und Datenbank-Ingenieure.", tag: "Technologie" },
-        { title: "MINT & Bildung", description: "Pädagogen, Physiklehrer und Maker mit Erfahrung in Schüler-Workshops und Jugend forscht.", tag: "Didaktik" },
-        { title: "Kulturzentrum KAMÜ Bürstadt", description: "Trägerverein, Raum, Werkstattinfrastruktur und Vernetzung mit regionalen Vereinen.", tag: "Standort" },
+      teamMembers: [
+        {
+          name: "Rüdiger Enger",
+          location: "Bürstadt",
+          role: "Gründer Kulturzentrum KAMÜ & Bürgerstiftung",
+          imageSrc: "/pitch/ruediger-engert.jpg",
+          bio: "Impulsgeber und Gründer des Kultur- und Begegnungszentrums KAMÜ ('Kultur am Übergang') im historischen Getreidespeicher in Bürstadt. Vorstandsmitglied der Bürgerstiftung Bürstadt, vernetzt Zivilgesellschaft, Kultur und Macher in der Region.",
+          highlights: ["KAMÜ Initiator", "Bürgerstiftung Bürstadt", "Lokale Netzwerke"],
+        },
+        {
+          name: "Michael Binzen",
+          location: "Bürstadt",
+          role: "Senior IT- & Software-Architekt (DB Systel / Bahn IT)",
+          imageSrc: "/pitch/michael-binzen.jpg",
+          bio: "Über 20 Jahre Software-Architektur und Digitalisierung bei der Deutschen Bahn. Pionier für Open Data, APIs und Innovationskultur. Bitkom-Referent, Mentor bei 'Jugend Hackt' und aktiv in der Bürstädter Vereinslandschaft.",
+          highlights: ["Open Data Pionier", "DB Systel / Bahn IT", "Jugend Hackt Mentor"],
+        },
+        {
+          name: "Erik Metz",
+          location: "Nordheim / Ried",
+          role: "Software Engineer & IoT-Systementwickler",
+          imageSrc: "/pitch/erik-metz.jpg",
+          bio: "Initiator von Open Ried Sens und Maintainer der offenen Sensor-Plattform. Spezialisiert auf Embedded LoRaWAN-Sensorik, Microservices, TimescaleDB und moderne Web-Architekturen für bürgernahe Umwelttelemetrie.",
+          highlights: ["Open Ried Sens Lead", "LoRaWAN & IoT Firmware", "Full-Stack Dev"],
+        },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Wir sind keine externe Agentur, die nach dem Projekt wieder abzieht. Wir leben hier im Ried, unsere Kinder gehen hier zur Schule, und wir wollen unsere Region fit für die Zukunft machen.",
+          "Schauen Sie sich unser Team an: Rüdiger Enger stellt mit dem KAMÜ die physische Werkstatt und Heimat im Ried. Michael Binzen bringt über 20 Jahre Open-Data- und IT-Erfahrung der Deutschen Bahn und von Jugend Hackt mit. Erik Metz steuert die LoRaWAN-Hardware und Web-Architektur. Wir sind Macher aus Bürstadt und Nordheim.",
         talkingPoints: [
-          "Hohe Fachkompetenz in IoT, Funktechnik und Web-Entwicklung.",
-          "Verlässliche Ehrenamtsstrukturen im Kulturzentrum KAMÜ.",
+          "Verbindung aus lokaler Verankerung, Bürgerstiftung, Kultur und professioneller Enterprise-Software.",
+          "Wir sind direkt ansprechbar und bleiben vor Ort.",
         ],
-        audienceEngagement: "Stellen Sie die anwesenden Teammitglieder kurz namentlich vor.",
-        localHook: "Bürstadt Kulturzentrum KAMÜ als Heimatbasis.",
+        audienceEngagement: "Geben Sie den Entscheidern die Visitenkarten des Kernteams.",
+        localHook: "Bürstadt & Nordheim direkt im Ried.",
       },
     },
     {
       id: "folie-10-ask",
       stepNumber: 10,
       stepLabel: "10 / The Ask & Politisches Commitment",
-      eyebrow: "Was wir von der Politik brauchen · Konkrete Beschlüsse",
+      eyebrow: "Konkrete Beschlüsse · Was wir von der Politik brauchen",
       title: "Unser 'Ask' an Bürgermeister, Landräte & Fraktionen",
-      lead: "Wir bitten nicht um Millionen – wir bitten um politisches Rückgrat, Infrastrukturzugang und eine Partnerschaft auf Augenhöhe.",
+      lead: "Wir bitten nicht um Haushaltsmillionen. Wir bitten um partnerschaftliches Rückgrat, Rohdaten-Zugang und Ihre Präsenz beim Hackathon.",
       layout: "the-ask-commitment",
       specificAsks: [
         {
           id: "ask-daten",
-          title: "1. Zugriff auf Rohdaten & Live-Schnittstellen",
-          description: "Zusammenarbeit für offene Daten: Freigabe von Parkplatz-Sensordaten (z.B. smartcity-system.de/buerstadt), ZAKB-Entsorgungstouren, Bahnübergangs-Status und Bus/Bahn-Echtzeitdaten für unser Dashboard.",
+          title: "1. Rohdaten-Kooperation (smartcity-system & Co.)",
+          description: "Freigabe der Rohdaten-Schnittstellen bestehender städtischer Systeme (Parksensoren smartcity-system.de/buerstadt, ZAKB-Tourenpläne, DB-Bahnübergangs-Status) für unser Bürger-Cockpit.",
           commitmentType: "daten",
           tag: "Open Data",
-          actionText: "Verwaltungs-Vereinbarung prüfen",
+          actionText: "Schnittstellen freigeben",
         },
         {
           id: "ask-infrastruktur",
-          title: "2. LoRaWAN-Infrastruktur öffnen & Antennenplätze",
-          description: "Zugang zu 2–3 kommunalen Dachstandorten (Rathaus, Feuerwehrhaus, Wasserturm) und Öffnung bestehender kommunaler Gateways für The Things Network (TTN).",
+          title: "2. Dachstandort für 1 LoRaWAN-Antenne",
+          description: "Freigabe eines Antennenmontagepunkts auf einem öffentlichen Gebäude (Rathaus Bürstadt oder Wasserturm) zur Öffnung des The Things Network (TTN) im Ried.",
           commitmentType: "infrastruktur",
-          tag: "Funk-Infrastruktur",
-          actionText: "Standort-Freigabe beschließen",
-        },
-        {
-          id: "ask-foerderung",
-          title: "3. Anschub-Budget für Open-Source Ausbau",
-          description: "Überschaubare Projektförderung (z.B. 3.000 € – 5.000 €) für 25–50 Sensorbausätze an Schulen und Vereinen im Ried.",
-          commitmentType: "finanzen",
-          tag: "MINT-Förderung",
-          actionText: "Fördermittel bereitstellen",
+          tag: "Funknetz",
+          actionText: "Dachplatz freigeben",
         },
         {
           id: "ask-praesenz",
-          title: "4. Schirmherrschaft & Siegerpreis beim Ried-Hackathon",
-          description: "Präsenz beim Hackathon im KAMÜ: Schirmherrschaft, Eröffnungs-Keynote durch Bürgermeister/Landrat und Stiftung eines Preises für das Gewinnerteam.",
+          title: "3. Schirmherrschaft & Keynote beim 1. Ried-Hackathon",
+          description: "Offizielle Schirmherrschaft durch die Bürgermeisterin / den Bürgermeister beim 48h-Hackathon im KAMÜ Bürstadt inklusive Begrüßungs-Keynote und Stiftung eines Gewinnerpreises.",
           commitmentType: "praesenz",
           tag: "Schirmherrschaft",
-          actionText: "Termin vormerken",
+          actionText: "Schirmherrschaft zusagen",
+        },
+        {
+          id: "ask-schulen",
+          title: "4. Politischer Rückenwind für MINT-Projekttage",
+          description: "Empfehlung und Fürsprache bei Schulleitungen im Ried für Sensorbau-Projekttage in Physik und MINT als Vorbereitung auf den Hackathon.",
+          commitmentType: "schulen",
+          tag: "MINT-Bildung",
+          actionText: "Schulen ermutigen",
         },
       ],
       callToAction: {
@@ -468,13 +611,14 @@ export const POLITIK_DECK: PitchDeck = {
       },
       speakerNotes: {
         elevatorPitch:
-          "Hier ist unsere konkrete Bitte: Geben Sie uns das politische Rückgrat! Öffnen Sie die Rohdaten – wie die Parkdaten von smartcity-system.de –, erlauben Sie eine LoRaWAN-Antenne auf dem Rathaus und übernehmen Sie die Schirmherrschaft für den Hackathon.",
+          "Hier ist unser konkreter 'Ask': Geben Sie uns die Rohdaten der Parksensoren von smartcity-system.de frei. Erlauben Sie eine Antenne auf dem Rathaus oder Wasserturm. Und übernehmen Sie die Schirmherrschaft für den 1. Ried-Hackathon im KAMÜ. Können wir das heute gemeinsam beschließen?",
         talkingPoints: [
-          "smartcity-system.de/buerstadt hat bereits Parksensoren – wir können diese Werte aggregieren und im Kontext von Verkehr und Wetter zeigen.",
-          "Eine TTN-Antenne auf dem Rathausdach kostet 300 € und versorgt die halbe Stadt.",
-          "Ihre Schirmherrschaft sendet ein starkes Signal an die Jugend.",
+          "Kein Haushaltsbeschluss nötig – reine Verwaltungs- und Kooperationsvereinbarung.",
+          "Hohe Sichtbarkeit für Bürgermeisterin und Fraktionen.",
+          "Rechtlich sauber und 100% DSGVO-konform.",
         ],
-        audienceEngagement: "Fragen Sie die Bürgermeisterin / den Bürgermeister direkt: 'Können wir den Termin für die Schirmherrschaft gemeinsam festhalten?'",
+        audienceEngagement:
+          "Klicken Sie die Checkboxen auf der Folie interaktiv mit dem Bürgermeister an.",
         localHook: "Kulturzentrum KAMÜ in Bürstadt als Austragungsort.",
       },
     },
@@ -484,19 +628,19 @@ export const POLITIK_DECK: PitchDeck = {
       stepLabel: "11 / Live-Daten-Beweis",
       eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
       title: "Was im Ried passiert ist, während Sie uns zugehört haben",
-      lead: "Unsere Plattform läuft bereits im Hintergrund: Keine theoretischen Folien, sondern reale Datenströme aus Müllabfuhr, Bahnverkehr, Parkleitsystem und LoRaWAN-Sensorik.",
+      lead: "Unsere Plattform läuft bereits im Hintergrund: Keine Folientheorie, sondern reale Datenströme aus Müllabfuhr, Bahnverkehr, Parkleitsystem und LoRaWAN-Sensorik – passgenau zur Tages- oder Nachtzeit.",
       layout: "live-telemetry-bonus",
       speakerNotes: {
         elevatorPitch:
-          "Bevor wir in die Fragen gehen, werfen Sie einen Blick auf diese Zahlen: Das ist keine Simulation – das sind die tatsächlichen Datenströme, die unsere Plattform während unseres kurzen Gesprächs erfasst hat!",
+          "Zum Abschluss der Beweis: Während wir die letzten 10 Minuten gesprochen haben, flossen kontinuierlich Live-Daten aus Bürstadt und dem Ried in unser System. Die Plattform funktioniert heute schon!",
         talkingPoints: [
-          "ZAKB Müllabfuhr: Tonnenleerungen im Ried live berechnet und nachverfolgt.",
-          "Riedbahn & Nibelungenbahn: Schrankenschließungen und Zugpassagen in Echtzeit erfasst.",
-          "LoRaWAN & smartcity-system.de: Kontinuierliche Ingestion in unsere TimescaleDB.",
-          "Fazit: Wir reden nicht über Zukunftsvisionen – die Plattform ist da und performt hervorragend.",
+          "ZAKB Müllabfuhr: Tagsüber reale Leerungen, nachts vorschriftsmäßige Betriebsruhe im Depot Hüttenfeld.",
+          "Riedbahn & Nibelungenbahn: Güterverkehr und Reisezüge werden 24/7 über Schrankenschließungen und Fahrten erfasst.",
+          "LoRaWAN & Umweltsensoren: Ununterbrochene Messung von CO2, Feinstaub und Bodenfeuchte.",
+          "Fazit: Wir müssen nichts neu erfinden, sondern nur gemeinsam den Hebel umlegen.",
         ],
         audienceEngagement:
-          "Zeigen Sie auf die Live-Zähler: 'Während wir gesprochen haben, wurden im Ried Dutzende Tonnen geleert und hunderte Messpakete empfangen!'",
+          "Zeigen Sie auf die Live-Zähler und lassen Sie die Entscheider die Reaktionsschnelligkeit des Dashboards sehen.",
         localHook: "Direkte Live-Anbindung im Kulturzentrum KAMÜ Bürstadt.",
       },
       callToAction: {
@@ -510,7 +654,7 @@ export const POLITIK_DECK: PitchDeck = {
 };
 
 // ============================================================================
-// 2. SCHULEN PITCH DECK (Fokus Sensorbau -> Multiplikator für Hackathon)
+// 2. SCHULEN PITCH DECK (MINT-Bildung & Multiplikator)
 // ============================================================================
 export const SCHULEN_DECK: PitchDeck = {
   slug: "schulen",
@@ -523,7 +667,7 @@ export const SCHULEN_DECK: PitchDeck = {
   accentColor: "sky",
   estimatedMinutes: 10,
   summary:
-    "Schul-Pitch: Fokus auf den Bau von Umweltsensoren. Handwerk (Löten, Zangen) trifft Physik und Full-Stack IT. Schüler werden Botschafter in ihren Familien und Teilnehmer am Ried-Hackathon.",
+    "Schul-Pitch: Fokus auf den Bau von Umweltsensoren. Handwerk (Löten, Zangen) trifft Physik und Full-Stack IT. Schüler werden Botschafter in ihren Familien und Teilnehmer am Ried-Hackathon. Kein Geld von Schulen erbeten!",
   slides: [
     {
       id: "schulen-1-title",
@@ -639,7 +783,7 @@ export const SCHULEN_DECK: PitchDeck = {
       stats: [
         { value: "3,3 V", label: "Schutzkleinspannung", subtext: "Absolut ungefährlich", color: "emerald" },
         { value: "3 Std.", label: "Bauzeit im Workshop", subtext: "Passend für Projekttag", color: "sky" },
-        { value: "< 100 €", label: "Materialkosten", subtext: "Fördervereins-kompatibel", color: "violet" },
+        { value: "< 100 €", label: "Materialkosten", subtext: "Gefördert durch Sponsoren / Paten", color: "violet" },
       ],
       speakerNotes: {
         elevatorPitch:
@@ -685,42 +829,42 @@ export const SCHULEN_DECK: PitchDeck = {
       id: "schulen-6-ask",
       stepNumber: 6,
       stepLabel: "06 / The Ask an die Schulleitung",
-      eyebrow: "Nächste Schritte · Konkrete Umsetzung",
-      title: "Unser 'Ask' an Schulleitung, Fachkonferenzen & Fördervereine",
-      lead: "Wir bringen Dozenten, Werkzeuge und Bausätze – Sie stellen Raum und motivierte Schüler.",
+      eyebrow: "Keine Schulgelder gefordert · Reine Partnerschaft",
+      title: "Unser 'Ask' an Schulleitung & Lehrerkollegium",
+      lead: "Wir fordern kein Schulbudget: Die Finanzierung der Bausätze übernehmen Firmenpaten, Fördervereine oder Eltern/Großeltern im Projektrahmen. Wir bitten um Raum, Ankündigung und Begeisterung.",
       layout: "the-ask-commitment",
       specificAsks: [
         {
           id: "schul-ankündigung",
-          title: "1. Schulisches Announcement & Projekttag",
-          description: "Ankündigung an der Schule durch Schulleitung oder Physiklehrer: Durchführung eines Projekttags 'Wir bauen unsere Schul-Wetterstation'.",
+          title: "1. Schulisches Announcement & MINT-Projekttag",
+          description: "Ankündigung an der Schule durch Schulleitung oder Physiklehrer: Einbindung in eine Projektwoche oder MINT-AG ('Wir bauen unsere eigene Schul-Wetterstation').",
           commitmentType: "schulen",
           tag: "Unterricht",
           actionText: "Projekttag festlegen",
         },
         {
-          id: "schul-foerderverein",
-          title: "2. Finanzierung über Förderverein / Sponsoren",
-          description: "Übernahme von 10–20 Bausätzen (ca. 1.000 € – 2.000 €) über den Förderverein oder regionale Firmen-Paten.",
-          commitmentType: "finanzen",
-          tag: "Finanzierung",
-          actionText: "Förderantrag stellen",
-        },
-        {
           id: "schul-schuldach",
-          title: "3. Messpunkt auf dem Schuldach",
-          description: "Montage einer offiziellen Schul-Wetterstation auf dem Schuldach als permanenter Messpunkt für den Unterricht.",
+          title: "2. Dachstandort für offizielle Schulstation",
+          description: "Montage einer fertigen Station auf dem Schuldach: Liefert 24/7 echte Messwerte direkt in Physik-, Erdkunde- und Informatikstunden.",
           commitmentType: "infrastruktur",
           tag: "Messpunkt",
-          actionText: "Standort freigeben",
+          actionText: "Schuldach bereitstellen",
         },
         {
           id: "schul-hackathon-team",
-          title: "4. Schüler-Delegation zum Ried-Hackathon",
-          description: "Entsendung von 1–2 Schüler-Teams zum 48h Ried-Hackathon im KAMÜ Bürstadt mit Betreuungslehrer.",
+          title: "3. Schülerteams für den Ried-Hackathon im KAMÜ",
+          description: "Ermutigung und Entsendung motivierter Schülerteams (Physik, IT, Mathe) zum 48h Ried-Hackathon im Kulturzentrum KAMÜ Bürstadt.",
           commitmentType: "praesenz",
           tag: "Hackathon",
-          actionText: "Teams anmelden",
+          actionText: "Teams entsenden",
+        },
+        {
+          id: "schul-multiplikator",
+          title: "4. Multiplikator in Familie & Nachbarschaft",
+          description: "Schüler montieren ihren Sensor am eigenen Haus – gelebte Werbung und Begeisterung für digitale Bildung in Bürstadt und Umgebung.",
+          commitmentType: "daten",
+          tag: "Bürgerstolz",
+          actionText: "Begeisterung teilen",
         },
       ],
       callToAction: {
@@ -731,13 +875,14 @@ export const SCHULEN_DECK: PitchDeck = {
       },
       speakerNotes: {
         elevatorPitch:
-          "Lassen Sie uns noch in diesem Schulhalbjahr einen Pilot-Workshop an Ihrer Schule machen. Wir begleiten Sie bei jedem Schritt und bringen das Material mit.",
+          "Liebe Schulleitungen: Wir wissen, wie knapp Schulbudgets sind. Wir wollen kein Geld von Ihrer Schule! Die Bausätze werden über lokale Unternehmenspaten (100 € pro Schüler), Fördervereine oder Eltern finanziert. Wir brauchen von Ihnen nur einen Projekttag und motivierte Schüler.",
         talkingPoints: [
-          "Wir unterstützen bei der Beantragung von Fördermitteln.",
-          "Die Schule erhält ein offizielles Zertifikat als 'MINT-Klimaforschungsschule im Ried'.",
+          "0 Euro Belastung für den Schuletat.",
+          "Schule erhält ein modernes MINT-Profil und Presseaufmerksamkeit.",
+          "Schüler erwerben zukunftsrelevante handwerkliche und digitale Kompetenzen.",
         ],
-        audienceEngagement: "Geben Sie Handouts und Terminvorschläge an die Lehrkräfte aus.",
-        localHook: "Ansprechpartner direkt vor Ort in Bürstadt.",
+        audienceEngagement: "Fragen Sie die Lehrer: 'Welche Klassenstufe würde bei Ihnen dafür brennen?'",
+        localHook: "Kulturzentrum KAMÜ Bürstadt bietet auch externe Werkräume.",
       },
     },
     {
@@ -755,8 +900,7 @@ export const SCHULEN_DECK: PitchDeck = {
           "Schüler arbeiten nicht mit veralteten Lehrbuch-Beispielen, sondern mit lebendigen Daten ihrer Heimat.",
           "ZAKB Müllabfuhr, Riedbahn-Züge und Umweltdaten sind synchronisiert.",
         ],
-        audienceEngagement:
-          "Zeigen Sie den Schülern oder Lehrern die tickenden Messwerte.",
+        audienceEngagement: "Zeigen Sie den Schülern oder Lehrern die tickenden Messwerte.",
         localHook: "Kulturzentrum KAMÜ Bürstadt als zentraler Datenserver.",
       },
       callToAction: {
@@ -934,391 +1078,229 @@ export const VHS_DECK: PitchDeck = {
         localHook: "Bürstadt Kulturzentrum KAMÜ.",
       },
     },
-  ],
-};
-
-// ============================================================================
-// 4. TECH COMMUNITY & MAKER PITCH DECK
-// ============================================================================
-export const COMMUNITY_DECK: PitchDeck = {
-  slug: "community",
-  title: "Open Hardware & Mesh: Wir bauen die freie Ried-Infrastruktur",
-  subtitle:
-    "Für Nerds, Maker, Freifunker, Funkamateure (DARC) & Vereine: The Things Network, Firmware-Hacking & 48h Hackathon im KAMÜ",
-  targetAudience: "Hacker, Maker, Freifunk, Chaos Computer Club, DARC Funkamateure, Vereine & Initiativen",
-  category: "community",
-  badge: "Tech Community & Maker",
-  accentColor: "teal",
-  estimatedMinutes: 10,
-  summary:
-    "Community-Pitch: Echte Open Hardware, RAK3113 LoRaWAN Node, dezentrale Gateways, offene APIs und der 48h Ried-Hackathon im Kulturzentrum KAMÜ.",
-  slides: [
     {
-      id: "comm-1-title",
-      stepNumber: 1,
-      stepLabel: "01 / Hook & Mission",
-      eyebrow: "Root für alle · Open Hardware & Free Network",
-      title: "Freie Frequenzen, freie Daten: Holen wir uns die Infrastruktur zurück!",
-      lead: "Genug von proprietären IoT-Silos und teuren Cloud-Abos. Wir bauen das offene LoRaWAN-Rückgrat für das gesamte Hessische Ried.",
-      layout: "one-pager-hero",
-      imageVisual: {
-        src: "/pitch/hackathon-kamue-community.jpg",
-        alt: "Hacker und Entwickler beim Hackathon",
-        caption: "KAMÜ Bürstadt: Lötkolben, Laptops, LoRa-Funk und Club-Mate",
-      },
-      bullets: [
-        { title: "Open Source", description: "RAK3113, Sensirion I²C, PlatformIO Firmware & TimescaleDB", tag: "100% Offen" },
-        { title: "The Things Network", description: "Dezentrales 868 MHz LoRaWAN ohne Provider-Vertrag", tag: "Freifunk IoT" },
-        { title: "KAMÜ Hackspace", description: "Regelmäßige Lötabende und Maker-Treffen in Bürstadt", tag: "HQ" },
-      ],
+      id: "vhs-5-live-bonus",
+      stepNumber: 5,
+      stepLabel: "Bonus / Live-Daten-Beweis",
+      eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
+      title: "Was im Ried passiert ist, während Sie uns zugehört haben",
+      lead: "Unsere Plattform läuft live: Reale Umweltdaten, Bahnverkehr und ZAKB-Telemetrie – passgenau zur Tages- oder Nachtzeit.",
+      layout: "live-telemetry-bonus",
       speakerNotes: {
         elevatorPitch:
-          "Moin Nerds und Maker! Die Welt redet über Smart Cities, aber das Ried ist auf allen Karten ein blinder Fleck. Lasst uns nicht meckern, sondern löten, flashen und Gateways aufs Dach setzen!",
+          "Hier sehen Sie das Ergebnis: Live-Messwerte aus dem Ried, die Teilnehmer in wenigen Kursabenden selbst erfassen und verstehen können!",
         talkingPoints: [
-          "Hier gibt es keine Vendor Lock-ins: Schaltpläne, KiCad-Files und STL-Dateien sind offen.",
-          "Jeder kann mitbauen: Von Antennenoptimierung bis Firmware-Entwicklung.",
+          "Bürger lernen, wie Sensoren Daten erzeugen und über Funk ins Dashboard senden.",
+          "Keine Angst vor Technik – greifbare Realität.",
         ],
-        audienceEngagement: "Wer von euch hat schonmal ein TTN Gateway betrieben oder mit ESP32/LoRa gearbeitet?",
-        localHook: "Kulturzentrum KAMÜ in Bürstadt als offener Treffpunkt.",
+        audienceEngagement: "Zeigen Sie den Live-Zähler auf dem Beamer.",
+        localHook: "KAMÜ Bürstadt.",
       },
-    },
-    {
-      id: "comm-2-problem",
-      stepNumber: 2,
-      stepLabel: "02 / Die Heatmaps lügen nicht",
-      eyebrow: "Beweislage · Daten-Blindflecken",
-      title: "Unser Feindbild: Weiße Flecken auf TTN Mapper & Sensor.Community",
-      lead: "Zwischen Mannheim und Darmstadt klafft Niemandsland. Das ist kein Schicksal, das ist eine persönliche Herausforderung für unsere Community!",
-      layout: "blindspot-evidence",
-      mapEvidence: MAP_EVIDENCE_ITEMS,
-      speakerNotes: {
-        elevatorPitch:
-          "Auf TTN Mapper sieht man genau drei blaue Striche, wo mal einer mit dem LoRa-Node im Auto über die B47 gefahren ist. Im Ortskern Bürstadt? Null Empfang. Das ändern wir!",
-        talkingPoints: [
-          "Ziel: Mindestens 10 aktive Gateways und 50 Sensor-Nodes bis Ende des Jahres im Ried!",
-        ],
-        audienceEngagement: "Wer hat ein hohes Dach oder eine Scheune mit Sichtkontakt für ein Outdoor-Gateway?",
-        localHook: "Wasserturm Bürstadt, Kirchtürme, KAMÜ-Dach, Bobstadt.",
-      },
-    },
-    {
-      id: "comm-3-hackathon",
-      stepNumber: 3,
-      stepLabel: "03 / Das Event",
-      eyebrow: "48 Stunden Vollgas · Kulturzentrum KAMÜ",
-      title: "Der Ried-Hackathon: Code, Solder & Open Data",
-      lead: "Ein ganzes Wochenende im Kulturzentrum KAMÜ: Hardware-Hacker, Software-Devs und Vereine bauen an echten Lösungen.",
-      layout: "value-prop-split",
-      imageVisual: {
-        src: "/pitch/hackathon-kamue-community.jpg",
-        alt: "Hackathon im KAMÜ",
-        caption: "48h Coding, LoRa-Reichweitentests und Pizza im Kulturzentrum KAMÜ",
-      },
-      bullets: [
-        { title: "Track 1: LoRaWAN & Mesh", description: "Gateways aufbauen, TTN Mapper Coverage, Meshtastic-Relays", tag: "Funktechnik" },
-        { title: "Track 2: Data Science & AI", description: "Hitze-Heatmaps, Grundwasser-Vorhersagemodelle, Telegram-Alert-Bots", tag: "Software" },
-        { title: "Track 3: Hardware Hacks", description: "Pegelsonden für die Weschnitz, Bodenfeuchte für Landwirte, 3D-Druck", tag: "Hardware" },
-      ],
-      speakerNotes: {
-        elevatorPitch:
-          "Der Hackathon wird das Event für die regionale Tech-Szene. 48 Stunden schnelles Netz, Pizza, Mate und Hardware satt.",
-        talkingPoints: [
-          "Kooperation mit Freifunk, Linux-User-Groups und Hochschulen.",
-          "Keine Marketing-Show: Am Sonntag müssen funktionierende Prototypen auf dem Tisch stehen.",
-        ],
-        audienceEngagement: "Welche Tracks sprechen euch am meisten an?",
-        localHook: "KAMÜ Bürstadt bietet beste Räumlichkeiten.",
-      },
-    },
-    {
-      id: "comm-4-ask",
-      stepNumber: 4,
-      stepLabel: "04 / The Ask an die Maker",
-      eyebrow: "Mitmachen · Jetzt ins Team einsteigen",
-      title: "Unser 'Ask' an Hacker, Maker & Funkamateure",
-      lead: "Ob du löten kannst, Python schreibst, Antennen misst oder Gehäuse druckst – wir brauchen deinen Skill!",
-      layout: "the-ask-commitment",
-      specificAsks: [
-        {
-          id: "maker-gateway",
-          title: "1. Werde Gateway-Host",
-          description: "Stelle ein Outdoor-LoRaWAN-Gateway auf dein Dach. Wir stellen vorkonfigurierte Hardware bereit.",
-          commitmentType: "infrastruktur",
-          tag: "Gateway Host",
-          actionText: "Dachstandort anbieten",
-        },
-        {
-          id: "maker-mentor",
-          title: "2. Mentor beim Ried-Hackathon werden",
-          description: "Unterstütze Schüler- und Einsteiger-Teams beim Löten, Coden und Flashen während des Hackathons.",
-          commitmentType: "praesenz",
-          tag: "Mentoring",
-          actionText: "Als Mentor eintragen",
-        },
-        {
-          id: "maker-code",
-          title: "3. Open Source Firmware & Dashboard beisteuern",
-          description: "Contribute zu unseren Repositories: Neue Sensortreiber (I²C), Decoder oder Karten-Layer.",
-          commitmentType: "daten",
-          tag: "GitHub / GitLab",
-          actionText: "Repo forken & beitragen",
-        },
-      ],
       callToAction: {
-        primaryText: "Zur Bauanleitung & BOM",
-        primaryHref: "/sensor-bauen",
-        secondaryText: "Dem Entwickler-Team beitreten",
-        secondaryHref: "mailto:hackathon@open-ried.de?subject=Maker%20Community%20Open%20Ried%20Sens",
-      },
-      speakerNotes: {
-        elevatorPitch:
-          "Die Hardware liegt bereit, der Code ist online. Schaut auf /sensor-bauen vorbei und lasst uns das Netz aufbauen.",
-        talkingPoints: ["Kommt beim nächsten Treffen im KAMÜ vorbei, bringt eure Projekte mit."],
-        audienceEngagement: "Teilt den Link in euren Signal- und Discord-Gruppen!",
-        localHook: "Treffpunkt Kulturzentrum KAMÜ in Bürstadt.",
+        primaryText: "Live-Karte öffnen",
+        primaryHref: "/?preset=mobility&darstellung=satellit",
+        secondaryText: "Zurück zu Folie 1",
+        secondaryHref: "#intro",
       },
     },
   ],
 };
 
 // ============================================================================
-// 5. REGIONALE WIRTSCHAFT & STADTWERKE PITCH DECK
+// 4. REGIONALE WIRTSCHAFT & STADTWERKE PITCH DECK
 // ============================================================================
 export const WIRTSCHAFT_DECK: PitchDeck = {
   slug: "wirtschaft",
-  title: "Green Tech & Fachkräfte: Sponsoring mit regionaler Wirkung",
+  title: "Betriebsnutzen & Fachkräfte: Kooperation mit regionaler Wirkung",
   subtitle:
-    "Wie Stadtwerke, Mittelstand & IT-Unternehmen den MINT-Nachwuchs fördern und Klimaresilienz schaffen",
-  targetAudience: "Geschäftsführer von Stadtwerken, regionalen IT-Betrieben, Banken & Mittelständlern",
+    "CSR (Corporate Social Responsibility), Nachwuchs-Recruiting und smarte Sensorik für Betriebe im Ried",
+  targetAudience: "Geschäftsführer, Inhaber von Handwerks- & Gewerbebetrieben, Stadtwerke & IT-Unternehmen",
   category: "wirtschaft",
   badge: "Wirtschaft & Stadtwerke",
   accentColor: "amber",
   estimatedMinutes: 10,
   summary:
-    "Sponsoren-Pitch: Fachkräftesicherung durch MINT-Schulpateschaften (1.000 € für 10 Sensoren), Co-Innovation beim Hackathon und eigenes Monitoring von Energie & Hallenklima.",
+    "Wirtschafts-Pitch: CSR ausgeschrieben (Corporate Social Responsibility), reale betriebliche Probleme lösen (Logistik, Bahnübergänge, Kühlketten, Raumklima), 100 € Sensor-Schulpate oder In-House Azubi-Workshop, flexibles Hackathon-Sponsoring ohne starre Beträge, LoRaWAN für Nicht-Techniker erklärt & Live-Telemetrie-Beweis.",
   slides: [
     {
       id: "wirt-1-title",
       stepNumber: 1,
-      stepLabel: "01 / Hook & ROI",
-      eyebrow: "Regionale Wertschöpfung · CSR & Fachkräfte",
-      title: "Investieren in die Fachkräfte von morgen und ein klimaresilientes Ried",
-      lead: "Statt austauschbarer Bandenwerbung investieren Sie in handfeste MINT-Bildung, Open-Source-Infrastruktur und Innovationskultur vor Ihrer Haustür.",
+      stepLabel: "01 / Hook & Echte CSR",
+      eyebrow: "Regionale Verantwortung · Fachkräfte & MINT",
+      title: "Investieren in Fachkräfte und ein vernetztes Ried: Echte CSR vor Ort",
+      lead: "Statt austauschbarer Bandenwerbung oder anonymer Zertifikate: Wir leben **CSR (Corporate Social Responsibility / gesellschaftliche Verantwortung von Unternehmen)** direkt vor Ihrer Haustür. Fördern Sie MINT-Kompetenzen an Schulen und vernetzen Sie Ihren eigenen Betrieb.",
       layout: "one-pager-hero",
       imageVisual: {
         src: "/pitch/hackathon-kamue-community.jpg",
         alt: "Junge Talente beim Hackathon",
-        caption: "Fachkräfte finden: Motivierte Schüler und Studenten beim Hackathon im KAMÜ",
+        caption: "Fachkräfte finden: Motivierte Schüler, Azubis und Entwickler beim Hackathon im KAMÜ Bürstadt",
       },
       bullets: [
-        { title: "Recruiting", description: "Lernen Sie beim Hackathon motivierte Entwickler und Schüler persönlich kennen", tag: "Talente" },
-        { title: "Echte CSR", description: "Finanzieren Sie Sensorbausätze für Schulen inkl. Schulpateschaft", tag: "Nachhaltigkeit" },
-        { title: "Infrastruktur", description: "Nutzen Sie das freie LoRaWAN-Netz für eigene Zähler oder Hallenklima", tag: "Smarte Betriebe" },
+        {
+          title: "CSR ausgeschrieben & gelebt",
+          description: "Corporate Social Responsibility bedeutet für uns: Jugendliche vor Ort für Technologie begeistern, statt weit entfernte Ausgleichsmaßnahmen zu kaufen.",
+          tag: "Echte CSR",
+        },
+        {
+          title: "Recruiting ohne Personalberater",
+          description: "Lernen Sie beim Ried-Hackathon im KAMÜ motivierte Schüler, Azubis und Entwickler persönlich bei der Teamarbeit kennen.",
+          tag: "Fachkräfte",
+        },
+        {
+          title: "Betriebsvernetzung ohne Funkkosten",
+          description: "Nutzen Sie das freie LoRaWAN-Funknetz für Ihren eigenen Betrieb: Keine monatlichen SIM-Karten, keine teuren WLAN-Kabel.",
+          tag: "Smarte Betriebe",
+        },
       ],
       speakerNotes: {
         elevatorPitch:
-          "Sehr geehrte Unternehmerinnen und Unternehmer: Der Fachkräftemangel betrifft uns alle. Mit diesem Projekt zeigen wir jungen Menschen, dass innovative Zukunftstechnologie direkt hier im Ried stattfindet.",
+          "Sehr geehrte Unternehmerinnen und Unternehmer: Wir kennen das Buzzword CSR – Corporate Social Responsibility, also die unternehmerische Gesellschaftsverantwortung. Mit Open Ried Sens wird CSR greifbar: Sie fördern Jugendliche direkt an unseren Schulen und erhalten gleichzeitig Zugang zu cleveren Nachwuchskräften und moderner IoT-Funktechnik für Ihren Betrieb.",
         talkingPoints: [
-          "Schüler und Azubis suchen heute Sinnhaftigkeit und moderne Technologien.",
-          "Möglichkeit, eigene Aufgabenstellungen ('Challenges') in den Hackathon einzubringen.",
+          "Echtes soziales Engagement in der Heimatregion statt anonymer Zertifikate.",
+          "Verbindung aus Nachwuchs-Recruiting, gesellschaftlicher Wirkung und praktischem Betriebsnutzen.",
+          "Kulturzentrum KAMÜ in Bürstadt als Treffpunkt der regionalen Wirtschaft.",
         ],
-        audienceEngagement: "Frage: Wie viel Budget geben Sie jährlich für Stellenanzeigen aus, auf die sich niemand meldet?",
+        audienceEngagement:
+          "Frage: Wie schwer fällt es Ihnen aktuell, technisch interessierte Azubis und Fachkräfte im Ried zu finden?",
         localHook: "Standort Bergstraße / Metropolregion Rhein-Neckar.",
       },
     },
     {
       id: "wirt-2-problem",
       stepNumber: 2,
-      stepLabel: "02 / Die Datenlücke",
-      eyebrow: "Standortrisiko · Klimafolgen im Gewerbegebiet",
-      title: "Ohne lokale Daten keine fundierten Klimaschutzentscheidungen",
-      lead: "Gewerbegebiete im Ried sind extreme Hitzeinseln. Dennoch gibt es bisher kein freies Sensornetz zur objektiven Messung von Hitze und Trockenheit.",
+      stepLabel: "02 / Reale Betriebsprobleme lösen",
+      eyebrow: "Reale Herausforderungen · Offen für Firmen-Challenges",
+      title: "Reale betriebliche Herausforderungen mit Daten & schlauen Köpfen lösen",
+      lead: "Es geht nicht nur um das Klima: Ob Logistikverzögerungen an Bahnübergängen, Kühlketten-Ausfälle, Hallenklima, Spitzenlasten oder Parkraum – wir bringen Daten und kreative Köpfe an einen Tisch, um konkrete betriebliche Probleme zu knacken.",
       layout: "blindspot-evidence",
       mapEvidence: MAP_EVIDENCE_ITEMS,
+      bullets: [
+        {
+          title: "Logistik & Bahnübergänge",
+          description: "Lieferverzögerungen durch geschlossene Schranken (z.B. B47 Bobstadt / Bürstadt) in Echtzeit vorhersagen und Routen optimieren.",
+          tag: "Logistik",
+        },
+        {
+          title: "Kühlketten & Hallenmonitoring",
+          description: "Beispiel Bäckerei, Handwerk & Frischehandel: Kühlräume, Silos und Maschinenhallen rund um die Uhr überwachen – zuverlässig durch dicke Mauern hindurch.",
+          tag: "Betriebssicherheit",
+        },
+        {
+          title: "Ihre Challenge beim Hackathon",
+          description: "Bringen Sie Ihre eigene reale Problemstellung als Challenge in den 48h-Hackathon im KAMÜ ein – multidisziplinäre Teams entwickeln funktionierende Prototypen!",
+          tag: "Co-Innovation",
+        },
+      ],
       speakerNotes: {
         elevatorPitch:
-          "Gewerbegebiete heizen sich im Sommer massiv auf. Mit unserem Sensornetz erfassen Unternehmen und Stadtwerke diese Werte objektiv.",
+          "Wir sind keine Theoretiker: Uns geht es um reale betriebliche Schmerzpunkte. Stehen Ihre Lieferfahrzeuge regelmäßig vor geschlossenen Schranken an der B47? Müssen Sie Kühlräume oder Silos überwachen? Genau solche Aufgabenstellungen lösen wir mit Sensorik und kreativen Köpfen beim Ried-Hackathon.",
         talkingPoints: [
-          "Stadtwerke können das Netz zur Zählerablesung (Smart Metering) nutzen.",
+          "Wir sind offen für ganz reale Problemstellungen regionaler Firmen.",
+          "Kombination aus Live-Telemetrie und kreativer Softwareentwicklung im KAMÜ.",
+          "Konkreter Mehrwert für Handwerk, Logistik, Bäckereien und Industrie.",
         ],
-        audienceEngagement: "Erwähnen Sie Gewerbegebiete in Bürstadt und Lampertheim.",
-        localHook: "Gewerbegebiet Bürstadt-Ost und Bobstadt.",
+        audienceEngagement:
+          "Frage an die Unternehmer: Welcher Prozess in Ihrem Betrieb kostet Sie aktuell die meisten Nerven oder unnötig Geld?",
+        localHook: "Gewerbegebiete Bürstadt-Ost, Bobstadt und Lampertheim.",
       },
     },
     {
       id: "wirt-3-ask",
       stepNumber: 3,
-      stepLabel: "03 / The Ask an Sponsoren",
-      eyebrow: "Sponsoring-Pakete · Transparente Wirkung",
-      title: "Unser 'Ask' an Unternehmen & Stadtwerke",
-      lead: "Transparent kalkuliert – jeder Euro fließt direkt in Bausätze für Jugendliche und den Hackathon.",
+      stepLabel: "03 / The Ask an Unternehmen & Stadtwerke",
+      eyebrow: "Flexible Partnerschaft · Ohne starre Beträge",
+      title: "Sensor-Schulpate (100 €), In-House Azubi-Workshops & Hackathon-Support",
+      lead: "Vom 100-€-Schulpatesatz bis zum betriebsinternen Azubi-Workshop: Wir bieten maßgeschneiderte Kooperationen mit echtem Mehrwert für Ihr Unternehmen.",
       layout: "the-ask-commitment",
       specificAsks: [
         {
           id: "sponsor-schulpate",
-          title: "1. Sensor-Schulpate (1.000 €)",
-          description: "Finanziert 10 komplette Multisensor-Bausätze für eine Schulklasse inkl. Firmenlogo als offizieller Schulsponsor.",
+          title: "1. Sensor-Schulpate (100 € pro Schüler)",
+          description: "Finanzieren Sie einem Schüler den kompletten Bausatz für den MINT-Projekttag. Sponsoring für einzelne Kinder oder ganze Klassen (10–20 Schüler) möglich inklusive Logo auf der Station.",
           commitmentType: "schulen",
-          tag: "Schulpate",
-          actionText: "Schulpateschaft übernehmen",
+          tag: "100 € Schulpate",
+          actionText: "Schulpate werden",
         },
         {
-          id: "sponsor-track",
-          title: "2. Hackathon Track-Sponsor (2.500 €)",
-          description: "Namensgeber für eine Hackathon-Challenge (z.B. 'Green Energy Challenge') inkl. Jurysitz und Recruiting-Stand.",
+          id: "sponsor-inhouse",
+          title: "2. In-House Workshop für Mitarbeiter & Azubis",
+          description: "Interne Tech-Weiterbildung: Ihre Azubis und Mitarbeiter bauen Sensoren selbst im Betrieb, lernen Elektronik und vernetzen das eigene Firmengelände kostenlos.",
+          commitmentType: "infrastruktur",
+          tag: "Betriebs-Workshop",
+          actionText: "Workshop buchen",
+        },
+        {
+          id: "sponsor-hackathon-flex",
+          title: "3. Hackathon-Sponsor & Challenge-Stifter (flexibel)",
+          description: "Unterstützung ohne starre Beträge: Stiften Sie Sachpreise für Gewinner, sponsern Sie das Catering, öffnen Sie Ihre Türen für eine Werksführung oder stellen Sie eine reale Firmen-Challenge.",
           commitmentType: "finanzen",
-          tag: "Track Sponsor",
-          actionText: "Track sponsern",
+          tag: "Freies Sponsoring",
+          actionText: "Beitrag besprechen",
         },
         {
-          id: "sponsor-gateway",
-          title: "3. Gateway auf dem Firmendach",
-          description: "Bereitstellung eines LoRaWAN-Antennenstandorts auf Ihrem Betriebsgebäude zur Erweiterung des Netzes.",
-          commitmentType: "infrastruktur",
-          tag: "Dachstandort",
-          actionText: "Firmendach bereitstellen",
+          id: "sponsor-lora-verstaendnis",
+          title: "4. LoRaWAN einfach erklärt: Funk durch Wände",
+          description: "Für Nicht-Techniker: LoRaWAN funktioniert wie ein extrem weitreichendes Funkgerät. Es dringt durch dicke Mauern, Keller und Kühlräume – ohne WLAN-Passwörter, ohne SIM-Karten und ohne monatliche Gebühren.",
+          commitmentType: "daten",
+          tag: "Einfach erklärt",
+          actionText: "Signalabdeckung prüfen",
         },
       ],
       callToAction: {
-        primaryText: "Sponsoring vereinbaren",
-        primaryHref: "mailto:partner@open-ried.de?subject=Sponsoring%20Open%20Ried%20Sens",
+        primaryText: "Unternehmens-Gespräch vereinbaren",
+        primaryHref: "mailto:partner@open-ried.de?subject=Wirtschaft%20Kooperation%20Open%20Ried%20Sens",
         secondaryText: "Bauanleitung & BOM ansehen",
         secondaryHref: "/sensor-bauen",
       },
       speakerNotes: {
         elevatorPitch:
-          "Mit 1.000 Euro ermöglichen Sie 10 Jugendlichen einen kompletten Praxis-Workshop und erhalten dafür dauerhafte, sichtbare Präsenz.",
+          "Hier sind unsere Kooperationsmodelle: Werden Sie Schulpate für 100 Euro pro Kind, oder machen Sie einen internen Workshop mit Ihren eigenen Azubis und Mitarbeitern – kostenlose Weiterbildung und Vernetzung inklusive! Und beim Hackathon gibt es keine starren Summen: Ob Sachpreis, Challenge-Stiftung oder Catering, jeder Beitrag zählt.",
         talkingPoints: [
-          "Spenden- oder Sponsoringrechnung kann steuerlich geltend gemacht werden.",
+          "LoRaWAN einfach erklärt: Wie ein Funkgerät, das kilometerweit durch Mauern und Kühlhäuser reicht, ohne laufende Kosten.",
+          "100 € pro Kind ist für jedes Unternehmen leistbar und schafft direkte Bindung zu Schülern.",
+          "In-House-Workshops bringen Digitalisierung und Maker-Spirit direkt in Ihren Betrieb.",
         ],
-        audienceEngagement: "Bieten Sie ein persönliches Kennenlernen an.",
-        localHook: "Präsentation im Kulturzentrum KAMÜ.",
+        audienceEngagement:
+          "Bieten Sie an: 'Wollen wir bei Ihren Azubis mit einem 3-stündigen Löt- und Sensor-Workshop starten?'",
+        localHook: "Kulturzentrum KAMÜ Bürstadt als neutraler Eventort.",
+      },
+    },
+    {
+      id: "wirt-4-live-bonus",
+      stepNumber: 4,
+      stepLabel: "04 / Live-Telemetrie-Beweis",
+      eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
+      title: "Was im Ried passiert ist, während Sie uns zugehört haben",
+      lead: "Unsere Plattform läuft bereits im Hintergrund: Reale Datenströme aus Müllabfuhr, Bahnverkehr, Parkleitsystem und LoRaWAN-Sensorik – passgenau zur Tages- oder Nachtzeit.",
+      layout: "live-telemetry-bonus",
+      speakerNotes: {
+        elevatorPitch:
+          "Schauen Sie auf diese Zahlen: Während unserer Präsentation liefen reale Messungen aus dem Ried ein. Das System steht und kann morgen auch Ihre Betriebsdaten aufnehmen!",
+        talkingPoints: [
+          "Zeigt Unternehmen, dass die Technologie reif für den Praxiseinsatz ist.",
+          "Verknüpfung von kommunalen, betrieblichen und bürgerschaftlichen Datenströmen.",
+        ],
+        audienceEngagement: "Zeigen Sie den Live-Zähler auf dem Beamer.",
+        localHook: "Kulturzentrum KAMÜ Bürstadt.",
+      },
+      callToAction: {
+        primaryText: "Live-Karte mit diesen Daten öffnen",
+        primaryHref: "/?preset=mobility&darstellung=satellit",
+        secondaryText: "Zurück zu Folie 1",
+        secondaryHref: "#intro",
       },
     },
   ],
 };
 
 // ============================================================================
-// 6. LANDWIRTSCHAFT & WASSER PITCH DECK
+// EXPORT ALL DECKS (Politik, Schulen, VHS, Wirtschaft)
 // ============================================================================
-export const LANDWIRTSCHAFT_DECK: PitchDeck = {
-  slug: "landwirtschaft",
-  title: "Dürre, Grundwasser & Mikroklima: Sensordaten für die Ried-Landwirtschaft",
-  subtitle:
-    "Präzisionslandwirtschaft mit LoRaWAN: Bodenfeuchte in mehreren Tiefen, Blattnässe & Frostwarnung auf dem Acker",
-  targetAudience: "Landwirte, Gemüsebauer, Wasser- und Beregnungsverbände, Winzer im Ried",
-  category: "umwelt",
-  badge: "Landwirtschaft & Wasser",
-  accentColor: "emerald",
-  estimatedMinutes: 10,
-  summary:
-    "Agrar-Pitch: Autarke Bodenfeuchte- und Mikroklimasensoren für Landwirte. 10 km LoRaWAN-Reichweite ohne SIM-Karte, optimierte Beregnung und gemeinsame Challenges beim Hackathon.",
-  slides: [
-    {
-      id: "land-1-title",
-      stepNumber: 1,
-      stepLabel: "01 / Hook & Nutzen",
-      eyebrow: "Wasser ist Zukunft · Präzision auf dem Acker",
-      title: "Intelligentes Wassermanagement im Gemüsegarten Hessens",
-      lead: "Das Hessische Ried steht vor enormen Wasser- und Bodenspannungen. Mit autarken LoRaWAN-Boden- und Mikroklimasensoren messen Landwirte exakt, wann Beregnung nötig ist.",
-      layout: "one-pager-hero",
-      imageVisual: {
-        src: "/pitch/sensor-hardware-kit.jpg",
-        alt: "Sensorstation auf landwirtschaftlicher Fläche",
-        caption: "Wetterfeste Außenstation: 10 km Reichweite ohne Mobilfunkgebühren",
-      },
-      bullets: [
-        { title: "Bodenfeuchte", description: "Messung in 20, 40 und 60 cm Tiefe – genau dort, wo Wurzeln saugen", tag: "Wasser sparen" },
-        { title: "10 km LoRaWAN", description: "Ein Empfänger auf dem Hof deckt alle Außenlieger-Felder ab", tag: "0 € Funkkosten" },
-        { title: "Frost- & Blattnässe", description: "Echtzeitwarnung aufs Smartphone für Spargel-, Erdbeer- und Obstanbau", tag: "Ernteschutz" },
-      ],
-      speakerNotes: {
-        elevatorPitch:
-          "Liebe Landwirtinnen und Landwirte: Das Hessische Ried hat die sandigsten Böden und die schärfsten Grundwasservorschriften. Unser Sensorsystem gibt Ihnen die Faktenbasis, um Beregnung exakt und rechtssicher zu steuern.",
-        talkingPoints: [
-          "LoRaWAN sendet kilometerweit über Felder ohne monatliche SIM-Kartenkosten.",
-        ],
-        audienceEngagement: "Frage: Wie oft beregnen Sie auf Verdacht, weil die Bodenfeuchte in 40 cm Tiefe unbekannt ist?",
-        localHook: "Beregnungsverband Hessisches Ried, Spargelanbau Bürstadt & Lampertheim.",
-      },
-    },
-    {
-      id: "land-2-problem",
-      stepNumber: 2,
-      stepLabel: "02 / Die Datenwüste auf dem Acker",
-      eyebrow: "Funklöcher · Agrarflächen abgeschnitten",
-      title: "Die Ackerflächen im Ried sind von Sensordaten völlig abgeschnitten",
-      lead: "Die TTN Mapper Karte zeigt es schonungslos: Auf den Feldern zwischen Bürstadt, Biblis und Lorsch gibt es kein LoRaWAN-Signal.",
-      layout: "blindspot-evidence",
-      mapEvidence: MAP_EVIDENCE_ITEMS,
-      speakerNotes: {
-        elevatorPitch:
-          "Ein einziges Gateway auf einer Hofscheune reicht aus, um 50 Sensoren auf allen Feldern im Umkreis zu empfangen.",
-        talkingPoints: [
-          "Landwirte behalten die volle Datenhoheit: Werte können privat bleiben oder freiwillig geteilt werden.",
-        ],
-        audienceEngagement: "Wer hat ein Scheunendach oder Silo mit Strom und Internetanschluss?",
-        localHook: "Hofstellen in Bürstadt, Bobstadt, Riedrode und Hofheim.",
-      },
-    },
-    {
-      id: "land-3-ask",
-      stepNumber: 3,
-      stepLabel: "03 / The Ask an die Landwirtschaft",
-      eyebrow: "Pilotprojekt · Vom Hof zum Sensor",
-      title: "Unser 'Ask' an Landwirte & Beregnungsverbände",
-      lead: "Gemeinsam mit Ihnen möchten wir Testfelder aufbauen und die Daten beim Hackathon mit Agrar-Experten veredeln.",
-      layout: "the-ask-commitment",
-      specificAsks: [
-        {
-          id: "agrar-testbetrieb",
-          title: "1. Kostenlose Teststation auf Ihrem Hof",
-          description: "Wir installieren fachgerecht eine Bodenfeuchte- und Wetterstation auf Ihrem Versuchsfeld.",
-          commitmentType: "infrastruktur",
-          tag: "Pilotbetrieb",
-          actionText: "Als Pilotbetrieb bewerben",
-        },
-        {
-          id: "agrar-gateway",
-          title: "2. Gateway-Standort auf Scheune oder Silo",
-          description: "Bereitstellung einer Außenantenne auf einem hohen Wirtschaftsgebäude für flächendeckenden Acker-Empfang.",
-          commitmentType: "infrastruktur",
-          tag: "Scheunendach",
-          actionText: "Standort bereitstellen",
-        },
-        {
-          id: "agrar-hackathon",
-          title: "3. Challenge-Partner beim Ried-Hackathon",
-          description: "Bringen Sie Ihre konkrete Fragestellung (z.B. Frostschutz-Alarmierung) als Wettbewerbsaufgabe in den Hackathon ein.",
-          commitmentType: "praesenz",
-          tag: "Smart Farming",
-          actionText: "Aufgabe formulieren",
-        },
-      ],
-      callToAction: {
-        primaryText: "Als Testbetrieb bewerben",
-        primaryHref: "mailto:agrar@open-ried.de?subject=Testbetrieb%20Landwirtschaft%20Open%20Ried%20Sens",
-        secondaryText: "Bauanleitung & BOM ansehen",
-        secondaryHref: "/sensor-bauen",
-      },
-      speakerNotes: {
-        elevatorPitch:
-          "Wir suchen zwei engagierte landwirtschaftliche Betriebe im Ried für unser kostenloses Pilotprogramm.",
-        talkingPoints: ["Keinerlei Verpflichtungen, volle Datenkontrolle."],
-        audienceEngagement: "Sprechen Sie gezielt die anwesenden Landwirte an.",
-        localHook: "Kulturzentrum KAMÜ in Bürstadt als Treffpunkt.",
-      },
-    },
-  ],
-};
-
 export const PITCH_DECKS: PitchDeck[] = [
   POLITIK_DECK,
   SCHULEN_DECK,
   VHS_DECK,
-  COMMUNITY_DECK,
   WIRTSCHAFT_DECK,
-  LANDWIRTSCHAFT_DECK,
 ];
 
 export function getPitchDeckBySlug(slug: string): PitchDeck | undefined {

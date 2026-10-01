@@ -12,15 +12,8 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
     "utf8"
   );
 
-  // Check required stakeholder slugs
-  const expectedSlugs = [
-    "politik",
-    "schulen",
-    "vhs",
-    "community",
-    "wirtschaft",
-    "landwirtschaft",
-  ];
+  // Check required stakeholder slugs (politik, schulen, vhs, wirtschaft)
+  const expectedSlugs = ["politik", "schulen", "vhs", "wirtschaft"];
 
   for (const slug of expectedSlugs) {
     assert.ok(
@@ -29,7 +22,17 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
     );
   }
 
-  // Check required map services
+  // Confirm deleted decks are not present in PITCH_DECKS
+  assert.ok(
+    !pitchDataSource.includes('slug: "community"'),
+    "community deck must be removed"
+  );
+  assert.ok(
+    !pitchDataSource.includes('slug: "landwirtschaft"'),
+    "landwirtschaft deck must be removed"
+  );
+
+  // Check required map services (including renamed Raspberry Shake)
   assert.ok(
     pitchDataSource.includes("https://sensor.community/de/"),
     "Must reference Sensor.Community URL"
@@ -41,6 +44,10 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
   assert.ok(
     pitchDataSource.includes("https://raspberryshake.org/"),
     "Must reference Raspberry Shake URL"
+  );
+  assert.ok(
+    pitchDataSource.includes("Raspberry Shake (Seismograph für Erschütterungen & Geothermie)"),
+    "Raspberry Shake must reference seismograph / vibrations in its title"
   );
 
   // Check that speaker notes structure is present
@@ -58,6 +65,38 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
   );
 });
 
+test("Core Team members (Rüdiger Enger, Michael Binzen, Erik Metz) are featured with photos", () => {
+  const pitchDataSource = fs.readFileSync(
+    path.join(__dirname, "../lib/pitchData.ts"),
+    "utf8"
+  );
+
+  assert.ok(
+    pitchDataSource.includes("Rüdiger Enger"),
+    "Must feature Rüdiger Enger"
+  );
+  assert.ok(
+    pitchDataSource.includes("Michael Binzen"),
+    "Must feature Michael Binzen"
+  );
+  assert.ok(
+    pitchDataSource.includes("Erik Metz"),
+    "Must feature Erik Metz"
+  );
+
+  // Check physical profile image files
+  const teamImages = [
+    "ruediger-engert.jpg",
+    "michael-binzen.jpg",
+    "erik-metz.jpg",
+  ];
+  for (const img of teamImages) {
+    const filePath = path.join(__dirname, "../public/pitch", img);
+    assert.ok(fs.existsSync(filePath), `Team image ${img} must exist on disk`);
+    assert.ok(fs.statSync(filePath).size > 1000, `Team image ${img} must not be empty`);
+  }
+});
+
 test("Pitch visual photo and diagram assets physically exist in public/pitch", () => {
   const expectedImages = [
     "sensor-community-ried-map.png",
@@ -66,6 +105,8 @@ test("Pitch visual photo and diagram assets physically exist in public/pitch", (
     "hackathon-kamue-community.jpg",
     "sensor-hardware-kit.jpg",
     "schul-stem-workshop.jpg",
+    "ried-smart-cockpit.jpg",
+    "kamue-cooperation.jpg",
   ];
 
   for (const img of expectedImages) {
@@ -79,7 +120,7 @@ test("Pitch visual photo and diagram assets physically exist in public/pitch", (
   }
 });
 
-test("Politik pitch deck includes specific asks (smartcity-system.de, TTN gateways, Hackathon)", () => {
+test("Politik pitch deck includes specific asks and 0 € cost proposition", () => {
   const pitchDataSource = fs.readFileSync(
     path.join(__dirname, "../lib/pitchData.ts"),
     "utf8"
@@ -90,8 +131,9 @@ test("Politik pitch deck includes specific asks (smartcity-system.de, TTN gatewa
     "Politik pitch must reference smartcity-system.de/buerstadt raw parking sensor data"
   );
   assert.ok(
-    pitchDataSource.includes("The Things Network (TTN)"),
-    "Politik pitch must ask for opening / access to LoRaWAN TTN gateways"
+    pitchDataSource.includes("0 € Belastung für den städtischen Haushalt") ||
+    pitchDataSource.includes("0 € Kommunalkosten"),
+    "Politik pitch must emphasize 0 € municipal cost"
   );
   assert.ok(
     pitchDataSource.includes("Schirmherrschaft"),
@@ -99,12 +141,16 @@ test("Politik pitch deck includes specific asks (smartcity-system.de, TTN gatewa
   );
 });
 
-test("Schulen pitch deck includes differentiated STEM learning matrix and multiplier effect", () => {
+test("Schulen pitch deck does NOT ask schools for money and focuses on STEM & project days", () => {
   const pitchDataSource = fs.readFileSync(
     path.join(__dirname, "../lib/pitchData.ts"),
     "utf8"
   );
 
+  assert.ok(
+    pitchDataSource.includes("Wir fordern kein Schulbudget"),
+    "Schulen deck must explicitly state that no school money is demanded"
+  );
   assert.ok(
     pitchDataSource.includes("stem-learning-matrix"),
     "Schulen deck must use stem-learning-matrix layout"
@@ -113,10 +159,44 @@ test("Schulen pitch deck includes differentiated STEM learning matrix and multip
     pitchDataSource.includes("Praktisches Handwerk"),
     "STEM matrix must include practical craftmanship (soldering, pliers)"
   );
-  assert.ok(
-    pitchDataSource.includes("Multiplikator"),
-    "STEM matrix must include multiplier effect leading to Hackathon participation"
+});
+
+test("Wirtschaft pitch deck spells out CSR and provides flexible sponsorship and LoRa explanation", () => {
+  const pitchDataSource = fs.readFileSync(
+    path.join(__dirname, "../lib/pitchData.ts"),
+    "utf8"
   );
+
+  assert.ok(
+    pitchDataSource.includes("CSR (Corporate Social Responsibility"),
+    "Wirtschaft deck must spell out CSR"
+  );
+  assert.ok(
+    pitchDataSource.includes("100 € pro Schüler"),
+    "Wirtschaft deck must offer 100 € student sponsorship"
+  );
+  assert.ok(
+    pitchDataSource.includes("LoRaWAN einfach erklärt"),
+    "Wirtschaft deck must explain LoRaWAN simply for non-techs"
+  );
+});
+
+test("Live regional metrics logic is time-of-day aware (nighttime = 0 bins emptied, 0.0 solar kWh)", async () => {
+  const { calculateLiveRegionalMetrics } = await import("../lib/pitchLiveTicker.ts");
+
+  // Test at midnight (00:21)
+  const nightMetrics = calculateLiveRegionalMetrics(300, 0);
+  assert.equal(nightMetrics.isDaytime, false, "00:00 must be nighttime");
+  assert.equal(nightMetrics.binsEmptied, 0, "No bins emptied at night (ZAKB depot sleep)");
+  assert.equal(nightMetrics.solarKwhGenerated, "0.0", "Solar generation must be 0.0 at night");
+  assert.ok(nightMetrics.telemetryPackets > 0, "LoRaWAN telemetry packets must be > 0 at night (24/7)");
+  assert.ok(nightMetrics.trainsTraversed > 0, "Riedbahn freight trains must run at night");
+
+  // Test at noon (12:00)
+  const dayMetrics = calculateLiveRegionalMetrics(300, 12);
+  assert.equal(dayMetrics.isDaytime, true, "12:00 must be daytime");
+  assert.ok(dayMetrics.binsEmptied > 0, "Bins must be emptied during daytime");
+  assert.ok(parseFloat(dayMetrics.solarKwhGenerated) > 0, "Solar generation must be > 0 during daytime");
 });
 
 test("HandoutModal component exists and provides Ink-Saver white print mode", () => {
