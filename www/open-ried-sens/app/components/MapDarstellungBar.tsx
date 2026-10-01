@@ -231,7 +231,7 @@ export default function MapDarstellungBar({
               <SlidersHorizontal className="size-3.5 text-slate-400" />
               <span className="text-xs font-semibold text-slate-300">Kartenebenen verwalten</span>
               <span className="text-[11px] text-slate-400">
-                ({totalActive} von 19 aktiv)
+                ({totalActive} von {MAP_LAYER_IDS.length} aktiv)
               </span>
             </div>
 
@@ -240,7 +240,7 @@ export default function MapDarstellungBar({
                 type="button"
                 onClick={enableAllLayers}
                 className="text-xs text-slate-400 hover:text-emerald-300 transition-colors"
-                title="Alle 19 Ebenen auf der Karte anzeigen"
+                title={`Alle ${MAP_LAYER_IDS.length} Ebenen auf der Karte anzeigen`}
               >
                 Alle an
               </button>

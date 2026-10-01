@@ -39,9 +39,52 @@ export const LAYER_CATEGORIES: Record<LayerCategory, {
   },
 };
 
+export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
+  // Regional (Zoom 8-11)
+  nature: 8,
+  floods: 8,
+  trains: 9,
+  closures: 10,
+
+  // Municipal / City (Zoom 12-13)
+  buses: 12,
+  waste: 12,
+  traffic: 12,
+  energy: 12,
+  starkregen: 12,
+  places: 13,
+  companies: 13,
+  broadband: 13,
+  elections: 13,
+
+  // Neighborhood / Street (Zoom 14+)
+  crossings: 14,
+  charging: 14,
+  wifi: 14,
+  crops: 14,
+  road: 14,
+  stops: 14,
+  boris: 14,
+  devplans: 14,
+};
+
 export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
-  places: { id: "places", label: "Öffentliche Orte", icon: "🏫", category: "planning", description: "Kartierte Schulen, Gesundheit, Kultur und Freizeit – ohne Live-Öffnungs- oder Notdienststatus" },
-  crossings: { id: "crossings", label: "Bahnübergänge", icon: "⛩", category: "mobility", description: "Gesammelte Bahnübergänge; Schrankenstatus nur bei verfügbarer Messung" },
+  places: {
+    id: "places",
+    label: "Öffentliche Orte",
+    icon: "🏫",
+    category: "planning",
+    description: "Kartierte Schulen, Gesundheit, Kultur und Freizeit – ohne Live-Öffnungs- oder Notdienststatus",
+    minZoom: LAYER_MIN_ZOOM.places,
+  },
+  crossings: {
+    id: "crossings",
+    label: "Bahnübergänge",
+    icon: "⛩",
+    category: "mobility",
+    description: "Gesammelte Bahnübergänge; Schrankenstatus nur bei verfügbarer Messung",
+    minZoom: LAYER_MIN_ZOOM.crossings,
+  },
   // Mobility & Traffic
   closures: {
     id: "closures",
@@ -49,6 +92,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "⛔",
     category: "mobility",
     description: "Aktuelle und geplante Straßensperrungen & Baustellen im Ried",
+    minZoom: LAYER_MIN_ZOOM.closures,
     highlightColor: "border-red-500 text-red-300",
   },
   traffic: {
@@ -57,6 +101,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🚗",
     category: "mobility",
     description: "Echtzeit-Verkehrslage, Staus und Verzögerungen auf Ried-Hauptachsen",
+    minZoom: LAYER_MIN_ZOOM.traffic,
     highlightColor: "border-amber-500 text-amber-300",
   },
   buses: {
@@ -65,6 +110,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🚌",
     category: "mobility",
     description: "Fahrplanbasierte Live-Positionen der VRN-Buslinien im Ried",
+    minZoom: LAYER_MIN_ZOOM.buses,
     highlightColor: "border-sky-500 text-sky-300",
   },
   stops: {
@@ -72,8 +118,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Haltestellen",
     icon: "🚏",
     category: "mobility",
-    description: "VRN-Bushaltestellen mit Richtungssteigen & Abfahrten (sichtbar ab Zoom 13)",
-    minZoom: 13,
+    description: "VRN-Bushaltestellen mit Richtungssteigen & Abfahrten (sichtbar ab Zoom 14)",
+    minZoom: LAYER_MIN_ZOOM.stops,
     highlightColor: "border-amber-500 text-amber-300",
   },
   trains: {
@@ -82,6 +128,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🚅",
     category: "mobility",
     description: "Riedbahn & Nibelungenbahn Zugpositionen aus gespeicherten Meldungen und Fahrplänen",
+    minZoom: LAYER_MIN_ZOOM.trains,
     highlightColor: "border-sky-500 text-sky-300",
   },
   charging: {
@@ -90,6 +137,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "⚡",
     category: "mobility",
     description: "Öffentliche Elektro-Ladesäulen und Live-Belegungsstatus",
+    minZoom: LAYER_MIN_ZOOM.charging,
     highlightColor: "border-emerald-400 text-emerald-300",
   },
 
@@ -100,6 +148,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🌿",
     category: "environment",
     description: "Naturschutzgebiete (Biedensand, Lampertheimer Altrhein, Weschnitzinsel)",
+    minZoom: LAYER_MIN_ZOOM.nature,
     highlightColor: "border-emerald-500 text-emerald-300",
   },
   floods: {
@@ -108,6 +157,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🌊",
     category: "environment",
     description: "Offizielle Rhein-Pegel (Worms) & Weschnitz-Pegel mit Alarmstufen",
+    minZoom: LAYER_MIN_ZOOM.floods,
     highlightColor: "border-sky-400 text-sky-300",
   },
   starkregen: {
@@ -116,6 +166,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🌧️",
     category: "environment",
     description: "Offizielle HLNUG Starkregengefahrenkarte Hessen (Fließwege & Überflutung)",
+    minZoom: LAYER_MIN_ZOOM.starkregen,
     highlightColor: "border-blue-500 text-blue-300",
   },
   crops: {
@@ -123,8 +174,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Agrarkulturen",
     icon: "🌾",
     category: "environment",
-    description: "Spargelanbau, Gemüseflächen und Ackerschläge im Ried (sichtbar ab Zoom 13)",
-    minZoom: 13,
+    description: "Spargelanbau, Gemüseflächen und Ackerschläge im Ried (sichtbar ab Zoom 14)",
+    minZoom: LAYER_MIN_ZOOM.crops,
     highlightColor: "border-purple-400 text-purple-300",
   },
 
@@ -135,6 +186,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "☀️",
     category: "infrastructure",
     description: "ZAKB Energiepark Hüttenfeld, Biogasanlagen & Solarparks im Ried",
+    minZoom: LAYER_MIN_ZOOM.energy,
     highlightColor: "border-amber-400 text-amber-300",
   },
   road: {
@@ -143,6 +195,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🛣️",
     category: "infrastructure",
     description: "KI-basierte Fahrbahnbewertung durch ZAKB-Flottensensorik",
+    minZoom: LAYER_MIN_ZOOM.road,
     highlightColor: "border-lime-400 text-lime-300",
   },
   wifi: {
@@ -151,6 +204,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "📶",
     category: "infrastructure",
     description: "Öffentliche WLAN-Hotspots (Hessen-WLAN & Freifunk Ried)",
+    minZoom: LAYER_MIN_ZOOM.wifi,
     highlightColor: "border-cyan-400 text-cyan-300",
   },
   broadband: {
@@ -159,6 +213,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🌐",
     category: "infrastructure",
     description: "Breitband- und Glasfaser-Ausbaugebiete im Ried",
+    minZoom: LAYER_MIN_ZOOM.broadband,
     highlightColor: "border-purple-400 text-purple-300",
   },
 
@@ -169,6 +224,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🏡",
     category: "planning",
     description: "Offizielle BORIS Hessen Bodenrichtwertzonen (€/m² Wohnbauland)",
+    minZoom: LAYER_MIN_ZOOM.boris,
     highlightColor: "border-teal-400 text-teal-300",
   },
   devplans: {
@@ -177,6 +233,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🏗️",
     category: "planning",
     description: "Bebauungspläne und Neubaugebiete in Bürstadt, Lampertheim & Biblis",
+    minZoom: LAYER_MIN_ZOOM.devplans,
     highlightColor: "border-amber-400 text-amber-300",
   },
   elections: {
@@ -185,6 +242,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🗳️",
     category: "planning",
     description: "Stimmbezirke und historische Wahlbeteiligung der Kommunalwahlen",
+    minZoom: LAYER_MIN_ZOOM.elections,
     highlightColor: "border-purple-400 text-purple-300",
   },
   companies: {
@@ -193,6 +251,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🏢",
     category: "planning",
     description: "Bedeutende Industrie- & Gewerbearbeitgeber im Ried",
+    minZoom: LAYER_MIN_ZOOM.companies,
     highlightColor: "border-sky-400 text-sky-300",
   },
   waste: {
@@ -201,6 +260,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🚛",
     category: "planning",
     description: "Live-Fahrzeuge der ZAKB Müllabfuhr und Sammeltouren im Ried",
+    minZoom: LAYER_MIN_ZOOM.waste,
     highlightColor: "border-emerald-500 text-emerald-300",
   },
 };

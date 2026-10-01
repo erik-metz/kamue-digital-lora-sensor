@@ -131,3 +131,23 @@ test("countActiveLayers and countCategoryActiveLayers compute accurate numbers",
   assert.equal(mobilityCounts.total, 7);
   assert.equal(mobilityCounts.active, 7);
 });
+
+test("LAYER_MIN_ZOOM and LAYER_DEFINITIONS minZoom correctly configure all 21 layers", () => {
+  assert.ok(mapPresets.LAYER_MIN_ZOOM);
+  for (const layerId of urlState.MAP_LAYER_IDS) {
+    const minZoom = mapPresets.LAYER_MIN_ZOOM[layerId];
+    assert.equal(typeof minZoom, "number", `LAYER_MIN_ZOOM missing for ${layerId}`);
+    assert.ok(minZoom >= 8 && minZoom <= 19, `LAYER_MIN_ZOOM out of bounds for ${layerId}`);
+    assert.equal(mapPresets.LAYER_DEFINITIONS[layerId].minZoom, minZoom);
+  }
+});
+
+test("SENSOR_CATEGORY_MIN_ZOOM specifies valid zoom thresholds for all categories", () => {
+  assert.ok(mapData.SENSOR_CATEGORY_MIN_ZOOM);
+  for (const catId of mapData.CATEGORY_IDS) {
+    const minZoom = mapData.SENSOR_CATEGORY_MIN_ZOOM[catId];
+    assert.equal(typeof minZoom, "number", `SENSOR_CATEGORY_MIN_ZOOM missing for ${catId}`);
+    assert.ok(minZoom >= 8 && minZoom <= 19, `SENSOR_CATEGORY_MIN_ZOOM out of bounds for ${catId}`);
+  }
+});
+

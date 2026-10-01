@@ -15,6 +15,22 @@ export const CATEGORIES = {
 } as const;
 export type Category = keyof typeof CATEGORIES;
 export const CATEGORY_IDS = Object.keys(CATEGORIES) as Category[];
+
+export const SENSOR_CATEGORY_MIN_ZOOM: Record<Category, number> = {
+  weather: 8,
+  water: 8,
+  air: 8,
+  seismic: 8,
+  traffic: 11,
+  soil: 12,
+  parking: 12,
+  bikes: 13,
+  education: 13,
+  healthcare: 13,
+  culture: 13,
+  tourism: 13,
+  other: 13,
+};
 export type Reading = { metric: string; value: number; unit: string; timestamp: string };
 export type MapMode = "category" | "temperature";
 export type Freshness = "fresh" | "stale" | "unknown" | "state";

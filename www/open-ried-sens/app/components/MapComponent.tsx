@@ -10,9 +10,10 @@ import { motionPoint, nextMotion, MOVEMENT_POLL_MS, type MarkerMotion } from "@/
 import { detailCard, featureCard, featureKind, mapSymbol, placeMarker } from "@/lib/mapPresentation";
 import { useEffect, useRef, useState } from "react";
 import type { GeoJsonObject } from "geojson";
-import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, SENSOR_CATEGORY_MIN_ZOOM, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer } from "@/lib/temperatureHeatmap";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, DEFAULT_MAP_LAYERS, type MapLayerId } from "@/lib/urlState";
+import { LAYER_MIN_ZOOM } from "@/lib/mapPresets";
 
 export type { SensorNode } from "@/lib/mapData";
 interface MapProps {
@@ -158,6 +159,7 @@ export default function MapComponent(props: MapProps) {
       return target;
     }
     const points: { lat: number; lng: number; temp: number }[] = [];
+    const isSoleCategory = props.categories.length === 1;
     for (const node of props.nodes) {
       const category = markerCategory(node, props.categories);
       if (!category || !props.categories.includes(category)) continue;
@@ -168,6 +170,10 @@ export default function MapComponent(props: MapProps) {
       if (props.mode === "temperature") {
         if (!reading) continue;
         if (fresh) points.push({ lat: node.lat, lng: node.lng, temp: reading.value });
+      }
+      const minCategoryZoom = isSoleCategory ? 8 : (SENSOR_CATEGORY_MIN_ZOOM[category] ?? 8);
+      if (props.mode !== "temperature" && zoom < minCategoryZoom && node.id !== props.selectedNodeId) {
+        continue;
       }
       const color = props.mode === "temperature" && reading ? (muted ? "#94a3b8" : temperatureColor(reading.value)) : CATEGORIES[category].color;
       const label = zoom >= (props.mode === "temperature" ? 15 : 16) ? valueLabel(reading, node.readings) : "";
@@ -215,8 +221,10 @@ export default function MapComponent(props: MapProps) {
     const icons = vehicleIcons.current;
     const receivedAt = performance.now();
     for (const position of positions) {
-      const enabled = layers[position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : "waste"];
-      if (!enabled || !(Date.parse(position.valid_until) > Date.now()) ||
+      const layerId = position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : "waste";
+      const enabled = layers[layerId];
+      const minZoom = LAYER_MIN_ZOOM[layerId] ?? 8;
+      if (!enabled || zoom < minZoom || !(Date.parse(position.valid_until) > Date.now()) ||
           !Number.isFinite(Date.parse(position.timestamp)) || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) continue;
       const key = `${position.kind}:${position.id}`;
       retained.add(key);
@@ -286,7 +294,7 @@ export default function MapComponent(props: MapProps) {
       document.removeEventListener("visibilitychange", resume);
       reducedMotion.removeEventListener("change", resume);
     };
-  }, [ready, clusteringReady, positions, layers]);
+  }, [ready, clusteringReady, positions, layers, zoom]);
 
   useEffect(() => {
     for (const position of positions) {
@@ -308,7 +316,10 @@ export default function MapComponent(props: MapProps) {
     let closures = 0;
     const requests = new Set<AbortController>();
     for (const [id, geometry] of Object.entries(publication.layers)) {
-      if (!layers[id as MapLayerId]) continue;
+      const layerId = id as MapLayerId;
+      if (!layers[layerId]) continue;
+      const minZoom = LAYER_MIN_ZOOM[layerId] ?? 8;
+      if (zoom < minZoom) continue;
       const pointGroup = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 45, disableClusteringAtZoom: 16, showCoverageOnHover: false,
         iconCreateFunction: cluster => L.divIcon({ html: placeMarker(id, String(cluster.getChildCount())), className: "map-place-icon", iconSize: [36, 36] }),
       }).addTo(group) : group;
@@ -353,10 +364,11 @@ export default function MapComponent(props: MapProps) {
         },
       }).addTo(pointGroup);
     }
-    if (layers.starkregen) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
+    const starkregenMinZoom = LAYER_MIN_ZOOM.starkregen ?? 12;
+    if (layers.starkregen && zoom >= starkregenMinZoom) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
     callbacks.current.onActiveClosuresCountChange?.(closures);
     return () => { requests.forEach(controller => controller.abort()); group.remove(); };
-  }, [ready, clusteringReady, publication, layers]);
+  }, [ready, clusteringReady, publication, layers, zoom]);
 
   const missing = publication.unavailable.filter(id => layers[id as MapLayerId]);
   return <div className="relative h-full min-h-[500px] w-full">
