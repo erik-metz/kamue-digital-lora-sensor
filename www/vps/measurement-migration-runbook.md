@@ -1,4 +1,27 @@
-# Measurement migration: local rehearsal
+# Measurement migration: deployment and rehearsal
+
+## Production deployment — 2026-10-01
+
+At the user's explicit request, the additive core was applied directly to the VPS
+without another test run. `entities`, `measurement_definitions` and `readings`
+are installed and live shadow writes are enabled. Current sensor metadata/readings,
+movement readings, seven statistics publications, two charger publications, two
+gauge publications and 1,765 archived weather receipts were transferred.
+
+The API runs with `MEASUREMENT_READ_MODE=core_current`: current snapshots and
+supported publications use canonical readings; historical `sensor_data` queries
+continue using the complete old history. Historical transfer and some domain
+mappings remain incomplete. The weather collector runs with
+`MEASUREMENT_WEATHER_WRITE_MODE=dual`; its first live acquisition committed and
+both updated services started healthy.
+
+Source is mounted read-only from
+`/home/ubuntu/my-app/releases/measurement-229fb2d/www/vps/` using the default
+`docker-compose.override.yml`. `measurement_reads.py` includes the subsequent
+`core_current` change. Automatic image updates remain enabled. No legacy tables
+were removed; full historical transfer was not started with only 2.4 GiB free.
+
+## Earlier implementation notes
 
 The working branch implements the three core tables, shared SQL ingestion, revision/latest helpers, sensor/movement/statistics/charger shadow writes, bounded backfill, comparison audits and preliminary disk sizing. Sensor, movement, statistics, charger and archive readers have an opt-in compatibility path. Reads default to legacy; this is not a completed production cutover. Installing an updated API image alone does not activate migration.
 

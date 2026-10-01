@@ -14,9 +14,9 @@ PATTERN = re.compile(r"\b(" + "|".join(RELATIONS) + r")\b")
 
 def core_reads():
     mode = os.getenv("MEASUREMENT_READ_MODE", "legacy")
-    if mode not in {"legacy", "core"}:
-        raise RuntimeError("MEASUREMENT_READ_MODE must be legacy or core")
-    return mode == "core"
+    if mode not in {"legacy", "core", "core_current"}:
+        raise RuntimeError("MEASUREMENT_READ_MODE must be legacy, core_current or core")
+    return mode != "legacy"
 
 
 def read_sql(statement):
@@ -24,7 +24,14 @@ def read_sql(statement):
         raise ValueError("Only read statements may select a measurement read model")
     if not core_reads():
         return statement
-    return PATTERN.sub(lambda match: RELATIONS[match.group()], statement)
+    def relation(match):
+        name = match.group()
+        # During the production history transfer, current snapshots use the core
+        # while historical queries retain their complete existing database data.
+        if name == 'sensor_data' and os.getenv('MEASUREMENT_READ_MODE') == 'core_current':
+            return name
+        return RELATIONS[name]
+    return PATTERN.sub(relation, statement)
 
 
 async def ensure_core_ready(conn):
