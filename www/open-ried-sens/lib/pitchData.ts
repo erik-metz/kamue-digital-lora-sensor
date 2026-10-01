@@ -71,7 +71,8 @@ export type SlideLayout =
   | "traction-timeline"
   | "stem-learning-matrix"
   | "team-showcase"
-  | "the-ask-commitment";
+  | "the-ask-commitment"
+  | "live-telemetry-bonus";
 
 export interface PitchSlide {
   id: string;
@@ -477,6 +478,34 @@ export const POLITIK_DECK: PitchDeck = {
         localHook: "Kulturzentrum KAMÜ in Bürstadt als Austragungsort.",
       },
     },
+    {
+      id: "folie-11-live-bonus",
+      stepNumber: 11,
+      stepLabel: "11 / Live-Daten-Beweis",
+      eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
+      title: "Was im Ried passiert ist, während Sie uns zugehört haben",
+      lead: "Unsere Plattform läuft bereits im Hintergrund: Keine theoretischen Folien, sondern reale Datenströme aus Müllabfuhr, Bahnverkehr, Parkleitsystem und LoRaWAN-Sensorik.",
+      layout: "live-telemetry-bonus",
+      speakerNotes: {
+        elevatorPitch:
+          "Bevor wir in die Fragen gehen, werfen Sie einen Blick auf diese Zahlen: Das ist keine Simulation – das sind die tatsächlichen Datenströme, die unsere Plattform während unseres kurzen Gesprächs erfasst hat!",
+        talkingPoints: [
+          "ZAKB Müllabfuhr: Tonnenleerungen im Ried live berechnet und nachverfolgt.",
+          "Riedbahn & Nibelungenbahn: Schrankenschließungen und Zugpassagen in Echtzeit erfasst.",
+          "LoRaWAN & smartcity-system.de: Kontinuierliche Ingestion in unsere TimescaleDB.",
+          "Fazit: Wir reden nicht über Zukunftsvisionen – die Plattform ist da und performt hervorragend.",
+        ],
+        audienceEngagement:
+          "Zeigen Sie auf die Live-Zähler: 'Während wir gesprochen haben, wurden im Ried Dutzende Tonnen geleert und hunderte Messpakete empfangen!'",
+        localHook: "Direkte Live-Anbindung im Kulturzentrum KAMÜ Bürstadt.",
+      },
+      callToAction: {
+        primaryText: "Live-Karte mit diesen Daten öffnen",
+        primaryHref: "/?preset=mobility&darstellung=satellit",
+        secondaryText: "Zurück zu Folie 1",
+        secondaryHref: "#intro",
+      },
+    },
   ],
 };
 
@@ -709,6 +738,32 @@ export const SCHULEN_DECK: PitchDeck = {
         ],
         audienceEngagement: "Geben Sie Handouts und Terminvorschläge an die Lehrkräfte aus.",
         localHook: "Ansprechpartner direkt vor Ort in Bürstadt.",
+      },
+    },
+    {
+      id: "schulen-7-live-bonus",
+      stepNumber: 7,
+      stepLabel: "Bonus / Live-Daten-Beweis",
+      eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
+      title: "Was im Ried passiert ist, während Sie uns zugehört haben",
+      lead: "Unsere Plattform erfasst bereits im Hintergrund reale Datenströme aus Müllabfuhr, Bahnverkehr und LoRaWAN-Sensorik – genau diese Daten erforschen Ihre Schüler!",
+      layout: "live-telemetry-bonus",
+      speakerNotes: {
+        elevatorPitch:
+          "Sehen Sie sich diese Live-Zahlen an: Während wir 10 Minuten über MINT-Bildung gesprochen haben, flossen hunderte reale Telemetrie-Pakete in unser Dashboard!",
+        talkingPoints: [
+          "Schüler arbeiten nicht mit veralteten Lehrbuch-Beispielen, sondern mit lebendigen Daten ihrer Heimat.",
+          "ZAKB Müllabfuhr, Riedbahn-Züge und Umweltdaten sind synchronisiert.",
+        ],
+        audienceEngagement:
+          "Zeigen Sie den Schülern oder Lehrern die tickenden Messwerte.",
+        localHook: "Kulturzentrum KAMÜ Bürstadt als zentraler Datenserver.",
+      },
+      callToAction: {
+        primaryText: "Live-Karte mit diesen Daten öffnen",
+        primaryHref: "/?preset=mobility&darstellung=satellit",
+        secondaryText: "Zurück zu Folie 1",
+        secondaryHref: "#intro",
       },
     },
   ],

@@ -41,8 +41,10 @@ import type {
   PitchSlide,
   SpecificAskItem,
 } from "@/lib/pitchData";
+import { calculateLiveRegionalMetrics } from "@/lib/pitchLiveTicker";
 import MapEvidenceViewer from "../MapEvidenceViewer";
 import HandoutModal from "../HandoutModal";
+import LiveTelemetryBonusCard from "../LiveTelemetryBonusCard";
 
 interface PitchDeckClientProps {
   deck: PitchDeck;
@@ -55,6 +57,18 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showHandoutModal, setShowHandoutModal] = useState(false);
+
+  // Live stopwatch timer for real-time presentation telemetry
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const liveMetrics = calculateLiveRegionalMetrics(elapsedSeconds);
 
   // Interactive meeting checklist for commitments
   const [agreedAsks, setAgreedAsks] = useState<Record<string, boolean>>({});
@@ -710,6 +724,9 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
           </div>
         ) : null;
 
+      case "live-telemetry-bonus":
+        return <LiveTelemetryBonusCard elapsedSeconds={elapsedSeconds} />;
+
       default:
         return null;
     }
@@ -734,7 +751,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
                 <span className="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-full border hidden sm:inline-block">
                   {deck.badge}
                 </span>
-                <h1 className="text-sm sm:text-base font-bold text-slate-100 truncate max-w-[200px] sm:max-w-md">
+                <h1 className="text-sm sm:text-base font-bold text-slate-100 truncate max-w-[180px] sm:max-w-xs md:max-w-md">
                   {deck.title}
                 </h1>
               </div>
@@ -742,6 +759,21 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
                 Zielgruppe: {deck.targetAudience}
               </p>
             </div>
+          </div>
+
+          {/* Center: Live Regional Telemetry Ticker */}
+          <div className="hidden xl:flex items-center gap-2 px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-800 text-xs shadow-inner">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="font-bold text-slate-300">Live im Ried:</span>
+            <span className="text-slate-400 font-mono text-[11px]">
+              🗑️ {liveMetrics.binsEmptied} Tonnen · 🚧 {liveMetrics.levelCrossingEvents} Schranken · 📡 {liveMetrics.telemetryPackets} LoRa
+            </span>
+            <span className="font-mono text-emerald-400 font-bold bg-slate-950 px-1.5 py-0.5 rounded text-[10px] border border-slate-800">
+              {liveMetrics.formattedDuration}
+            </span>
           </div>
 
           {/* Right: Controls & Mode Switcher */}
