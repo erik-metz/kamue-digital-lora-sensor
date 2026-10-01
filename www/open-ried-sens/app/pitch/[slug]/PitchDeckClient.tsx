@@ -42,7 +42,10 @@ import type {
   PitchSlide,
   SpecificAskItem,
 } from "@/lib/pitchData";
-import { calculateLiveRegionalMetrics } from "@/lib/pitchLiveTicker";
+import {
+  calculateLiveRegionalMetrics,
+  getLiveEventFeed,
+} from "@/lib/pitchLiveTicker";
 import MapEvidenceViewer from "../MapEvidenceViewer";
 import HandoutModal from "../HandoutModal";
 import LiveTelemetryBonusCard from "../LiveTelemetryBonusCard";
@@ -61,6 +64,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
 
   // Live stopwatch timer for real-time presentation telemetry
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [packetPulse, setPacketPulse] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -70,6 +74,17 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
   }, []);
 
   const liveMetrics = calculateLiveRegionalMetrics(elapsedSeconds);
+  const liveEvents = getLiveEventFeed(elapsedSeconds);
+  const latestEvent = liveEvents[0] || null;
+
+  // Trigger pulse animation when LoRa packets increment
+  useEffect(() => {
+    if (elapsedSeconds > 0) {
+      setPacketPulse(true);
+      const pulseTimeout = setTimeout(() => setPacketPulse(false), 600);
+      return () => clearTimeout(pulseTimeout);
+    }
+  }, [liveMetrics.telemetryPackets, elapsedSeconds]);
 
   // Interactive meeting checklist for commitments
   const [agreedAsks, setAgreedAsks] = useState<Record<string, boolean>>({});
@@ -275,6 +290,146 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
                     </h4>
                     <p className="text-sm text-slate-300 font-light leading-relaxed">
                       {b.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case "dual-pillars":
+        return slide.dualPillars ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2 items-stretch">
+            {slide.dualPillars.map((pillar, idx) => (
+              <div
+                key={idx}
+                className="flex flex-col justify-between p-5 sm:p-6 rounded-3xl bg-slate-900/85 border border-slate-800 hover:border-slate-700 shadow-xl transition-all space-y-4"
+              >
+                <div className="space-y-4">
+                  {pillar.imageSrc && (
+                    <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden border border-slate-700/80 shadow-lg bg-slate-950">
+                      <Image
+                        src={pillar.imageSrc}
+                        alt={pillar.headline}
+                        fill
+                        className="object-cover object-center"
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <span className="inline-block text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      {pillar.tag}
+                    </span>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-100">
+                      {pillar.headline}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
+                      {pillar.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-800/80">
+                  <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    Schlüsselelemente:
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {pillar.badges.map((b, bIdx) => (
+                      <span
+                        key={bIdx}
+                        className="text-xs px-2.5 py-1 rounded-lg bg-slate-800/90 text-slate-200 border border-slate-700/80 flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{b}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null;
+
+      case "open-innovation":
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start pt-2">
+            {/* Left Column: Die Bürgerinitiative als eigentliches Produkt & Know-how Bündelung */}
+            <div className="lg:col-span-6 space-y-4">
+              <div className="p-5 rounded-2xl bg-emerald-950/30 border border-emerald-500/30 space-y-2">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
+                  <Sparkles className="w-4 h-4" />
+                  <span>Das Prinzip Open Innovation</span>
+                </div>
+                <h4 className="text-base sm:text-lg font-bold text-slate-100">
+                  Der Ausgang eines Hackathons ist bewusst unvorhersehbar
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-300 font-light leading-relaxed">
+                  Statt festgefahrener Lastenhefte entsteht echte Innovation durch das Zusammenwerfen von Rohdaten, interdisziplinären Köpfen und regionalem Problembewusstsein. Was am Sonntagabend auf der Bühne steht, überrascht jedes Mal!
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                {slide.bullets?.map((b, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400">
+                        {b.tag}
+                      </span>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <h5 className="text-sm sm:text-base font-bold text-slate-100">
+                      {b.title}
+                    </h5>
+                    <p className="text-xs text-slate-300 font-light leading-relaxed">
+                      {b.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column: Kuriose & inspirierende Hackathon-Beispiele mit Links */}
+            <div className="lg:col-span-6 space-y-3">
+              <div className="flex items-center justify-between pb-1">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Inspiration: Kuriose & clevere Hackathon-Prototypen
+                </h4>
+                <span className="text-[11px] text-emerald-400 font-mono">
+                  Open Data in Action
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {slide.curiousHackathonExamples?.map((ex, idx) => (
+                  <div
+                    key={idx}
+                    className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all space-y-2 group"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                        {ex.tag}
+                      </span>
+                      <a
+                        href={ex.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-semibold text-emerald-400 group-hover:text-emerald-300 flex items-center gap-1 hover:underline"
+                      >
+                        <span>Open Source / Link</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                    <h5 className="text-sm font-bold text-slate-100 group-hover:text-emerald-300 transition-colors">
+                      {ex.title}
+                    </h5>
+                    <p className="text-xs text-slate-300 font-light leading-relaxed">
+                      {ex.description}
                     </p>
                   </div>
                 ))}
@@ -807,16 +962,16 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
               })}
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-xs text-slate-400 flex items-center justify-between">
-              <span>
-                💡 <em>Tipp für das Gespräch:</em> Klicken Sie die Checkboxen an, wenn der Entscheider zustimmt!
+            <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-slate-300 font-medium">
+                Ergebnisse festhalten & als Beschlussgrundlage mitnehmen:
               </span>
               <button
                 onClick={() => setShowHandoutModal(true)}
-                className="text-xs font-semibold text-emerald-400 hover:underline flex items-center gap-1"
+                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all cursor-pointer"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Als PDF-Handout mitnehmen</span>
+                <span>Als 1-Pager Handout exportieren</span>
               </button>
             </div>
           </div>
@@ -866,7 +1021,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             <span className="font-bold text-slate-300">Ried-Radar</span>
-            <span className="font-mono text-emerald-400 font-bold bg-slate-950 px-1.5 py-0.5 rounded text-[11px] border border-slate-800">
+            <span className="font-mono text-emerald-400 font-bold bg-slate-950 px-1.5 py-0.5 rounded text-[11px] border border-slate-800 tabular-nums min-w-[48px] text-center inline-block">
               {liveMetrics.formattedDuration}
             </span>
           </div>
@@ -973,21 +1128,47 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
       <div className="w-full bg-slate-900/95 border-b border-slate-800 px-4 sm:px-6 py-2 flex items-center justify-between text-xs overflow-x-auto whitespace-nowrap scrollbar-none gap-6 print:hidden shadow-inner">
         <div className="flex items-center gap-2.5 shrink-0">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+            <span
+              className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80 ${
+                packetPulse ? "animate-ping scale-150" : "animate-ping"
+              }`}
+            />
+            <span
+              className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                packetPulse ? "bg-emerald-300 shadow-sm shadow-emerald-400" : "bg-emerald-500"
+              }`}
+            />
           </span>
           <span className="font-black text-emerald-400 uppercase tracking-widest text-[11px] font-mono">
             Live-Telemetrie im Ried:
           </span>
+          {latestEvent && (
+            <div
+              className={`hidden xl:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-950 border text-[10px] font-sans transition-all duration-300 ${
+                packetPulse
+                  ? "border-emerald-500/60 text-emerald-300 shadow-sm shadow-emerald-500/10"
+                  : "border-slate-800 text-slate-400"
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  packetPulse ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
+                }`}
+              />
+              <span className="truncate max-w-[210px] font-medium">
+                {latestEvent.title}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-xs text-slate-300 font-mono">
           <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
             <span className="text-orange-400">🗑️</span>
             <span className="text-slate-400 font-sans text-[11px]">ZAKB:</span>
-            <strong className="text-slate-100">
+            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[2rem] text-right inline-block">
               {liveMetrics.isDaytime ? liveMetrics.binsEmptied : "0"}
-            </strong>
+            </span>
             <span className="text-slate-400 font-sans text-[11px]">
               {liveMetrics.isDaytime ? "Tonnen" : "(Nachtruhe)"}
             </span>
@@ -996,33 +1177,55 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
           <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
             <span className="text-rose-400">🚧</span>
             <span className="text-slate-400 font-sans text-[11px]">Riedbahn:</span>
-            <strong className="text-slate-100">{liveMetrics.levelCrossingEvents}</strong>
+            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[1.8rem] text-right inline-block">
+              {liveMetrics.levelCrossingEvents}
+            </span>
             <span className="text-slate-400 font-sans text-[11px]">Schranken</span>
           </div>
 
           <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
             <span className="text-sky-400">🚆</span>
             <span className="text-slate-400 font-sans text-[11px]">Züge:</span>
-            <strong className="text-slate-100">{liveMetrics.trainsTraversed}</strong>
+            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[1.8rem] text-right inline-block">
+              {liveMetrics.trainsTraversed}
+            </span>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-            <span className="text-emerald-400">📡</span>
+          <div
+            className={`flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border transition-all duration-300 ${
+              packetPulse
+                ? "border-emerald-400/80 bg-emerald-950/40 shadow-sm shadow-emerald-500/20"
+                : "border-slate-800"
+            }`}
+          >
+            <span
+              className={`text-emerald-400 transition-transform duration-300 ${
+                packetPulse ? "scale-110" : ""
+              }`}
+            >
+              📡
+            </span>
             <span className="text-slate-400 font-sans text-[11px]">LoRaWAN:</span>
-            <strong className="text-emerald-300">{liveMetrics.telemetryPackets}</strong>
+            <span className="font-mono font-bold text-emerald-300 tabular-nums min-w-[2.5rem] text-right inline-block">
+              {liveMetrics.telemetryPackets}
+            </span>
             <span className="text-slate-400 font-sans text-[11px]">Pakete</span>
           </div>
 
           <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
             <span className="text-violet-400">🅿️</span>
             <span className="text-slate-400 font-sans text-[11px]">Bürstadt:</span>
-            <strong className="text-slate-100">{liveMetrics.parkingStateChanges}</strong>
+            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[1.8rem] text-right inline-block">
+              {liveMetrics.parkingStateChanges}
+            </span>
             <span className="text-slate-400 font-sans text-[11px]">Park-Events</span>
           </div>
 
           <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
             <span className="text-yellow-400">⚡</span>
-            <strong className="text-slate-100">{liveMetrics.solarKwhGenerated}</strong>
+            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[2.8rem] text-right inline-block">
+              {liveMetrics.solarKwhGenerated}
+            </span>
             <span className="text-slate-400 font-sans text-[11px]">
               {liveMetrics.isDaytime ? "kWh" : "kWh (Nacht)"}
             </span>

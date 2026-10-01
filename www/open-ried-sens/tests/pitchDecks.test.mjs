@@ -46,8 +46,8 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
     "Must reference Raspberry Shake URL"
   );
   assert.ok(
-    pitchDataSource.includes("Raspberry Shake (Seismograph für Erschütterungen & Geothermie)"),
-    "Raspberry Shake must reference seismograph / vibrations in its title"
+    pitchDataSource.includes("Raspberryshaker (Seismograph für Erschütterungen & Geothermie)"),
+    "Raspberryshaker must reference seismograph / vibrations in its title"
   );
 
   // Check that speaker notes structure is present
@@ -65,15 +65,19 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
   );
 });
 
-test("Core Team members (Rüdiger Enger, Michael Binzen, Erik Metz) are featured with photos", () => {
+test("Core Team members (Rüdiger Engert, Michael Binzen, Erik Metz) are featured with photos", () => {
   const pitchDataSource = fs.readFileSync(
     path.join(__dirname, "../lib/pitchData.ts"),
     "utf8"
   );
 
   assert.ok(
-    pitchDataSource.includes("Rüdiger Enger"),
-    "Must feature Rüdiger Enger"
+    pitchDataSource.includes("Rüdiger Engert"),
+    "Must feature Rüdiger Engert"
+  );
+  assert.ok(
+    pitchDataSource.includes("Engert Agrarmarkt"),
+    "Must reference Engert Agrarmarkt in Rüdiger's background"
   );
   assert.ok(
     pitchDataSource.includes("Michael Binzen"),
@@ -82,6 +86,14 @@ test("Core Team members (Rüdiger Enger, Michael Binzen, Erik Metz) are featured
   assert.ok(
     pitchDataSource.includes("Erik Metz"),
     "Must feature Erik Metz"
+  );
+  assert.ok(
+    pitchDataSource.includes("Digital Fellow am MIT"),
+    "Must feature Erik Metz MIT Digital Fellow background"
+  );
+  assert.ok(
+    pitchDataSource.includes("Wir leben im Ried"),
+    "Must emphasize living in the Ried"
   );
 
   // Check physical profile image files
@@ -120,7 +132,7 @@ test("Pitch visual photo and diagram assets physically exist in public/pitch", (
   }
 });
 
-test("Politik pitch deck includes specific asks and 0 € cost proposition", () => {
+test("Politik pitch deck includes specific asks, dual-pillars, and follows content constraints", () => {
   const pitchDataSource = fs.readFileSync(
     path.join(__dirname, "../lib/pitchData.ts"),
     "utf8"
@@ -131,6 +143,11 @@ test("Politik pitch deck includes specific asks and 0 € cost proposition", () 
     "Politik pitch must reference smartcity-system.de/buerstadt raw parking sensor data"
   );
   assert.ok(
+    pitchDataSource.includes("Bürstadt & Lampertheim") ||
+    pitchDataSource.includes("Bürstadt und Lampertheim"),
+    "Politik pitch must mention joint investment of Bürstadt and Lampertheim"
+  );
+  assert.ok(
     pitchDataSource.includes("0 € Belastung für den städtischen Haushalt") ||
     pitchDataSource.includes("0 € Kommunalkosten"),
     "Politik pitch must emphasize 0 € municipal cost"
@@ -138,6 +155,32 @@ test("Politik pitch deck includes specific asks and 0 € cost proposition", () 
   assert.ok(
     pitchDataSource.includes("Schirmherrschaft"),
     "Politik pitch must ask for patronage (Schirmherrschaft) at KAMÜ Hackathon"
+  );
+  assert.ok(
+    pitchDataSource.includes("dual-pillars"),
+    "Politik pitch must use dual-pillars layout for sensor building and hackathon"
+  );
+  assert.ok(
+    pitchDataSource.includes("open-innovation"),
+    "Politik pitch must use open-innovation layout for curiosity examples"
+  );
+
+  // Isolate POLITIK_DECK from pitchData source to verify forbidden phrases
+  const politikMatch = pitchDataSource.match(/export const POLITIK_DECK[\s\S]*?export const SCHULEN_DECK/);
+  assert.ok(politikMatch, "POLITIK_DECK block must be extractable");
+  const politikContent = politikMatch[0];
+
+  assert.ok(
+    !politikContent.includes("2,4 Millionen") && !politikContent.includes("2.4 Millionen"),
+    "POLITIK_DECK must NOT mention 2,4 Millionen Euro"
+  );
+  assert.ok(
+    !politikContent.includes("Wasserturm"),
+    "POLITIK_DECK must NOT mention Wasserturm"
+  );
+  assert.ok(
+    !politikContent.includes("Bürger-Cockpit"),
+    "POLITIK_DECK must NOT use the term Bürger-Cockpit"
   );
 });
 
