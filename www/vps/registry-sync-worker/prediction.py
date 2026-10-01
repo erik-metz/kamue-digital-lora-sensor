@@ -70,10 +70,21 @@ async def store_position(
         model_version=model,
     )
     await conn.execute(
-        "SELECT write_movement_position(%s)",
-        (Jsonb({'timestamp':timestamp.isoformat(),'entity_id':entity_id,'kind':kind,
-                'latitude':lat,'longitude':lon,'basis':basis,'source_id':source_id,
-                'payload_sha256':digest,'model_version':model,'metadata':metadata}),),
+        """INSERT INTO movement_positions(timestamp,entity_id,kind,latitude,longitude,basis,
+        source_id,payload_sha256,model_version,metadata) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        ON CONFLICT DO NOTHING""",
+        (
+            timestamp,
+            entity_id,
+            kind,
+            lat,
+            lon,
+            basis,
+            source_id,
+            digest,
+            model,
+            Jsonb(metadata),
+        ),
     )
     await conn.execute(
         """INSERT INTO movement_latest(entity_id,basis,timestamp,valid_until,data)

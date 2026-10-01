@@ -32,6 +32,8 @@ async def install(conn, shadow=False):
         await conn.execute((MIGRATIONS / "20261002_gauges.sql").read_text())
         await conn.execute((MIGRATIONS / "20261003_weather_reconciliation.sql").read_text())
         await conn.execute((MIGRATIONS / "20261004_inventory_coordinates.sql").read_text())
+        await conn.execute((MIGRATIONS / "20261004_movement_writer.sql").read_text())
+        await conn.execute((MIGRATIONS / "20261004_bulk_history.sql").read_text())
         if shadow:
             paused = await (await conn.execute("""SELECT state->>'requires_reconciliation'
                 FROM measurement_migration_state WHERE name='shadow_writes'""")).fetchone()
