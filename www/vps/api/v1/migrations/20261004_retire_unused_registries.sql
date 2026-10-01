@@ -1,6 +1,12 @@
 -- Explicit retirement, never run automatically by install(). These registries
 -- have no active collector or mounted API reader; current domain publications
 -- are collected_datasets/measurement_publications instead. No CASCADE.
+CREATE TABLE IF NOT EXISTS measurement_migration_state (
+    name TEXT PRIMARY KEY,
+    state JSONB NOT NULL DEFAULT '{}',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 DO $$
 DECLARE targets TEXT[] := ARRAY[
     'agriculture_crop_zones','agriculture_municipal_stats','boris_land_value_zones',
