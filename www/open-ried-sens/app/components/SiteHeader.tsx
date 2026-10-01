@@ -17,6 +17,7 @@ import {
   FileText,
   ShieldCheck,
   ExternalLink,
+  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -77,6 +78,12 @@ const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Offene Daten & API",
     shortLabel: "Offene Daten",
     icon: Database,
+  },
+  {
+    href: "/sensor-bauen",
+    label: "Sensor bauen",
+    shortLabel: "Sensor-Bau",
+    icon: Wrench,
     highlight: true,
   },
 ];

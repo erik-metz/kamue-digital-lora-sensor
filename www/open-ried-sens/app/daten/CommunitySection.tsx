@@ -16,6 +16,7 @@ import {
   Star,
   Wrench,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function CommunitySection() {
   const mailSubject = encodeURIComponent("Interesse am Sensor-Bau-Workshop – Open Ried Sens");
@@ -184,13 +185,13 @@ export default function CommunitySection() {
           </div>
 
           <div className="space-y-3 pt-2">
-            <a
-              href={`mailto:info@kamue.me?subject=${mailSubject}&body=${mailBody}`}
+            <Link
+              href="/sensor-bauen"
               className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold px-5 py-3 transition-all hover:scale-[1.01] shadow-lg text-sm"
             >
-              <Mail className="w-4 h-4" />
-              <span>Interesse am Sensor-Bau anmelden</span>
-            </a>
+              <Wrench className="w-4 h-4" />
+              <span>Zur Mitmach-Seite &amp; Bauanleitung</span>
+            </Link>
 
             <div className="flex items-center justify-between text-xs text-slate-400 px-1">
               <span>Workshops im Kulturzentrum KAMÜ Bürstadt</span>

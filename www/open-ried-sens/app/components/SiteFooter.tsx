@@ -38,6 +38,13 @@ export default function SiteFooter() {
           </Link>
           <span className="text-slate-700">•</span>
           <Link
+            href="/sensor-bauen"
+            className="text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
+          >
+            Sensor bauen
+          </Link>
+          <span className="text-slate-700">•</span>
+          <Link
             href="/demografie"
             className="hover:text-emerald-400 transition-colors"
           >
