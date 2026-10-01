@@ -58,11 +58,14 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
   );
 });
 
-test("Pitch evidence map image files physically exist in public/pitch", () => {
+test("Pitch visual photo and diagram assets physically exist in public/pitch", () => {
   const expectedImages = [
     "sensor-community-ried-map.png",
     "ttn-mapper-ried-map.png",
     "raspberry-shake-ried-map.png",
+    "hackathon-kamue-community.jpg",
+    "sensor-hardware-kit.jpg",
+    "schul-stem-workshop.jpg",
   ];
 
   for (const img of expectedImages) {
@@ -74,6 +77,62 @@ test("Pitch evidence map image files physically exist in public/pitch", () => {
     const stats = fs.statSync(filePath);
     assert.ok(stats.size > 1000, `Image file ${img} must not be empty`);
   }
+});
+
+test("Politik pitch deck includes specific asks (smartcity-system.de, TTN gateways, Hackathon)", () => {
+  const pitchDataSource = fs.readFileSync(
+    path.join(__dirname, "../lib/pitchData.ts"),
+    "utf8"
+  );
+
+  assert.ok(
+    pitchDataSource.includes("smartcity-system.de/buerstadt"),
+    "Politik pitch must reference smartcity-system.de/buerstadt raw parking sensor data"
+  );
+  assert.ok(
+    pitchDataSource.includes("The Things Network (TTN)"),
+    "Politik pitch must ask for opening / access to LoRaWAN TTN gateways"
+  );
+  assert.ok(
+    pitchDataSource.includes("Schirmherrschaft"),
+    "Politik pitch must ask for patronage (Schirmherrschaft) at KAMÜ Hackathon"
+  );
+});
+
+test("Schulen pitch deck includes differentiated STEM learning matrix and multiplier effect", () => {
+  const pitchDataSource = fs.readFileSync(
+    path.join(__dirname, "../lib/pitchData.ts"),
+    "utf8"
+  );
+
+  assert.ok(
+    pitchDataSource.includes("stem-learning-matrix"),
+    "Schulen deck must use stem-learning-matrix layout"
+  );
+  assert.ok(
+    pitchDataSource.includes("Praktisches Handwerk"),
+    "STEM matrix must include practical craftmanship (soldering, pliers)"
+  );
+  assert.ok(
+    pitchDataSource.includes("Multiplikator"),
+    "STEM matrix must include multiplier effect leading to Hackathon participation"
+  );
+});
+
+test("HandoutModal component exists and provides Ink-Saver white print mode", () => {
+  const handoutSource = fs.readFileSync(
+    path.join(__dirname, "../app/pitch/HandoutModal.tsx"),
+    "utf8"
+  );
+
+  assert.ok(
+    handoutSource.includes("inkSaverMode"),
+    "HandoutModal must support inkSaverMode"
+  );
+  assert.ok(
+    handoutSource.includes("window.print()"),
+    "HandoutModal must trigger window.print()"
+  );
 });
 
 test("Pitch pages have noindex metadata to remain hidden from search engines", () => {
