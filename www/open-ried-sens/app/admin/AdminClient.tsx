@@ -1,21 +1,30 @@
 "use client";
 
 import type { SensorItem } from "@/lib/backend";
+import Link from "next/link";
 import {
   AlertTriangle,
+  Check,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
   Eye,
   EyeOff,
   MapPin,
   Pencil,
   Plus,
+  Presentation,
   Radio,
   RefreshCw,
   Search,
+  Sparkles,
   Trash2,
   X,
 } from "lucide-react";
 import { useState, useTransition } from "react";
+import { PITCH_DECKS } from "@/lib/pitchData";
 import {
   createSensorAction,
   deleteSensorAction,
@@ -52,6 +61,19 @@ export default function AdminClient({
     type: "success" | "error";
     text: string;
   } | null>(initialError ? { type: "error", text: initialError } : null);
+
+  // Pitch decks state
+  const [pitchSectionOpen, setPitchSectionOpen] = useState(true);
+  const [copiedPitchSlug, setCopiedPitchSlug] = useState<string | null>(null);
+
+  function handleCopyPitch(slug: string) {
+    if (typeof window !== "undefined") {
+      const url = `${window.location.origin}/pitch/${slug}`;
+      navigator.clipboard.writeText(url);
+      setCopiedPitchSlug(slug);
+      setTimeout(() => setCopiedPitchSlug(null), 2500);
+    }
+  }
 
   // Modals state
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -406,6 +428,96 @@ export default function AdminClient({
               In Tests oder verborgen
             </p>
           </div>
+        </div>
+
+        {/* Stakeholder Pitch Decks Section (Hidden / Secret Presentations) */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                <Presentation className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-100">
+                    Stakeholder Pitch-Decks (Versteckte Seiten)
+                  </h2>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Neu
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Präsentationen für Vor-Ort-Termine (Politik, Schulen, VHS, Hacker, Wirtschaft) mit Tonspur-Leitfaden [N]
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link
+                href="/pitch"
+                className="text-xs font-semibold px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 flex items-center gap-1.5 transition-all shadow-md shadow-emerald-500/10"
+              >
+                <span>Pitch-Hub öffnen</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+              <button
+                onClick={() => setPitchSectionOpen((prev) => !prev)}
+                className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                title={pitchSectionOpen ? "Einklappen" : "Ausklappen"}
+              >
+                {pitchSectionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {pitchSectionOpen && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+              {PITCH_DECKS.map((deck) => (
+                <div
+                  key={deck.slug}
+                  className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition-all flex flex-col justify-between space-y-3"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                        {deck.badge}
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-mono">
+                        {deck.slides.length} Slides · {deck.estimatedMinutes}m
+                      </span>
+                    </div>
+                    <h3 className="text-sm font-bold text-slate-200 truncate">
+                      {deck.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 line-clamp-1">
+                      {deck.targetAudience}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-900">
+                    <Link
+                      href={`/pitch/${deck.slug}`}
+                      className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Presentation className="w-3.5 h-3.5" />
+                      <span>Starten</span>
+                    </Link>
+                    <button
+                      onClick={() => handleCopyPitch(deck.slug)}
+                      className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors"
+                      title="Geheimen Link kopieren"
+                    >
+                      {copiedPitchSlug === deck.slug ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Actions & Filters Toolbar */}

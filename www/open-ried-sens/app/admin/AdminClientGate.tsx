@@ -7,6 +7,7 @@ import {
   Globe,
   Lock,
   LogOut,
+  Presentation,
   Radio,
   RefreshCw,
   Server,
@@ -229,6 +230,13 @@ export default function AdminClientGate({
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/pitch"
+              className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 transition-all font-semibold"
+            >
+              <Presentation className="w-4 h-4" />
+              <span className="hidden sm:inline">Pitch-Decks</span>
+            </Link>
             <Link
               href="/"
               className="flex items-center gap-2 text-sm px-3.5 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-emerald-400 hover:border-slate-700 transition-all"

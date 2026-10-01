@@ -91,14 +91,14 @@ export default function DownloadsAndMediaSection() {
 
         {/* 3D-PRINT & PDF DOWNLOAD CARDS */}
         <div className="space-y-4 flex flex-col justify-between">
-          {/* 3D-PRINT STL CARD */}
+          {/* 3D-PRINT STL CARD (COMING SOON) */}
           <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <span className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 flex items-center justify-center">
                 <Box className="w-4 h-4" />
               </span>
-              <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-1">
-                <Construction className="w-2.5 h-2.5" /> In Optimierung
+              <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center gap-1 font-semibold">
+                <Construction className="w-2.5 h-2.5" /> Kommt bald · In Konstruktion
               </span>
             </div>
             <div>
@@ -107,33 +107,27 @@ export default function DownloadsAndMediaSection() {
               </h4>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                 Wetterfeste Lamellenkonstruktion mit Montageplatte für das RAK3113, SPS30-Kanal und
-                Sensoren.
+                Sensoren. Das 3D-Modell wird aktuell konstruiert und getestet.
               </p>
             </div>
             <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
               <div><strong>Material:</strong> PETG oder ASA (weiß, UV-stabil)</div>
-              <div><strong>Status:</strong> Freiluft-Testphase im Ried</div>
+              <div><strong>Verfügbarkeit:</strong> Wird rechtzeitig vor Workshop-Start freigeschaltet</div>
             </div>
-            <a
-              href="https://github.com/erik-metz/kamue-digital-lora-sensor/tree/main/hardware/sensor-node/v2/3d-prints"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-300 font-semibold px-4 py-2.5 text-xs transition-colors border border-slate-700"
-            >
-              <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span>STL-Fortschritt im GitHub-Repo</span>
-              <ExternalLink className="w-3 h-3 text-slate-500 ml-1" />
-            </a>
+            <div className="flex items-center justify-center gap-2 w-full rounded-xl bg-slate-950 border border-slate-800 text-slate-500 px-4 py-2.5 text-xs font-medium cursor-not-allowed">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>3D-Druckdateien folgen in Kürze</span>
+            </div>
           </div>
 
-          {/* PDF MANUAL CHEATSHEET CARD */}
+          {/* PDF MANUAL CHEATSHEET CARD (COMING SOON) */}
           <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <span className="w-8 h-8 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
                 <FileText className="w-4 h-4" />
               </span>
-              <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30">
-                In Vorbereitung
+              <span className="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-300 border border-blue-500/30 font-semibold">
+                Kommt bald · In Redaktion
               </span>
             </div>
             <div>
@@ -141,18 +135,22 @@ export default function DownloadsAndMediaSection() {
                 Druckfertige Bauanleitung (PDF)
               </h4>
               <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                Kompakte Schnellübersicht mit I²C-Adressenliste, Schaltplan und
+                Kompakte 2-seitige Schnellübersicht mit I²C-Adressenliste, Schaltplan und
                 Lötanleitung zum Ausdrucken auf die Werkbank.
               </p>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
+              <div><strong>Format:</strong> A4 PDF (2 Seiten, druckoptimiert)</div>
+              <div><strong>Status:</strong> Layoutierung für Druckfassung</div>
             </div>
             <a
               href="https://github.com/erik-metz/kamue-digital-lora-sensor/blob/main/hardware/sensor-node/v2/bom.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold px-4 py-2.5 text-xs transition-colors border border-slate-700"
+              className="inline-flex items-center justify-center gap-2 w-full rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-emerald-300 font-semibold px-4 py-2.5 text-xs transition-colors border border-slate-700"
             >
               <Printer className="w-3.5 h-3.5 text-blue-400" />
-              <span>Aktuelle Online-BOM &amp; Schaltplan ansehen</span>
+              <span>Online-BOM vorab auf GitHub ansehen</span>
               <ExternalLink className="w-3 h-3 text-slate-500 ml-1" />
             </a>
           </div>
