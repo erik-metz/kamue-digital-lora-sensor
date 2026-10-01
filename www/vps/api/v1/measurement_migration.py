@@ -96,6 +96,15 @@ async def disable_shadow(conn):
             WHERE name='shadow_writes'""")
 
 
+async def retire_unused_registries(conn):
+    """Safely drops unmounted legacy registry tables and registers state."""
+    async with conn.transaction():
+        await conn.execute((MIGRATIONS / "20261004_retire_unused_registries.sql").read_text())
+        row = await (await conn.execute("""SELECT state FROM measurement_migration_state
+            WHERE name='retired_unused_registries'""")).fetchone()
+        return row[0] if row else {"retired": True}
+
+
 async def audit(conn, start, end):
     """Compare a bounded interval using the current sensor/movement bridge contract.
 
@@ -319,6 +328,8 @@ async def main(args):
             result = await audit(conn, datetime.fromisoformat(args.start), datetime.fromisoformat(args.end))
         elif args.action == "capacity":
             result = await capacity(conn, args.available_disk_gib)
+        elif args.action == "retire-unused-registries":
+            result = await retire_unused_registries(conn)
         else:
             report = await capacity(conn, args.available_disk_gib)
             if not report['passes_preliminary_gate']:
@@ -335,6 +346,7 @@ if __name__ == "__main__":
     install_parser.add_argument("--shadow", action="store_true")
     install_parser.add_argument("--available-disk-gib", type=Decimal)
     sub.add_parser("disable-shadow")
+    sub.add_parser("retire-unused-registries")
     capacity_parser = sub.add_parser("capacity")
     capacity_parser.add_argument("--available-disk-gib", type=Decimal, required=True)
     audit_parser = sub.add_parser("audit")

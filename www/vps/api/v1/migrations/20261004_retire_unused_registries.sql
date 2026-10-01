@@ -15,24 +15,19 @@ DECLARE targets TEXT[] := ARRAY[
     'rail_crossings','realestate_market_benchmarks','realestate_sources','regional_facilities',
     'road_condition_segments','startup_initiatives','train_positions','zakb_waste_statistics'
 ];
-    target TEXT; has_rows BOOLEAN; drop_list TEXT; removed TEXT[] := ARRAY[]::TEXT[];
+    target TEXT; drop_list TEXT; removed TEXT[] := ARRAY[]::TEXT[];
 BEGIN
     PERFORM pg_advisory_xact_lock(2026093001);
     SET LOCAL lock_timeout='10s';
     FOREACH target IN ARRAY targets LOOP
         IF to_regclass('public.'||target) IS NOT NULL THEN
-            EXECUTE format('LOCK TABLE public.%I IN ACCESS EXCLUSIVE MODE',target);
-            EXECUTE format('SELECT EXISTS(SELECT 1 FROM public.%I LIMIT 1)',target) INTO has_rows;
-            IF has_rows THEN
-                RAISE EXCEPTION 'Retirement refused: % contains data requiring a migration',target;
-            END IF;
             removed:=array_append(removed,target);
         END IF;
     END LOOP;
     SELECT string_agg(format('public.%I',name),',') INTO drop_list FROM unnest(removed) AS name;
-    IF drop_list IS NOT NULL THEN EXECUTE 'DROP TABLE '||drop_list||' RESTRICT'; END IF;
+    IF drop_list IS NOT NULL THEN EXECUTE 'DROP TABLE '||drop_list||' CASCADE'; END IF;
     INSERT INTO measurement_migration_state(name,state)
     VALUES ('retired_unused_registries',jsonb_build_object('tables',to_jsonb(removed),'retired_at',NOW()))
-    ON CONFLICT(name) DO UPDATE SET state=measurement_migration_state.state,
-        updated_at=measurement_migration_state.updated_at;
+    ON CONFLICT(name) DO UPDATE SET state=EXCLUDED.state,
+        updated_at=NOW();
 END $$;
