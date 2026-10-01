@@ -4,12 +4,14 @@ from typing import Annotated
 import psycopg_pool
 from dependencies import get_db_pool, verify_admin_key
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+from measurement_reads import read_sql
 from schemas import (
     SensorMetadataCreate,
     SensorMetadataResponse,
     SensorMetadataUpdate,
     SensorVisibilityUpdate,
 )
+from snapshot_cache import sensor_map_cache
 
 router = APIRouter()
 
@@ -35,7 +37,7 @@ async def list_public_sensors(pool: DbPool):
         ORDER BY created_at ASC;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query)
+        cur = await conn.execute(read_sql(query))
         rows = await cur.fetchall()
 
     return [dict(row) for row in rows]
@@ -55,7 +57,7 @@ async def get_public_sensor(id: str, pool: DbPool):
         WHERE id = %s AND is_hidden = FALSE;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (id,))
+        cur = await conn.execute(read_sql(query), (id,))
         row = await cur.fetchone()
 
     if not row:
@@ -87,7 +89,7 @@ async def admin_list_sensors(pool: DbPool):
         ORDER BY created_at DESC;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query)
+        cur = await conn.execute(read_sql(query))
         rows = await cur.fetchall()
 
     return [dict(row) for row in rows]
@@ -134,6 +136,7 @@ async def admin_create_sensor(sensor: SensorMetadataCreate, pool: DbPool):
         )
         row = await cur.fetchone()
 
+    sensor_map_cache.invalidate()
     return dict(row)
 
 
@@ -207,6 +210,7 @@ async def admin_update_sensor(
         )
         updated_row = await cur.fetchone()
 
+    sensor_map_cache.invalidate()
     return dict(updated_row)
 
 
@@ -241,6 +245,7 @@ async def admin_toggle_visibility(
             detail=f"Sensor '{id}' not found.",
         )
 
+    sensor_map_cache.invalidate()
     return dict(row)
 
 
@@ -278,7 +283,7 @@ async def admin_delete_sensor(
             async with conn.transaction():
                 await conn.execute("DELETE FROM sensor_data WHERE sensor_id = %s;", (id,))
                 await conn.execute("DELETE FROM sensor_metadata WHERE id = %s;", (id,))
-            return {
+            result = {
                 "status": "purged",
                 "id": id,
                 "message": f"Sensor '{id}' and all telemetry permanently deleted.",
@@ -289,9 +294,11 @@ async def admin_delete_sensor(
                 "UPDATE sensor_metadata SET is_hidden = TRUE, updated_at = %s WHERE id = %s;",
                 (datetime.now(UTC), id),
             )
-            return {
+            result = {
                 "status": "hidden",
                 "id": id,
                 "message": f"Sensor '{id}' was archived and hidden from public feeds.",
             }
 
+    sensor_map_cache.invalidate()
+    return result

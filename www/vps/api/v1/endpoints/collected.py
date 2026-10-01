@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from dependencies import get_db_pool
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.encoders import jsonable_encoder
+from measurement_reads import core_reads, read_sql
 
 router = APIRouter(tags=["Collected data"])
 
@@ -89,7 +90,13 @@ async def dataset_publication(
         dataset = "demographics/commuters"
     async with pool.connection() as conn:
         cursor = await conn.execute(
-            "SELECT * FROM collected_datasets WHERE dataset=%s", (dataset,)
+            ("SELECT * FROM core_statistical_datasets WHERE dataset=%s"
+             if core_reads() and dataset.startswith("statistics/")
+             else "SELECT * FROM core_charger_datasets WHERE dataset=%s"
+             if core_reads() and dataset in {"infrastructure/ev-charging", "map/layers/charging"}
+             else "SELECT * FROM core_gauge_datasets WHERE dataset=%s"
+             if core_reads() and dataset in {"environment/flood/gauges", "map/layers/floods"}
+             else "SELECT * FROM collected_datasets WHERE dataset=%s"), (dataset,)
         )
         row = await cursor.fetchone()
     if row is None:
@@ -139,12 +146,12 @@ async def dataset_publication(
 @router.get("/movements/latest")
 async def movements(request: Request, pool=Depends(get_db_pool)):
     async with pool.connection() as conn:
-        cursor = await conn.execute("""SELECT DISTINCT ON (entity_id) data FROM movement_latest
+        cursor = await conn.execute(read_sql("""SELECT DISTINCT ON (entity_id) data FROM movement_latest
             WHERE valid_until > NOW() AND NOT EXISTS (
                 SELECT 1 FROM movement_trip_updates u WHERE u.cancelled AND u.valid_until>NOW()
                 AND movement_latest.entity_id=u.source_id||':'||u.service_date::text||':'||u.trip_id)
             ORDER BY entity_id,
-            CASE WHEN basis='observed' THEN 0 ELSE 1 END, timestamp DESC""")
+            CASE WHEN basis='observed' THEN 0 ELSE 1 END, timestamp DESC"""))
         rows = await cursor.fetchall()
     return cached_response({"positions": [r["data"] for r in rows]}, request, 5)
 
@@ -202,7 +209,9 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
     }
     async with pool.connection() as conn:
         cursor = await conn.execute(
-            "SELECT dataset,data,expires_at FROM collected_datasets WHERE (dataset LIKE 'map/layers/%%' OR dataset LIKE 'transport/stops/%%') AND expires_at > NOW()"
+            "SELECT dataset,data,expires_at FROM "
+            + ("core_map_datasets" if core_reads() else "collected_datasets")
+            + " WHERE (dataset LIKE 'map/layers/%%' OR dataset LIKE 'transport/stops/%%') AND expires_at > NOW()"
         )
         rows = await cursor.fetchall()
         traffic_cursor = await conn.execute(

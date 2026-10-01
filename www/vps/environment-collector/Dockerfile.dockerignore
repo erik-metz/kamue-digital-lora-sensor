@@ -1,0 +1,8 @@
+**
+!environment-collector/
+!environment-collector/*.py
+!environment-collector/requirements.txt
+!environment-collector/Dockerfile
+!api/
+!api/v1/
+!api/v1/weather_measurements.py

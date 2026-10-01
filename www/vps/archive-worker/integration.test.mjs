@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import pg from 'pg';
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import { runArchives } from './worker.mjs';
 
 // Uses a dedicated temporary PostgreSQL instance, never the production database.
@@ -20,7 +21,13 @@ test('database export, publication, retry, replacement and visibility', { skip: 
       INSERT INTO sensor_data SELECT '2025-01-01T00:00:00Z'::timestamptz + i * interval '1 second', 'public', 'temperature', i, 'C' FROM generate_series(1,6001) i;
       INSERT INTO sensor_data VALUES ('2025-01-01T00:00:00Z', 'hidden', 'temperature', 99, 'C'), ('2025-02-01T00:00:00Z', 'public', 'temperature', 100, 'C');`);
     const sql = await readFile(new URL('../api/v1/schema.sql', import.meta.url), 'utf8');
-    await client.query(sql.slice(sql.indexOf('CREATE TABLE IF NOT EXISTS data_archives')));
+    // Archive tests use plain PostgreSQL. Load only their actual tables, not
+    // every later schema section (which also creates Timescale hypertables).
+    for (const table of ['data_archives', 'archive_cleanup']) {
+      const statement = sql.match(new RegExp(`CREATE TABLE IF NOT EXISTS ${table} \\([\\s\\S]*?\\n\\);`));
+      assert.ok(statement, `Missing schema definition for ${table}`);
+      await client.query(statement[0]);
+    }
     let sequence = 0;
     let failAt = Infinity;
     const removed = [];
@@ -65,4 +72,55 @@ test('database export, publication, retry, replacement and visibility', { skip: 
     assert.equal(Number(row.reading_count), 0);
     assert.equal(row.files.length, 0);
   } finally { await client.query(`DROP SCHEMA ${schema} CASCADE`); await client.end(); }
+});
+
+test('core export reads canonical values and still honours station visibility', { skip: !process.env.ARCHIVE_TEST_SOCKET && !process.env.ARCHIVE_TEST_DATABASE_URL }, async () => {
+  const dbConfig = process.env.ARCHIVE_TEST_DATABASE_URL ? { connectionString: process.env.ARCHIVE_TEST_DATABASE_URL } : { host: process.env.ARCHIVE_TEST_SOCKET, port: 55439, database: 'postgres', user: process.env.USER };
+  const client = new pg.Client(dbConfig);
+  await client.connect();
+  const schema = `archive_core_test_${process.pid}`;
+  const previousMode = process.env.MEASUREMENT_READ_MODE;
+  await client.query(`CREATE SCHEMA ${schema}`);
+  dbConfig.options = `-c search_path=${schema},public`;
+  await client.query(`SET search_path TO ${schema},public`);
+  try {
+    await client.query(`CREATE TABLE sensor_metadata(id text PRIMARY KEY,is_hidden boolean NOT NULL DEFAULT false);
+      INSERT INTO sensor_metadata VALUES ('public',false);
+      CREATE TABLE sensor_data(timestamp timestamptz,sensor_id text,metric text,value float,unit text);
+      INSERT INTO sensor_data VALUES ('2025-01-01','public','temperature',9999,'C');
+      CREATE TABLE movement_latest(entity_id text,basis text,timestamp timestamptz,valid_until timestamptz,data jsonb);`);
+    for (const migration of ['20260930_measurements.sql', '20261001_read_models.sql']) {
+      await client.query(await readFile(new URL(`../api/v1/migrations/${migration}`, import.meta.url), 'utf8'));
+    }
+    const sql = await readFile(new URL('../api/v1/schema.sql', import.meta.url), 'utf8');
+    for (const table of ['data_archives', 'archive_cleanup']) {
+      const statement = sql.match(new RegExp(`CREATE TABLE IF NOT EXISTS ${table} \\([\\s\\S]*?\\n\\);`));
+      assert.ok(statement);
+      await client.query(statement[0]);
+    }
+    await client.query(`INSERT INTO entities(id,name,entity_type) VALUES('sensor:public','Canonical station','sensor');
+      SELECT write_measurement('sensor:public','temperature','C','legacy-sensor:public','unknown','{}',
+        '2025-01-01T00:00:00Z',20.125,'2025-01-01T00:01:00Z','{}');`);
+    let csv = '';
+    const storage = {
+      async upload(file) {
+        csv = await readFile(path.join(path.dirname(file.path), 'part-1.csv'), 'utf8');
+        return { key: 'canonical-key', url: 'https://test.ufs.sh/f/canonical' };
+      },
+      async remove() {},
+    };
+    process.env.MEASUREMENT_READ_MODE = 'core';
+    await runArchives({ storage, dbConfig, requestedMonth: '2025-01' });
+    assert.match(csv, /,20\.125,/);
+    assert.doesNotMatch(csv, /9999/);
+    assert.equal(Number((await client.query('SELECT reading_count FROM data_archives')).rows[0].reading_count), 1);
+    await client.query("UPDATE sensor_metadata SET is_hidden=true; UPDATE entities SET is_hidden=true WHERE id='sensor:public'");
+    await runArchives({ storage, dbConfig, requestedMonth: '2025-01' });
+    assert.equal(Number((await client.query('SELECT reading_count FROM data_archives')).rows[0].reading_count), 0);
+  } finally {
+    if (previousMode === undefined) delete process.env.MEASUREMENT_READ_MODE;
+    else process.env.MEASUREMENT_READ_MODE = previousMode;
+    await client.query(`DROP SCHEMA ${schema} CASCADE`);
+    await client.end();
+  }
 });

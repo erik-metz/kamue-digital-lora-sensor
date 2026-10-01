@@ -1,5 +1,6 @@
 """Database persistence for environment observations."""
 
+import os
 from datetime import datetime, timedelta
 
 from psycopg.types.json import Jsonb
@@ -10,8 +11,24 @@ async def persist_environment_data(
 ) -> dict[str, int]:
     updated_gauges = 0
     updated_weather = 0
+    mode = os.getenv('MEASUREMENT_WEATHER_WRITE_MODE', 'legacy')
+    if mode not in {'legacy', 'dual'}:
+        raise ValueError('MEASUREMENT_WEATHER_WRITE_MODE must be legacy or dual')
 
     async with conn.transaction():
+        if mode == 'dual':
+            from weather_measurements import replay_weather_receipt
+
+            if not payload or 'weather_attempt_id' not in payload:
+                raise ValueError('Canonical weather writes require an archived source receipt')
+            receipt = await (await conn.execute("""SELECT a.id,a.received_at,a.payload_sha256,p.body
+                FROM collection_attempts a JOIN collected_payloads p ON p.sha256=a.payload_sha256
+                WHERE a.id=%s AND a.source_id='environment-weather' AND a.http_status=200
+                    AND a.status IN ('received','success') AND a.payload_sha256=%s""",
+                (payload['weather_attempt_id'],payload['weather_sha256']))).fetchone()
+            if receipt is None:
+                raise ValueError('Weather receipt missing or does not match payload')
+            await replay_weather_receipt(conn, *receipt)
         # 1. Update Gauges
         for g in gauges:
             await conn.execute(
@@ -62,12 +79,26 @@ async def persist_environment_data(
                     VALUES (%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING""",
                     (w.sensor_id, metric, unit, w.timestamp, value),
                 )
+                latest_value = value
+                if mode == 'dual':
+                    # An older receipt may be retried after a newer correction.
+                    # Keep the legacy latest cache aligned with the authoritative
+                    # source-aware reading, not the retried response's old value.
+                    canonical = await (await conn.execute("""SELECT r.value FROM readings r
+                        JOIN measurement_definitions d ON d.id=r.measurement_id
+                        WHERE d.entity_id=%s AND d.source_id='environment-weather' AND d.basis='model'
+                            AND d.dimensions='{}' AND d.metric=%s AND d.unit=%s
+                            AND r.observed_at=%s AND r.quality='valid'""",
+                        ('sensor:'+w.sensor_id,metric,unit,w.timestamp))).fetchone()
+                    if canonical is None:
+                        raise ValueError('Canonical weather reading missing for legacy cache')
+                    latest_value = canonical[0]
                 await conn.execute(
                     """INSERT INTO sensor_latest(sensor_id,metric,unit,timestamp,value)
                     VALUES (%s,%s,%s,%s,%s) ON CONFLICT(sensor_id,metric,unit) DO UPDATE SET
                     timestamp=EXCLUDED.timestamp,value=EXCLUDED.value
                     WHERE EXCLUDED.timestamp >= sensor_latest.timestamp""",
-                    (w.sensor_id, metric, unit, w.timestamp, value),
+                    (w.sensor_id, metric, unit, w.timestamp, latest_value),
                 )
                 updated_weather += 1
         if payload and gauges:

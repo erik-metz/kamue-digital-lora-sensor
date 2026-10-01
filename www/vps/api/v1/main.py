@@ -9,6 +9,7 @@ import psycopg_pool
 from dependencies import validate_api_keys
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from measurement_reads import ensure_core_ready
 from psycopg.rows import dict_row
 from router import api_router as v1_router
 
@@ -53,6 +54,8 @@ async def lifespan(app: FastAPI):
 
     try:
         await init_db(app.state.pool)
+        async with app.state.pool.connection() as conn:
+            await ensure_core_ready(conn)
         yield
     finally:
         await app.state.pool.close()

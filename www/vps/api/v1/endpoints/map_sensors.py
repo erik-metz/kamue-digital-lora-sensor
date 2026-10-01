@@ -1,11 +1,17 @@
 """Bounded public map inventory and latest measurements in one request."""
 
+import hashlib
+import json
 import math
 from datetime import UTC, datetime
+from time import monotonic
 
 from dependencies import get_db_pool
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi.encoders import jsonable_encoder
+from measurement_reads import core_reads, read_sql
 from psycopg.errors import QueryCanceled
+from snapshot_cache import sensor_map_cache
 
 router = APIRouter()
 MAX_MAP_SENSORS = 5000
@@ -31,12 +37,11 @@ ORDER BY sm.id LIMIT %s
 """
 
 
-@router.get("/map/sensors", tags=["Telemetry Public"])
 async def get_map_sensors(pool=Depends(get_db_pool)):
     try:
         async with pool.connection() as conn, conn.transaction():
             await conn.execute("SET LOCAL statement_timeout = '5s'")
-            cursor = await conn.execute(MAP_QUERY, (MAX_MAP_READINGS + 1, MAX_MAP_SENSORS + 1))
+            cursor = await conn.execute(read_sql(MAP_QUERY), (MAX_MAP_READINGS + 1, MAX_MAP_SENSORS + 1))
             rows = await cursor.fetchall()
     except QueryCanceled:
         raise HTTPException(503, "Map data temporarily unavailable.") from None
@@ -48,3 +53,20 @@ async def get_map_sensors(pool=Depends(get_db_pool)):
         item["readings"] = [r for r in item["readings"] if isinstance(r["value"], (int, float)) and math.isfinite(r["value"])]
         sensors.append(item)
     return {"generated_at": datetime.now(UTC), "sensors": sensors}
+
+
+@router.get("/map/sensors", tags=["Telemetry Public"])
+async def map_sensor_snapshot(request: Request, pool=Depends(get_db_pool)):
+    async def load():
+        data = await get_map_sensors(pool)
+        body = json.dumps(jsonable_encoder(data), separators=(",", ":"), ensure_ascii=False,
+                          allow_nan=False).encode()
+        return body, '"' + hashlib.sha256(body).hexdigest() + '"'
+
+    (body, etag), expires = await sensor_map_cache.get((pool, core_reads()), load)
+    # Bound downstream caching by the remaining lifetime of this snapshot.
+    remaining = max(0, int(expires-monotonic()))
+    headers = {"Cache-Control": f"public, max-age={remaining}, s-maxage={remaining}", "ETag": etag}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return Response(body, media_type="application/json", headers=headers)

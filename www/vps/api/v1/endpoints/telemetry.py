@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 import psycopg_pool
 from dependencies import get_db_pool, verify_ingestion_key
 from fastapi import APIRouter, Depends, HTTPException, Query, Security, status
+from measurement_reads import read_sql
 from psycopg.errors import QueryCanceled
 from schemas import (
     BatchSensorReadings,
@@ -181,7 +182,7 @@ async def get_raw_telemetry(
         LIMIT %s;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (sensor_id, metric, metric, start_time, end, limit))
+        cur = await conn.execute(read_sql(query), (sensor_id, metric, metric, start_time, end, limit))
         rows = await cur.fetchall()
 
     return [
@@ -251,7 +252,7 @@ async def get_telemetry_aggregates(
         async with pool.connection() as conn, conn.transaction():
             # Transaction-local: also bounds database work before LIMIT is applied.
             await conn.execute("SET LOCAL statement_timeout = '5s'")
-            cur = await conn.execute(query, (cleaned_interval, sensor_id, metric, metric, start_time, end, MAX_AGGREGATE_ROWS + 1))
+            cur = await conn.execute(read_sql(query), (cleaned_interval, sensor_id, metric, metric, start_time, end, MAX_AGGREGATE_ROWS + 1))
             rows = await cur.fetchall()
     except QueryCanceled:
         raise HTTPException(503, "Query exceeded its time budget; shorten the range.") from None
@@ -294,7 +295,7 @@ async def get_latest_sensor_reading(
         LIMIT 1;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (sensor_id, metric, metric))
+        cur = await conn.execute(read_sql(query), (sensor_id, metric, metric))
         row = await cur.fetchone()
 
     if not row:
@@ -325,6 +326,6 @@ async def get_latest_sensor_metrics(
         ORDER BY sd.metric, sd.unit, sd.timestamp DESC;
     """
     async with pool.connection() as conn:
-        cur = await conn.execute(query, (sensor_id,))
+        cur = await conn.execute(read_sql(query), (sensor_id,))
         rows = await cur.fetchall()
     return [dict(row) for row in rows]

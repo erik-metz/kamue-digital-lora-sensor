@@ -30,9 +30,9 @@ async def fetch(client, settings, conn=None):
                     response.headers.get("content-type", "application/json"),
                 ),
             )
-            await conn.execute(
+            receipt = await conn.execute(
                 """INSERT INTO collection_attempts(source_id,http_status,payload_sha256,status)
-                VALUES (%s,%s,%s,%s)""",
+                VALUES (%s,%s,%s,%s) RETURNING id""",
                 (
                     "environment-" + name,
                     response.status_code,
@@ -40,6 +40,7 @@ async def fetch(client, settings, conn=None):
                     "received" if response.is_success else "failed",
                 ),
             )
+            payload[name + "_attempt_id"] = (await receipt.fetchone())[0]
             await conn.commit()
         response.raise_for_status()
         payload[name] = response.json()

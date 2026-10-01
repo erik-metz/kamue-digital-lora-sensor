@@ -3,6 +3,7 @@ from datetime import datetime
 import psycopg_pool
 from dependencies import get_db_pool
 from fastapi import APIRouter, Depends
+from measurement_reads import read_sql
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -37,7 +38,7 @@ async def list_archives(pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_
     Snapshots containing stations which became private are not listed.
     """
     async with pool.connection() as conn:
-        cur = await conn.execute("""
+        cur = await conn.execute(read_sql("""
             SELECT month, generated_at, is_complete, reading_count, size_bytes, files
             FROM data_archives a
             WHERE NOT EXISTS (
@@ -46,7 +47,7 @@ async def list_archives(pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_
                     WHERE s.id = included.station_id AND NOT s.is_hidden)
             )
             ORDER BY month DESC;
-        """)
+        """))
         rows = await cur.fetchall()
     return [
         {
