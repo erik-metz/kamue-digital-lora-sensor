@@ -615,130 +615,140 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
             Partner, Schnittstellen &amp; Urheber
           </h2>
           <p className="text-sm text-slate-400">
-            Die Daten werden direkt von den jeweiligen Betreibern, Bundes- und Landesbehörden sowie kommunalen Einrichtungen bezogen:
+            Klicke auf eine Karte, um direkt zur offiziellen Quelle, dem Betreiber oder der Dokumentation zu gelangen:
           </p>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("vrn", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">VRN</span>
-              <span className="text-[10px] text-slate-400 block">Bus &amp; Bahn GTFS-RT</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("nextbike", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">VRNnextbike</span>
-              <span className="text-[10px] text-slate-400 block">Leihräder &amp; Stationen</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("zakb", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">ZAKB Bergstraße</span>
-              <span className="text-[10px] text-slate-400 block">Abfalltouren &amp; Höfe</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("bkg", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">BKG TopPlus</span>
-              <span className="text-[10px] text-slate-400 block">Amtliche Geobasisdaten</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("bnetza", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">Bundesnetzagentur</span>
-              <span className="text-[10px] text-slate-400 block">Ladeinfrastruktur</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("hessen", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">Statistik Hessen</span>
-              <span className="text-[10px] text-slate-400 block">Gemeindestatistik</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("wahl", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">Bundeswahlleiterin</span>
-              <span className="text-[10px] text-slate-400 block">Wahlbezirke 2025</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("cross7", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">Cross-7 Bürstadt</span>
-              <span className="text-[10px] text-slate-400 block">Veranstaltungskalender</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("osm", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">OpenStreetMap</span>
-              <span className="text-[10px] text-slate-400 block">Straßennetz &amp; Adressen</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("ttn", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">The Things Network</span>
-              <span className="text-[10px] text-slate-400 block">LoRaWAN Funknetz</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("pegel", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">HLNUG Hessen</span>
-              <span className="text-[10px] text-slate-400 block">Rheinpegel &amp; Wasser</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("autobahn", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">Die Autobahn</span>
-              <span className="text-[10px] text-slate-400 block">A67, A5, A6 Stau-API</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("weather", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">DWD / Open-Meteo</span>
-              <span className="text-[10px] text-slate-400 block">Wetter &amp; Niederschlag</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("shake", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">Raspberry Shake</span>
-              <span className="text-[10px] text-slate-400 block">Bürger-Seismologie</span>
-            </div>
-          </div>
-
-          <div className="bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-slate-700 transition-colors">
-            {getSourceLogo("smartcity", "w-10 h-10")}
-            <div className="space-y-0.5">
-              <span className="font-bold text-xs text-slate-200 block">Smart City System</span>
-              <span className="text-[10px] text-slate-400 block">Bürstadt IoT-Plan</span>
-            </div>
-          </div>
+          {[
+            {
+              id: "vrn",
+              name: "VRN",
+              subtitle: "Bus & Bahn GTFS-RT",
+              url: "https://www.vrn.de/service/entwickler/gtfs-realtime/",
+              logoId: "vrn",
+            },
+            {
+              id: "nextbike",
+              name: "VRNnextbike",
+              subtitle: "Leihräder & Stationen",
+              url: "https://www.vrnnextbike.de/de/",
+              logoId: "nextbike",
+            },
+            {
+              id: "zakb",
+              name: "ZAKB Bergstraße",
+              subtitle: "Abfalltouren & Höfe",
+              url: "https://www.zakb.de/abfallkalender",
+              logoId: "zakb",
+            },
+            {
+              id: "bkg",
+              name: "BKG TopPlus",
+              subtitle: "Amtliche Geobasisdaten",
+              url: "https://sgx.geodatenzentrum.de/wms_topplus_open",
+              logoId: "bkg",
+            },
+            {
+              id: "bnetza",
+              name: "Bundesnetzagentur",
+              subtitle: "Ladeinfrastruktur",
+              url: "https://www.bundesnetzagentur.de/DE/Fachthemen/ElektrizitaetundGas/E-Mobilitaet/DownloadundKontakt.html",
+              logoId: "bnetza",
+            },
+            {
+              id: "hessen",
+              name: "Statistik Hessen",
+              subtitle: "Gemeindestatistik",
+              url: "https://statistik.hessen.de/publikationen/hessiche-gemeindestatistik",
+              logoId: "hessen",
+            },
+            {
+              id: "wahl",
+              name: "Bundeswahlleiterin",
+              subtitle: "Wahlbezirke 2025",
+              url: "https://www.bundeswahlleiterin.de/bundestagswahlen/2025.html",
+              logoId: "wahl",
+            },
+            {
+              id: "cross7",
+              name: "Cross-7 Bürstadt",
+              subtitle: "Veranstaltungskalender",
+              url: "https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender",
+              logoId: "cross7",
+            },
+            {
+              id: "osm",
+              name: "OpenStreetMap",
+              subtitle: "Straßennetz & Adressen",
+              url: "https://www.openstreetmap.org/",
+              logoId: "osm",
+            },
+            {
+              id: "ttn",
+              name: "The Things Network",
+              subtitle: "LoRaWAN Funknetz",
+              url: "https://www.thethingsnetwork.org/",
+              logoId: "ttn",
+            },
+            {
+              id: "pegel",
+              name: "HLNUG Hessen",
+              subtitle: "Rheinpegel & Wasser",
+              url: "https://www.hlnug.de/themen/wasser/hochwasser",
+              logoId: "pegel",
+            },
+            {
+              id: "autobahn",
+              name: "Die Autobahn",
+              subtitle: "A67, A5, A6 Stau-API",
+              url: "https://autobahn.de/",
+              logoId: "autobahn",
+            },
+            {
+              id: "weather",
+              name: "DWD / Open-Meteo",
+              subtitle: "Wetter & Niederschlag",
+              url: "https://open-meteo.com/",
+              logoId: "weather",
+            },
+            {
+              id: "shake",
+              name: "Raspberry Shake",
+              subtitle: "Bürger-Seismologie",
+              url: "https://raspberryshake.org/",
+              logoId: "shake",
+            },
+            {
+              id: "smartcity",
+              name: "Smart City System",
+              subtitle: "Bürstadt IoT-Plan",
+              url: "https://smartcity-system.de/",
+              logoId: "smartcity",
+            },
+          ].map((partner) => (
+            <a
+              key={partner.id}
+              href={partner.url}
+              target="_blank"
+              rel="noreferrer"
+              title={`${partner.name} (${partner.subtitle}) – Öffne Originalquelle in neuem Tab`}
+              className="group relative bg-slate-900/70 border border-slate-800/90 rounded-xl p-3.5 flex flex-col items-center text-center gap-2.5 hover:border-emerald-500/40 hover:bg-slate-900 transition-all hover:scale-[1.02] shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 cursor-pointer"
+            >
+              <div className="absolute top-2 right-2 text-slate-600 group-hover:text-emerald-400 transition-colors">
+                <ExternalLink className="w-3 h-3" />
+              </div>
+              {getSourceLogo(partner.logoId, "w-10 h-10 transition-transform group-hover:scale-105")}
+              <div className="space-y-0.5">
+                <span className="font-bold text-xs text-slate-200 group-hover:text-emerald-300 transition-colors block">
+                  {partner.name}
+                </span>
+                <span className="text-[10px] text-slate-400 block">
+                  {partner.subtitle}
+                </span>
+              </div>
+            </a>
+          ))}
         </div>
       </section>
 
