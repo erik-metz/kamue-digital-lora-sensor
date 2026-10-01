@@ -109,6 +109,36 @@ test("Core Team members (Rüdiger Engert, Michael Binzen, Erik Metz) are feature
   }
 });
 
+test("Every pitch deck (Politik, Schulen, VHS, Wirtschaft) contains the Core Team slide", async () => {
+  const { PITCH_DECKS } = await import("../lib/pitchData.ts");
+
+  assert.equal(PITCH_DECKS.length, 4, "Must have exactly 4 stakeholder pitch decks");
+
+  for (const deck of PITCH_DECKS) {
+    const teamSlide = deck.slides.find((s) => s.layout === "team-showcase");
+    assert.ok(
+      teamSlide,
+      `Deck '${deck.slug}' (${deck.title}) must include a slide with layout 'team-showcase'`
+    );
+    assert.ok(
+      teamSlide.teamMembers && teamSlide.teamMembers.length === 3,
+      `Deck '${deck.slug}' team slide must feature all 3 core team members`
+    );
+    assert.ok(
+      teamSlide.teamMembers.some((m) => m.name === "Rüdiger Engert"),
+      `Deck '${deck.slug}' must include Rüdiger Engert`
+    );
+    assert.ok(
+      teamSlide.teamMembers.some((m) => m.name === "Michael Binzen"),
+      `Deck '${deck.slug}' must include Michael Binzen`
+    );
+    assert.ok(
+      teamSlide.teamMembers.some((m) => m.name === "Erik Metz"),
+      `Deck '${deck.slug}' must include Erik Metz`
+    );
+  }
+});
+
 test("Pitch visual photo and diagram assets physically exist in public/pitch", () => {
   const expectedImages = [
     "sensor-community-ried-map.png",

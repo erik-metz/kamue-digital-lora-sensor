@@ -194,6 +194,33 @@ export const MAP_EVIDENCE_ITEMS: MapEvidence[] = [
   },
 ];
 
+export const CORE_TEAM_MEMBERS: TeamMember[] = [
+  {
+    name: "Rüdiger Engert",
+    location: "Bürstadt",
+    role: "Gründer Kulturzentrum KAMÜ & Bürgerstiftung",
+    imageSrc: "/pitch/ruediger-engert.jpg",
+    bio: "Impulsgeber und Gründer des Kultur- und Begegnungszentrums KAMÜ ('Kultur am Übergang') im historischen Getreidespeicher in Bürstadt (ehemals Engert Agrarmarkt). Langjähriger Förderer der regionalen Kultur und Vorstandsmitglied der Bürgerstiftung Bürstadt.",
+    highlights: ["KAMÜ Gründer", "Ehemals Engert Agrarmarkt", "Bürgerstiftung Bürstadt"],
+  },
+  {
+    name: "Michael Binzen",
+    location: "Bürstadt",
+    role: "Senior IT- & Software-Architekt (DB Systel / Bahn IT)",
+    imageSrc: "/pitch/michael-binzen.jpg",
+    bio: "Über 20 Jahre Software-Architektur und Digitalisierung bei der Deutschen Bahn. Pionier für Open Data, Echtzeit-APIs und Innovationskultur. Bitkom-Referent, Mentor bei 'Jugend Hackt' und aktiv in der Bürstädter Vereinslandschaft (TV 1891 Bürstadt).",
+    highlights: ["Open Data & APIs", "DB Systel / Bahn IT", "Jugend Hackt Mentor"],
+  },
+  {
+    name: "Erik Metz",
+    location: "Nordheim / Ried",
+    role: "Software Engineer, Automatisierung & IoT (Digital Fellow MIT)",
+    imageSrc: "/pitch/erik-metz.jpg",
+    bio: "20+ Jahre Erfahrung in industrieller Automatisierungstechnik, SPS-Steuerungen, Industrie-Robotik, Embedded Elektronik und IoT. Digital Fellow am MIT, Initiator von Open Ried Sens und Maintainer der Plattform.",
+    highlights: ["20+ Jahre Automation & Robotik", "Digital Fellow MIT", "IoT & Open Source Lead"],
+  },
+];
+
 // ============================================================================
 // 1. POLITIK PITCH DECK (Bürgermeister, Landräte, Fraktionen)
 // ============================================================================
@@ -469,32 +496,7 @@ export const POLITIK_DECK: PitchDeck = {
       title: "Das Team vor Ort: Tief im Ried verwurzelt & technologisch erfahren",
       lead: "Wir leben im Ried, engagieren uns vor Ort und bringen jahrzehntelange Erfahrung aus Groß-IT, Industrie-Automation, Kultur und Open Source mit.",
       layout: "team-showcase",
-      teamMembers: [
-        {
-          name: "Rüdiger Engert",
-          location: "Bürstadt",
-          role: "Gründer Kulturzentrum KAMÜ & Bürgerstiftung",
-          imageSrc: "/pitch/ruediger-engert.jpg",
-          bio: "Impulsgeber und Gründer des Kultur- und Begegnungszentrums KAMÜ ('Kultur am Übergang') im historischen Getreidespeicher in Bürstadt (ehemals Engert Agrarmarkt). Langjähriger Förderer der regionalen Kultur und Vorstandsmitglied der Bürgerstiftung Bürstadt.",
-          highlights: ["KAMÜ Gründer", "Ehemals Engert Agrarmarkt", "Bürgerstiftung Bürstadt"],
-        },
-        {
-          name: "Michael Binzen",
-          location: "Bürstadt",
-          role: "Senior IT- & Software-Architekt (DB Systel / Bahn IT)",
-          imageSrc: "/pitch/michael-binzen.jpg",
-          bio: "Über 20 Jahre Software-Architektur und Digitalisierung bei der Deutschen Bahn. Pionier für Open Data, Echtzeit-APIs und Innovationskultur. Bitkom-Referent, Mentor bei 'Jugend Hackt' und aktiv in der Bürstädter Vereinslandschaft (TV 1891 Bürstadt).",
-          highlights: ["Open Data & APIs", "DB Systel / Bahn IT", "Jugend Hackt Mentor"],
-        },
-        {
-          name: "Erik Metz",
-          location: "Nordheim / Ried",
-          role: "Software Engineer, Automatisierung & IoT (Digital Fellow MIT)",
-          imageSrc: "/pitch/erik-metz.jpg",
-          bio: "20+ Jahre Erfahrung in industrieller Automatisierungstechnik, SPS-Steuerungen, Industrie-Robotik, Embedded Elektronik und IoT. Digital Fellow am MIT, Initiator von Open Ried Sens und Maintainer der Plattform.",
-          highlights: ["20+ Jahre Automation & Robotik", "Digital Fellow MIT", "IoT & Open Source Lead"],
-        },
-      ],
+      teamMembers: CORE_TEAM_MEMBERS,
       speakerNotes: {
         elevatorPitch:
           "Wir sind kein anonymes Beratungsunternehmen, sondern Menschen, die im Ried leben: Rüdiger Engert bringt mit dem KAMÜ den zentralen Begegnungsort und Bürgerstiftungs-Erfahrung mit. Michael Binzen steuert 20 Jahre Bahn-IT und Jugend-Hackt-Expertise bei. Erik Metz verbindet 20 Jahre Automation und MIT-Erfahrung mit der Plattform-Architektur.",
@@ -770,9 +772,31 @@ export const SCHULEN_DECK: PitchDeck = {
       },
     },
     {
-      id: "schulen-6-ask",
+      id: "schulen-6-team",
       stepNumber: 6,
-      stepLabel: "06 / The Ask an die Schulleitung",
+      stepLabel: "06 / Das Core-Team vor Ort",
+      eyebrow: "Wir leben im Ried · Mentoren & Macher vor Ort",
+      title: "Die Köpfe hinter der Initiative: Mentoren, Ingenieure & Kulturmacher",
+      lead: "Wir leben im Ried und begleiten Ihre Schüler und Lehrkräfte ehrenamtlich – mit Praxiserfahrung aus Jugend Hackt, Industrie-Automation, Schulträgerschaft und KAMÜ-Kulturarbeit.",
+      layout: "team-showcase",
+      teamMembers: CORE_TEAM_MEMBERS,
+      speakerNotes: {
+        elevatorPitch:
+          "Wir begleiten Ihre Schule persönlich: Michael Binzen engagiert sich seit Jahren als Jugend-Hackt-Mentor und bringt Schülern Programmierfreude bei. Erik Metz bringt 20 Jahre Industrie-Robotik, Elektronik und MIT-Fellowship ein, und Rüdiger Engert öffnet das KAMÜ als außerschulischen Werkstatt- und Begegnungsort.",
+        talkingPoints: [
+          "Ehrenamtliche Begleitung und Praxistipps für Lehrkräfte.",
+          "Verlässliche Ansprechpartner direkt vor Ort in Bürstadt und Nordheim.",
+          "Brücke zwischen Schule, Handwerk und moderner Software-Industrie.",
+        ],
+        audienceEngagement:
+          "Bieten Sie an: 'Wir kommen gerne persönlich in Ihre Fachschaft oder Ihren Physikunterricht!'",
+        localHook: "Kulturzentrum KAMÜ in Bürstadt als außerschulischer Lernort.",
+      },
+    },
+    {
+      id: "schulen-7-ask",
+      stepNumber: 7,
+      stepLabel: "07 / The Ask an die Schulleitung",
       eyebrow: "Keine Schulgelder gefordert · Reine Partnerschaft",
       title: "Unser 'Ask' an Schulleitung & Lehrerkollegium",
       lead: "Wir fordern kein Schulbudget: Die Finanzierung der Bausätze übernehmen Firmenpaten, Fördervereine oder Eltern/Großeltern im Projektrahmen. Wir bitten um Raum, Ankündigung und Begeisterung.",
@@ -830,9 +854,9 @@ export const SCHULEN_DECK: PitchDeck = {
       },
     },
     {
-      id: "schulen-7-live-bonus",
-      stepNumber: 7,
-      stepLabel: "Bonus / Live-Daten-Beweis",
+      id: "schulen-8-live-bonus",
+      stepNumber: 8,
+      stepLabel: "08 / Live-Daten-Beweis",
       eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
       title: "Was im Ried passiert ist, während Sie uns zugehört haben",
       lead: "Unsere Plattform erfasst bereits im Hintergrund reale Datenströme aus Müllabfuhr, Bahnverkehr und LoRaWAN-Sensorik – genau diese Daten erforschen Ihre Schüler!",
@@ -972,9 +996,30 @@ export const VHS_DECK: PitchDeck = {
       },
     },
     {
-      id: "vhs-4-ask",
+      id: "vhs-4-team",
       stepNumber: 4,
-      stepLabel: "04 / The Ask an die VHS-Leitung",
+      stepLabel: "04 / Das Dozenten- & Macher-Team",
+      eyebrow: "Wir leben im Ried · Bürgerbildung & Technologie",
+      title: "Das Team vor Ort: Tief im Ried verwurzelt & didaktisch erfahren",
+      lead: "Wir leben im Ried, engagieren uns in Bürgerstiftung, Kultur und Vereinen und bringen jahrzehntelange Praxis aus Groß-IT, Robotik und Bildungsinitiativen mit.",
+      layout: "team-showcase",
+      teamMembers: CORE_TEAM_MEMBERS,
+      speakerNotes: {
+        elevatorPitch:
+          "Ihre VHS-Kursteilnehmer werden von echten Praktikern angeleitet: Rüdiger Engert steht für gelebte Bürgerkultur im KAMÜ Bürstadt. Michael Binzen und Erik Metz bringen jahrzehntelange IT- und Automatisierungserfahrung mit – mit Geduld, Freude und ohne Fachchinesisch.",
+        talkingPoints: [
+          "Verbindung aus lokaler Verankerung, Kultur, Bürgerstiftung und Industrie-Know-how.",
+          "Dozenten, die auf Augenhöhe erklären und Freude am Selbermachen vermitteln.",
+        ],
+        audienceEngagement:
+          "Betonen Sie: 'Wir stehen persönlich hinter jedem einzelnen Kursabend.'",
+        localHook: "Kulturzentrum KAMÜ Bürstadt als barrierefreier Kurs- und Veranstaltungsort.",
+      },
+    },
+    {
+      id: "vhs-5-ask",
+      stepNumber: 5,
+      stepLabel: "05 / The Ask an die VHS-Leitung",
       eyebrow: "Kooperation · Nächste Schritte",
       title: "Unser 'Ask' an die Volkshochschule",
       lead: "Lassen Sie uns den Kurs im nächsten Semesterheft platzieren. Wir liefern den Inhalt, Sie die Reichweite.",
@@ -1023,9 +1068,9 @@ export const VHS_DECK: PitchDeck = {
       },
     },
     {
-      id: "vhs-5-live-bonus",
-      stepNumber: 5,
-      stepLabel: "Bonus / Live-Daten-Beweis",
+      id: "vhs-6-live-bonus",
+      stepNumber: 6,
+      stepLabel: "06 / Live-Daten-Beweis",
       eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
       title: "Was im Ried passiert ist, während Sie uns zugehört haben",
       lead: "Unsere Plattform läuft live: Reale Umweltdaten, Bahnverkehr und ZAKB-Telemetrie – passgenau zur Tages- oder Nachtzeit.",
@@ -1149,9 +1194,31 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
       },
     },
     {
-      id: "wirt-3-ask",
+      id: "wirt-3-team",
       stepNumber: 3,
-      stepLabel: "03 / The Ask an Unternehmen & Stadtwerke",
+      stepLabel: "03 / Das Core-Team vor Ort",
+      eyebrow: "Wir leben im Ried · Unternehmerisch & technologisch",
+      title: "Das Team vor Ort: Tief im Ried verwurzelt & technologisch erfahren",
+      lead: "Wir leben im Ried, kennen die regionalen Betriebe und vereinen jahrzehntelange Expertise aus Industrie-Automatisierung, Groß-IT, Bürgerstiftung und Kultur.",
+      layout: "team-showcase",
+      teamMembers: CORE_TEAM_MEMBERS,
+      speakerNotes: {
+        elevatorPitch:
+          "Wir sind kein anonymes Beratungsunternehmen, sondern Macher aus Ihrer Nachbarschaft: Rüdiger Engert kennt als ehem. Inhaber des Engert Agrarmarkts und KAMÜ-Gründer die regionale Wirtschaft aus dem Effeff. Erik Metz bringt 20 Jahre Industrie-Automatisierung und Robotik ein, Michael Binzen 20 Jahre Groß-IT und Datenarchitektur der Bahn.",
+        talkingPoints: [
+          "Gesprächspartner auf Augenhöhe für Geschäftsführer und Handwerksmeister.",
+          "Keine leeren Berater-Folien, sondern erprobte Ingenieurs- und IT-Praxis.",
+          "Verlässliche Verankerung in Bürstadt und der Region Bergstraße.",
+        ],
+        audienceEngagement:
+          "Fragen Sie: 'Wann hatten Sie das letzte Mal ein Technologieprojekt direkt mit Köpfen aus Ihrer Nachbarschaft?'",
+        localHook: "Kulturzentrum KAMÜ Bürstadt als Schnittstelle von Wirtschaft, Kultur und IT.",
+      },
+    },
+    {
+      id: "wirt-4-ask",
+      stepNumber: 4,
+      stepLabel: "04 / The Ask an Unternehmen & Stadtwerke",
       eyebrow: "Flexible Partnerschaft · Ohne starre Beträge",
       title: "Sensor-Schulpate (100 €), In-House Azubi-Workshops & Hackathon-Support",
       lead: "Vom 100-€-Schulpatesatz bis zum betriebsinternen Azubi-Workshop: Wir bieten maßgeschneiderte Kooperationen mit echtem Mehrwert für Ihr Unternehmen.",
@@ -1210,9 +1277,9 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
       },
     },
     {
-      id: "wirt-4-live-bonus",
-      stepNumber: 4,
-      stepLabel: "04 / Live-Telemetrie-Beweis",
+      id: "wirt-5-live-bonus",
+      stepNumber: 5,
+      stepLabel: "05 / Live-Telemetrie-Beweis",
       eyebrow: "Live aus dem Hessischen Ried · Während Ihres Vortrags",
       title: "Was im Ried passiert ist, während Sie uns zugehört haben",
       lead: "Unsere Plattform läuft bereits im Hintergrund: Reale Datenströme aus Müllabfuhr, Bahnverkehr, Parkleitsystem und LoRaWAN-Sensorik – passgenau zur Tages- oder Nachtzeit.",
