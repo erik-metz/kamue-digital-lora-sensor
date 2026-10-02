@@ -30,11 +30,18 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
     if not gauges or not weather_list:
         raise ValueError("Incomplete environment source data")
     normalized = monotonic()
+    radar_list = getattr(weather_list, "radar", [])
+    forecast_list = getattr(weather_list, "forecasts", [])
+    coverage = ["pegelonline_wsv", "open_meteo_dwd"]
+    if radar_list:
+        coverage.append("dwd_radolan")
+    if forecast_list:
+        coverage.append("dwd_mosmix")
     summary = {
         "fetched_at": fetched_at.isoformat(),
-        "accepted": len(gauges) + len(weather_list),
+        "accepted": len(gauges) + len(weather_list) + len(radar_list) + len(forecast_list),
         "skipped": 0,
-        "source_coverage": ["pegelonline_wsv", "open_meteo_dwd"],
+        "source_coverage": coverage,
         "complete": True,
     }
     if dry_run:
@@ -42,6 +49,8 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             **summary,
             "gauges": [asdict(g) for g in gauges],
             "weather": [asdict(w) for w in weather_list],
+            "radar": [asdict(r) for r in radar_list],
+            "forecasts": [asdict(f) for f in forecast_list],
         }
     async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
         summary["ingestion"] = await persist_environment_data(

@@ -7,10 +7,22 @@ from psycopg.types.json import Jsonb
 
 
 async def persist_environment_data(
-    conn, gauges, weather_list, fetched_at: datetime, *, payload=None, source_url=""
+    conn,
+    gauges,
+    weather_list,
+    fetched_at: datetime,
+    *,
+    payload=None,
+    source_url="",
+    radar=None,
+    forecasts=None,
 ) -> dict[str, int]:
     updated_gauges = 0
     updated_weather = 0
+    updated_radar = 0
+    updated_forecasts = 0
+    radar_items = radar if radar is not None else getattr(weather_list, "radar", [])
+    forecast_items = forecasts if forecasts is not None else getattr(weather_list, "forecasts", [])
     mode = os.getenv('MEASUREMENT_WEATHER_WRITE_MODE', 'legacy')
     if mode not in {'legacy', 'dual'}:
         raise ValueError('MEASUREMENT_WEATHER_WRITE_MODE must be legacy or dual')
@@ -81,9 +93,6 @@ async def persist_environment_data(
                 )
                 latest_value = value
                 if mode == 'dual':
-                    # An older receipt may be retried after a newer correction.
-                    # Keep the legacy latest cache aligned with the authoritative
-                    # source-aware reading, not the retried response's old value.
                     canonical = await (await conn.execute("""SELECT r.value FROM readings r
                         JOIN measurement_definitions d ON d.id=r.measurement_id
                         WHERE d.entity_id=%s AND d.source_id='environment-weather' AND d.basis='model'
@@ -101,6 +110,72 @@ async def persist_environment_data(
                     (w.sensor_id, metric, unit, w.timestamp, latest_value),
                 )
                 updated_weather += 1
+
+        # 3. Update RADOLAN Radar
+        for r in radar_items:
+            provenance = Jsonb({"source": "dwd_radolan", "product": "RW", "lat": r.latitude, "lon": r.longitude})
+            if mode == 'dual':
+                await conn.execute("""
+                    INSERT INTO entities(id, name, entity_type, metadata)
+                    VALUES ('sensor:weather-radolan-ried', 'DWD RADOLAN Radar Ried', 'radar_grid_cell',
+                            '{"provider":"DWD","product":"RW","resolution":"1km"}')
+                    ON CONFLICT(id) DO NOTHING
+                """)
+                await conn.execute("""
+                    SELECT write_measurement(
+                        'sensor:weather-radolan-ried', 'precipitation', 'mm', 'environment-radolan',
+                        'observed', '{"product":"RW","interval":"60m"}'::jsonb,
+                        %s, %s, %s, %s, 'valid', %s - interval '1 hour', %s, 'period_total'
+                    )
+                """, (r.timestamp, r.precipitation_mm, fetched_at, provenance, r.timestamp, r.timestamp))
+            await conn.execute("""
+                INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, description)
+                VALUES (%s, 'DWD RADOLAN Radar Ried', %s, %s, 'DWD RADOLAN RW 1km Stundensumme')
+                ON CONFLICT (id) DO UPDATE SET friendly_name=EXCLUDED.friendly_name,
+                    latitude=EXCLUDED.latitude, longitude=EXCLUDED.longitude, description=EXCLUDED.description
+            """, (r.sensor_id, r.latitude, r.longitude))
+            await conn.execute("""
+                INSERT INTO sensor_data(sensor_id, metric, unit, timestamp, value)
+                VALUES (%s, 'precipitation_radar', 'mm', %s, %s)
+                ON CONFLICT DO NOTHING
+            """, (r.sensor_id, r.timestamp, r.precipitation_mm))
+            await conn.execute("""
+                INSERT INTO sensor_latest(sensor_id, metric, unit, timestamp, value)
+                VALUES (%s, 'precipitation_radar', 'mm', %s, %s)
+                ON CONFLICT(sensor_id, metric, unit) DO UPDATE SET
+                timestamp=EXCLUDED.timestamp, value=EXCLUDED.value
+                WHERE EXCLUDED.timestamp >= sensor_latest.timestamp
+            """, (r.sensor_id, r.timestamp, r.precipitation_mm))
+            updated_radar += 1
+
+        # 4. Update MOSMIX Forecasts
+        for f in forecast_items:
+            provenance = Jsonb({"source": "dwd_mosmix", "station": f.station_id})
+            if mode == 'dual':
+                await conn.execute("""
+                    INSERT INTO entities(id, name, entity_type, metadata)
+                    VALUES (%s, 'DWD MOSMIX Station 10729', 'weather_station',
+                            '{"provider":"DWD","model":"MOSMIX_L"}')
+                    ON CONFLICT(id) DO NOTHING
+                """, (f"sensor:{f.station_id}",))
+                for metric, unit, val in (
+                    ("temperature", "°C", f.temperature_c),
+                    ("dew_point", "°C", f.dew_point_c),
+                    ("wind_speed", "m/s", f.wind_speed_ms),
+                    ("precipitation_probability", "%", f.precipitation_prob),
+                    ("precipitation", "mm", f.precipitation_mm),
+                ):
+                    if val is None:
+                        continue
+                    await conn.execute("""
+                        SELECT write_measurement(
+                            %s, %s, %s, 'environment-mosmix',
+                            'model', '{"station":"10729"}'::jsonb,
+                            %s, %s, %s, %s, 'valid', NULL, NULL, 'instantaneous'
+                        )
+                    """, (f"sensor:{f.station_id}", metric, unit, f.timestamp, val, fetched_at, provenance))
+            updated_forecasts += 1
+
         if payload and gauges:
             data = [
                 {
@@ -171,9 +246,22 @@ async def persist_environment_data(
                     Jsonb(map_data),
                 ),
             )
-            await conn.execute(
-                "UPDATE collection_attempts SET status='success' WHERE payload_sha256 IN (%s,%s) AND source_id LIKE 'environment-%%'",
-                (digest, payload["weather_sha256"]),
-            )
 
-    return {"gauges": updated_gauges, "weather_metrics": updated_weather}
+        if payload:
+            success_shas = [
+                payload[k]
+                for k in ("pegel_sha256", "weather_sha256", "radolan_sha256", "mosmix_sha256")
+                if payload.get(k)
+            ]
+            if success_shas:
+                await conn.execute(
+                    "UPDATE collection_attempts SET status='success' WHERE payload_sha256 = ANY(%s) AND source_id LIKE 'environment-%%'",
+                    (success_shas,),
+                )
+
+    return {
+        "gauges": updated_gauges,
+        "weather_metrics": updated_weather,
+        "radar_metrics": updated_radar,
+        "forecast_metrics": updated_forecasts,
+    }

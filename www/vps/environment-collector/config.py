@@ -12,6 +12,12 @@ class Settings:
     state_dir: Path = Path("/data")
     pegelonline_url: str = "https://pegelonline.wsv.de/webservices/rest-api/v2/stations/WORMS.json?includeTimeseries=true&includeCurrentMeasurement=true"
     weather_url: str = "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=8.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=UTC"
+    radolan_url: str = "https://opendata.dwd.de/weather/radar/radolan/rw/raa01-rw_10000-latest-dwd---bin.bz2"
+    mosmix_url: str = "https://opendata.dwd.de/weather/local_forecasts/mos/MOSMIX_L/single_stations/10729/kml/MOSMIX_L_LATEST_10729.kmz"
+    enable_radolan: bool = True
+    enable_mosmix: bool = True
+    ried_lat: float = 49.6425
+    ried_lon: float = 8.4552
     request_timeout: float = 30.0
 
     @classmethod
@@ -26,6 +32,8 @@ class Settings:
         }
         poll_seconds = int(os.getenv("ENVIRONMENT_POLL_SECONDS", "300"))
         state_dir = Path(os.getenv("ENVIRONMENT_STATE_DIR", "/data"))
+        enable_radolan = os.getenv("ENABLE_DWD_RADOLAN", "true").lower() in ("1", "true", "yes")
+        enable_mosmix = os.getenv("ENABLE_DWD_MOSMIX", "true").lower() in ("1", "true", "yes")
         return cls(
             db=db,
             poll_seconds=poll_seconds,
@@ -38,4 +46,16 @@ class Settings:
                 "WEATHER_URL",
                 "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=8.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=UTC",
             ),
+            radolan_url=os.getenv(
+                "DWD_RADOLAN_URL",
+                "https://opendata.dwd.de/weather/radar/radolan/rw/raa01-rw_10000-latest-dwd---bin.bz2",
+            ),
+            mosmix_url=os.getenv(
+                "DWD_MOSMIX_URL",
+                "https://opendata.dwd.de/weather/local_forecasts/mos/MOSMIX_L/single_stations/10729/kml/MOSMIX_L_LATEST_10729.kmz",
+            ),
+            enable_radolan=enable_radolan,
+            enable_mosmix=enable_mosmix,
+            ried_lat=float(os.getenv("RIED_LATITUDE", "49.6425")),
+            ried_lon=float(os.getenv("RIED_LONGITUDE", "8.4552")),
         )

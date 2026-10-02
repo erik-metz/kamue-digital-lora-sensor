@@ -49,5 +49,69 @@ class TestEnvironmentCollector(unittest.TestCase):
         self.assertEqual(gauges[0].status, "unknown")
 
 
+    def test_normalize_radolan(self):
+        settings = Settings(db={}, ried_lat=49.6425, ried_lon=8.4552)
+        # Synthetic 900x900 grid
+        # Col 406, Row 292 for Bürstadt
+        col = 406
+        row = 292
+        header = b"RW020650100001026BY1620153VS 3SW   2.29.1PR E-01INT  60GP 900x 900\x03"
+        grid_bytes = bytearray(900 * 900 * 2)
+        offset = (row * 900 + col) * 2
+        # Write 25 (2.5 mm) in little endian
+        grid_bytes[offset] = 25
+        grid_bytes[offset + 1] = 0
+        raw_payload = header + bytes(grid_bytes)
+
+        res = normalize({"radolan": raw_payload}, settings)
+        self.assertEqual(len(res.radar), 1)
+        self.assertEqual(res.radar[0].sensor_id, "weather-radolan-ried")
+        self.assertEqual(res.radar[0].precipitation_mm, 2.5)
+
+    def test_normalize_mosmix(self):
+        settings = Settings(db={})
+        kml = b"""<?xml version="1.0" encoding="ISO-8859-1"?>
+<kml:kml xmlns:dwd="https://opendata.dwd.de/weather/lib/pointforecast_dwd_extension_V1_0.xsd" xmlns:kml="http://www.opengis.net/kml/2.2">
+  <kml:Document>
+    <kml:ExtendedData>
+      <dwd:ProductDefinition>
+        <dwd:ForecastTimeSteps>
+          <dwd:TimeStep>2026-10-02T10:00:00.000Z</dwd:TimeStep>
+        </dwd:ForecastTimeSteps>
+      </dwd:ProductDefinition>
+    </kml:ExtendedData>
+    <kml:Placemark>
+      <kml:ExtendedData>
+        <dwd:Forecast dwd:elementName="TTT">
+          <dwd:value>288.15</dwd:value>
+        </dwd:Forecast>
+        <dwd:Forecast dwd:elementName="Td">
+          <dwd:value>283.15</dwd:value>
+        </dwd:Forecast>
+        <dwd:Forecast dwd:elementName="FF">
+          <dwd:value>3.5</dwd:value>
+        </dwd:Forecast>
+        <dwd:Forecast dwd:elementName="R101">
+          <dwd:value>15.0</dwd:value>
+        </dwd:Forecast>
+        <dwd:Forecast dwd:elementName="RR1c">
+          <dwd:value>0.4</dwd:value>
+        </dwd:Forecast>
+      </kml:ExtendedData>
+    </kml:Placemark>
+  </kml:Document>
+</kml:kml>"""
+        res = normalize({"mosmix": kml}, settings)
+        self.assertEqual(len(res.forecasts), 1)
+        fc = res.forecasts[0]
+        self.assertEqual(fc.station_id, "dwd-mosmix-10729")
+        self.assertEqual(fc.temperature_c, 15.0)
+        self.assertEqual(fc.dew_point_c, 10.0)
+        self.assertEqual(fc.wind_speed_ms, 3.5)
+        self.assertEqual(fc.precipitation_prob, 15.0)
+        self.assertEqual(fc.precipitation_mm, 0.4)
+
+
 if __name__ == "__main__":
     unittest.main()
+

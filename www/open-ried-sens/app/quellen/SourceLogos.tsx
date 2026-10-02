@@ -232,7 +232,12 @@ export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
   if (sourceId.includes("traffic") || sourceId.includes("autobahn")) {
     return <AutobahnLogo className={className} />;
   }
-  if (sourceId.includes("weather") || sourceId.includes("dwd")) {
+  if (
+    sourceId.includes("weather") ||
+    sourceId.includes("dwd") ||
+    sourceId.includes("radolan") ||
+    sourceId.includes("mosmix")
+  ) {
     return <WeatherLogo className={className} />;
   }
   if (sourceId.includes("shake")) {

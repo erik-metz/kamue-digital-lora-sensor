@@ -161,6 +161,22 @@ const SOURCE_INFO: Record<
       "Aktuelle Lufttemperatur, Luftdruck, relative Feuchte, Windgeschwindigkeit und Niederschlagsradar.",
     frequencyHint: "Laufende Erfassung",
   },
+  "environment-radolan": {
+    title: "DWD RADOLAN Niederschlagsradar",
+    domain: "Umwelt & Gewässer",
+    provider: "Deutscher Wetterdienst (DWD Open Data)",
+    description:
+      "Stündliche hochauflösende 1-km-Rastermessung des Niederschlags für Bürstadt und das Hessische Ried.",
+    frequencyHint: "Stündlicher Abruf",
+  },
+  "environment-mosmix": {
+    title: "DWD MOSMIX Stationsvorhersage",
+    domain: "Umwelt & Gewässer",
+    provider: "Deutscher Wetterdienst (DWD Open Data)",
+    description:
+      "Statistisch optimierte Punktvorhersagen für Temperatur, Taupunkt, Wind und Niederschlag (Station Mannheim/Ried).",
+    frequencyHint: "Mehrmals täglich",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {

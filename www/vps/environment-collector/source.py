@@ -5,10 +5,16 @@ import hashlib
 
 async def fetch(client, settings, conn=None):
     payload = {}
-    for name, url in [
-        ("pegel", settings.pegelonline_url),
-        ("weather", settings.weather_url),
-    ]:
+    endpoints: list[tuple[str, str, bool]] = [
+        ("pegel", settings.pegelonline_url, True),
+        ("weather", settings.weather_url, True),
+    ]
+    if getattr(settings, "enable_radolan", False) and getattr(settings, "radolan_url", None):
+        endpoints.append(("radolan", settings.radolan_url, False))
+    if getattr(settings, "enable_mosmix", False) and getattr(settings, "mosmix_url", None):
+        endpoints.append(("mosmix", settings.mosmix_url, False))
+
+    for name, url, required in endpoints:
         try:
             response = await client.get(url, timeout=settings.request_timeout)
         except Exception as exc:
@@ -18,8 +24,15 @@ async def fetch(client, settings, conn=None):
                     ("environment-" + name, type(exc).__name__),
                 )
                 await conn.commit()
-            raise
+            if required:
+                raise
+            continue
+
         digest = hashlib.sha256(response.content).hexdigest()
+        content_type = response.headers.get(
+            "content-type",
+            "application/octet-stream" if name in ("radolan", "mosmix") else "application/json",
+        )
         if conn:
             await conn.execute(
                 """INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,%s)
@@ -27,7 +40,7 @@ async def fetch(client, settings, conn=None):
                 (
                     digest,
                     response.content,
-                    response.headers.get("content-type", "application/json"),
+                    content_type,
                 ),
             )
             receipt = await conn.execute(
@@ -42,7 +55,15 @@ async def fetch(client, settings, conn=None):
             )
             payload[name + "_attempt_id"] = (await receipt.fetchone())[0]
             await conn.commit()
-        response.raise_for_status()
-        payload[name] = response.json()
+
+        if not response.is_success:
+            if required:
+                response.raise_for_status()
+            continue
+
+        if name in ("radolan", "mosmix"):
+            payload[name] = response.content
+        else:
+            payload[name] = response.json()
         payload[name + "_sha256"] = digest
     return payload
