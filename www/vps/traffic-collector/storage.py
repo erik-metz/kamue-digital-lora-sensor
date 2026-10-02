@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 import psycopg
 from config import Settings
 from normalize import ParsedIncident
+from traffic_flow import FlowObservation
 
 LOG = logging.getLogger("traffic-collector.storage")
 
@@ -16,6 +17,7 @@ async def persist_traffic_incidents(
     incidents: list[ParsedIncident],
     settings: Settings,
     now: datetime | None = None,
+    flows: list[FlowObservation] | None = None,
 ) -> dict:
     now = now or datetime.now(UTC)
     incoming_ids = [inc.id for inc in incidents]
@@ -134,5 +136,199 @@ async def persist_traffic_incidents(
                 ),
             )
 
+        # 4. Canonical Core Schema: entities, measurement_definitions, readings
+        await cur.execute(
+            "SELECT 1 FROM information_schema.routines WHERE routine_name = 'write_measurement'"
+        )
+        has_measurement_core = (await cur.fetchone()) is not None
+
+        if has_measurement_core:
+            # 4a. Corridor snapshot measurements
+            for road in settings.roads:
+                corridor_id = f"corridor-{road.lower()}"
+                active_on_road = [
+                    inc for inc in incidents if inc.road_name.upper() == road.upper()
+                ]
+                count = len(active_on_road)
+                max_delay = max(
+                    (inc.delay_seconds for inc in active_on_road), default=0
+                )
+                await cur.execute(
+                    """
+                    INSERT INTO entities (id, name, entity_type, metadata)
+                    VALUES (%s, %s, 'corridor', %s)
+                    ON CONFLICT (id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        metadata = entities.metadata || EXCLUDED.metadata,
+                        updated_at = NOW()
+                    """,
+                    (
+                        corridor_id,
+                        f"Autobahn-Korridor {road.upper()}",
+                        json.dumps({"road": road.upper()}),
+                    ),
+                )
+                await cur.execute(
+                    """
+                    SELECT write_measurement(
+                        %s, 'delay', 's', 'autobahn_api', 'observed',
+                        '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                    )
+                    """,
+                    (
+                        corridor_id,
+                        now,
+                        max_delay,
+                        now,
+                        json.dumps({"road": road.upper()}),
+                    ),
+                )
+                await cur.execute(
+                    """
+                    SELECT write_measurement(
+                        %s, 'active_incidents', 'count', 'autobahn_api', 'observed',
+                        '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                    )
+                    """,
+                    (
+                        corridor_id,
+                        now,
+                        count,
+                        now,
+                        json.dumps({"road": road.upper()}),
+                    ),
+                )
+
+            # 4b. Road segment flow measurements
+            if flows:
+                for flow in flows:
+                    c = flow.corridor
+                    meta = {
+                        "road": c.road,
+                        "direction": c.direction,
+                        "start_junction": c.start_junction,
+                        "end_junction": c.end_junction,
+                        "length_km": c.length_km,
+                        "center_lat": c.lat,
+                        "center_lon": c.lon,
+                    }
+                    await cur.execute(
+                        """
+                        INSERT INTO entities (id, name, entity_type, metadata)
+                        VALUES (%s, %s, 'road_segment', %s)
+                        ON CONFLICT (id) DO UPDATE SET
+                            name = EXCLUDED.name,
+                            metadata = entities.metadata || EXCLUDED.metadata,
+                            updated_at = NOW()
+                        """,
+                        (c.id, c.name, json.dumps(meta)),
+                    )
+                    dims = json.dumps({"road": c.road, "direction": c.direction})
+                    prov = json.dumps(
+                        {
+                            "source": flow.source,
+                            "status": flow.status,
+                            "confidence": flow.confidence,
+                        }
+                    )
+                    basis = "observed" if flow.source == "tomtom_flow" else "estimated"
+
+                    # Speed
+                    await cur.execute(
+                        """
+                        SELECT write_measurement(
+                            %s, 'speed', 'km/h', %s, %s,
+                            %s::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                        )
+                        """,
+                        (
+                            c.id,
+                            flow.source,
+                            basis,
+                            dims,
+                            now,
+                            flow.speed_kmh,
+                            now,
+                            prov,
+                        ),
+                    )
+                    # Free flow speed (reference)
+                    await cur.execute(
+                        """
+                        SELECT write_measurement(
+                            %s, 'free_flow_speed', 'km/h', %s, 'reference',
+                            %s::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                        )
+                        """,
+                        (
+                            c.id,
+                            flow.source,
+                            dims,
+                            now,
+                            flow.free_flow_speed_kmh,
+                            now,
+                            prov,
+                        ),
+                    )
+                    # Delay
+                    await cur.execute(
+                        """
+                        SELECT write_measurement(
+                            %s, 'delay', 's', %s, %s,
+                            %s::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                        )
+                        """,
+                        (
+                            c.id,
+                            flow.source,
+                            basis,
+                            dims,
+                            now,
+                            flow.delay_seconds,
+                            now,
+                            prov,
+                        ),
+                    )
+                    # Congestion ratio
+                    await cur.execute(
+                        """
+                        SELECT write_measurement(
+                            %s, 'congestion_ratio', 'ratio', %s, %s,
+                            '{"range": "0-1"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                        )
+                        """,
+                        (
+                            c.id,
+                            flow.source,
+                            basis,
+                            now,
+                            flow.congestion_ratio,
+                            now,
+                            prov,
+                        ),
+                    )
+                    # Coordinates as reference
+                    await cur.execute(
+                        """
+                        SELECT write_measurement(
+                            %s, 'latitude', 'degrees', %s, 'reported',
+                            '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                        )
+                        """,
+                        (c.id, flow.source, now, c.lat, now, prov),
+                    )
+                    await cur.execute(
+                        """
+                        SELECT write_measurement(
+                            %s, 'longitude', 'degrees', %s, 'reported',
+                            '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                        )
+                        """,
+                        (c.id, flow.source, now, c.lon, now, prov),
+                    )
+
     LOG.info("Persisted %d active traffic incidents to database", len(incidents))
-    return {"active_incidents": len(incidents)}
+    result: dict[str, int] = {"active_incidents": len(incidents)}
+    if flows is not None:
+        result["persisted_flows"] = len(flows)
+    return result

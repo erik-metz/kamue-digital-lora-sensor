@@ -18,6 +18,7 @@ class Settings:
     max_lat: float = 49.90
     min_lon: float = 8.25
     max_lon: float = 8.75
+    tomtom_api_key: str | None = None
 
     @classmethod
     def from_env(cls):
@@ -51,6 +52,7 @@ class Settings:
             raise ValueError(
                 "AUTOBAHN_API_BASE must be an HTTPS URL without credentials/query"
             )
+        tomtom_key = os.getenv("TOMTOM_API_KEY", "").strip() or None
         return cls(
             roads,
             interval,
@@ -64,4 +66,5 @@ class Settings:
                 "connect_timeout": 10,
             },
             base,
+            tomtom_api_key=tomtom_key,
         )

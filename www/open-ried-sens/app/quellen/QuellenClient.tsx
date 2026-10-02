@@ -185,6 +185,14 @@ const SOURCE_INFO: Record<
       "Offizielles Grundwassermonitoring und Brunnenkataster des Landes Hessen für Bürstadt, Lampertheim, Biblis und Groß-Rohrheim.",
     frequencyHint: "Täglicher Abgleich",
   },
+  "traffic-corridors": {
+    title: "Verkehrsfluss & Stauvolumen Ried",
+    domain: "Mobilität & ÖPNV",
+    provider: "Die Autobahn & TomTom Flow / Korridor-Modell",
+    description:
+      "Echtzeit-Geschwindigkeiten, Verlustzeiten und Staufaktoren für zentrale Ried-Achsen (B44 Bürstadt–Lampertheim, B47 Worms, A67).",
+    frequencyHint: "Alle 3 Minuten",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {
@@ -724,8 +732,8 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
             },
             {
               id: "autobahn",
-              name: "Die Autobahn",
-              subtitle: "A67, A5, A6 Stau-API",
+              name: "Die Autobahn & Verkehrsfluss",
+              subtitle: "A67, A5, A6 Stau-API & Ried-Achsen B44/B47",
               url: "https://autobahn.de/",
               logoId: "autobahn",
             },
