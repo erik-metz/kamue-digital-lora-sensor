@@ -316,7 +316,7 @@ Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvo
 
 ### 6.5 Geplante Implementierungsschritte Phase 2
 
-- [ ] **Schritt 2.1: Copernicus CDSE / STAC Downloader**: Automatischer Abruf neuer wolkenfreier Szenen für das Ried im `registry-sync-worker` oder dedizierten `satellite-worker`.
+- [x] **Schritt 2.1: Copernicus CDSE / STAC Downloader**: Automatischer Abruf neuer wolkenfreier Sentinel-2 L2A Szenen für das Ried (Tile 32UMA/32UMV) via STAC-API (`registry-sync-worker/satellite.py`), Drei-Tabellen Ingestion (`entities: satellite_scene`, `readings: cloud_cover, vegetation_coverage`), Atomic Datasets (`environment/satellite/scenes`), Frontend `/quellen` aktualisiert.
 - [ ] **Schritt 2.2: BBOX-Clipper & COG-Generator**: Automatischer Zuschnitt auf das Ried und Generierung von Cloud-Optimized GeoTIFFs (RGB & NDVI).
 - [ ] **Schritt 2.3: Ingestion in das Three-Table Schema**: Speicherung von Metadaten in `entities` und Ableitung skalaren Vegetationsmetriken via `write_measurement`.
 - [ ] **Schritt 2.4: FastAPI Kachel-Endpunkt (COG Tile Server)**: Schnelles Bereitstellen von PNG-Kacheln für Leaflet/MapLibre im Frontend.

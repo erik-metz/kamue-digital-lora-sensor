@@ -209,6 +209,14 @@ const SOURCE_INFO: Record<
       "Amtliche INSPIRE-Referenzparzellen und Feldblöcke mit Hauptnutzungsarten (Getreide, Grünland, Sonderkulturen), Flächengrößen (ha) und Geometrien im Hessischen Ried.",
     frequencyHint: "Wöchentlicher Abgleich",
   },
+  "copernicus-sentinel2": {
+    title: "Copernicus Sentinel-2 Satellitenbilder",
+    domain: "Umwelt & Erdbeobachtung",
+    provider: "Europäische Weltraumorganisation (ESA / Copernicus)",
+    description:
+      "Optische Erdbeobachtungsszenen (Level-2A BOA) mit 10 m Bodenauflösung für das Hessische Ried zur Dürre-, Bodenfeuchte- und Vegetationsüberwachung (NDVI, TCI RGB).",
+    frequencyHint: "Alle 5 Tage (bei wolkenfreiem Überflug)",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {
@@ -780,6 +788,13 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
               subtitle: "Agrar- & Parzellenkataster",
               url: "https://inspire-geo.ibykus.net/geoserver/lawi/wfs",
               logoId: "invekos",
+            },
+            {
+              id: "copernicus",
+              name: "ESA Copernicus",
+              subtitle: "Sentinel-2 Erdbeobachtung",
+              url: "https://dataspace.copernicus.eu/",
+              logoId: "copernicus",
             },
             {
               id: "smartcity",

@@ -345,6 +345,29 @@
       "http_retries": 2
     },
     {
+      "id": "copernicus-sentinel2",
+      "group": "environment",
+      "adapter": "sentinel-satellite",
+      "enabled": true,
+      "url": "https://earth-search.aws.element84.com/v1/search?collections=sentinel-2-c1-l2a&bbox=8.33,49.54,8.58,49.75&limit=20",
+      "interval_seconds": 86400,
+      "max_age_seconds": 604800,
+      "max_cloud_cover": 25.0,
+      "municipalities": [
+        "Bürstadt",
+        "Lampertheim",
+        "Biblis",
+        "Groß-Rohrheim"
+      ],
+      "bbox": [
+        49.54,
+        8.33,
+        49.75,
+        8.58
+      ],
+      "http_retries": 2
+    },
+    {
       "id": "environment-published-source",
       "group": "environment",
       "adapter": "json",

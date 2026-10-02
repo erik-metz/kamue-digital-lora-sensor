@@ -26,6 +26,7 @@ from osm_addresses import import_addresses
 from prediction import predict_tick
 from publications import acquisition_error, import_json, public_url
 from realtime import import_realtime
+from satellite import import_satellite
 from zakb import import_zakb
 
 LOG = logging.getLogger(__name__)
@@ -45,6 +46,7 @@ ADAPTERS = {
     "zakb": import_zakb,
     "hlnug-groundwater": import_groundwater,
     "invekos": import_invekos,
+    "sentinel-satellite": import_satellite,
 }
 
 

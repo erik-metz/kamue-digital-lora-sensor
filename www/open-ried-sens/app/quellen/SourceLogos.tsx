@@ -212,6 +212,23 @@ export function InvekosLogo({ className = "w-7 h-7" }: LogoProps) {
   );
 }
 
+export function CopernicusLogo({ className = "w-7 h-7" }: LogoProps) {
+  return (
+    <div className={`rounded-lg bg-sky-950 border border-sky-500/40 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-sky-400">
+        {/* Satellite and orbit earth observation */}
+        <circle cx="50" cy="50" r="32" stroke="currentColor" strokeWidth="5" strokeDasharray="6 4" opacity="0.4" />
+        <circle cx="50" cy="50" r="18" fill="#0284C7" opacity="0.7" />
+        <path d="M20 72 Q 50 25 80 72" stroke="#38BDF8" strokeWidth="6" strokeLinecap="round" fill="none" />
+        <rect x="68" y="24" width="16" height="10" rx="2" fill="#E0F2FE" />
+        <rect x="74" y="20" width="4" height="4" fill="#38BDF8" />
+        <line x1="62" y1="29" x2="68" y2="29" stroke="#E0F2FE" strokeWidth="3" />
+        <line x1="84" y1="29" x2="90" y2="29" stroke="#E0F2FE" strokeWidth="3" />
+      </svg>
+    </div>
+  );
+}
+
 export function ShakeLogo({ className = "w-7 h-7" }: LogoProps) {
   return (
     <div className={`rounded-lg bg-rose-950 border border-rose-500/40 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
@@ -237,6 +254,9 @@ export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
   }
   if (sourceId.includes("bnetza") || sourceId.includes("charger")) {
     return <BnetzaLogo className={className} />;
+  }
+  if (sourceId.includes("copernicus") || sourceId.includes("sentinel") || sourceId.includes("satellite")) {
+    return <CopernicusLogo className={className} />;
   }
   if (sourceId.includes("invekos") || sourceId.includes("crop") || sourceId.includes("agriculture") || sourceId.includes("field")) {
     return <InvekosLogo className={className} />;
