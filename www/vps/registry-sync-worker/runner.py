@@ -17,6 +17,7 @@ from budgets import import_biblis_budget
 from chargers import import_chargers
 from config import Settings
 from elections import import_elections
+from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
 from map_tiles import import_wms
@@ -41,6 +42,7 @@ ADAPTERS = {
     "tiles": import_tiles,
     "gtfs-rt": import_realtime,
     "zakb": import_zakb,
+    "hlnug-groundwater": import_groundwater,
 }
 
 

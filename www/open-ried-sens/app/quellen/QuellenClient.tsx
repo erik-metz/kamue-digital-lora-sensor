@@ -177,6 +177,14 @@ const SOURCE_INFO: Record<
       "Statistisch optimierte Punktvorhersagen für Temperatur, Taupunkt, Wind und Niederschlag (Station Mannheim/Ried).",
     frequencyHint: "Mehrmals täglich",
   },
+  "hlnug-groundwater": {
+    title: "HLNUG Grundwassermessstellen Ried",
+    domain: "Umwelt & Gewässer",
+    provider: "Hessisches Landesamt für Naturschutz, Umwelt und Geologie (HLNUG)",
+    description:
+      "Offizielles Grundwassermonitoring und Brunnenkataster des Landes Hessen für Bürstadt, Lampertheim, Biblis und Groß-Rohrheim.",
+    frequencyHint: "Täglicher Abgleich",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {

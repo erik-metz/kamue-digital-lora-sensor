@@ -214,7 +214,7 @@ export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
   if (sourceId.includes("bnetza") || sourceId.includes("charger")) {
     return <BnetzaLogo className={className} />;
   }
-  if (sourceId.includes("hessen")) {
+  if (sourceId.includes("hessen") || sourceId.includes("hlnug") || sourceId.includes("groundwater")) {
     return <HessenLogo className={className} />;
   }
   if (sourceId.includes("wahl") || sourceId.includes("election")) {
