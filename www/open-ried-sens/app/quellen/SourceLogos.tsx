@@ -198,6 +198,20 @@ export function BlitzortungLogo({ className = "w-7 h-7" }: LogoProps) {
   );
 }
 
+export function InvekosLogo({ className = "w-7 h-7" }: LogoProps) {
+  return (
+    <div className={`rounded-lg bg-emerald-950 border border-emerald-500/40 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-emerald-400">
+        {/* Field parcel geometry with furrow lines and plant sprout */}
+        <polygon points="18,32 82,22 88,78 12,82" stroke="currentColor" strokeWidth="6" strokeLinejoin="round" fill="none" opacity="0.6" />
+        <line x1="28" y1="52" x2="74" y2="46" stroke="currentColor" strokeWidth="4" strokeDasharray="3 3" opacity="0.8" />
+        <line x1="24" y1="68" x2="80" y2="62" stroke="currentColor" strokeWidth="4" strokeDasharray="3 3" opacity="0.8" />
+        <path d="M50 75 V35 M50 50 C40 45 38 32 50 32 M50 42 C60 37 62 25 50 25" stroke="#34D399" strokeWidth="5" strokeLinecap="round" fill="none" />
+      </svg>
+    </div>
+  );
+}
+
 export function ShakeLogo({ className = "w-7 h-7" }: LogoProps) {
   return (
     <div className={`rounded-lg bg-rose-950 border border-rose-500/40 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
@@ -223,6 +237,9 @@ export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
   }
   if (sourceId.includes("bnetza") || sourceId.includes("charger")) {
     return <BnetzaLogo className={className} />;
+  }
+  if (sourceId.includes("invekos") || sourceId.includes("crop") || sourceId.includes("agriculture") || sourceId.includes("field")) {
+    return <InvekosLogo className={className} />;
   }
   if (sourceId.includes("hessen") || sourceId.includes("hlnug") || sourceId.includes("groundwater")) {
     return <HessenLogo className={className} />;

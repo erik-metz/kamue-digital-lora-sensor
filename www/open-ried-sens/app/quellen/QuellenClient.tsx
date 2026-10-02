@@ -201,6 +201,14 @@ const SOURCE_INFO: Record<
       "Echtzeit-Erfassung von Blitzentladungen, Blitzanzahl, Minimaldistanz und Scheitelströmen im 25-km-Radius um Bürstadt und das Ried.",
     frequencyHint: "Alle 5 Minuten",
   },
+  "invekos-agriculture": {
+    title: "INVEKOS Landwirtschaftliche Parzellen & Feldblöcke",
+    domain: "Landwirtschaft & Boden",
+    provider: "Land Hessen (HMLU / GDI-Hessen)",
+    description:
+      "Amtliche INSPIRE-Referenzparzellen und Feldblöcke mit Hauptnutzungsarten (Getreide, Grünland, Sonderkulturen), Flächengrößen (ha) und Geometrien im Hessischen Ried.",
+    frequencyHint: "Wöchentlicher Abgleich",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {
@@ -765,6 +773,13 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
               subtitle: "Live-Gewitterdaten 25km Ried",
               url: "https://www.blitzortung.org/",
               logoId: "blitzortung",
+            },
+            {
+              id: "invekos",
+              name: "INVEKOS Hessen",
+              subtitle: "Agrar- & Parzellenkataster",
+              url: "https://inspire-geo.ibykus.net/geoserver/lawi/wfs",
+              logoId: "invekos",
             },
             {
               id: "smartcity",

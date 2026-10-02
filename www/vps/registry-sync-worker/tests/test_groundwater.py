@@ -1,8 +1,11 @@
 """Unit tests for HLNUG groundwater monitoring station adapter."""
 
 import json
+import sys
 import unittest
+from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from groundwater import parse_hlnug_groundwater
 
 

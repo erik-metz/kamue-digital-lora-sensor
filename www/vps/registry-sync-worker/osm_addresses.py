@@ -68,11 +68,34 @@ def extract_addresses(path, source):
                 'source': 'OpenStreetMap / Geofabrik',
                 'description': 'Kartierte Anlage (z. B. private Solaranlage / Photovoltaik-Dachanlage). Keine Live-Einspeisemessung und kein IoT-Sensor.',
             }
+        elif kind == 'crops':
+            crop_type = tags.get('crop') or tags.get('produce') or tags.get('landuse')
+            props = {
+                'id': identity,
+                'name': tags.get('name') or (f'Landwirtschaftliche Fläche ({crop_type})' if crop_type and crop_type != 'farmland' else 'Landwirtschaftliche Fläche'),
+                'operator': tags.get('operator'),
+                'crop_type': crop_type,
+                'place_type': tags.get('landuse'),
+                'address': ' '.join(filter(None, [tags.get('addr:street'), tags.get('addr:housenumber')])),
+                'source': 'OpenStreetMap / Geofabrik',
+                'description': f'Kartierte Fläche ({crop_type}). OpenStreetMap-Bestand; keine amtliche INVEKOS-Referenzparzelle.' if crop_type else 'Kartierte landwirtschaftliche Fläche; keine Live-Messung und kein vollständiges amtliches Register.',
+            }
+        elif kind == 'nature':
+            protect = tags.get('protect_class') or tags.get('protection_title') or tags.get('boundary')
+            props = {
+                'id': identity,
+                'name': tags.get('name') or 'Schutzgebiet',
+                'operator': tags.get('operator'),
+                'protection_type': protect,
+                'place_type': tags.get('leisure') or tags.get('boundary'),
+                'address': ' '.join(filter(None, [tags.get('addr:street'), tags.get('addr:housenumber')])),
+                'source': 'OpenStreetMap / Geofabrik',
+                'description': 'Kartiertes Schutzgebiet; keine Live-Messung und kein vollständiges amtliches Register.',
+            }
         else:
             props = {
                 'id': identity,
-                'name': tags.get('name') or {'nature': 'Schutzgebiet', 'crops': 'Landwirtschaftliche Fläche',
-                    'wifi': 'WLAN-Standort', 'companies': 'Unternehmen', 'places': 'Öffentlicher Ort'}[kind],
+                'name': tags.get('name') or {'wifi': 'WLAN-Standort', 'companies': 'Unternehmen', 'places': 'Öffentlicher Ort'}[kind],
                 'operator': tags.get('operator'),
                 'place_type': tags.get('amenity') or tags.get('tourism') or tags.get('leisure'),
                 'address': ' '.join(filter(None, [tags.get('addr:street'), tags.get('addr:housenumber')])),

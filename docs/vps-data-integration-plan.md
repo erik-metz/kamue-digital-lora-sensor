@@ -215,5 +215,6 @@ Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvo
 - [x] **Schritt 2: Hessen Open Data & HLNUG Grundwasser**: 120 Brunnen/Pegelmessstellen im Ried über ArcGIS REST angebunden (`registry-sync-worker`), Drei-Tabellen-Architektur, Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`c041a79`).
 - [x] **Schritt 3: Verkehrsfluss & Stauvolumen**: Ried-Korridore (B44, B47, A67) mit Geschwindigkeits-, Verlustzeit- und Staufaktormodellierung (`traffic-collector/traffic_flow.py`), Three-Table Ingestion via `write_measurement`, Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`9bb6009`).
 - [x] **Schritt 4: Blitzortung.org (Live-Gewitterdaten)**: Live-Blitzentladungen im 25 km Radius um Bürstadt (`environment-collector`), Three-Table Ingestion via `write_measurement` (`lightning_strikes_count`, `lightning_distance_min`, `lightning_peak_current`), Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`f1fc7c9`).
-- [ ] **Schritt 5: INVEKOS Feldblöcke & OpenStreetMap Optimierungen**: Nächster Schritt.
+- [x] **Schritt 5: INVEKOS Feldblöcke & OpenStreetMap Optimierungen**: Hessen INVEKOS INSPIRE-Parzellenkataster WFS (`lawi:Landwirtschaftliche Parzellen 2025`) für Bürstadt, Lampertheim, Biblis und Groß-Rohrheim (`registry-sync-worker/invekos.py`), Three-Table Ingestion via `write_measurement` (`area`, `latitude`, `longitude`), OpenStreetMap Layer-Optimierungen (`osm_addresses.py`), Frontend `/quellen` aktualisiert.
+
 

@@ -20,6 +20,7 @@ from elections import import_elections
 from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
+from invekos import import_invekos
 from map_tiles import import_wms
 from osm_addresses import import_addresses
 from prediction import predict_tick
@@ -43,6 +44,7 @@ ADAPTERS = {
     "gtfs-rt": import_realtime,
     "zakb": import_zakb,
     "hlnug-groundwater": import_groundwater,
+    "invekos": import_invekos,
 }
 
 
