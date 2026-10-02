@@ -25,7 +25,7 @@
 [ Sensor-Knoten (v1, v2, v3) ]
 │ (LoRaWAN / HTTP)
 ▼
-[ DuckDNS Domain / Nginx Proxy ] (AWS EC2)
+[ DuckDNS Domain / Nginx Proxy ] (Contabo VPS)
 │
 ┌────────┴────────┐
 ▼ ▼
@@ -41,7 +41,7 @@
 
 - **Hardware-Knoten (`/hardware`)**: ESP/Arduino-basierte Sensoren mit eigener Firmware (`.ino`) aufgeteilt nach Hardware-Versionen (v1, v2, v3).
 
-* **VPS-Dienste (`/www/vps/`)**: Gehostet auf einer AWS EC2 Instanz hinter einer DuckDNS-Adresse.
+* **VPS-Dienste (`/www/vps/`)**: Gehostet auf einer Contabo VPS hinter einer DuckDNS-Adresse.
   - **Nginx**: Reverse Proxy und TLS-Verschlüsselung.
   - **Certbot**: Automatische SSL-Zertifikatsverwaltung via Let's Encrypt.
   - **FastAPI**: Erfassung und Bereitstellung der Sensordaten.

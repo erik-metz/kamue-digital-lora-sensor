@@ -1,10 +1,13 @@
 import hashlib
+import logging
 import re
 from datetime import UTC, datetime
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 from publications import acquire, publish
+
+logger = logging.getLogger(__name__)
 
 
 def classify_category(text: str) -> str:
@@ -81,9 +84,9 @@ async def sync_cultural_events_to_db_and_publish(conn, source, new_events, diges
                     ev.get("source", source["id"]),
                 ),
             )
-        except Exception:
+        except Exception as err:  # noqa: BLE001
             # Tolerant if cultural_events table is in transaction lock or schema variant
-            pass
+            logger.debug("Tolerant skip inserting cultural_event %s: %s", ev.get("id"), err)
 
     # Read all aggregated events from cultural_events table if possible
     all_events = []
@@ -103,8 +106,8 @@ async def sync_cultural_events_to_db_and_publish(conn, source, new_events, diges
             if r and r[0]:
                 item = r[0]
                 all_events.append(item)
-    except Exception:
-        pass
+    except Exception as err:  # noqa: BLE001
+        logger.debug("Could not read aggregated cultural_events: %s", err)
 
     if not all_events:
         all_events = new_events
@@ -239,7 +242,7 @@ async def import_lampertheim_events(conn, client, source):
             if until_time:
                 u_parts = until_time.split(":")
                 end = datetime(year, month, day, int(u_parts[0]), int(u_parts[1]), tzinfo=ZoneInfo("Europe/Berlin"))
-        except Exception:
+        except (ValueError, IndexError):
             continue
 
         loc_m = re.search(r'<span class=\"listEntryLocation\">(.*?)</span>', block)

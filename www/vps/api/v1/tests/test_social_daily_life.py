@@ -228,7 +228,10 @@ class TestSocialDailyLife(unittest.IsolatedAsyncioTestCase):
         self.assertIn("title ILIKE %s", executed_query)
 
     async def test_submit_cultural_event(self):
-        from endpoints.social_daily_life import submit_cultural_event, CulturalEventCreate
+        from endpoints.social_daily_life import (
+            CulturalEventCreate,
+            submit_cultural_event,
+        )
         payload = CulturalEventCreate(
             title="Freiwillige Feuerwehr Bürstadt Tag der offenen Tür",
             organizer="Freiwillige Feuerwehr Bürstadt",

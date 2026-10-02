@@ -1,11 +1,10 @@
 import asyncio
 import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
-
-import types
 
 if "httpx" not in sys.modules:
     sys.modules["httpx"] = MagicMock()

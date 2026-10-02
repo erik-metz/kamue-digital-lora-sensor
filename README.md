@@ -21,7 +21,7 @@ npm run dev
 
 ### 2. Backend Stack (`/www/vps`)
 
-Der Backend-Service läuft via Docker Compose auf einer AWS EC2 Instanz unter einer DuckDNS-Domain.
+Der Backend-Service läuft via Docker Compose auf einer Contabo VPS unter einer DuckDNS-Domain.
 
 cd www/vps
 docker-compose up -d --build

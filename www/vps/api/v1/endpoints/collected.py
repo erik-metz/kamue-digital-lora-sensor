@@ -305,7 +305,7 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
                    WHERE is_active=TRUE"""
             )
             municipal_closures = await closures_cursor.fetchall()
-        except BaseException:
+        except Exception:  # noqa: BLE001
             municipal_closures = []
     layers = {
         r["dataset"].removeprefix("map/layers/"): r["data"]
