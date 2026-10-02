@@ -207,3 +207,13 @@ Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvo
 3. **Logos & Badges in `SourceLogos.tsx`:**
    * Ergänzung der offiziellen Logos/Icons (DWD-Logo, Hessen-Löwe/HLNUG, TomTom/Open Data) für die Kacheln auf der `/quellen`-Seite.
 
+---
+
+## 5. Umsetzungs-Status
+
+- [x] **Schritt 1: DWD Open Data (RADOLAN RW 1km & MOSMIX 10729)**: Vollständig implementiert in `environment-collector`, Three-Table Ingestion via `write_measurement`, Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`924737b`).
+- [x] **Schritt 2: Hessen Open Data & HLNUG Grundwasser**: 120 Brunnen/Pegelmessstellen im Ried über ArcGIS REST angebunden (`registry-sync-worker`), Drei-Tabellen-Architektur, Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`c041a79`).
+- [x] **Schritt 3: Verkehrsfluss & Stauvolumen**: Ried-Korridore (B44, B47, A67) mit Geschwindigkeits-, Verlustzeit- und Staufaktormodellierung (`traffic-collector/traffic_flow.py`), Three-Table Ingestion via `write_measurement`, Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`9bb6009`).
+- [ ] **Schritt 4: Blitzortung.org (Live-Gewitterdaten)**: Nächster Schritt.
+- [ ] **Schritt 5: INVEKOS Feldblöcke & OpenStreetMap Optimierungen**: Ausstehend.
+
