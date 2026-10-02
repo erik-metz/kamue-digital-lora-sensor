@@ -185,5 +185,25 @@ Dieser Plan beschreibt die Anbindung, Normalisierung und Speicherung externer Da
 1. **Keine Tabellen-Migration nötig:** Da das Three-Table Schema (`entities`, `measurement_definitions`, `readings`) bereits existiert, werden keine neuen Tabellen via SQL angelegt.
 2. **Kollektor-Anpassung:**
    * Jeder Collector (`environment-collector`, `traffic-collector`, `registry-sync-worker`) nutzt die bestehenden Helfer für Ingestion in `entities`, `measurement_definitions` und `readings`.
+   * Registrierung der `source_id` in den Sammlungsversuchen (`collection_attempts`), damit das Backend den Live-Status kennt.
 3. **Erster Schritt zur Umsetzung:**
    * DWD RADOLAN- und MOSMIX-Normalisierung im `environment-collector` implementieren und direkt in die drei Kern-Tabellen schreiben.
+
+---
+
+## 4. Frontend: Integration in die Datenquellen-Seite (`/quellen`)
+
+Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvollziehbar für die Bürgerinnen und Bürger auf der Datenquellen-Seite (`www/open-ried-sens/app/quellen/`) aufgeführt werden:
+
+1. **Backend-Status-Endpunkt (`/api/v1/collection/status`):**
+   * Die neuen Quellen (`dwd-radolan`, `dwd-mosmix`, `hlnug-groundwater`, `traffic-flow`, `blitzortung`, `invekos-agriculture`) melden ihre Status-Snapshots (letzter Abruf, Erfolg, Intervall, Fehler) an den Status-Endpunkt.
+2. **Quellen-Metadaten in `QuellenClient.tsx` (`SOURCE_INFO`):**
+   * Für jede neue Quelle wird ein Eintrag im Metadaten-Objekt hinterlegt:
+     * `title`: z.B. *"DWD RADOLAN Niederschlagsradar"*, *"HLNUG Grundwasserpegel"*
+     * `domain`: *"Umwelt & Wetter"*, *"Verkehr"* oder *"Landwirtschaft"*
+     * `provider`: *"Deutscher Wetterdienst (DWD)"*, *"HLNUG Hessen"*, etc.
+     * `description`: Klare Erklärung, was erfasst wird und warum es für das Ried wichtig ist.
+     * `frequencyHint`: z.B. *"stündlich"*, *"alle 5 Minuten"* oder *"täglich"*
+3. **Logos & Badges in `SourceLogos.tsx`:**
+   * Ergänzung der offiziellen Logos/Icons (DWD-Logo, Hessen-Löwe/HLNUG, TomTom/Open Data) für die Kacheln auf der `/quellen`-Seite.
+
