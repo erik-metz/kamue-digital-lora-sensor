@@ -12,7 +12,7 @@ from pathlib import Path
 
 import httpx
 import psycopg
-from adapters import import_cross7, import_tiles
+from adapters import import_cross7, import_lampertheim_events, import_tiles
 from budgets import import_biblis_budget
 from chargers import import_chargers
 from config import Settings
@@ -37,6 +37,7 @@ ADAPTERS = {
     "bnetza": import_chargers,
     "gtfs": import_gtfs,
     "cross7": import_cross7,
+    "lampertheim-events": import_lampertheim_events,
     "tiles": import_tiles,
     "gtfs-rt": import_realtime,
     "zakb": import_zakb,

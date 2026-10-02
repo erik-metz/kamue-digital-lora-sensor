@@ -35,6 +35,7 @@ const statsContext = {
   fetch: globalThis.fetch,
   AbortSignal: globalThis.AbortSignal,
   URL: globalThis.URL,
+  URLSearchParams: globalThis.URLSearchParams,
 };
 vm.runInNewContext(
   ts.transpileModule(statsSource, {
@@ -114,3 +115,32 @@ test("generateIcsCalendar produces valid RFC 5545 calendar format", () => {
   assert.ok(ics.includes("DTSTART:"), "Includes DTSTART");
   assert.ok(ics.endsWith("END:VCALENDAR"), "Ends with END:VCALENDAR");
 });
+
+test("generateGoogleCalendarUrl produces valid Google Calendar web link", () => {
+  const event = regionalStats.BASELINE_EVENTS.find((e) => e.title.includes("Bürstädter Kerwe"));
+  assert.ok(event, "Bürstädter Kerwe event exists");
+
+  const gcalUrl = regionalStats.generateGoogleCalendarUrl(event);
+  assert.ok(gcalUrl.startsWith("https://calendar.google.com/calendar/render?action=TEMPLATE"), "Correct Google Calendar URL prefix");
+  assert.ok(gcalUrl.includes("text="), "Includes text parameter");
+  assert.ok(gcalUrl.includes("dates="), "Includes dates parameter");
+  assert.ok(gcalUrl.includes("location="), "Includes location parameter");
+  assert.doesNotThrow(() => new URL(gcalUrl), "Produces a syntactically valid URL");
+});
+
+test("BASELINE_EVENTS contains both scheduled upcoming events and archived past events", () => {
+  const events = regionalStats.BASELINE_EVENTS;
+  const pastEvents = events.filter((e) => e.status === "past");
+  const upcomingEvents = events.filter((e) => e.status === "scheduled");
+
+  assert.ok(pastEvents.length >= 5, `Expected at least 5 archived past events, got ${pastEvents.length}`);
+  assert.ok(upcomingEvents.length >= 10, `Expected at least 10 upcoming scheduled events, got ${upcomingEvents.length}`);
+
+  // Test geographical coordinates and expected visitors for sensor correlation
+  const eventsWithCoords = events.filter((e) => typeof e.latitude === "number" && typeof e.longitude === "number");
+  assert.ok(eventsWithCoords.length >= 10, "Multiple events should have geo coordinates for spatial mapping");
+
+  const majorEvents = events.filter((e) => (e.expected_visitors || 0) > 1000);
+  assert.ok(majorEvents.length >= 4, "Major festivals have visitor estimates for environmental correlation");
+});
+

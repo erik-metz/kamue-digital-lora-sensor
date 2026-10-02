@@ -115,6 +115,7 @@
       "group": "social",
       "adapter": "cross7",
       "enabled": true,
+      "municipality": "Bürstadt",
       "url": "https://api.cross-7.de/public/calendar/667/events",
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
@@ -122,6 +123,36 @@
         "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender",
         "Origin": "https://www.buerstadt.de",
         "Referer": "https://www.buerstadt.de/"
+      },
+      "http_retries": 2
+    },
+    {
+      "id": "cross7-gross-rohrheim",
+      "group": "social",
+      "adapter": "cross7",
+      "enabled": true,
+      "municipality": "Groß-Rohrheim",
+      "url": "https://api.cross-7.de/public/calendar/1106/events",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "headers": {
+        "slug": "/freizeit-kultur/veranstaltungen/veranstaltungskalender",
+        "Origin": "https://www.gross-rohrheim.de",
+        "Referer": "https://www.gross-rohrheim.de/"
+      },
+      "http_retries": 2
+    },
+    {
+      "id": "lampertheim-events",
+      "group": "social",
+      "adapter": "lampertheim-events",
+      "enabled": true,
+      "municipality": "Lampertheim",
+      "url": "https://www.lampertheim.de/de/veranstaltungen/?navid=370285370285",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "headers": {
+        "User-Agent": "OpenRiedSens-Bot/1.0"
       },
       "http_retries": 2
     },

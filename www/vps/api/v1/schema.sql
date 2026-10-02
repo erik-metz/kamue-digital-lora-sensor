@@ -1013,14 +1013,20 @@ ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS event_url TEXT;
 ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS image_url TEXT;
 ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS street_address TEXT;
 ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS postal_code VARCHAR(16);
+ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
+ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS status VARCHAR(32) DEFAULT 'scheduled';
 ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT FALSE;
+ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS expected_visitors INTEGER;
 ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS source VARCHAR(64) DEFAULT 'kamue_events';
 ALTER TABLE cultural_events ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE INDEX IF NOT EXISTS idx_events_time ON cultural_events (start_time ASC);
 CREATE INDEX IF NOT EXISTS idx_events_muni_start ON cultural_events (municipality, start_time DESC);
 CREATE INDEX IF NOT EXISTS idx_events_source ON cultural_events (source);
+CREATE INDEX IF NOT EXISTS idx_events_status ON cultural_events (status);
+CREATE INDEX IF NOT EXISTS idx_events_category ON cultural_events (category);
+CREATE INDEX IF NOT EXISTS idx_events_geo ON cultural_events (latitude, longitude);
 
 -- Seed Municipal Social Statistics (Unemployment, SGB II, Healthcare Density, Associations, Tourism)
 

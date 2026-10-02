@@ -11,7 +11,7 @@ DO $$
 DECLARE targets TEXT[] := ARRAY[
     'agriculture_crop_zones','agriculture_municipal_stats','boris_land_value_zones',
     'broadband_coverage','business_registrations','commuter_flows','companies',
-    'construction_permits','cultural_events','demographic_snapshots','development_plans',
+    'construction_permits','demographic_snapshots','development_plans',
     'educational_facilities','election_district_results','election_districts','election_events',
     'energy_production_readings','energy_facilities','environmental_map_services',
     'ev_charging_status','ev_charging_stations','finance_expenditures','finance_budgets',

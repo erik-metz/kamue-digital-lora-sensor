@@ -21,6 +21,7 @@ import {
   ExternalLink,
   Wrench,
   ChevronDown,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -46,6 +47,12 @@ export const REGIONALATLAS_NAV_SUBITEMS = [
     label: "Übersicht & Hub",
     description: "Zahlen, Fakten & alle Fachbereiche",
     icon: LayoutGrid,
+  },
+  {
+    href: "/termine",
+    label: "Termine & Events",
+    description: "Veranstaltungskalender, Vereine & Feste",
+    icon: CalendarDays,
   },
   {
     href: "/bauen-wohnen",
@@ -85,6 +92,12 @@ const MAIN_NAV_ITEMS: NavItem[] = [
     label: "Sensor-Karte",
     shortLabel: "Karte",
     icon: Radio,
+  },
+  {
+    href: "/termine",
+    label: "Termine & Events",
+    shortLabel: "Termine",
+    icon: CalendarDays,
   },
   {
     href: "/regionalatlas",

@@ -12,7 +12,7 @@ from typing import Annotated, Any
 
 import psycopg_pool
 from dependencies import get_db_pool, verify_admin_key
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/social", tags=["Social & Daily Life"])
@@ -100,10 +100,33 @@ class CulturalEventResponse(BaseModel):
     image_url: str | None = None
     street_address: str | None = None
     postal_code: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     status: str = "scheduled"
     is_free: bool = False
     is_archived: bool = False
+    expected_visitors: int | None = None
     source: str = "kamue_events"
+
+
+class CulturalEventCreate(BaseModel):
+    title: str
+    organizer: str
+    municipality: str
+    venue_name: str
+    start_time: datetime
+    end_time: datetime | None = None
+    category: str = "civic"
+    description: str | None = None
+    ticket_url: str | None = None
+    event_url: str | None = None
+    street_address: str | None = None
+    postal_code: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    is_free: bool = True
+    expected_visitors: int | None = None
+    contact_email: str | None = None
 
 
 # --- Endpoints ---
@@ -284,7 +307,8 @@ async def get_cultural_events(
         SELECT id, title, organizer, venue_id, venue_name, municipality,
                start_time, end_time, category, description, ticket_url,
                COALESCE(event_url, ticket_url) as event_url, image_url,
-               street_address, postal_code, status, is_free, is_archived, source
+               street_address, postal_code, latitude, longitude, status,
+               is_free, is_archived, expected_visitors, source
         FROM cultural_events
         WHERE 1=1
     """
@@ -317,3 +341,48 @@ async def get_cultural_events(
         rows = await cur.fetchall()
 
     return [CulturalEventResponse(**dict(r)) for r in rows]
+
+
+@router.post("/events/submit", response_model=CulturalEventResponse, status_code=status.HTTP_201_CREATED)
+async def submit_cultural_event(
+    payload: CulturalEventCreate,
+    pool: DbPool,
+):
+    """Submit a community or club event for verification and addition to the regional calendar."""
+    import re
+    import uuid
+    clean_title = re.sub(r'[^a-zA-Z0-9]+', '-', payload.title.lower()).strip('-')[:32] or "event"
+    event_id = f"user-{uuid.uuid4().hex[:8]}-{clean_title}"
+
+    query = """
+        INSERT INTO cultural_events (
+            id, title, organizer, venue_id, venue_name, municipality,
+            start_time, end_time, category, description, ticket_url,
+            event_url, image_url, street_address, postal_code, latitude, longitude,
+            status, is_free, is_archived, expected_visitors, source, updated_at
+        ) VALUES (
+            %s, %s, %s, NULL, %s, %s,
+            %s, %s, %s, %s, %s,
+            %s, NULL, %s, %s, %s, %s,
+            'scheduled', %s, FALSE, %s, 'user_submission', NOW()
+        )
+        RETURNING id, title, organizer, venue_id, venue_name, municipality,
+                  start_time, end_time, category, description, ticket_url,
+                  COALESCE(event_url, ticket_url) as event_url, image_url,
+                  street_address, postal_code, latitude, longitude, status,
+                  is_free, is_archived, expected_visitors, source;
+    """
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            query,
+            (
+                event_id, payload.title, payload.organizer, payload.venue_name, payload.municipality,
+                payload.start_time, payload.end_time, payload.category, payload.description, payload.ticket_url,
+                payload.event_url, payload.street_address, payload.postal_code, payload.latitude, payload.longitude,
+                payload.is_free, payload.expected_visitors,
+            ),
+        )
+        row = await cur.fetchone()
+        await conn.commit()
+
+    return CulturalEventResponse(**dict(row))

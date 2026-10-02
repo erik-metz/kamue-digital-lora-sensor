@@ -227,6 +227,60 @@ class TestSocialDailyLife(unittest.IsolatedAsyncioTestCase):
         executed_query = cur.execute.call_args[0][0]
         self.assertIn("title ILIKE %s", executed_query)
 
+    async def test_submit_cultural_event(self):
+        from endpoints.social_daily_life import submit_cultural_event, CulturalEventCreate
+        payload = CulturalEventCreate(
+            title="Freiwillige Feuerwehr Bürstadt Tag der offenen Tür",
+            organizer="Freiwillige Feuerwehr Bürstadt",
+            municipality="Bürstadt",
+            venue_name="Feuerwehrgerätehaus Bürstadt",
+            start_time=datetime(2026, 10, 25, 11, 0, tzinfo=UTC),
+            end_time=datetime(2026, 10, 25, 18, 0, tzinfo=UTC),
+            category="civic",
+            description="Schauübungen, Fahrzeugausstellung und Bewirtung.",
+            street_address="Röntgenstraße 1",
+            postal_code="68642",
+            latitude=49.642,
+            longitude=8.455,
+            is_free=True,
+            expected_visitors=800,
+        )
+        returned_row = {
+            "id": "user-12345678-feuerwehr-tag",
+            "title": payload.title,
+            "organizer": payload.organizer,
+            "venue_id": None,
+            "venue_name": payload.venue_name,
+            "municipality": payload.municipality,
+            "start_time": payload.start_time,
+            "end_time": payload.end_time,
+            "category": payload.category,
+            "description": payload.description,
+            "ticket_url": None,
+            "event_url": None,
+            "image_url": None,
+            "street_address": payload.street_address,
+            "postal_code": payload.postal_code,
+            "latitude": payload.latitude,
+            "longitude": payload.longitude,
+            "status": "scheduled",
+            "is_free": True,
+            "is_archived": False,
+            "expected_visitors": 800,
+            "source": "user_submission",
+        }
+        pool = MagicMock()
+        conn = AsyncMock()
+        cur = AsyncMock()
+        cur.fetchone = AsyncMock(return_value=returned_row)
+        conn.cursor = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=cur), __aexit__=AsyncMock()))
+        pool.connection = MagicMock(return_value=AsyncMock(__aenter__=AsyncMock(return_value=conn), __aexit__=AsyncMock()))
+
+        result = await submit_cultural_event(payload, pool)
+        self.assertEqual(result.title, payload.title)
+        self.assertEqual(result.source, "user_submission")
+        self.assertEqual(result.expected_visitors, 800)
+
 
 if __name__ == "__main__":
     unittest.main()

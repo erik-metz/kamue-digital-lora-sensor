@@ -1,9 +1,29 @@
-"""Standard library unit tests for registry-sync-worker."""
-
 import asyncio
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock
+
+import types
+
+if "httpx" not in sys.modules:
+    sys.modules["httpx"] = MagicMock()
+if "psycopg" not in sys.modules:
+    psycopg_mock = types.ModuleType("psycopg")
+    psycopg_types = types.ModuleType("psycopg.types")
+    psycopg_types_json = types.ModuleType("psycopg.types.json")
+    psycopg_types_json.Jsonb = lambda x: x
+    sys.modules["psycopg"] = psycopg_mock
+    sys.modules["psycopg.types"] = psycopg_types
+    sys.modules["psycopg.types.json"] = psycopg_types_json
+if "openpyxl" not in sys.modules:
+    sys.modules["openpyxl"] = MagicMock()
+if "google" not in sys.modules:
+    sys.modules["google"] = MagicMock()
+    sys.modules["google.transit"] = MagicMock()
+if "icalendar" not in sys.modules:
+    sys.modules["icalendar"] = MagicMock()
 
 from config import Settings
 from health import read_status, record_job_status

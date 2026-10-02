@@ -10,6 +10,7 @@ import {
   Briefcase,
   BarChart3,
   LayoutGrid,
+  CalendarDays,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,14 @@ export const REGIONALATLAS_TABS: RegionalatlasTab[] = [
     shortLabel: "Übersicht",
     icon: LayoutGrid,
     tag: "Hub",
+  },
+  {
+    id: "termine",
+    href: "/termine",
+    label: "Termine & Events",
+    shortLabel: "Termine",
+    icon: CalendarDays,
+    tag: "Kalender",
   },
   {
     id: "bauen-wohnen",
@@ -74,7 +83,7 @@ export const REGIONALATLAS_TABS: RegionalatlasTab[] = [
 ];
 
 interface RegionalatlasTabsProps {
-  activeTab?: "uebersicht" | "bauen-wohnen" | "demografie" | "statistik" | "haushalt" | "wirtschaft";
+  activeTab?: "uebersicht" | "termine" | "bauen-wohnen" | "demografie" | "statistik" | "haushalt" | "wirtschaft";
   className?: string;
 }
 
