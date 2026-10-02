@@ -217,4 +217,111 @@ Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvo
 - [x] **Schritt 4: Blitzortung.org (Live-Gewitterdaten)**: Live-Blitzentladungen im 25 km Radius um Bürstadt (`environment-collector`), Three-Table Ingestion via `write_measurement` (`lightning_strikes_count`, `lightning_distance_min`, `lightning_peak_current`), Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`f1fc7c9`).
 - [x] **Schritt 5: INVEKOS Feldblöcke & OpenStreetMap Optimierungen**: Hessen INVEKOS INSPIRE-Parzellenkataster WFS (`lawi:Landwirtschaftliche Parzellen 2025`) für Bürstadt, Lampertheim, Biblis und Groß-Rohrheim (`registry-sync-worker/invekos.py`), Three-Table Ingestion via `write_measurement` (`area`, `latitude`, `longitude`), OpenStreetMap Layer-Optimierungen (`osm_addresses.py`), Frontend `/quellen` aktualisiert.
 
+---
+
+## 6. Phase 2: Satellitendaten & Historische Erdbeobachtungs-Datenbank (Sentinel-2 / Copernicus)
+
+### 6.1 Storage-Architektur & Kostenanalyse: Contabo VPS vs. UploadThing
+
+| Kriterium | UploadThing | Contabo VPS (MinIO / Lokaler NVMe/Block Storage) | Empfehlung |
+| :--- | :--- | :--- | :--- |
+| **Kostenmodell** | Teuer bei hohem Speicherbedarf (mehrere GB/TB); laufende Bandbreitengebühren | Extrem günstig: Contabo Block Storage (z. B. 250–500 GB für wenige €/Monat) ohne Datentransferkosten zum VPS | **Contabo VPS** |
+| **GeoTIFF / COG-Unterstützung** | Nur normale Dateiablage; keine HTTP Range Requests für Sub-Kacheln | Native Unterstützung von **Cloud-Optimized GeoTIFF (COG)** via Byte-Range-Requests; Web-Clients laden nur sichtbare Zoomstufen | **Contabo VPS** |
+| **ML-Pipeline-Readiness** | Daten müssen für jedes Training über das Internet gestreamt werden | Direkter schneller NVMe/POSIX-Dateizugriff oder lokaler S3-Endpunkt für PyTorch, Rasterio, GDAL und Scikit-Learn | **Contabo VPS** |
+| **Datensouveränität** | Abhängigkeit von Drittanbieter-Cloud | Vollständige Datenhoheit auf dem eigenen Contabo VPS in Deutschland/EU | **Contabo VPS** |
+
+> **Architektur-Entscheidung Storage:**  
+> Für die historische Satellitendatenbank wird ein lokales Verzeichnis (`/data/satellite/` auf Contabo NVMe/Block Storage) mit S3-kompatibler MinIO-Schnittstelle eingesetzt.  
+> Satellitenszenen werden direkt nach dem Download auf das Hessische Ried zugeschnitten (BBOX-Clip) und als **Cloud-Optimized GeoTIFF (COG)** abgelegt. Dies reduziert die Dateigröße von ca. 500 MB pro Sentinel-Kachel auf **nur ca. 15–25 MB pro Szene**, sodass ein ganzes Jahr an wolkenfreien Szenen weniger als 2 GB Speicher belegt.
+
+---
+
+### 6.2 Datenquelle & Sentinel-2 Pipeline
+
+* **Datenquelle:** Copernicus Data Space Ecosystem (CDSE) / OpenSearch / STAC API (`catalogue.dataspace.copernicus.eu`).
+* **Satellit:** Sentinel-2 MSI (Multi-Spectral Instrument), Level-2A (Bottom-Of-Atmosphere Bodenreflektanz, wolkenkorrigiert).
+* **Überflugfrequenz:** Ca. alle 5 Tage über dem Hessischen Ried.
+* **Filterkriterien:**
+  * Bounding Box: Hessisches Ried (`49.54, 8.33, 49.75, 8.58`)
+  * Bewölkung: Cloud Cover < 20% über dem Zielgebiet
+* **Berechnete Raster-Produkte pro Szene:**
+  1. **True Color RGB (B04, B03, B02):** Visuelle Echtfarbendarstellung (10 m Auflösung).
+  2. **NDVI (Normalized Difference Vegetation Index):**
+     $$\text{NDVI} = \frac{\text{B08 (NIR)} - \text{B04 (Red)}}{\text{B08 (NIR)} + \text{B04 (Red)}}$$
+     Vitalitäts- und Dürremonitoring für Agrarflächen und den Riedwald.
+  3. **NDMI (Normalized Difference Moisture Index / Bodenfeuchte-Proxy):**
+     $$\text{NDMI} = \frac{\text{B08 (NIR)} - \text{B11 (SWIR)}}{\text{B08 (NIR)} + \text{B11 (SWIR)}}$$
+     Trockenstress-Erkennung auf landwirtschaftlichen Parzellen.
+
+---
+
+### 6.3 Mapping in das Three-Table Core Schema (Keine neuen SQL-Tabellen!)
+
+#### 1. Entities
+* `id`: `satellite-scene-sentinel2-<YYYYMMDD>`
+* `name`: *"Sentinel-2 Szene Hessisches Ried <YYYY-MM-DD>"*
+* `entity_type`: `satellite_scene`
+* `metadata`:
+  ```json
+  {
+    "satellite": "Sentinel-2A",
+    "orbit": 108,
+    "cloud_cover_percent": 4.2,
+    "sensing_time": "2026-06-15T10:35:20Z",
+    "bbox": [49.54, 8.33, 49.75, 8.58],
+    "storage": {
+      "rgb_cog": "satellite/2026/06/sentinel2_ried_20260615_rgb.tif",
+      "ndvi_cog": "satellite/2026/06/sentinel2_ried_20260615_ndvi.tif",
+      "preview_url": "/api/v1/satellite/scenes/20260615/preview.webp"
+    }
+  }
+  ```
+
+#### 2. Measurement Definitions & Readings (via `write_measurement`)
+* **Mittlerer Vegetationsindex Ried:**
+  * `metric`: `ndvi_mean`
+  * `unit`: `index` ([-1.0 .. 1.0])
+  * `source_id`: `copernicus-sentinel2`
+  * `basis`: `observed`
+  * `semantics`: `instantaneous`
+* **Dürre- und Trockenstress-Fläche:**
+  * `metric`: `drought_stressed_area`
+  * `unit`: `ha`
+  * `source_id`: `copernicus-sentinel2`
+  * `basis`: `model` (Schwellenwert $\text{NDVI} < 0.25$ auf Ackerflächen)
+  * `semantics`: `instantaneous`
+* **Bewölkungsgrad:**
+  * `metric`: `cloud_cover`
+  * `unit`: `%`
+  * `source_id`: `copernicus-sentinel2`
+  * `basis`: `observed`
+  * `semantics`: `instantaneous`
+
+---
+
+### 6.4 Frontend-Integration (Sensorkarte & Regionalatlas)
+
+1. **Sensorkarte (`/karte`):**
+   * Zuschaltbarer Ebenen-Layer *"Sentinel-2 Satellit"* mit Unteroptionen:
+     * *Echtfarben (RGB)* – aktuelle Ansicht aus dem All
+     * *Vegetationsgesundheit (NDVI)* – farbcodierte Heatmap (Rot = trocken/brach, Grün = vitale Vegetation)
+   * Kachelung über performanten FastAPI-Tile-Handler (`/api/v1/satellite/tiles/{date}/{z}/{x}/{y}.png`), der direkt aus den COGs liest.
+2. **Regionalatlas (`/regionalatlas`):**
+   * **Zeitreise-Schieberegler:** Historische Gegenüberstellung von Satellitenszenen (z. B. Frühjahr vs. Hochsommer-Dürre).
+   * **Trend-Charts:** Zeitlicher Verlauf des mittleren Ried-NDVI korreliert mit den HLNUG-Grundwasserständen und DWD-Niederschlägen.
+3. **Datenquellen-Seite (`/quellen`):**
+   * Transparente Auflistung von *Copernicus Sentinel-2* mit Lizenznachweis (Copernicus Open Access / EU-Verordnung) und Status-Chip.
+
+---
+
+### 6.5 Geplante Implementierungsschritte Phase 2
+
+- [ ] **Schritt 2.1: Copernicus CDSE / STAC Downloader**: Automatischer Abruf neuer wolkenfreier Szenen für das Ried im `registry-sync-worker` oder dedizierten `satellite-worker`.
+- [ ] **Schritt 2.2: BBOX-Clipper & COG-Generator**: Automatischer Zuschnitt auf das Ried und Generierung von Cloud-Optimized GeoTIFFs (RGB & NDVI).
+- [ ] **Schritt 2.3: Ingestion in das Three-Table Schema**: Speicherung von Metadaten in `entities` und Ableitung skalaren Vegetationsmetriken via `write_measurement`.
+- [ ] **Schritt 2.4: FastAPI Kachel-Endpunkt (COG Tile Server)**: Schnelles Bereitstellen von PNG-Kacheln für Leaflet/MapLibre im Frontend.
+- [ ] **Schritt 2.5: Frontend-Integration**: Layer auf der Sensorkarte (`/karte`) und Zeitreise-Modul im Regionalatlas (`/regionalatlas`).
+- [ ] **Schritt 2.6: ML-Vorbereitung (Historical Earth Observation DB)**: Standardisierte Schnittstelle für nachgelagerte PyTorch/Scikit-Learn-Modelle (Dürre-Klassifikation, Versiegelungsgrad).
+
+
 
