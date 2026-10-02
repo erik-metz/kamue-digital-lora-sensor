@@ -313,3 +313,15 @@ test("mapPresentation identifies roadwork and corridors with distinct symbols an
   assert.equal(presentation.featureKind("closures", { closure_type: "full", reason: "Vollsperrung" }), "closures");
   assert.equal(presentation.featureKind("traffic", { kind: "corridor" }), "corridor");
 });
+
+test("mapPresentation formats energy facilities as private solar with static hint", () => {
+  assert.equal(presentation.mapSymbol("energy").symbol, "☀");
+  assert.ok(presentation.mapSymbol("energy").label.includes("Solar"));
+
+  const card = presentation.featureCard("energy", {
+    name: "Energieanlage",
+    facility_type: "Photovoltaik (Dachanlage)",
+    operator: "Privat",
+  });
+  assert.ok(card);
+});

@@ -35,14 +35,51 @@ def extract_addresses(path, source):
             return 'companies'
         return None
 
+    def energy_meta(tags):
+        source = tags.get('generator:source') or tags.get('plant:source')
+        method = tags.get('generator:method') or tags.get('plant:method')
+        place = tags.get('generator:place') or tags.get('location')
+        power = tags.get('power')
+        is_plant = power == 'plant'
+
+        if source == 'solar' or method == 'photovoltaic' or place in ('roof', 'rooftop'):
+            if is_plant or place == 'ground':
+                return 'Solarpark / Freiflächenanlage', 'Photovoltaik (Freifläche)'
+            return 'Private Solaranlage / Photovoltaik-Dachanlage', 'Photovoltaik (Dachanlage)'
+        if source == 'biogas' or tags.get('plant:source') == 'biogas':
+            return 'Biogasanlage', 'Biomasse / Biogas'
+        if source == 'wind' or method == 'wind_turbine':
+            return 'Windkraftanlage', 'Windenergie'
+        if source in ('gas', 'diesel', 'oil') or method == 'cogeneration':
+            return 'Blockheizkraftwerk / Notstrom', 'BHKW'
+        if is_plant:
+            return 'Energiepark / Erzeugungsanlage', 'Kraftwerk / Großanlage'
+        return 'Private Solaranlage / Photovoltaik-Dachanlage', 'Photovoltaik (Dachanlage)'
+
     def add_feature(kind, identity, tags, geometry):
-        map_layers[kind]['features'].append({'type': 'Feature', 'geometry': geometry, 'properties': {
-            'id': identity, 'name': tags.get('name') or {'nature': 'Schutzgebiet', 'crops': 'Landwirtschaftliche Fläche',
-                'energy': 'Energieanlage', 'wifi': 'WLAN-Standort', 'companies': 'Unternehmen', 'places': 'Öffentlicher Ort'}[kind],
-            'operator': tags.get('operator'), 'place_type': tags.get('amenity') or tags.get('tourism') or tags.get('leisure'),
-            'address': ' '.join(filter(None, [tags.get('addr:street'), tags.get('addr:housenumber')])), 'source': 'OpenStreetMap / Geofabrik',
-            'description': 'Kartierter Standort bzw. Fläche; keine Live-Messung und kein vollständiges amtliches Register.',
-        }})
+        if kind == 'energy':
+            default_name, facility_type = energy_meta(tags)
+            props = {
+                'id': identity,
+                'name': tags.get('name') or default_name,
+                'facility_type': facility_type,
+                'operator': tags.get('operator'),
+                'address': ' '.join(filter(None, [tags.get('addr:street'), tags.get('addr:housenumber')])),
+                'source': 'OpenStreetMap / Geofabrik',
+                'description': 'Kartierte Anlage (z. B. private Solaranlage / Photovoltaik-Dachanlage). Keine Live-Einspeisemessung und kein IoT-Sensor.',
+            }
+        else:
+            props = {
+                'id': identity,
+                'name': tags.get('name') or {'nature': 'Schutzgebiet', 'crops': 'Landwirtschaftliche Fläche',
+                    'wifi': 'WLAN-Standort', 'companies': 'Unternehmen', 'places': 'Öffentlicher Ort'}[kind],
+                'operator': tags.get('operator'),
+                'place_type': tags.get('amenity') or tags.get('tourism') or tags.get('leisure'),
+                'address': ' '.join(filter(None, [tags.get('addr:street'), tags.get('addr:housenumber')])),
+                'source': 'OpenStreetMap / Geofabrik',
+                'description': 'Kartierter Standort bzw. Fläche; keine Live-Messung und kein vollständiges amtliches Register.',
+            }
+        map_layers[kind]['features'].append({'type': 'Feature', 'geometry': geometry, 'properties': props})
 
     def tags_for(obj):
         tags = dict(obj.tags)

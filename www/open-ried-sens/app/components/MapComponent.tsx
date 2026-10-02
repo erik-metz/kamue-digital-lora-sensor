@@ -77,6 +77,8 @@ export default function MapComponent(props: MapProps) {
       center: callbacks.current.initialCenter ?? DEFAULT_MAP_CENTER,
       zoom: callbacks.current.initialZoom ?? DEFAULT_MAP_ZOOM,
       minZoom: 8,
+      maxBounds: [[49.45, 8.15], [49.90, 8.80]],
+      maxBoundsViscosity: 0.8,
     });
     map.current = instance;
     const resize = new ResizeObserver(() => instance.invalidateSize({ pan: false }));
@@ -340,11 +342,17 @@ export default function MapComponent(props: MapProps) {
           }
           return { color: mapSymbol(id).color, weight: 3, fillOpacity: .15 };
         },
-        pointToLayer: (feature, latlng) => L.marker(latlng, {
-          title: String(feature.properties?.name ?? mapSymbol(id).label),
-          keyboard: true,
-          icon: L.divIcon({ html: placeMarker(featureKind(id, feature.properties ?? {})), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20] }),
-        }),
+        pointToLayer: (feature, latlng) => {
+          const props = feature.properties ?? {};
+          const markerTitle = id === "energy" && (!props.name || props.name === "Energieanlage" || props.name === "Ökostrom / Solaranlage")
+            ? (props.facility_type ? `Solaranlage (${props.facility_type})` : "Private Solaranlage / Photovoltaik")
+            : String(props.name ?? mapSymbol(id).label);
+          return L.marker(latlng, {
+            title: markerTitle,
+            keyboard: true,
+            icon: L.divIcon({ html: placeMarker(featureKind(id, props)), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20] }),
+          });
+        },
         onEachFeature: (feature, layer) => {
           const values = feature.properties ?? {};
           if (id === "stops" && typeof values.stop_id === "string" && typeof values.source_id === "string") {
@@ -373,8 +381,16 @@ export default function MapComponent(props: MapProps) {
             layer.on("popupclose", () => pending?.abort());
             return;
           }
+          const displayName = id === "energy" && (!values.name || values.name === "Energieanlage" || values.name === "Ökostrom / Solaranlage")
+            ? (typeof values.facility_type === "string"
+                ? `Solaranlage (${values.facility_type})`
+                : "Private Solaranlage / Photovoltaik")
+            : String(values.name ?? values.title ?? mapSymbol(id).label);
+          const displaySubtitle = id === "energy"
+            ? "Kartierte Solaranlage · keine Live-Messung"
+            : mapSymbol(id).label;
           layer.bindPopup(featureCard(id, values), { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
-          layer.bindTooltip(detailCard(String(values.name ?? values.title ?? mapSymbol(id).label), mapSymbol(id).label, []));
+          layer.bindTooltip(detailCard(displayName, displaySubtitle, []));
           if (id === "closures") {
             closures++;
             if (feature.geometry?.type === "LineString" && Array.isArray((feature.geometry as unknown as { coordinates?: unknown }).coordinates)) {

@@ -185,7 +185,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Ökostrom",
     icon: "☀️",
     category: "infrastructure",
-    description: "ZAKB Energiepark Hüttenfeld, Biogasanlagen & Solarparks im Ried",
+    description: "Kartierte private Solaranlagen, PV-Dächer, Energieparks & Biomasse (Geodaten ohne Live-Messwerte)",
     minZoom: LAYER_MIN_ZOOM.energy,
     highlightColor: "border-amber-400 text-amber-300",
   },

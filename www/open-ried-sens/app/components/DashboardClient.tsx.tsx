@@ -3,7 +3,7 @@
 import { Check, MapPin, RefreshCw, Share2, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { CATEGORIES, CATEGORY_IDS, parseStoredCategories, visibleNodes, hasCoordinates, type Category, type MapMode, type StationNode } from "@/lib/mapData";
+import { CATEGORIES, CATEGORY_IDS, parseStoredCategories, visibleNodes, hasCoordinates, type Category, type MapMode, type StationNode, type SensorNode } from "@/lib/mapData";
 import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_LAYERS,
@@ -61,7 +61,18 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
   const categories = useMemo(() => parseStoredCategories(stored), [stored]);
   const nodes = data.nodes;
   const filtered = useMemo(() => visibleNodes(nodes, categories, mode), [nodes, categories, mode]);
-  const mapNodes = useMemo(() => filtered.filter(hasCoordinates), [filtered]);
+  const mapNodes = useMemo(
+    () =>
+      filtered.filter(
+        (n): n is SensorNode =>
+          hasCoordinates(n) &&
+          n.lat >= 49.55 &&
+          n.lat <= 49.80 &&
+          n.lng >= 8.30 &&
+          n.lng <= 8.65
+      ),
+    [filtered]
+  );
   const selected = nodes.find(n => n.id === selectedNodeId);
   const chartNode = selected ?? filtered[0] ?? nodes[0];
   const counts = useMemo(() => Object.fromEntries(CATEGORY_IDS.map(c => [c, nodes.filter(n => n.categories.includes(c)).length])) as Record<Category, number>, [nodes]);
@@ -258,7 +269,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         }}
         onActiveClosuresCountChange={setActiveClosuresCount}
       />
-      {filtered.length > mapNodes.length && <p className="text-xs text-slate-400">{filtered.length - mapNodes.length} Stationen ohne Kartenposition sind unter „Messwerte & Zeitverlauf“ auswählbar.</p>}
+      {filtered.length > mapNodes.length && <p className="text-xs text-slate-400">{filtered.length - mapNodes.length} Stationen außerhalb des Ried-Kartenbereichs oder ohne Position sind unter „Messwerte & Zeitverlauf“ auswählbar.</p>}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400" aria-label="Kartenlegende">
         {mode === "temperature" ? <>
           <div className="flex items-center gap-2">

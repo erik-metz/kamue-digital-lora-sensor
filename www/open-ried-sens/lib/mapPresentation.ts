@@ -11,7 +11,7 @@ export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color:
   waste: { label: "Abfallsammlung", symbol: "🚛", color: "#fb923c" },
   stops: { label: "Haltestelle", symbol: "H", color: "#facc15" },
   charging: { label: "Ladestation", symbol: "⚡", color: "#34d399" },
-  energy: { label: "Energieanlage", symbol: "☀", color: "#fbbf24" },
+  energy: { label: "Ökostrom / Solaranlage", symbol: "☀", color: "#fbbf24" },
   traffic: { label: "Verkehrsmeldung", symbol: "⚠", color: "#fb923c" },
   corridor: { label: "Verkehrsachse", symbol: "🚗", color: "#10b981" },
   closures: { label: "Sperrung", symbol: "⛔", color: "#ef4444" },
@@ -73,7 +73,8 @@ const FIELD_LABELS: Record<string, string> = {
   totalPoints: "Ladepunkte", maxPowerKw: "Max. Ladeleistung (kW)", availablePoints: "Freie Ladepunkte",
   installedCapacityKw: "Installierte Leistung (kW)", currentPowerKw: "Aktuelle Leistung (kW)",
   sourceUpdatedAt: "Quellenstand",
-  operator: "Betreiber", address: "Adresse", street: "Straße", house_number: "Hausnummer",
+  operator: "Betreiber", facility_type: "Anlagentyp", facilityType: "Anlagentyp", power_source: "Energieträger",
+  address: "Adresse", street: "Straße", house_number: "Hausnummer",
   municipality: "Gemeinde", district: "Ortsteil", city: "Ort", postcode: "Postleitzahl", postal_code: "Postleitzahl",
   total_points: "Ladepunkte", charging_points: "Ladepunkte", available_points: "Freie Ladepunkte",
   max_power_kw: "Max. Ladeleistung (kW)", power_kw: "Leistung (kW)", installed_capacity_kw: "Installierte Leistung (kW)",
@@ -129,7 +130,22 @@ function formatFieldValue(key: string, value: string | number): string {
 
 export function featureCard(kind: string, values: Record<string, unknown>): HTMLElement {
   const style = mapSymbol(featureKind(kind, values));
-  const title = String(values.name ?? values.title ?? style.label);
+  let title = String(values.name ?? values.title ?? style.label);
+  let subtitle = style.label;
+
+  if (kind === "energy") {
+    const isGeneric = !values.name || values.name === "Energieanlage" || values.name === "Ökostrom / Solaranlage";
+    const facilityType = typeof values.facility_type === "string"
+      ? values.facility_type
+      : typeof values.facilityType === "string"
+      ? values.facilityType
+      : undefined;
+    if (isGeneric) {
+      title = facilityType ? `Solaranlage (${facilityType})` : "Private Solaranlage / Photovoltaik";
+    }
+    subtitle = "Kartierte Erzeugungsanlage · keine Live-Messung";
+  }
+
   const rows = Object.entries(FIELD_LABELS).flatMap(([key, label]) => {
     const raw = values[key];
     if ((typeof raw !== "string" && typeof raw !== "number") || raw === title) return [];
@@ -138,6 +154,9 @@ export function featureCard(kind: string, values: Record<string, unknown>): HTML
   if (kind === "places") rows.push("Öffnungs- und Notdienststatus nicht verfügbar.");
   if (kind === "crossings") rows.push("Schrankenstatus unbekannt – keine Live-Meldung verfügbar.");
   if (kind === "charging" && values.available_points == null && values.availablePoints == null) rows.push("Live-Belegung nicht verfügbar.");
+  if (kind === "energy") {
+    rows.push("Hinweis: Kartierte private oder gewerbliche Solaranlage bzw. Erzeugungsstandort (OpenStreetMap). Statischer Geodatensatz, keine Live-Telemetrie.");
+  }
   if (Array.isArray(values.connectorTypes)) rows.push(`Anschlüsse: ${values.connectorTypes.filter(v => typeof v === "string").join(", ")}`);
-  return detailCard(`${style.symbol} ${title}`, style.label, rows.length ? rows : ["Für weitere Details liegen noch keine Daten vor."]);
+  return detailCard(`${style.symbol} ${title}`, subtitle, rows.length ? rows : ["Für weitere Details liegen noch keine Daten vor."]);
 }
