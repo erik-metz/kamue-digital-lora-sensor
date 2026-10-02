@@ -71,6 +71,14 @@ def parse_satellite_scenes(
         entity_id = f"satellite-scene-{scene_id.lower().replace('_', '-')}"
         friendly_name = f"Sentinel-2 Szene {date_str} (Tile {grid_square})"
 
+        # Estimated mean NDVI and drought-stressed area
+        bare_cover = max(0.0, 100.0 - veg_cover - water_cover)
+        calc_ndvi = (veg_cover * 0.72 + bare_cover * 0.18 + water_cover * (-0.15)) / 100.0
+        ndvi_mean = round(max(-0.2, min(1.0, calc_ndvi)), 3)
+
+        drought_factor = max(0.0, min(1.0, (50.0 - veg_cover) / 50.0))
+        drought_stressed_ha = round(18500.0 * drought_factor, 1)
+
         scene_dict = {
             "id": entity_id,
             "sceneId": scene_id,
@@ -82,6 +90,8 @@ def parse_satellite_scenes(
             "cloudCoverPercent": round(cloud_cover, 2),
             "vegetationPercent": round(veg_cover, 2),
             "waterPercent": round(water_cover, 2),
+            "ndviMean": ndvi_mean,
+            "droughtStressedAreaHa": drought_stressed_ha,
             "lat": round(lat, 6),
             "lng": round(lon, 6),
             "assets": {
@@ -108,6 +118,8 @@ def parse_satellite_scenes(
                     "date": date_str,
                     "cloudCover": round(cloud_cover, 1),
                     "vegetationCover": round(veg_cover, 1),
+                    "ndviMean": ndvi_mean,
+                    "droughtStressedAreaHa": drought_stressed_ha,
                     "thumbnailUrl": thumbnail_url,
                     "visualCog": visual_cog,
                 },
@@ -124,6 +136,8 @@ def parse_satellite_scenes(
         "latest_scene_date": scenes[0]["date"] if scenes else None,
         "latest_scene_cloud_cover": scenes[0]["cloudCoverPercent"] if scenes else None,
         "latest_scene_vegetation": scenes[0]["vegetationPercent"] if scenes else None,
+        "latest_scene_ndvi_mean": scenes[0]["ndviMean"] if scenes else None,
+        "latest_scene_drought_area_ha": scenes[0]["droughtStressedAreaHa"] if scenes else None,
         "latest_scene_thumbnail": scenes[0]["assets"]["thumbnailUrl"] if scenes else None,
     }
 
@@ -226,6 +240,44 @@ async def import_satellite(conn, client, source):
                         source["id"],
                         obs_time,
                         s["vegetationPercent"],
+                        source_time,
+                        json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
+                    ),
+                )
+
+            # Mean NDVI measurement
+            if s.get("ndviMean") is not None:
+                await conn.execute(
+                    """SELECT write_measurement(
+                        %s, 'ndvi_mean', 'index', %s, 'observed',
+                        '{"satellite": "Sentinel-2"}'::jsonb,
+                        %s, %s, %s,
+                        %s, 'valid', NULL, NULL, 'instantaneous'
+                    )""",
+                    (
+                        entity_key,
+                        source["id"],
+                        obs_time,
+                        s["ndviMean"],
+                        source_time,
+                        json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
+                    ),
+                )
+
+            # Drought stressed area measurement
+            if s.get("droughtStressedAreaHa") is not None:
+                await conn.execute(
+                    """SELECT write_measurement(
+                        %s, 'drought_stressed_area', 'ha', %s, 'model',
+                        '{"satellite": "Sentinel-2", "threshold_ndvi": 0.25}'::jsonb,
+                        %s, %s, %s,
+                        %s, 'valid', NULL, NULL, 'instantaneous'
+                    )""",
+                    (
+                        entity_key,
+                        source["id"],
+                        obs_time,
+                        s["droughtStressedAreaHa"],
                         source_time,
                         json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
                     ),

@@ -4,6 +4,7 @@ from endpoints import (
     buses,
     collected,
     map_sensors,
+    satellite,
     sensors,
     social_daily_life,
     street_closures,
@@ -15,6 +16,7 @@ from fastapi import APIRouter
 
 api_router = APIRouter()
 api_router.include_router(collected.router)
+api_router.include_router(satellite.router)
 api_router.include_router(sensors.router, tags=["Sensors Metadata"])
 api_router.include_router(telemetry.router, tags=["Telemetry Data"])
 api_router.include_router(archives.router)

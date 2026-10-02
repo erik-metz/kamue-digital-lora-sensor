@@ -88,6 +88,8 @@ class SatelliteAdapterTests(unittest.TestCase):
         self.assertEqual(s["gridSquare"], "UMA")
         self.assertEqual(s["lat"], 49.6425)
         self.assertEqual(s["lng"], 8.4552)
+        self.assertAlmostEqual(s["ndviMean"], 0.462, places=2)
+        self.assertEqual(s["droughtStressedAreaHa"], 0.0)
         self.assertEqual(s["assets"]["visualCog"], "https://example.org/sentinel2/TCI.tif")
         self.assertEqual(s["assets"]["redCog"], "https://example.org/sentinel2/B04.tif")
         self.assertEqual(s["assets"]["nirCog"], "https://example.org/sentinel2/B08.tif")
@@ -97,12 +99,15 @@ class SatelliteAdapterTests(unittest.TestCase):
         self.assertEqual(geojson["type"], "FeatureCollection")
         self.assertEqual(len(geojson["features"]), 1)
         self.assertEqual(geojson["features"][0]["properties"]["cloudCover"], 16.2)
+        self.assertAlmostEqual(geojson["features"][0]["properties"]["ndviMean"], 0.462, places=2)
 
         # Summary
         self.assertEqual(summary["total_scenes"], 1)
         self.assertEqual(summary["latest_scene_date"], "2026-09-30")
         self.assertEqual(summary["latest_scene_cloud_cover"], 16.2)
         self.assertEqual(summary["latest_scene_vegetation"], 52.8)
+        self.assertAlmostEqual(summary["latest_scene_ndvi_mean"], 0.462, places=2)
+        self.assertEqual(summary["latest_scene_drought_area_ha"], 0.0)
 
 
 if __name__ == "__main__":
