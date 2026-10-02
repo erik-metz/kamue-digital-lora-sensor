@@ -1,5 +1,6 @@
 import bz2
 import io
+import json
 import math
 import struct
 import xml.etree.ElementTree as ET
@@ -54,18 +55,32 @@ class NormalizedForecast:
     precipitation_mm: float | None = None
 
 
+@dataclass
+class NormalizedLightning:
+    zone_id: str
+    timestamp: datetime
+    strikes_count: int
+    distance_min_km: float | None
+    peak_current_max_ka: float | None
+    center_lat: float
+    center_lon: float
+    radius_km: float
+    raw_strikes: list[dict[str, Any]]
+
+
 class NormalizedEnvironment(tuple):
     """Backwards-compatible tuple that unpacks as (gauges, weather_list)
-    while also exposing .radar and .forecasts."""
+    while also exposing .radar, .forecasts, and .lightning."""
 
-    def __new__(cls, gauges, weather_list, radar=None, forecasts=None):
+    def __new__(cls, gauges, weather_list, radar=None, forecasts=None, lightning=None):
         return super().__new__(cls, (gauges, weather_list))
 
-    def __init__(self, gauges, weather_list, radar=None, forecasts=None):
+    def __init__(self, gauges, weather_list, radar=None, forecasts=None, lightning=None):
         self.gauges = gauges
         self.weather_list = weather_list
         self.radar: list[NormalizedRadar] = radar or []
         self.forecasts: list[NormalizedForecast] = forecasts or []
+        self.lightning: NormalizedLightning | None = lightning
 
 
 def parse_radolan_rw(raw_bytes: bytes, target_lat: float, target_lon: float) -> NormalizedRadar | None:
@@ -234,6 +249,142 @@ def parse_mosmix(raw_bytes: bytes, station_id: str = "10729") -> list[Normalized
     return forecasts
 
 
+def haversine_distance_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6371.0
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = (
+        math.sin(dphi / 2.0) ** 2
+        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2.0) ** 2
+    )
+    return 2.0 * r * math.atan2(math.sqrt(a), math.sqrt(1.0 - a))
+
+
+def parse_blitzortung(
+    raw_data: Any,
+    center_lat: float = 49.6425,
+    center_lon: float = 8.4552,
+    radius_km: float = 25.0,
+    now: datetime | None = None,
+    max_age_seconds: float | None = None,
+) -> NormalizedLightning:
+    now_utc = now or datetime.now(UTC)
+    zone_id = f"lightning-zone-ried-{int(radius_km)}km"
+    if not raw_data:
+        return NormalizedLightning(
+            zone_id=zone_id,
+            timestamp=now_utc,
+            strikes_count=0,
+            distance_min_km=None,
+            peak_current_max_ka=None,
+            center_lat=center_lat,
+            center_lon=center_lon,
+            radius_km=radius_km,
+            raw_strikes=[],
+        )
+
+    parsed_items: list[dict[str, Any]] = []
+    if isinstance(raw_data, (bytes, bytearray)):
+        raw_text = raw_data.decode("utf-8", errors="ignore").strip()
+    elif isinstance(raw_data, str):
+        raw_text = raw_data.strip()
+    elif isinstance(raw_data, list):
+        parsed_items = [item for item in raw_data if isinstance(item, dict)]
+        raw_text = ""
+    elif isinstance(raw_data, dict):
+        raw_items = raw_data.get("strokes") or raw_data.get("strikes") or [raw_data]
+        parsed_items = [item for item in raw_items if isinstance(item, dict)]
+        raw_text = ""
+    else:
+        raw_text = ""
+
+    if raw_text:
+        try:
+            loaded = json.loads(raw_text)
+            if isinstance(loaded, list):
+                parsed_items = [item for item in loaded if isinstance(item, dict)]
+            elif isinstance(loaded, dict):
+                raw_items = loaded.get("strokes") or loaded.get("strikes") or [loaded]
+                parsed_items = [item for item in raw_items if isinstance(item, dict)]
+        except json.JSONDecodeError:
+            for line in raw_text.splitlines():
+                line = line.strip()
+                if not line or not line.startswith("{"):
+                    continue
+                try:
+                    item = json.loads(line)
+                    if isinstance(item, dict):
+                        parsed_items.append(item)
+                except json.JSONDecodeError:
+                    continue
+
+    matching: list[dict[str, Any]] = []
+    distances: list[float] = []
+    currents: list[float] = []
+    strike_times: list[datetime] = []
+
+    for item in parsed_items:
+        try:
+            lat = float(item["lat"])
+            lon = float(item["lon"])
+        except (KeyError, ValueError, TypeError):
+            continue
+
+        d = haversine_distance_km(lat, lon, center_lat, center_lon)
+        if d > radius_km:
+            continue
+
+        strike_dt = now_utc
+        t_val = item.get("time")
+        if t_val is not None:
+            try:
+                if isinstance(t_val, (int, float)):
+                    if t_val > 1e15:
+                        sec = t_val / 1e9
+                    elif t_val > 1e11:
+                        sec = t_val / 1e3
+                    else:
+                        sec = float(t_val)
+                    strike_dt = datetime.fromtimestamp(sec, UTC)
+                else:
+                    strike_dt = datetime.fromisoformat(str(t_val))
+                if max_age_seconds is not None:
+                    age = (now_utc - strike_dt).total_seconds()
+                    if age > max_age_seconds or age < -60.0:
+                        continue
+            except (ValueError, OSError, OverflowError):
+                pass
+
+        matching.append(item)
+        strike_times.append(strike_dt)
+        distances.append(d)
+        curr_val = (
+            item.get("current")
+            or item.get("peak_current")
+            or item.get("mcg")
+            or item.get("scs")
+        )
+        if curr_val is not None:
+            try:
+                currents.append(abs(float(curr_val)))
+            except (ValueError, TypeError):
+                pass
+
+    latest_time = max(strike_times, default=now_utc)
+    return NormalizedLightning(
+        zone_id=zone_id,
+        timestamp=latest_time,
+        strikes_count=len(matching),
+        distance_min_km=round(min(distances), 2) if distances else None,
+        peak_current_max_ka=round(max(currents), 1) if currents else None,
+        center_lat=center_lat,
+        center_lon=center_lon,
+        radius_km=radius_km,
+        raw_strikes=matching,
+    )
+
+
 def normalize(payload: dict[str, Any], settings) -> NormalizedEnvironment:
     gauges: list[NormalizedGauge] = []
     weather_list: list[NormalizedWeather] = []
@@ -299,5 +450,14 @@ def normalize(payload: dict[str, Any], settings) -> NormalizedEnvironment:
     if mosmix_raw and isinstance(mosmix_raw, (bytes, bytearray)):
         forecast_list = parse_mosmix(bytes(mosmix_raw), station_id="10729")
 
-    return NormalizedEnvironment(gauges, weather_list, radar_list, forecast_list)
+    # 5. Parse Blitzortung
+    blitz_raw = payload.get("blitzortung")
+    target_lat = getattr(settings, "ried_lat", 49.6425)
+    target_lon = getattr(settings, "ried_lon", 8.4552)
+    radius_km = getattr(settings, "blitzortung_radius_km", 25.0)
+    lightning_item = parse_blitzortung(blitz_raw, target_lat, target_lon, radius_km)
+
+    return NormalizedEnvironment(
+        gauges, weather_list, radar_list, forecast_list, lightning_item
+    )
 

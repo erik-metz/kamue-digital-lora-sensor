@@ -14,8 +14,11 @@ class Settings:
     weather_url: str = "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=8.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=UTC"
     radolan_url: str = "https://opendata.dwd.de/weather/radar/radolan/rw/raa01-rw_10000-latest-dwd---bin.bz2"
     mosmix_url: str = "https://opendata.dwd.de/weather/local_forecasts/mos/MOSMIX_L/single_stations/10729/kml/MOSMIX_L_LATEST_10729.kmz"
+    blitzortung_url: str = "https://data.blitzortung.org/Data/Protected/last_strikes.php"
     enable_radolan: bool = True
     enable_mosmix: bool = True
+    enable_blitzortung: bool = True
+    blitzortung_radius_km: float = 25.0
     ried_lat: float = 49.6425
     ried_lon: float = 8.4552
     request_timeout: float = 30.0
@@ -34,6 +37,7 @@ class Settings:
         state_dir = Path(os.getenv("ENVIRONMENT_STATE_DIR", "/data"))
         enable_radolan = os.getenv("ENABLE_DWD_RADOLAN", "true").lower() in ("1", "true", "yes")
         enable_mosmix = os.getenv("ENABLE_DWD_MOSMIX", "true").lower() in ("1", "true", "yes")
+        enable_blitzortung = os.getenv("ENABLE_BLITZORTUNG", "true").lower() in ("1", "true", "yes")
         return cls(
             db=db,
             poll_seconds=poll_seconds,
@@ -54,8 +58,14 @@ class Settings:
                 "DWD_MOSMIX_URL",
                 "https://opendata.dwd.de/weather/local_forecasts/mos/MOSMIX_L/single_stations/10729/kml/MOSMIX_L_LATEST_10729.kmz",
             ),
+            blitzortung_url=os.getenv(
+                "BLITZORTUNG_URL",
+                "https://data.blitzortung.org/Data/Protected/last_strikes.php",
+            ),
             enable_radolan=enable_radolan,
             enable_mosmix=enable_mosmix,
+            enable_blitzortung=enable_blitzortung,
+            blitzortung_radius_km=float(os.getenv("BLITZORTUNG_RADIUS_KM", "25.0")),
             ried_lat=float(os.getenv("RIED_LATITUDE", "49.6425")),
             ried_lon=float(os.getenv("RIED_LONGITUDE", "8.4552")),
         )

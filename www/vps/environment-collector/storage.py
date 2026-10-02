@@ -16,13 +16,16 @@ async def persist_environment_data(
     source_url="",
     radar=None,
     forecasts=None,
+    lightning=None,
 ) -> dict[str, int]:
     updated_gauges = 0
     updated_weather = 0
     updated_radar = 0
     updated_forecasts = 0
+    updated_lightning = 0
     radar_items = radar if radar is not None else getattr(weather_list, "radar", [])
     forecast_items = forecasts if forecasts is not None else getattr(weather_list, "forecasts", [])
+    lightning_item = lightning if lightning is not None else getattr(weather_list, "lightning", None)
     mode = os.getenv('MEASUREMENT_WEATHER_WRITE_MODE', 'legacy')
     if mode not in {'legacy', 'dual'}:
         raise ValueError('MEASUREMENT_WEATHER_WRITE_MODE must be legacy or dual')
@@ -176,6 +179,107 @@ async def persist_environment_data(
                     """, (f"sensor:{f.station_id}", metric, unit, f.timestamp, val, fetched_at, provenance))
             updated_forecasts += 1
 
+        # 5. Update Blitzortung Lightning Observations
+        if lightning_item is not None:
+            provenance = Jsonb({"source": "blitzortung", "radius_km": lightning_item.radius_km})
+            if mode == 'dual':
+                await conn.execute("""
+                    INSERT INTO entities(id, name, entity_type, metadata)
+                    VALUES (%s, 'Blitzüberwachungszone Ried (25 km Radius Bürstadt)', 'monitoring_area',
+                            %s)
+                    ON CONFLICT(id) DO UPDATE SET
+                        name = EXCLUDED.name,
+                        metadata = entities.metadata || EXCLUDED.metadata,
+                        updated_at = NOW()
+                """, (
+                    lightning_item.zone_id,
+                    Jsonb({
+                        "center_lat": lightning_item.center_lat,
+                        "center_lon": lightning_item.center_lon,
+                        "radius_km": lightning_item.radius_km,
+                        "provider": "Blitzortung.org",
+                    }),
+                ))
+                # Strikes count (period_total over 15m)
+                await conn.execute("""
+                    SELECT write_measurement(
+                        %s, 'lightning_strikes_count', 'count', 'environment-blitzortung',
+                        'observed', '{"radius_km": 25, "interval": "15m"}'::jsonb,
+                        %s, %s, %s, %s, 'valid', %s - interval '15 minutes', %s, 'period_total'
+                    )
+                """, (
+                    lightning_item.zone_id,
+                    lightning_item.timestamp,
+                    lightning_item.strikes_count,
+                    fetched_at,
+                    provenance,
+                    lightning_item.timestamp,
+                    lightning_item.timestamp,
+                ))
+                # Distance min (km) if strikes occurred
+                if lightning_item.distance_min_km is not None:
+                    await conn.execute("""
+                        SELECT write_measurement(
+                            %s, 'lightning_distance_min', 'km', 'environment-blitzortung',
+                            'observed', '{"radius_km": 25}'::jsonb,
+                            %s, %s, %s, %s, 'valid', NULL, NULL, 'instantaneous'
+                        )
+                    """, (
+                        lightning_item.zone_id,
+                        lightning_item.timestamp,
+                        lightning_item.distance_min_km,
+                        fetched_at,
+                        provenance,
+                    ))
+                # Peak current max (kA) if available
+                if lightning_item.peak_current_max_ka is not None:
+                    await conn.execute("""
+                        SELECT write_measurement(
+                            %s, 'lightning_peak_current', 'kA', 'environment-blitzortung',
+                            'observed', '{"radius_km": 25}'::jsonb,
+                            %s, %s, %s, %s, 'valid', NULL, NULL, 'instantaneous'
+                        )
+                    """, (
+                        lightning_item.zone_id,
+                        lightning_item.timestamp,
+                        lightning_item.peak_current_max_ka,
+                        fetched_at,
+                        provenance,
+                    ))
+                # Center coordinates as reference
+                await conn.execute("""
+                    SELECT write_measurement(
+                        %s, 'latitude', 'degrees', 'environment-blitzortung', 'reported',
+                        '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s, 'valid', NULL, NULL, 'reference'
+                    )
+                """, (lightning_item.zone_id, lightning_item.timestamp, lightning_item.center_lat, fetched_at, provenance))
+                await conn.execute("""
+                    SELECT write_measurement(
+                        %s, 'longitude', 'degrees', 'environment-blitzortung', 'reported',
+                        '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s, 'valid', NULL, NULL, 'reference'
+                    )
+                """, (lightning_item.zone_id, lightning_item.timestamp, lightning_item.center_lon, fetched_at, provenance))
+
+            await conn.execute("""
+                INSERT INTO sensor_metadata (id, friendly_name, latitude, longitude, description)
+                VALUES (%s, 'Blitzortung Ried 25km', %s, %s, 'Blitzüberwachung Ried 25 km Bürstadt')
+                ON CONFLICT (id) DO UPDATE SET friendly_name=EXCLUDED.friendly_name,
+                    latitude=EXCLUDED.latitude, longitude=EXCLUDED.longitude, description=EXCLUDED.description
+            """, (lightning_item.zone_id, lightning_item.center_lat, lightning_item.center_lon))
+            await conn.execute("""
+                INSERT INTO sensor_data(sensor_id, metric, unit, timestamp, value)
+                VALUES (%s, 'lightning_strikes', 'count', %s, %s)
+                ON CONFLICT DO NOTHING
+            """, (lightning_item.zone_id, lightning_item.timestamp, lightning_item.strikes_count))
+            await conn.execute("""
+                INSERT INTO sensor_latest(sensor_id, metric, unit, timestamp, value)
+                VALUES (%s, 'lightning_strikes', 'count', %s, %s)
+                ON CONFLICT(sensor_id, metric, unit) DO UPDATE SET
+                timestamp=EXCLUDED.timestamp, value=EXCLUDED.value
+                WHERE EXCLUDED.timestamp >= sensor_latest.timestamp
+            """, (lightning_item.zone_id, lightning_item.timestamp, lightning_item.strikes_count))
+            updated_lightning += 1
+
         if payload and gauges:
             data = [
                 {
@@ -250,7 +354,7 @@ async def persist_environment_data(
         if payload:
             success_shas = [
                 payload[k]
-                for k in ("pegel_sha256", "weather_sha256", "radolan_sha256", "mosmix_sha256")
+                for k in ("pegel_sha256", "weather_sha256", "radolan_sha256", "mosmix_sha256", "blitzortung_sha256")
                 if payload.get(k)
             ]
             if success_shas:
@@ -264,4 +368,5 @@ async def persist_environment_data(
         "weather_metrics": updated_weather,
         "radar_metrics": updated_radar,
         "forecast_metrics": updated_forecasts,
+        "lightning_metrics": updated_lightning,
     }

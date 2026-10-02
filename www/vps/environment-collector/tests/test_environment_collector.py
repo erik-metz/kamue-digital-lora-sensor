@@ -111,6 +111,42 @@ class TestEnvironmentCollector(unittest.TestCase):
         self.assertEqual(fc.precipitation_prob, 15.0)
         self.assertEqual(fc.precipitation_mm, 0.4)
 
+    def test_normalize_blitzortung_empty(self):
+        settings = Settings(db={})
+        res = normalize({"blitzortung": ""}, settings)
+        self.assertIsNotNone(res.lightning)
+        self.assertEqual(res.lightning.zone_id, "lightning-zone-ried-25km")
+        self.assertEqual(res.lightning.strikes_count, 0)
+        self.assertIsNone(res.lightning.distance_min_km)
+        self.assertIsNone(res.lightning.peak_current_max_ka)
+
+    def test_normalize_blitzortung_json_lines(self):
+        settings = Settings(db={}, ried_lat=49.6425, ried_lon=8.4552)
+        # Line 1: Bürstadt center (approx 0.1 km)
+        # Line 2: Worms Rheinbrücke (approx 7 km)
+        # Line 3: Frankfurt North (approx 60 km - should be filtered out)
+        lines = (
+            '{"time": 1727860000000000000, "lat": 49.6420, "lon": 8.4550, "mcg": 42.5}\n'
+            '{"time": 1727860010000000000, "lat": 49.6300, "lon": 8.3600, "mcg": 18.2}\n'
+            '{"time": 1727860020000000000, "lat": 50.3000, "lon": 8.6000, "mcg": 85.0}\n'
+        )
+        res = normalize({"blitzortung": lines}, settings)
+        self.assertIsNotNone(res.lightning)
+        self.assertEqual(res.lightning.strikes_count, 2)
+        self.assertLess(res.lightning.distance_min_km, 1.0)
+        self.assertEqual(res.lightning.peak_current_max_ka, 42.5)
+
+    def test_normalize_blitzortung_json_list(self):
+        settings = Settings(db={}, ried_lat=49.6425, ried_lon=8.4552)
+        json_data = [
+            {"time": 1727860000, "lat": 49.6000, "lon": 8.5000, "current": 25.0},
+        ]
+        res = normalize({"blitzortung": json_data}, settings)
+        self.assertIsNotNone(res.lightning)
+        self.assertEqual(res.lightning.strikes_count, 1)
+        self.assertAlmostEqual(res.lightning.distance_min_km, 5.7, delta=1.5)
+        self.assertEqual(res.lightning.peak_current_max_ka, 25.0)
+
 
 if __name__ == "__main__":
     unittest.main()

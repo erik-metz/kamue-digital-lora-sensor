@@ -193,6 +193,14 @@ const SOURCE_INFO: Record<
       "Echtzeit-Geschwindigkeiten, Verlustzeiten und Staufaktoren für zentrale Ried-Achsen (B44 Bürstadt–Lampertheim, B47 Worms, A67).",
     frequencyHint: "Alle 3 Minuten",
   },
+  "environment-blitzortung": {
+    title: "Blitzortung Live-Gewitterüberwachung",
+    domain: "Umwelt & Wetter",
+    provider: "Blitzortung.org Community Network",
+    description:
+      "Echtzeit-Erfassung von Blitzentladungen, Blitzanzahl, Minimaldistanz und Scheitelströmen im 25-km-Radius um Bürstadt und das Ried.",
+    frequencyHint: "Alle 5 Minuten",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {
@@ -750,6 +758,13 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
               subtitle: "Bürger-Seismologie",
               url: "https://raspberryshake.org/",
               logoId: "shake",
+            },
+            {
+              id: "blitzortung",
+              name: "Blitzortung.org",
+              subtitle: "Live-Gewitterdaten 25km Ried",
+              url: "https://www.blitzortung.org/",
+              logoId: "blitzortung",
             },
             {
               id: "smartcity",

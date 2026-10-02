@@ -32,26 +32,38 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
     normalized = monotonic()
     radar_list = getattr(weather_list, "radar", [])
     forecast_list = getattr(weather_list, "forecasts", [])
+    lightning_item = getattr(weather_list, "lightning", None)
     coverage = ["pegelonline_wsv", "open_meteo_dwd"]
     if radar_list:
         coverage.append("dwd_radolan")
     if forecast_list:
         coverage.append("dwd_mosmix")
+    if lightning_item:
+        coverage.append("blitzortung")
     summary = {
         "fetched_at": fetched_at.isoformat(),
-        "accepted": len(gauges) + len(weather_list) + len(radar_list) + len(forecast_list),
+        "accepted": (
+            len(gauges)
+            + len(weather_list)
+            + len(radar_list)
+            + len(forecast_list)
+            + (1 if lightning_item else 0)
+        ),
         "skipped": 0,
         "source_coverage": coverage,
         "complete": True,
     }
     if dry_run:
-        return {
+        dry_res = {
             **summary,
             "gauges": [asdict(g) for g in gauges],
             "weather": [asdict(w) for w in weather_list],
             "radar": [asdict(r) for r in radar_list],
             "forecasts": [asdict(f) for f in forecast_list],
         }
+        if lightning_item:
+            dry_res["lightning"] = asdict(lightning_item)
+        return dry_res
     async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
         summary["ingestion"] = await persist_environment_data(
             conn,
@@ -60,6 +72,9 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             fetched_at,
             payload=payload,
             source_url=settings.pegelonline_url,
+            radar=radar_list,
+            forecasts=forecast_list,
+            lightning=lightning_item,
         )
     summary["durations_seconds"] = {
         "fetch": fetched - started,

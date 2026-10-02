@@ -13,6 +13,8 @@ async def fetch(client, settings, conn=None):
         endpoints.append(("radolan", settings.radolan_url, False))
     if getattr(settings, "enable_mosmix", False) and getattr(settings, "mosmix_url", None):
         endpoints.append(("mosmix", settings.mosmix_url, False))
+    if getattr(settings, "enable_blitzortung", False) and getattr(settings, "blitzortung_url", None):
+        endpoints.append(("blitzortung", settings.blitzortung_url, False))
 
     for name, url, required in endpoints:
         try:
@@ -63,6 +65,8 @@ async def fetch(client, settings, conn=None):
 
         if name in ("radolan", "mosmix"):
             payload[name] = response.content
+        elif name == "blitzortung":
+            payload[name] = response.text
         else:
             payload[name] = response.json()
         payload[name + "_sha256"] = digest

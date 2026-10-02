@@ -188,6 +188,16 @@ export function SmartCityLogo({ className = "w-7 h-7" }: LogoProps) {
   );
 }
 
+export function BlitzortungLogo({ className = "w-7 h-7" }: LogoProps) {
+  return (
+    <div className={`rounded-lg bg-amber-950 border border-amber-500/40 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-amber-400">
+        <path d="M55 12L25 54H48L42 88L75 46H52L55 12Z" fill="currentColor" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
 export function ShakeLogo({ className = "w-7 h-7" }: LogoProps) {
   return (
     <div className={`rounded-lg bg-rose-950 border border-rose-500/40 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
@@ -231,6 +241,9 @@ export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
   }
   if (sourceId.includes("traffic") || sourceId.includes("autobahn")) {
     return <AutobahnLogo className={className} />;
+  }
+  if (sourceId.includes("blitz") || sourceId.includes("lightning")) {
+    return <BlitzortungLogo className={className} />;
   }
   if (
     sourceId.includes("weather") ||
