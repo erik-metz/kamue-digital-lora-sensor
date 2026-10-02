@@ -295,3 +295,21 @@ test("weather identity is not overridden by generic parking notes in source desc
   })]);
   assert.deepEqual([...nodes[0].categories], ["weather"]);
 });
+
+const presentationContext = { exports: {}, document: { createElement: () => ({ style: { setProperty: () => {} }, append: () => {}, setAttribute: () => {} }) }, Date, Set, Number, JSON };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/mapPresentation.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, presentationContext);
+const presentation = presentationContext.exports;
+
+test("mapPresentation identifies roadwork and corridors with distinct symbols and colors", () => {
+  assert.equal(presentation.mapSymbol("roadwork").symbol, "🚧");
+  assert.equal(presentation.mapSymbol("roadwork").label, "Baustelle");
+  assert.equal(presentation.mapSymbol("corridor").symbol, "🚗");
+  assert.equal(presentation.mapSymbol("closures").symbol, "⛔");
+
+  assert.equal(presentation.featureKind("closures", { cause_type: "roadwork" }), "roadwork");
+  assert.equal(presentation.featureKind("closures", { closure_type: "partial", reason: "Kabelverlegung" }), "roadwork");
+  assert.equal(presentation.featureKind("closures", { closure_type: "full", reason: "Vollsperrung" }), "closures");
+  assert.equal(presentation.featureKind("traffic", { kind: "corridor" }), "corridor");
+});

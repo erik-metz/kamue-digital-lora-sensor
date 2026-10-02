@@ -324,7 +324,22 @@ export default function MapComponent(props: MapProps) {
         iconCreateFunction: cluster => L.divIcon({ html: placeMarker(id, String(cluster.getChildCount())), className: "map-place-icon", iconSize: [36, 36] }),
       }).addTo(group) : group;
       L.geoJSON(geometry as GeoJsonObject, {
-        style: { color: mapSymbol(id).color, weight: 3, fillOpacity: .15 },
+        style: (feature) => {
+          if (id === "traffic") {
+            const status = feature?.properties?.status;
+            if (status === "congestion") return { color: "#ef4444", weight: 5, opacity: 0.9, dashArray: "8, 8" };
+            if (status === "closure") return { color: "#b91c1c", weight: 5, opacity: 0.9, dashArray: "4, 6" };
+            if (status === "sluggish") return { color: "#f59e0b", weight: 4.5, opacity: 0.85 };
+            if (status === "clear") return { color: "#10b981", weight: 3.5, opacity: 0.75 };
+          }
+          if (id === "closures") {
+            const closureType = feature?.properties?.closure_type;
+            const causeType = feature?.properties?.cause_type;
+            if (closureType === "full" || causeType === "closure") return { color: "#ef4444", weight: 5, opacity: 0.9 };
+            return { color: "#f59e0b", weight: 4.5, opacity: 0.85 };
+          }
+          return { color: mapSymbol(id).color, weight: 3, fillOpacity: .15 };
+        },
         pointToLayer: (feature, latlng) => L.marker(latlng, {
           title: String(feature.properties?.name ?? mapSymbol(id).label),
           keyboard: true,
@@ -360,7 +375,28 @@ export default function MapComponent(props: MapProps) {
           }
           layer.bindPopup(featureCard(id, values), { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
           layer.bindTooltip(detailCard(String(values.name ?? values.title ?? mapSymbol(id).label), mapSymbol(id).label, []));
-          if (id === "closures") closures++;
+          if (id === "closures") {
+            closures++;
+            if (feature.geometry?.type === "LineString" && Array.isArray((feature.geometry as unknown as { coordinates?: unknown }).coordinates)) {
+              const coords = (feature.geometry as unknown as { coordinates: [number, number][] }).coordinates;
+              if (coords.length > 0) {
+                const mid = coords[Math.floor(coords.length / 2)];
+                const midMarker = L.marker([mid[1], mid[0]], {
+                  title: String(values.name ?? mapSymbol(id).label),
+                  icon: L.divIcon({
+                    html: placeMarker(featureKind(id, values)),
+                    className: "map-place-icon",
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18],
+                    popupAnchor: [0, -20],
+                  }),
+                });
+                midMarker.bindPopup(featureCard(id, values), { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
+                midMarker.bindTooltip(detailCard(String(values.name ?? values.title ?? mapSymbol(id).label), mapSymbol(id).label, []));
+                pointGroup.addLayer(midMarker);
+              }
+            }
+          }
         },
       }).addTo(pointGroup);
     }
@@ -370,13 +406,56 @@ export default function MapComponent(props: MapProps) {
     return () => { requests.forEach(controller => controller.abort()); group.remove(); };
   }, [ready, clusteringReady, publication, layers, zoom]);
 
+  const trafficCorridors = (publication.layers.traffic && "features" in (publication.layers.traffic as unknown as { features?: unknown[] })
+    ? ((publication.layers.traffic as unknown as { features: { properties?: { id?: string; road_name?: string; name?: string; status?: string; delay_minutes?: number; description?: string; kind?: string }; geometry?: { type: string; coordinates: [number, number][] } }[] }).features ?? [])
+    : [])
+    .filter(f => f.properties?.kind === "corridor")
+    .map(f => f.properties as { id: string; road_name: string; name: string; status: string; delay_minutes: number; description: string });
+
   const missing = publication.unavailable.filter(id => layers[id as MapLayerId]);
   return <div className="relative h-full min-h-[500px] w-full">
     <div ref={container} className="sensor-map h-full min-h-[500px] w-full" aria-label="Karte mit gespeicherten Quelldaten" />
+    {layers.traffic && trafficCorridors.length > 0 && (
+      <div className="absolute top-3 left-14 z-[400] hidden sm:flex items-center gap-1 pointer-events-auto">
+        <div className="commuter-corridor-bar">
+          <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5 mr-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            Auslastung:
+          </span>
+          {trafficCorridors.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              className={`corridor-pill corridor-pill-${c.status}`}
+              title={`${c.name}: ${c.description} – Klick zum Fokussieren`}
+              onClick={() => {
+                const feature = (publication.layers.traffic as { features?: { properties?: { id?: string }; geometry?: { type: string; coordinates: [number, number][] } }[] })?.features?.find((f) => f.properties?.id === c.id);
+                if (feature?.geometry?.type === "LineString") {
+                  const pts = feature.geometry.coordinates.map((p) => [p[1], p[0]] as [number, number]);
+                  map.current?.fitBounds(L.latLngBounds(pts), { padding: [50, 50], maxZoom: 14 });
+                }
+              }}
+            >
+              <span className="font-bold">{c.road_name}</span>
+              <span>
+                {c.status === "clear"
+                  ? "🟢 Frei"
+                  : c.status === "sluggish"
+                  ? `🟡 +${c.delay_minutes}m`
+                  : c.status === "congestion"
+                  ? `🔴 +${c.delay_minutes}m`
+                  : "⛔ Gesperrt"}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )}
     <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
       <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung</p>
       <p>Ⓗ Haltestelle · ⚡ Ladestation</p>
+      <p>⛔ Sperrung · 🚧 Baustelle · 🚗 Verkehrsachse</p>
       <p className="mt-1">Symbol anklicken für Details und Abfahrten.</p>
       <p className="mt-1 text-slate-400">Gestrichelter Rand: Prognose · Durchgehend: beobachtet (Fahrzeuge)</p>
       {(missing.length > 0) && <p>Ohne aktuelle Quelle: {missing.map(id => mapSymbol(id).label).join(", ")}.</p>}

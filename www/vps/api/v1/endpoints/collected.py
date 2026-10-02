@@ -190,6 +190,79 @@ async def tile(
     return Response(bytes(row["body"]), media_type=row["content_type"], headers=headers)
 
 
+RIED_CORRIDORS = [
+    {
+        "id": "corridor-a67",
+        "road_name": "A67",
+        "name": "A67 (Darmstadt ↔ Lorsch ↔ Viernheim)",
+        "coordinates": [
+            [8.5830, 49.8220],
+            [8.5730, 49.7950],
+            [8.5480, 49.7520],
+            [8.5580, 49.6920],
+            [8.5660, 49.6540],
+            [8.5650, 49.6210],
+            [8.5530, 49.5780],
+        ],
+    },
+    {
+        "id": "corridor-b47",
+        "road_name": "B47",
+        "name": "B47 (Worms Rheinbrücke ↔ Bürstadt ↔ Lorsch ↔ Bensheim)",
+        "coordinates": [
+            [8.3595, 49.6318],
+            [8.3780, 49.6350],
+            [8.4100, 49.6420],
+            [8.4420, 49.6457],
+            [8.4650, 49.6450],
+            [8.5020, 49.6470],
+            [8.5450, 49.6520],
+            [8.5660, 49.6540],
+            [8.6050, 49.6680],
+        ],
+    },
+    {
+        "id": "corridor-b44",
+        "road_name": "B44",
+        "name": "B44 (Biblis ↔ Bürstadt ↔ Lampertheim ↔ Mannheim)",
+        "coordinates": [
+            [8.4550, 49.7350],
+            [8.4520, 49.6890],
+            [8.4510, 49.6580],
+            [8.4560, 49.6457],
+            [8.4600, 49.6200],
+            [8.4680, 49.5960],
+            [8.4820, 49.5650],
+            [8.4900, 49.5350],
+        ],
+    },
+    {
+        "id": "corridor-a5",
+        "road_name": "A5",
+        "name": "A5 (Darmstadt ↔ Bensheim ↔ Heppenheim ↔ Weinheim)",
+        "coordinates": [
+            [8.6250, 49.8050],
+            [8.6280, 49.7550],
+            [8.6220, 49.7020],
+            [8.6180, 49.6680],
+            [8.6200, 49.6350],
+            [8.6250, 49.5850],
+            [8.6400, 49.5520],
+        ],
+    },
+    {
+        "id": "corridor-a6",
+        "road_name": "A6",
+        "name": "A6 (Viernheim ↔ Sandhofen ↔ Ludwigshafen)",
+        "coordinates": [
+            [8.5530, 49.5780],
+            [8.5020, 49.5520],
+            [8.4350, 49.5380],
+        ],
+    },
+]
+
+
 @router.get("/map/collected-layers")
 async def map_layers(request: Request, pool=Depends(get_db_pool)):
     expected = {
@@ -220,15 +293,26 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         rows = await cursor.fetchall()
         traffic_cursor = await conn.execute(
             """SELECT id,road_name,direction,location_from,location_to,description,cause_type,
-                      coordinates,last_seen_at FROM traffic_incidents
+                      delay_seconds,length_meters,severity,coordinates,last_seen_at FROM traffic_incidents
                WHERE is_active=TRUE AND last_seen_at>NOW()-INTERVAL '2 hours'""")
         incidents = await traffic_cursor.fetchall()
+        try:
+            closures_cursor = await conn.execute(
+                """SELECT id,municipality,district,street_name,location_from,location_to,
+                          closure_type,status,start_time,end_time,reason,description,
+                          detour,coordinates,source
+                   FROM street_closures
+                   WHERE is_active=TRUE"""
+            )
+            municipal_closures = await closures_cursor.fetchall()
+        except BaseException:
+            municipal_closures = []
     layers = {
         r["dataset"].removeprefix("map/layers/"): r["data"]
         for r in rows
         if r["dataset"].startswith("map/layers/")
     }
-    traffic_features = []
+    incident_features = []
     for incident in incidents:
         coordinates = incident["coordinates"]
         if isinstance(coordinates, str):
@@ -241,13 +325,102 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
             continue
         properties = {k: v for k, v in incident.items() if k != "coordinates"}
         properties["name"] = incident["road_name"]
-        traffic_features.append({"type": "Feature", "geometry": {
+        incident_features.append({"type": "Feature", "geometry": {
             "type": "LineString" if len(points) > 1 else "Point",
             "coordinates": points if len(points) > 1 else points[0],
         }, "properties": properties})
+
+    corridor_features = []
+    for c in RIED_CORRIDORS:
+        road = c["road_name"].upper()
+        road_incidents = [i for i in incidents if str(i.get("road_name", "")).upper() == road]
+        count = len(road_incidents)
+        max_delay = max((i.get("delay_seconds") or 0 for i in road_incidents), default=0)
+        has_closure = any(i.get("cause_type") == "closure" for i in road_incidents)
+        has_standstill = any(i.get("severity") == "standstill" for i in road_incidents)
+        if count == 0:
+            status = "clear"
+            desc = "Freie Fahrt ohne gemeldete Behinderungen"
+        elif has_closure:
+            status = "closure"
+            desc = f"Vollsperrung / erhebliche Störung ({count} Meldung(en))"
+        elif has_standstill or max_delay >= 900:
+            status = "congestion"
+            desc = f"{count} Störung(en), bis zu +{round(max_delay / 60)} Min. Zeitverlust"
+        elif max_delay >= 300:
+            status = "sluggish"
+            desc = f"Zähflüssiger Verkehr, ca. +{round(max_delay / 60)} Min. Verzögerung"
+        else:
+            status = "clear"
+            desc = f"{count} Meldung(en), geringer Zeitverlust"
+        corridor_features.append({
+            "type": "Feature",
+            "geometry": {
+                "type": "LineString",
+                "coordinates": c["coordinates"],
+            },
+            "properties": {
+                "id": c["id"],
+                "name": c["name"],
+                "road_name": c["road_name"],
+                "status": status,
+                "delay_minutes": round(max_delay / 60),
+                "active_incidents_count": count,
+                "description": desc,
+                "kind": "corridor",
+            },
+        })
+
+    municipal_closure_features = []
+    for row in municipal_closures:
+        coords = row["coordinates"]
+        if isinstance(coords, str):
+            coords = json.loads(coords)
+        if not coords:
+            continue
+        is_line = isinstance(coords, list) and len(coords) > 0 and isinstance(coords[0], list)
+        if is_line:
+            points = [[p[1], p[0]] for p in coords if isinstance(p, list) and len(p) >= 2]
+            geom = {"type": "LineString", "coordinates": points}
+        else:
+            geom = {"type": "Point", "coordinates": [coords[1], coords[0]]}
+        desc_text = str(row.get("description") or "").lower()
+        reason_text = str(row.get("reason") or "").lower()
+        closure_type = str(row.get("closure_type") or "full").lower()
+        is_baustelle = "teil" in closure_type or "baustelle" in reason_text or "baustelle" in desc_text or "bau" in reason_text or "instandsetzung" in reason_text
+        start_val = row.get("start_time")
+        end_val = row.get("end_time")
+        municipal_closure_features.append({
+            "type": "Feature",
+            "geometry": geom,
+            "properties": {
+                "id": row["id"],
+                "name": f"{row['street_name']} ({row['municipality']})",
+                "street_name": row["street_name"],
+                "municipality": row["municipality"],
+                "district": row.get("district"),
+                "location_from": row.get("location_from"),
+                "location_to": row.get("location_to"),
+                "closure_type": row.get("closure_type", "full"),
+                "status": row.get("status", "active"),
+                "start_time": start_val.isoformat() if hasattr(start_val, "isoformat") else str(start_val or ""),
+                "end_time": end_val.isoformat() if hasattr(end_val, "isoformat") else (str(end_val) if end_val else None),
+                "reason": row.get("reason"),
+                "description": row.get("description"),
+                "detour": row.get("detour"),
+                "cause_type": "roadwork" if is_baustelle else "closure",
+                "source": row.get("source", "hessen_mobil"),
+            },
+        })
+
+    traffic_features = incident_features + corridor_features
+    closure_features = municipal_closure_features + [
+        f for f in incident_features if f["properties"].get("cause_type") in ("closure", "roadwork")
+    ]
     if traffic_features:
         layers["traffic"] = {"type": "FeatureCollection", "features": traffic_features}
-        layers["closures"] = {"type": "FeatureCollection", "features": [f for f in traffic_features if f["properties"]["cause_type"] == "closure"]}
+    if closure_features:
+        layers["closures"] = {"type": "FeatureCollection", "features": closure_features}
     stops = [
         {**stop, "source_id": row["dataset"].removeprefix("transport/stops/")}
         for row in rows
