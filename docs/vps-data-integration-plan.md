@@ -320,8 +320,8 @@ Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvo
 - [x] **Schritt 2.2: BBOX-Clipper & COG-Generator**: Ried-Zuschnitt und Berechnung des mittleren Vegetationsindex (`ndvi_mean`) sowie der Trockenstressfläche (`drought_stressed_area_ha`) für Agrar- und Forstflächen.
 - [x] **Schritt 2.3: Ingestion in das Three-Table Schema**: Speicherung von COG-Assets in `entities.metadata` und Persistierung der skalaren Kennzahlen `ndvi_mean` und `drought_stressed_area` via `write_measurement`.
 - [x] **Schritt 2.4: FastAPI Kachel-Endpunkt (COG Tile Server)**: Endpunkte `/api/v1/satellite/scenes`, `/api/v1/satellite/latest` und Kachel-Proxy `/api/v1/satellite/tiles/{scene_id}/{z}/{x}/{y}.png` in `endpoints/satellite.py`.
-- [ ] **Schritt 2.5: Frontend-Integration**: Layer auf der Sensorkarte (`/karte`) und Zeitreise-Modul im Regionalatlas (`/regionalatlas`).
-- [ ] **Schritt 2.6: ML-Vorbereitung (Historical Earth Observation DB)**: Standardisierte Schnittstelle für nachgelagerte PyTorch/Scikit-Learn-Modelle (Dürre-Klassifikation, Versiegelungsgrad).
+- [x] **Schritt 2.5: Frontend-Integration**: Layer auf der Sensorkarte (`/karte`, `MapComponent.tsx`, `MapDarstellungBar.tsx`, `DashboardClient.tsx.tsx`) mit Echtfarben- (RGB) und NDVI-Rasterkachelung (`/api/satellite/tiles/...`) sowie interaktives Zeitreise- und Dürremonitoring-Modul im Regionalatlas (`SatelliteEarthObservationSection.tsx` auf `/regionalatlas`).
+- [x] **Schritt 2.6: ML-Vorbereitung (Historical Earth Observation DB)**: Standardisierte Schnittstelle für nachgelagerte PyTorch- und Scikit-Learn-Modelle (`satellite_ml.py`, `satellite_ml_train.py`, `test_satellite_ml.py`) zur Dürrestress-Klassifikation und Bodenfeuchte-Schätzung basierend auf dem Drei-Tabellen Core Schema.
 
 
 

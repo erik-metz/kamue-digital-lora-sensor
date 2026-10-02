@@ -111,6 +111,16 @@ class SatelliteEndpointTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp.status_code, 307)
         self.assertEqual(resp.headers.get("Location"), "https://example.org/thumb.jpg")
 
+    async def test_get_satellite_tile_latest_and_ndvi(self):
+        self.cursor.fetchone.return_value = {
+            "metadata": {
+                "assets": {"ndviUrl": "https://example.org/ndvi.jpg"}
+            }
+        }
+        resp = await get_satellite_tile("latest", 12, 2150, 1400, self.pool, layer="ndvi")
+        self.assertEqual(resp.status_code, 307)
+        self.assertEqual(resp.headers.get("Location"), "https://example.org/ndvi.jpg")
+
 
 if __name__ == "__main__":
     unittest.main()

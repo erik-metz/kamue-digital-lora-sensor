@@ -98,27 +98,40 @@ async def get_satellite_tile(
     x: int,
     y: int,
     pool: DbPool,
+    layer: str = Query(default="rgb", pattern="^(rgb|ndvi)$"),
 ) -> Response:
     """Tile proxy/redirect for Sentinel-2 Cloud-Optimized GeoTIFF raster layers."""
     async with pool.connection() as conn:
-        cursor = await conn.execute(
-            """SELECT metadata FROM entities
-            WHERE id = %s OR id = %s OR metadata->>'scene_id' = %s
-            LIMIT 1""",
-            (scene_id, f"satellite-scene-{scene_id.lower().replace('_', '-')}", scene_id),
-        )
+        if scene_id == "latest":
+            cursor = await conn.execute(
+                """SELECT metadata FROM entities
+                WHERE entity_type = 'satellite_scene'
+                ORDER BY metadata->>'date' DESC
+                LIMIT 1"""
+            )
+        else:
+            cursor = await conn.execute(
+                """SELECT metadata FROM entities
+                WHERE id = %s OR id = %s OR metadata->>'scene_id' = %s
+                LIMIT 1""",
+                (scene_id, f"satellite-scene-{scene_id.lower().replace('_', '-')}", scene_id),
+            )
         row = await cursor.fetchone()
         if not row:
             raise HTTPException(status_code=404, detail=f"Scene '{scene_id}' not found")
 
         meta = row.get("metadata", {})
         assets = meta.get("assets", {})
-        thumbnail_url = assets.get("thumbnailUrl") or assets.get("preview")
-        if thumbnail_url:
-            # Temporary redirect to thumbnail/asset
+        tile_url = None
+        if layer == "ndvi":
+            tile_url = assets.get("ndviUrl") or assets.get("ndvi_cog") or assets.get("thumbnailUrl") or assets.get("preview")
+        else:
+            tile_url = assets.get("thumbnailUrl") or assets.get("preview") or assets.get("visual_cog")
+
+        if tile_url:
             return Response(
                 status_code=307,
-                headers={"Location": thumbnail_url, "Cache-Control": "public, max-age=86400"},
+                headers={"Location": tile_url, "Cache-Control": "public, max-age=86400"},
             )
 
         raise HTTPException(status_code=404, detail="Raster visual asset unavailable")

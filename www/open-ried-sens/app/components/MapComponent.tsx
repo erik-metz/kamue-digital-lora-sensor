@@ -30,6 +30,8 @@ interface MapProps {
   onLayerToggle?: (layerId: MapLayerId, enabled: boolean) => void;
   onOpenLayersDrawer?: () => void;
   onActiveClosuresCountChange?: (count: number) => void;
+  satelliteMode?: "none" | "rgb" | "ndvi";
+  satelliteSceneId?: string;
 }
 interface Position {
   id: string; kind: "bus" | "train" | "waste"; latitude: number; longitude: number;
@@ -418,9 +420,22 @@ export default function MapComponent(props: MapProps) {
     }
     const starkregenMinZoom = LAYER_MIN_ZOOM.starkregen ?? 12;
     if (layers.starkregen && zoom >= starkregenMinZoom) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
+
+    // Copernicus Sentinel-2 Satellite Raster Tile Layer (RGB or NDVI)
+    if (props.satelliteMode && props.satelliteMode !== "none") {
+      const scene = props.satelliteSceneId ? encodeURIComponent(props.satelliteSceneId) : "latest";
+      L.tileLayer(`/api/satellite/tiles/${scene}/{z}/{x}/{y}.png?layer=${props.satelliteMode}`, {
+        maxZoom: 18,
+        minZoom: 8,
+        bounds: [[49.50, 8.25], [49.85, 8.75]],
+        opacity: props.satelliteMode === "ndvi" ? 0.75 : 0.9,
+        attribution: '© <a href="https://dataspace.copernicus.eu" target="_blank" rel="noopener">Copernicus Sentinel-2</a> · ESA / EU',
+      }).addTo(group);
+    }
+
     callbacks.current.onActiveClosuresCountChange?.(closures);
     return () => { requests.forEach(controller => controller.abort()); group.remove(); };
-  }, [ready, clusteringReady, publication, layers, zoom]);
+  }, [ready, clusteringReady, publication, layers, zoom, props.satelliteMode, props.satelliteSceneId]);
 
   const trafficCorridors = (publication.layers.traffic && "features" in (publication.layers.traffic as unknown as { features?: unknown[] })
     ? ((publication.layers.traffic as unknown as { features: { properties?: { id?: string; road_name?: string; name?: string; status?: string; delay_minutes?: number; description?: string; kind?: string }; geometry?: { type: string; coordinates: [number, number][] } }[] }).features ?? [])

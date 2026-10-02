@@ -10,6 +10,7 @@ import {
   Thermometer,
   RotateCcw,
   Check,
+  Satellite,
 } from "lucide-react";
 import type { MapMode } from "@/lib/mapData";
 import { MAP_LAYER_IDS, type MapLayerId, DEFAULT_MAP_LAYERS } from "@/lib/urlState";
@@ -29,6 +30,8 @@ import {
 interface MapDarstellungBarProps {
   mode: MapMode;
   onModeChange: (mode: MapMode) => void;
+  satelliteMode?: "none" | "rgb" | "ndvi";
+  onSatelliteModeChange?: (mode: "none" | "rgb" | "ndvi") => void;
   layers: Record<MapLayerId, boolean>;
   onLayerToggle: (id: MapLayerId, enabled: boolean) => void;
   onSetLayers: (layers: Record<MapLayerId, boolean>) => void;
@@ -44,6 +47,8 @@ interface MapDarstellungBarProps {
 export default function MapDarstellungBar({
   mode,
   onModeChange,
+  satelliteMode = "none",
+  onSatelliteModeChange,
   layers,
   onLayerToggle,
   onSetLayers,
@@ -167,6 +172,61 @@ export default function MapDarstellungBar({
                 </button>
               );
             })}
+          </div>
+
+          {/* Copernicus Sentinel-2 Satellite Switcher */}
+          <div className="flex items-center gap-1.5 border-t sm:border-t-0 sm:border-l border-slate-800 pt-2 sm:pt-0 sm:pl-3">
+            <span className="text-[11px] font-semibold text-slate-300 hidden md:inline-flex items-center gap-1">
+              <Satellite className="size-3 text-cyan-400" />
+              <span>Satellit:</span>
+            </span>
+            <div
+              className="inline-flex rounded-xl bg-slate-950/70 p-1 border border-slate-800 shadow-inner"
+              role="group"
+              aria-label="Copernicus Sentinel-2 Satellitenebene"
+            >
+              <button
+                type="button"
+                aria-pressed={satelliteMode === "none" || !satelliteMode}
+                onClick={() => onSatelliteModeChange?.("none")}
+                className={`rounded-lg px-2 py-1 text-xs font-medium transition-all ${
+                  satelliteMode === "none" || !satelliteMode
+                    ? "bg-slate-800 text-slate-200 border border-slate-700 shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+                title="Keine Satelliten-Rasterebene anzeigen"
+              >
+                Aus
+              </button>
+              <button
+                type="button"
+                aria-pressed={satelliteMode === "rgb"}
+                onClick={() => onSatelliteModeChange?.("rgb")}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                  satelliteMode === "rgb"
+                    ? "bg-blue-950/90 text-blue-300 shadow-sm border border-blue-500/50 font-medium"
+                    : "text-slate-400 hover:text-blue-300"
+                }`}
+                title="Copernicus Sentinel-2 Echtfarben-Satellitenbild (10m True Color RGB)"
+              >
+                <span>🌍</span>
+                <span>Echtfarben (RGB)</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={satelliteMode === "ndvi"}
+                onClick={() => onSatelliteModeChange?.("ndvi")}
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                  satelliteMode === "ndvi"
+                    ? "bg-emerald-950/90 text-emerald-300 shadow-sm border border-emerald-500/50 font-medium"
+                    : "text-slate-400 hover:text-emerald-300"
+                }`}
+                title="Copernicus Sentinel-2 Vegetationsgesundheit & NDVI (Rot=Trockenstress/Brache, Grün=vitale Vegetation)"
+              >
+                <span>🌱</span>
+                <span>NDVI Vitalität</span>
+              </button>
+            </div>
           </div>
         </div>
 

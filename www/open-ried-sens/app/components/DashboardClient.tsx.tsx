@@ -56,6 +56,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
   const [mounted, setMounted] = useState(false);
   const [isLayersDrawerOpen, setIsLayersDrawerOpen] = useState(false);
   const [activeClosuresCount, setActiveClosuresCount] = useState(0);
+  const [satelliteMode, setSatelliteMode] = useState<"none" | "rgb" | "ndvi">("none");
 
   const stored = useSyncExternalStore(subscribe, preferences, () => DEFAULT_SELECTION);
   const categories = useMemo(() => parseStoredCategories(stored), [stored]);
@@ -233,6 +234,8 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
       <MapDarstellungBar
         mode={mode}
         onModeChange={setMode}
+        satelliteMode={satelliteMode}
+        onSatelliteModeChange={setSatelliteMode}
         layers={layers}
         onLayerToggle={(layerId, enabled) =>
           setLayers((prev) => ({ ...prev, [layerId]: enabled }))
@@ -257,6 +260,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         initialCenter={[viewport.lat, viewport.lng]}
         initialZoom={viewport.z}
         layers={layers}
+        satelliteMode={satelliteMode}
         onViewportChange={(center, zoom) =>
           setViewport({ lat: center[0], lng: center[1], z: zoom })
         }
@@ -271,6 +275,20 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
       />
       {filtered.length > mapNodes.length && <p className="text-xs text-slate-400">{filtered.length - mapNodes.length} Stationen außerhalb des Ried-Kartenbereichs oder ohne Position sind unter „Messwerte & Zeitverlauf“ auswählbar.</p>}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400" aria-label="Kartenlegende">
+        {satelliteMode === "ndvi" && (
+          <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 text-slate-200">
+            <span className="font-semibold text-emerald-400">Copernicus Sentinel-2 NDVI:</span>
+            <span className="text-amber-400">0.0 (Dürrestress / Brache)</span>
+            <span className="h-2 w-20 sm:w-28 rounded-full inline-block" style={{ background: "linear-gradient(to right, #b45309, #eab308, #22c55e, #15803d)" }} />
+            <span className="text-emerald-300">1.0 (Dichte Vegetation)</span>
+          </div>
+        )}
+        {satelliteMode === "rgb" && (
+          <div className="inline-flex items-center gap-1.5 rounded-lg bg-blue-950/60 border border-blue-800/60 px-2.5 py-1 text-blue-200">
+            <span>🌍</span>
+            <span>Sentinel-2 L2A 10m Echtfarben-Satellitenbild (ESA/Copernicus)</span>
+          </div>
+        )}
         {mode === "temperature" ? <>
           <div className="flex items-center gap-2">
             <span>&lt; 0 °C</span>
