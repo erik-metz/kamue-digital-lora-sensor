@@ -56,11 +56,14 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
             'id': 'closure-1', 'road_name': 'A67', 'cause_type': 'closure',
             'coordinates': [[49.6, 8.4], [49.61, 8.41]],
         }])
-        conn.execute.side_effect = [publications, traffic]
+        closures = MagicMock()
+        closures.fetchall = AsyncMock(return_value=[])
+        conn.execute.side_effect = [publications, traffic, closures]
         response = await map_layers(request(), pool)
         data = json.loads(response.body)
         feature = data['layers']['traffic']['features'][0]
         self.assertEqual(feature['geometry']['coordinates'], [[8.4, 49.6], [8.41, 49.61]])
         self.assertEqual(data['layers']['closures']['features'], [feature])
-        self.assertIn("last_seen_at>NOW()-INTERVAL '2 hours'", conn.execute.call_args.args[0])
+        executed_queries = [call.args[0] for call in conn.execute.call_args_list]
+        self.assertTrue(any("last_seen_at>NOW()-INTERVAL '2 hours'" in q for q in executed_queries))
         self.assertIn('crossings', data['unavailable'])
