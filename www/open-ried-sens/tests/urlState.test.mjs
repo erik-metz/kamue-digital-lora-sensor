@@ -68,6 +68,10 @@ test("MAP_LAYER_IDS contains all 21 domain layers", () => {
   assert.ok(ids.includes("trains"));
 });
 
+test("DEFAULT_MAP_LAYERS disables energy by default to avoid cluttering standard view with private solar", () => {
+  assert.equal(urlState.DEFAULT_MAP_LAYERS.energy, false);
+});
+
 test("parseMapSessionState parses valid coordinates, zoom, and mode", () => {
   const parsed = urlState.parseMapSessionState("lat=49.635&lng=8.472&z=15&mode=temperature");
   assert.equal(parsed.lat, 49.635);

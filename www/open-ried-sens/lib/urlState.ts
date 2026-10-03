@@ -32,7 +32,7 @@ export const DEFAULT_MAP_LAYERS: Record<MapLayerId, boolean> = {
   floods: true,
   starkregen: false,
   charging: true,
-  energy: true,
+  energy: false,
   road: true,
   wifi: true,
   broadband: false,
