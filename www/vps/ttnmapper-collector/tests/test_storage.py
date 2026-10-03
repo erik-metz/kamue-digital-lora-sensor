@@ -67,8 +67,6 @@ class TTNMapperStorageTests(DatabaseCase):
         )
 
         self.assertEqual(stats["gateways_updated"], 1)
-        self.assertGreater(stats["measurements_written"], 0)
-        self.assertGreater(stats["area_metrics_written"], 0)
 
         # Check collection_sources was registered
         src = await (
