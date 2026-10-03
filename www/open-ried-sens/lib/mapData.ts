@@ -59,7 +59,7 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
       categories.add(r.metric === "soil_temperature" || soil ? "soil" : "weather");
     if (r.metric.startsWith("soil_") || r.metric === "water_surface_distance") categories.add("soil");
     if (["water_level_delta", "water_level"].includes(r.metric) || r.metric.startsWith("groundwater_") || r.metric.startsWith("river_")) categories.add("water");
-    if (["air_quality_index", "NO2", "PM10", "PM25", "O3"].includes(r.metric)) categories.add("air");
+    if (["air_quality_index", "NO2", "PM10", "PM25", "PM2.5", "pm10", "pm25", "O3"].includes(r.metric)) categories.add("air");
     if (r.metric.startsWith("traffic_") || r.metric.startsWith("crossing_") || r.metric === "closure_duration") categories.add("traffic");
     if (r.metric.startsWith("parking_")) categories.add("parking");
     if (r.metric.startsWith("bike_")) categories.add("bikes");
@@ -72,10 +72,11 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     else if (sensor.id.startsWith("bu-")) categories.add("traffic");
     else if (sensor.id.startsWith("nextbike-")) categories.add("bikes");
     else if (sensor.id.startsWith("rast-")) categories.add("parking");
+    else if (sensor.id.startsWith("osem-") || sensor.id.startsWith("sensebox-")) categories.add("weather");
     else if (sensor.id.startsWith("fac-apo-") || sensor.id.startsWith("fac-doc-")) categories.add("healthcare");
     else if (sensor.id.startsWith("fac-kamue-") || sensor.id.startsWith("fac-bst-sport") || sensor.id.startsWith("fac-la-alt") || sensor.id.startsWith("fac-la-kanu") || sensor.id.startsWith("fac-bst-buerger") || sensor.id.startsWith("fac-bst-vfr")) categories.add("culture");
     else if (sensor.id.startsWith("fac-tour-")) categories.add("tourism");
-    else if (type === "WeatherObserved") categories.add(soil ? "soil" : "weather");
+    else if (type === "WeatherObserved" || type === "environmental_sensor") categories.add(soil ? "soil" : "weather");
     else if (["GreenspaceRecord", "SoilMeasurement", "SoilTension"].includes(type ?? "")) categories.add("soil");
     else if (type === "FloodMonitoring") categories.add("water");
     else if (type === "AirQualityObserved") categories.add("air");

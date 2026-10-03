@@ -250,7 +250,24 @@ export function RastLogo({ className = "w-7 h-7" }: LogoProps) {
   );
 }
 
+export function OpenSenseMapLogo({ className = "w-7 h-7" }: LogoProps) {
+  return (
+    <div className={`rounded-lg bg-teal-700 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-white">
+        <path d="M50 16L84 35V65L50 84L16 65V35L50 16Z" stroke="currentColor" strokeWidth="6" strokeLinejoin="round" fill="#14B8A6" fillOpacity="0.3" />
+        <path d="M50 16V84M16 35L50 54L84 35" stroke="currentColor" strokeWidth="6" strokeLinejoin="round" />
+        <circle cx="50" cy="35" r="5" fill="#38BDF8" />
+        <circle cx="33" cy="65" r="4" fill="#FDE047" />
+        <circle cx="67" cy="65" r="4" fill="#34D399" />
+      </svg>
+    </div>
+  );
+}
+
 export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
+  if (sourceId.includes("opensensemap") || sourceId.includes("sensebox") || sourceId.includes("osem")) {
+    return <OpenSenseMapLogo className={className} />;
+  }
   if (sourceId.includes("vrn-realtime") || sourceId === "vrn" || sourceId.includes("gtfs")) {
     return <VrnLogo className={className} />;
   }

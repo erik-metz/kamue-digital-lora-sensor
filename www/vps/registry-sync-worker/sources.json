@@ -541,6 +541,22 @@
       "max_age_seconds": 63072000,
       "http_retries": 2,
       "partial_retry_seconds": 86400
+    },
+    {
+      "id": "opensensemap",
+      "group": "environment",
+      "adapter": "opensensemap",
+      "enabled": true,
+      "url": "https://api.opensensemap.org/boxes",
+      "interval_seconds": 300,
+      "max_age_seconds": 1800,
+      "bbox": [
+        49.40,
+        8.25,
+        50.00,
+        8.80
+      ],
+      "http_retries": 2
     }
   ]
 }

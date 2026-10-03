@@ -143,6 +143,30 @@ test("rast-monitor rest areas are categorized under parking and provide truck pa
   assert.ok(summary.details.includes("57 Stellplätze belegt"));
 });
 
+test("opensensemap stations are categorized under weather and air and provide environmental readings", () => {
+  const osemSensor = sensor(
+    [
+      reading("temperature", 21.5, "°C"),
+      reading("relative_humidity", 65, "%"),
+      reading("PM10", 14.2, "µg/m³"),
+      reading("PM25", 7.8, "µg/m³"),
+    ],
+    {
+      id: "osem-58cd22d8c877fb0011774898",
+      friendly_name: "senseBox: Bürstadt Wetterstation",
+      latitude: 49.6425,
+      longitude: 8.4552,
+      description: "openSenseMap / senseBox Station 'Bürstadt Wetterstation' · Quelle: openSenseMap",
+      entity_type: "environmental_sensor",
+    }
+  );
+  const nodes = model.toStationNodes([osemSensor]);
+  assert.equal(nodes.length, 1);
+  assert.equal(nodes[0].name, "senseBox: Bürstadt Wetterstation");
+  assert.deepEqual([...nodes[0].categories], ["weather", "air"]);
+  assert.equal(nodes[0].readings.length, 4);
+});
+
 test("nextbike stations are categorized under bikes and format x/y Räder availability", () => {
   const stationSensor = sensor(
     [

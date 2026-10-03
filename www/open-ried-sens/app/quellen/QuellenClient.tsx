@@ -225,6 +225,14 @@ const SOURCE_INFO: Record<
       "Echtzeit-Belegungsdaten und Stellplatzkapazitäten von LKW-Rastplätzen an den Ried-Autobahnen A67, A5, A6, A659 und A61 zur vorausschauenden Routen- und Stellplatzplanung.",
     frequencyHint: "Alle 15 Minuten",
   },
+  opensensemap: {
+    title: "openSenseMap & senseBox (Bürger-Sensornetzwerk)",
+    domain: "Umwelt & Luftqualität",
+    provider: "re:edu / Universität Münster & Citizen Science Community",
+    description:
+      "Dezentrales Sensornetzwerk mit Live-Messungen für Feinstaub (PM10, PM2.5), Temperatur, relative Luftfeuchte, Luftdruck und UV im Hessischen Ried.",
+    frequencyHint: "Alle 5 Minuten",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {
