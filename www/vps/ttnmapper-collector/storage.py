@@ -60,22 +60,17 @@ async def persist_gateways(
         if (await cur.fetchone()) is not None:
             await cur.execute(
                 """
-                INSERT INTO collection_sources (id, adapter, enabled, config)
-                VALUES ('ttnmapper', 'packetbroker', TRUE, %s)
+                INSERT INTO collection_sources (id, source_url, adapter, enabled, interval_seconds, description)
+                VALUES ('ttnmapper', %s, 'packetbroker', TRUE, %s, 'TTN Mapper & Packet Broker LoRaWAN Gateway Coverage (Ried)')
                 ON CONFLICT (id) DO UPDATE SET
+                    source_url = EXCLUDED.source_url,
                     adapter = EXCLUDED.adapter,
                     enabled = TRUE,
-                    config = EXCLUDED.config,
+                    interval_seconds = EXCLUDED.interval_seconds,
+                    description = EXCLUDED.description,
                     updated_at = NOW()
                 """,
-                (
-                    json.dumps({
-                        "api_url": settings.packetbroker_api_url,
-                        "center_lat": settings.center_lat,
-                        "center_lon": settings.center_lon,
-                        "radius_meters": settings.radius_meters,
-                    }),
-                ),
+                (settings.packetbroker_api_url, settings.poll_seconds),
             )
 
         # Check Three-Table Core routine
