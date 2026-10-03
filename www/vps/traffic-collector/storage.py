@@ -96,6 +96,12 @@ async def persist_traffic_incidents(
                  AND id != ALL(%s::varchar[]) AND last_seen_at < %s - INTERVAL '6 minutes'""",
             (now, now, list(settings.roads), incoming_ids, now),
         )
+        await cur.execute(
+            """UPDATE traffic_incidents SET is_active=FALSE, end_time=%s, updated_at=%s
+               WHERE is_active=TRUE AND source='hessen_verkehrsservice'
+                 AND id != ALL(%s::varchar[]) AND last_seen_at < %s - INTERVAL '15 minutes'""",
+            (now, now, incoming_ids, now),
+        )
 
         # 3. Record periodic snapshot for environmental correlation in hypertable
         for road in settings.roads:

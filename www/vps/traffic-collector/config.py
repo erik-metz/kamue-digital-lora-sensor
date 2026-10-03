@@ -19,6 +19,8 @@ class Settings:
     min_lon: float = 8.25
     max_lon: float = 8.75
     tomtom_api_key: str | None = None
+    hessen_verkehr_enabled: bool = True
+    hessen_verkehr_base: str = "https://verkehrsservice.hessen.de/syncdata"
 
     @classmethod
     def from_env(cls):
@@ -53,6 +55,12 @@ class Settings:
                 "AUTOBAHN_API_BASE must be an HTTPS URL without credentials/query"
             )
         tomtom_key = os.getenv("TOMTOM_API_KEY", "").strip() or None
+        hessen_enabled = (
+            os.getenv("HESSEN_VERKEHR_ENABLED", "true").lower() in ("true", "1", "yes")
+        )
+        hessen_base = os.getenv(
+            "HESSEN_VERKEHR_BASE", "https://verkehrsservice.hessen.de/syncdata"
+        ).rstrip("/")
         return cls(
             roads,
             interval,
@@ -67,4 +75,6 @@ class Settings:
             },
             base,
             tomtom_api_key=tomtom_key,
+            hessen_verkehr_enabled=hessen_enabled,
+            hessen_verkehr_base=hessen_base,
         )

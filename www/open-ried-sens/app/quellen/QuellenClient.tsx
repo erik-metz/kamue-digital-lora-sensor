@@ -419,7 +419,7 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
               </div>
               <h3 className="font-semibold text-sm text-slate-200">Citizen Science &amp; Schulen</h3>
               <p className="text-xs text-slate-400 leading-normal">
-                Freies LoRaWAN über The Things Network, Bauanleitungen für Schüler und Hackathons im Kulturzentrum KAMÜ.
+                openSenseMap &amp; senseBox Bürger-Stationen, freies LoRaWAN über The Things Network und Hackathons im Kulturzentrum KAMÜ.
               </p>
             </div>
           </div>
@@ -560,7 +560,7 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
                 />
               </div>
               <p className="text-xs text-slate-400">
-                Bodenfeuchtesensoren, Feinstaub (PM2.5 / PM10), Schall- und Lärmmessung, Temperatur und Mikroklima.
+                openSenseMap &amp; senseBox Bürger-Stationen, Bodenfeuchtesensoren, Feinstaub (PM2.5 / PM10), Schall- und Lärmmessung, Temperatur und Mikroklima.
               </p>
             </div>
 
@@ -825,6 +825,13 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
               subtitle: "LKW-Rastplätze Mobilithek",
               url: "https://rast-monitor.de/",
               logoId: "rast",
+            },
+            {
+              id: "opensensemap",
+              name: "openSenseMap",
+              subtitle: "senseBox Bürger-Sensoren",
+              url: "https://opensensemap.org/",
+              logoId: "opensensemap",
             },
           ].map((partner) => (
             <a

@@ -6,6 +6,7 @@ from time import monotonic
 
 import psycopg
 from config import Settings
+from hessen_verkehr import collect_hessen_traffic
 from normalize import normalize
 from runtime import cli
 from runtime import run as run_loop
@@ -21,30 +22,39 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
     fetched = monotonic()
     incidents, skipped = normalize(payload, settings)
     normalized = monotonic()
-    flows = await collect_traffic_flows(client, settings, incidents)
+    hessen_incidents = await collect_hessen_traffic(client, settings) if raw is None else []
+    hessen_done = monotonic()
+    all_incidents = incidents + hessen_incidents
+    flows = await collect_traffic_flows(client, settings, all_incidents)
     flow_done = monotonic()
+    coverage = list(settings.roads)
+    if getattr(settings, "hessen_verkehr_enabled", True):
+        coverage.append("hessen_verkehrsservice")
     summary = {
         "fetched_at": fetched_at.isoformat(),
-        "accepted": len(incidents),
+        "accepted": len(all_incidents),
+        "autobahn_incidents": len(incidents),
+        "hessen_incidents": len(hessen_incidents),
         "skipped": skipped,
-        "source_coverage": list(settings.roads),
+        "source_coverage": coverage,
         "traffic_flows": len(flows),
         "complete": True,
     }
     if dry_run:
         return {
             **summary,
-            "records": [asdict(inc) for inc in incidents],
+            "records": [asdict(inc) for inc in all_incidents],
             "flows": [asdict(f) for f in flows],
         }
     async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
         summary["ingestion"] = await persist_traffic_incidents(
-            conn, incidents, settings, fetched_at, flows=flows
+            conn, all_incidents, settings, fetched_at, flows=flows
         )
     summary["durations_seconds"] = {
         "fetch": fetched - started,
         "normalize": normalized - fetched,
-        "flow": flow_done - normalized,
+        "hessen": hessen_done - normalized,
+        "flow": flow_done - hessen_done,
         "persist": monotonic() - flow_done,
     }
     return summary
