@@ -28,7 +28,7 @@ export type MapLayerId = (typeof MAP_LAYER_IDS)[number];
 
 export const DEFAULT_MAP_LAYERS: Record<MapLayerId, boolean> = {
   nature: true,
-  crops: true,
+  crops: false,
   floods: true,
   starkregen: false,
   charging: true,
