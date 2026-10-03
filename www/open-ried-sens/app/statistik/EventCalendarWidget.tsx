@@ -26,14 +26,18 @@ export default function EventCalendarWidget({
   selectedDate,
   onSelectDate,
 }: EventCalendarWidgetProps) {
-  // Determine initial month based on earliest event or current context date
+  // Initialize to current month (or month of selectedDate if provided)
   const [currentYearMonth, setCurrentYearMonth] = useState(() => {
-    if (events.length > 0) {
-      const firstUpcoming = events.find((e) => e.status !== "past") || events[0];
-      const d = new Date(firstUpcoming.start_time);
-      return { year: d.getFullYear(), month: d.getMonth() }; // 0-indexed month
+    if (selectedDate) {
+      const parts = selectedDate.split("-");
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        if (!isNaN(y) && !isNaN(m)) return { year: y, month: m };
+      }
     }
-    return { year: 2026, month: 9 }; // Oct 2026 default
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() };
   });
 
   const { year, month } = currentYearMonth;
@@ -42,6 +46,14 @@ export default function EventCalendarWidget({
   const monthName = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" }).format(
     new Date(year, month, 1)
   );
+
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+
+  const handleToday = () => {
+    const d = new Date();
+    setCurrentYearMonth({ year: d.getFullYear(), month: d.getMonth() });
+  };
 
   // Map events to date strings (YYYY-MM-DD)
   const eventsByDate = useMemo(() => {
@@ -100,7 +112,15 @@ export default function EventCalendarWidget({
           <CalendarIcon className="w-4 h-4 text-purple-400" />
           <h4 className="text-sm font-bold text-slate-100 capitalize">{monthName}</h4>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={handleToday}
+            className="text-[11px] font-medium px-2 py-0.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors"
+            title="Aktueller Monat"
+          >
+            Heute
+          </button>
           <button
             type="button"
             onClick={handlePrevMonth}
@@ -149,6 +169,7 @@ export default function EventCalendarWidget({
           const dayEvents = eventsByDate.get(dateStr) || [];
           const hasEvents = dayEvents.length > 0;
           const isSelected = selectedDate === dateStr;
+          const isToday = dateStr === todayStr;
 
           return (
             <button
@@ -164,7 +185,11 @@ export default function EventCalendarWidget({
                 isSelected
                   ? "bg-purple-600 text-white font-bold ring-2 ring-purple-400 ring-offset-2 ring-offset-slate-950 shadow-md scale-105"
                   : hasEvents
-                  ? "bg-slate-900/90 text-slate-200 hover:bg-purple-950/40 hover:border-purple-500/50 border border-slate-800 font-semibold cursor-pointer"
+                  ? isToday
+                    ? "bg-purple-950/60 text-purple-200 border-2 border-purple-500/80 font-bold cursor-pointer hover:bg-purple-900/60"
+                    : "bg-slate-900/90 text-slate-200 hover:bg-purple-950/40 hover:border-purple-500/50 border border-slate-800 font-semibold cursor-pointer"
+                  : isToday
+                  ? "text-slate-400 border border-purple-500/40 font-semibold cursor-default"
                   : "text-slate-600 cursor-default opacity-50"
               }`}
             >
