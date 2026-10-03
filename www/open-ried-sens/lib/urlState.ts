@@ -47,7 +47,7 @@ export const DEFAULT_MAP_LAYERS: Record<MapLayerId, boolean> = {
   waste: true,
   trains: true,
   crossings: true,
-  places: true,
+  places: false,
 };
 
 export const DEFAULT_MAP_CENTER: [number, number] = [49.62, 8.46];

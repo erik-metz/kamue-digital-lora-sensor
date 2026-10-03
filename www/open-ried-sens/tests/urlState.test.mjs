@@ -68,8 +68,9 @@ test("MAP_LAYER_IDS contains all 21 domain layers", () => {
   assert.ok(ids.includes("trains"));
 });
 
-test("DEFAULT_MAP_LAYERS disables energy by default to avoid cluttering standard view with private solar", () => {
+test("DEFAULT_MAP_LAYERS disables energy and places by default to avoid cluttering standard view", () => {
   assert.equal(urlState.DEFAULT_MAP_LAYERS.energy, false);
+  assert.equal(urlState.DEFAULT_MAP_LAYERS.places, false);
 });
 
 test("parseMapSessionState parses valid coordinates, zoom, and mode", () => {
