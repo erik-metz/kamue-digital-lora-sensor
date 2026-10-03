@@ -239,7 +239,7 @@ async def persist_traffic_incidents(
                             "confidence": flow.confidence,
                         }
                     )
-                    basis = "observed" if flow.source == "tomtom_flow" else "estimated"
+                    basis = "observed" if flow.source == "tomtom_flow" else "model"
 
                     # Speed
                     await cur.execute(
