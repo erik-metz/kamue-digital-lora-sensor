@@ -39,7 +39,7 @@ export const DEFAULT_MAP_LAYERS: Record<MapLayerId, boolean> = {
   boris: false,
   devplans: false,
   elections: false,
-  companies: true,
+  companies: false,
   closures: true,
   traffic: true,
   buses: true,
