@@ -233,6 +233,22 @@ const SOURCE_INFO: Record<
       "Dezentrales Sensornetzwerk mit Live-Messungen für Feinstaub (PM10, PM2.5), Temperatur, relative Luftfeuchte, Luftdruck und UV im Hessischen Ried.",
     frequencyHint: "Alle 5 Minuten",
   },
+  uba: {
+    title: "Umweltbundesamt (UBA) Luftdaten",
+    domain: "Umwelt & Luftqualität",
+    provider: "Umweltbundesamt (UBA)",
+    description:
+      "Amtliche Luftqualitätsmessungen und Immissionswerte (PM10, PM2.5, NO2, O3, SO2, CO) sowie Luftqualitätsindex für das Hessische Ried.",
+    frequencyHint: "Stündlicher Abgleich",
+  },
+  "hessen-verkehr": {
+    title: "Verkehrsservice Hessen (Hessen Mobil)",
+    domain: "Mobilität & Verkehr",
+    provider: "Landesverkehrszentrale Hessen / Hessen Mobil",
+    description:
+      "Aktuelle Verkehrsstörungen, Stau- und Baustellenmeldungen auf Bundes- und Landesstraßen sowie Autobahnen im Hessischen Ried (A5, A67, B44, B47).",
+    frequencyHint: "Alle 3 Minuten",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {
@@ -832,6 +848,20 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
               subtitle: "senseBox Bürger-Sensoren",
               url: "https://opensensemap.org/",
               logoId: "opensensemap",
+            },
+            {
+              id: "uba",
+              name: "Umweltbundesamt",
+              subtitle: "UBA Luftdaten Hessen",
+              url: "https://www.umweltbundesamt.de/daten/luft/luftdaten",
+              logoId: "uba",
+            },
+            {
+              id: "hessen-verkehr",
+              name: "Verkehrsservice Hessen",
+              subtitle: "Hessen Mobil Stau & Baustellen",
+              url: "https://verkehrsservice.hessen.de/",
+              logoId: "hessen-verkehr",
             },
           ].map((partner) => (
             <a

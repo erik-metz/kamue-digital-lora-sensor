@@ -146,6 +146,18 @@ jobs:
       - run: ruff check --config www/vps/pyproject.toml www/vps/opensensemap-collector
       - run: PYTHONPATH=www/vps/opensensemap-collector:www/vps/tests python -m pytest -q www/vps/opensensemap-collector/tests
 
+  validate-uba-collector:
+    name: UBA collector tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r www/vps/uba-collector/requirements.txt ruff pytest
+      - run: ruff check --config www/vps/pyproject.toml www/vps/uba-collector
+      - run: PYTHONPATH=www/vps/uba-collector:www/vps/tests python -m pytest -q www/vps/uba-collector/tests
+
   validate-collector-storage:
     name: Collector database contracts
     runs-on: ubuntu-latest
@@ -166,10 +178,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -r www/vps/api/requirements.txt -r www/vps/shake-collector/requirements.txt -r www/vps/registry-sync-worker/requirements.txt -r www/vps/rast-collector/requirements.txt -r www/vps/opensensemap-collector/requirements.txt pytest
+      - run: pip install -r www/vps/api/requirements.txt -r www/vps/shake-collector/requirements.txt -r www/vps/registry-sync-worker/requirements.txt -r www/vps/rast-collector/requirements.txt -r www/vps/opensensemap-collector/requirements.txt -r www/vps/uba-collector/requirements.txt pytest
       - name: Test independent persistence contracts
         run: |
-          for service in nextbike traffic shake environment rast opensensemap; do
+          for service in nextbike traffic shake environment rast opensensemap uba; do
             PYTHONPATH=www/vps/$service-collector:www/vps/tests python -m pytest -q www/vps/$service-collector/tests
           done
           PYTHONPATH=www/vps/registry-sync-worker:www/vps/tests python -m pytest -q www/vps/registry-sync-worker/tests
@@ -238,6 +250,7 @@ jobs:
       - validate-traffic-collector
       - validate-rast-collector
       - validate-opensensemap-collector
+      - validate-uba-collector
       - validate-collector-storage
       - validate-archive-worker
       - validate-frontend-security
@@ -312,6 +325,14 @@ jobs:
           file: ./www/vps/opensensemap-collector/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-opensensemap-collector:latest
+
+      - name: Build and Push Docker Image UBA Collector
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/uba-collector
+          file: ./www/vps/uba-collector/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-uba-collector:latest
 
       - name: Build and Push Docker Image Archive Worker
         uses: docker/build-push-action@v6

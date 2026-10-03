@@ -167,6 +167,31 @@ test("opensensemap stations are categorized under weather and air and provide en
   assert.equal(nodes[0].readings.length, 4);
 });
 
+test("uba air quality stations are categorized under air and format readings", () => {
+  const ubaSensor = sensor(
+    [
+      reading("PM10", 16.5, "µg/m³"),
+      reading("PM25", 8.2, "µg/m³"),
+      reading("NO2", 22.1, "µg/m³"),
+      reading("O3", 45.0, "µg/m³"),
+      reading("air_quality_index", 2, "index"),
+    ],
+    {
+      id: "uba-DEHE043",
+      friendly_name: "UBA Riedstadt (DEHE043)",
+      latitude: 49.828,
+      longitude: 8.502,
+      description: "Umweltbundesamt Luftmessstation Riedstadt",
+      entity_type: "air_quality_station",
+    }
+  );
+  const nodes = model.toStationNodes([ubaSensor]);
+  assert.equal(nodes.length, 1);
+  assert.equal(nodes[0].name, "UBA Riedstadt (DEHE043)");
+  assert.deepEqual([...nodes[0].categories], ["air"]);
+  assert.equal(nodes[0].readings.length, 5);
+});
+
 test("nextbike stations are categorized under bikes and format x/y Räder availability", () => {
   const stationSensor = sensor(
     [

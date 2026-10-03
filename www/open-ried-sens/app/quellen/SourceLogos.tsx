@@ -264,7 +264,38 @@ export function OpenSenseMapLogo({ className = "w-7 h-7" }: LogoProps) {
   );
 }
 
+export function UbaLogo({ className = "w-7 h-7" }: LogoProps) {
+  return (
+    <div className={`rounded-lg bg-teal-900 border border-teal-400/40 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-teal-300">
+        <circle cx="50" cy="50" r="38" stroke="currentColor" strokeWidth="6" fill="#042F2E" />
+        <path d="M28 62 C32 45, 45 35, 60 36 C72 37, 76 48, 72 60 C68 70, 52 72, 38 66" stroke="#2DD4BF" strokeWidth="6" strokeLinecap="round" fill="none" />
+        <path d="M35 48 C40 38, 52 30, 65 32" stroke="#38BDF8" strokeWidth="4" strokeLinecap="round" strokeDasharray="3 3" />
+        <circle cx="50" cy="50" r="5" fill="#FDE047" />
+      </svg>
+    </div>
+  );
+}
+
+export function VerkehrsinfoHessenLogo({ className = "w-7 h-7" }: LogoProps) {
+  return (
+    <div className={`rounded-lg bg-[#b81d13] border border-amber-400/50 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-white">
+        <polygon points="50,14 88,82 12,82" stroke="currentColor" strokeWidth="7" strokeLinejoin="round" fill="#DC2626" />
+        <rect x="46" y="38" width="8" height="24" rx="4" fill="#FFFFFF" />
+        <circle cx="50" cy="71" r="5" fill="#FFFFFF" />
+      </svg>
+    </div>
+  );
+}
+
 export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
+  if (sourceId.includes("uba") || sourceId.includes("luftdaten") || sourceId.includes("air-data")) {
+    return <UbaLogo className={className} />;
+  }
+  if (sourceId.includes("hessen-verkehr") || sourceId.includes("verkehrsservice") || sourceId.includes("verkehrsinfo")) {
+    return <VerkehrsinfoHessenLogo className={className} />;
+  }
   if (sourceId.includes("opensensemap") || sourceId.includes("sensebox") || sourceId.includes("osem")) {
     return <OpenSenseMapLogo className={className} />;
   }

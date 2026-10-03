@@ -26,6 +26,8 @@ Dieser Plan beschreibt die Anbindung, Normalisierung und Speicherung externer Da
 | **INVEKOS Feldblöcke** | `agricultural_field` | `area`, `latitude`, `longitude` | `basis='reported'`, `semantics='reference'` | ha, deg |
 | **OSM Features** | `infrastructure_facility` | `capacity`, `latitude`, `longitude` | `basis='reported'`, `semantics='reference'` | Anzahl, deg |
 | **Rast-Monitor (LKW-Rastplätze)** | `truck_parking` | `parking_capacity`, `parking_free`, `parking_occupied`, `parking_occupancy_pct`, `latitude`, `longitude` | `basis='observed'/'reported'`, `semantics='instantaneous'/'reference'` | Anzahl, %, deg |
+| **UBA Luftdaten (Umweltbundesamt)** | `air_quality_station` | `PM10`, `PM25`, `NO2`, `O3`, `SO2`, `CO`, `air_quality_index` | `basis='observed'`, `semantics='instantaneous'` | µg/m³, mg/m³, Index |
+| **Verkehrsservice Hessen (Hessen Mobil)** | `traffic_incident` | `delay_minutes`, `latitude`, `longitude` | `basis='observed'/'reported'`, `semantics='instantaneous'` | min, deg |
 
 ---
 

@@ -72,6 +72,7 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     else if (sensor.id.startsWith("bu-")) categories.add("traffic");
     else if (sensor.id.startsWith("nextbike-")) categories.add("bikes");
     else if (sensor.id.startsWith("rast-")) categories.add("parking");
+    else if (sensor.id.startsWith("uba-")) categories.add("air");
     else if (sensor.id.startsWith("osem-") || sensor.id.startsWith("sensebox-")) categories.add("weather");
     else if (sensor.id.startsWith("fac-apo-") || sensor.id.startsWith("fac-doc-")) categories.add("healthcare");
     else if (sensor.id.startsWith("fac-kamue-") || sensor.id.startsWith("fac-bst-sport") || sensor.id.startsWith("fac-la-alt") || sensor.id.startsWith("fac-la-kanu") || sensor.id.startsWith("fac-bst-buerger") || sensor.id.startsWith("fac-bst-vfr")) categories.add("culture");
