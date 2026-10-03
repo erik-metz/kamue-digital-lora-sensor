@@ -71,6 +71,7 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     else if (sensor.id.startsWith("gw-") || sensor.id.startsWith("pegel-")) categories.add("water");
     else if (sensor.id.startsWith("bu-")) categories.add("traffic");
     else if (sensor.id.startsWith("nextbike-")) categories.add("bikes");
+    else if (sensor.id.startsWith("rast-")) categories.add("parking");
     else if (sensor.id.startsWith("fac-apo-") || sensor.id.startsWith("fac-doc-")) categories.add("healthcare");
     else if (sensor.id.startsWith("fac-kamue-") || sensor.id.startsWith("fac-bst-sport") || sensor.id.startsWith("fac-la-alt") || sensor.id.startsWith("fac-la-kanu") || sensor.id.startsWith("fac-bst-buerger") || sensor.id.startsWith("fac-bst-vfr")) categories.add("culture");
     else if (sensor.id.startsWith("fac-tour-")) categories.add("tourism");
@@ -79,7 +80,7 @@ export function categoriesFor(sensor: ApiMapSensor): Category[] {
     else if (type === "FloodMonitoring") categories.add("water");
     else if (type === "AirQualityObserved") categories.add("air");
     else if (type?.startsWith("TrafficFlow")) categories.add("traffic");
-    else if (type?.startsWith("Parking")) categories.add("parking");
+    else if (type?.startsWith("Parking") || type === "truck_parking") categories.add("parking");
     else categories.add("other");
   }
   return CATEGORY_IDS.filter(id => categories.has(id));

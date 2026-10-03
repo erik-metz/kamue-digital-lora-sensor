@@ -25,6 +25,7 @@ Dieser Plan beschreibt die Anbindung, Normalisierung und Speicherung externer Da
 | **Blitzortung.org** | `monitoring_area` (z.B. Ried 25km) | `lightning_strikes_count`, `peak_current_max` | `basis='observed'`, `semantics='period_total'` | Anzahl, kA |
 | **INVEKOS Feldblöcke** | `agricultural_field` | `area`, `latitude`, `longitude` | `basis='reported'`, `semantics='reference'` | ha, deg |
 | **OSM Features** | `infrastructure_facility` | `capacity`, `latitude`, `longitude` | `basis='reported'`, `semantics='reference'` | Anzahl, deg |
+| **Rast-Monitor (LKW-Rastplätze)** | `truck_parking` | `parking_capacity`, `parking_free`, `parking_occupied`, `parking_occupancy_pct`, `latitude`, `longitude` | `basis='observed'/'reported'`, `semantics='instantaneous'/'reference'` | Anzahl, %, deg |
 
 ---
 
@@ -216,6 +217,7 @@ Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvo
 - [x] **Schritt 3: Verkehrsfluss & Stauvolumen**: Ried-Korridore (B44, B47, A67) mit Geschwindigkeits-, Verlustzeit- und Staufaktormodellierung (`traffic-collector/traffic_flow.py`), Three-Table Ingestion via `write_measurement`, Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`9bb6009`).
 - [x] **Schritt 4: Blitzortung.org (Live-Gewitterdaten)**: Live-Blitzentladungen im 25 km Radius um Bürstadt (`environment-collector`), Three-Table Ingestion via `write_measurement` (`lightning_strikes_count`, `lightning_distance_min`, `lightning_peak_current`), Frontend `/quellen` aktualisiert, CI/CD & GHCR erfolgreich (`f1fc7c9`).
 - [x] **Schritt 5: INVEKOS Feldblöcke & OpenStreetMap Optimierungen**: Hessen INVEKOS INSPIRE-Parzellenkataster WFS (`lawi:Landwirtschaftliche Parzellen 2025`) für Bürstadt, Lampertheim, Biblis und Groß-Rohrheim (`registry-sync-worker/invekos.py`), Three-Table Ingestion via `write_measurement` (`area`, `latitude`, `longitude`), OpenStreetMap Layer-Optimierungen (`osm_addresses.py`), Frontend `/quellen` aktualisiert.
+- [x] **Schritt 6: Rast-Monitor (LKW-Rastplätze an Ried-Autobahnen)**: Neuer Kollektor `rast-collector` für https://rast-monitor.de (DATEX-II via Mobilithek). BBOX-Filterung auf Ried-Autobahnen (A67, A5, A6, A659, A61). Drei-Tabellen-Architektur (`entities`, `measurement_definitions`, `readings`) via `write_measurement` (`parking_capacity`, `parking_free`, `parking_occupied`, `parking_occupancy_pct`, `latitude`, `longitude`). Kompatibilität mit `sensor_metadata`/`sensor_latest` für Frontend-Kartenanzeige und `/quellen` Integration.
 
 ---
 

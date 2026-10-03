@@ -239,9 +239,23 @@ export function ShakeLogo({ className = "w-7 h-7" }: LogoProps) {
   );
 }
 
+export function RastLogo({ className = "w-7 h-7" }: LogoProps) {
+  return (
+    <div className={`rounded-lg bg-indigo-600 flex items-center justify-center p-1.5 shadow-sm shrink-0 ${className}`}>
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-white">
+        <rect x="15" y="15" width="70" height="70" rx="14" fill="#3B82F6" />
+        <path d="M35 70V30H52C59.7 30 65 34.5 65 42C65 49.5 59.7 54 52 54H47V70H35ZM47 44H51.5C54 44 55.5 42.5 55.5 42C55.5 41.5 54 40 51.5 40H47V44Z" fill="white" />
+      </svg>
+    </div>
+  );
+}
+
 export function getSourceLogo(sourceId: string, className = "w-7 h-7") {
   if (sourceId.includes("vrn-realtime") || sourceId === "vrn" || sourceId.includes("gtfs")) {
     return <VrnLogo className={className} />;
+  }
+  if (sourceId.includes("rast") || sourceId.includes("truck-parking")) {
+    return <RastLogo className={className} />;
   }
   if (sourceId.includes("nextbike") || sourceId.includes("bike")) {
     return <NextbikeLogo className={className} />;

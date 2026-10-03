@@ -217,6 +217,14 @@ const SOURCE_INFO: Record<
       "Optische Erdbeobachtungsszenen (Level-2A BOA) mit 10 m Bodenauflösung für das Hessische Ried zur Dürre-, Bodenfeuchte- und Vegetationsüberwachung (NDVI, TCI RGB).",
     frequencyHint: "Alle 5 Tage (bei wolkenfreiem Überflug)",
   },
+  "rast-monitor": {
+    title: "Rast-Monitor (LKW-Rastplätze Autobahn)",
+    domain: "Mobilität & Verkehr",
+    provider: "Toll Collect / Mobilithek / rast-monitor.de",
+    description:
+      "Echtzeit-Belegungsdaten und Stellplatzkapazitäten von LKW-Rastplätzen an den Ried-Autobahnen A67, A5, A6, A659 und A61 zur vorausschauenden Routen- und Stellplatzplanung.",
+    frequencyHint: "Alle 15 Minuten",
+  },
 };
 
 const LABELS: Record<string, { text: string; bg: string; border: string; textCol: string }> = {
@@ -802,6 +810,13 @@ export default function QuellenClient({ sources, sensorCount }: QuellenClientPro
               subtitle: "Bürstadt IoT-Plan",
               url: "https://smartcity-system.de/",
               logoId: "smartcity",
+            },
+            {
+              id: "rast-monitor",
+              name: "Rast-Monitor",
+              subtitle: "LKW-Rastplätze Mobilithek",
+              url: "https://rast-monitor.de/",
+              logoId: "rast",
             },
           ].map((partner) => (
             <a

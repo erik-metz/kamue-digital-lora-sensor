@@ -116,6 +116,33 @@ test("parking valueLabel formats x/y frei when capacity is available and preserv
   assert.equal(model.valueLabel(withCap[0]), "4 frei");
 });
 
+test("rast-monitor rest areas are categorized under parking and provide truck parking summary", () => {
+  const rastSensor = sensor(
+    [
+      reading("parking_free", 20, "count"),
+      reading("parking_occupied", 57, "count"),
+      reading("parking_capacity", 77, "count"),
+      reading("parking_occupancy_pct", 74, "%"),
+    ],
+    {
+      id: "rast-de-he-670010",
+      friendly_name: "Rastplatz Lorsch Ost (A67)",
+      latitude: 49.64408,
+      longitude: 8.553497,
+      description: "LKW-Rastplatz A67 Lorsch Ost · Fahrtrichtung Darmstadt · 77 Stellplätze · rast-monitor.de",
+      entity_type: "truck_parking",
+    }
+  );
+  const nodes = model.toStationNodes([rastSensor]);
+  assert.equal(nodes.length, 1);
+  assert.equal(nodes[0].name, "Rastplatz Lorsch Ost (A67)");
+  assert.deepEqual([...nodes[0].categories], ["parking"]);
+  const summary = model.parkingSummary(nodes[0].readings);
+  assert.ok(summary);
+  assert.equal(summary.summary, "20 von 77 Stellplätzen frei");
+  assert.ok(summary.details.includes("57 Stellplätze belegt"));
+});
+
 test("nextbike stations are categorized under bikes and format x/y Räder availability", () => {
   const stationSensor = sensor(
     [

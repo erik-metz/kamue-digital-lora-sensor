@@ -122,6 +122,18 @@ jobs:
       - run: ruff check --config www/vps/pyproject.toml www/vps/traffic-collector
       - run: PYTHONPATH=www/vps/traffic-collector:www/vps/tests python -m pytest -q www/vps/traffic-collector/tests
 
+  validate-rast-collector:
+    name: Rast collector tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r www/vps/rast-collector/requirements.txt ruff pytest
+      - run: ruff check --config www/vps/pyproject.toml www/vps/rast-collector
+      - run: PYTHONPATH=www/vps/rast-collector:www/vps/tests python -m pytest -q www/vps/rast-collector/tests
+
   validate-collector-storage:
     name: Collector database contracts
     runs-on: ubuntu-latest
@@ -142,10 +154,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -r www/vps/api/requirements.txt -r www/vps/shake-collector/requirements.txt -r www/vps/registry-sync-worker/requirements.txt pytest
+      - run: pip install -r www/vps/api/requirements.txt -r www/vps/shake-collector/requirements.txt -r www/vps/registry-sync-worker/requirements.txt -r www/vps/rast-collector/requirements.txt pytest
       - name: Test independent persistence contracts
         run: |
-          for service in nextbike traffic shake environment; do
+          for service in nextbike traffic shake environment rast; do
             PYTHONPATH=www/vps/$service-collector:www/vps/tests python -m pytest -q www/vps/$service-collector/tests
           done
           PYTHONPATH=www/vps/registry-sync-worker:www/vps/tests python -m pytest -q www/vps/registry-sync-worker/tests
@@ -212,6 +224,7 @@ jobs:
       - validate-smartcity-collector
       - validate-nextbike-collector
       - validate-traffic-collector
+      - validate-rast-collector
       - validate-collector-storage
       - validate-archive-worker
       - validate-frontend-security
@@ -270,6 +283,14 @@ jobs:
           file: ./www/vps/traffic-collector/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-traffic-collector:latest
+
+      - name: Build and Push Docker Image Rast Collector
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/rast-collector
+          file: ./www/vps/rast-collector/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-rast-collector:latest
 
       - name: Build and Push Docker Image Archive Worker
         uses: docker/build-push-action@v6
