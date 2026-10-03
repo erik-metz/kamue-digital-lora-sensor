@@ -93,8 +93,9 @@ async def persist_rast_sites(
                 await cur.execute(
                     """
                     SELECT write_measurement(
-                        %s, 'latitude', 'degrees', 'sensor-inventory', 'reported',
-                        '{"crs":"EPSG:4326"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                        %s::text, 'latitude'::text, 'degrees'::text, 'sensor-inventory'::text, 'reported'::text,
+                        '{"crs":"EPSG:4326"}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                        'valid'::text, NULL::timestamptz, NULL::timestamptz, 'reference'::text
                     )
                     """,
                     (entity_id, s.observed_at, s.latitude, now, provenance),
@@ -102,8 +103,9 @@ async def persist_rast_sites(
                 await cur.execute(
                     """
                     SELECT write_measurement(
-                        %s, 'longitude', 'degrees', 'sensor-inventory', 'reported',
-                        '{"crs":"EPSG:4326"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                        %s::text, 'longitude'::text, 'degrees'::text, 'sensor-inventory'::text, 'reported'::text,
+                        '{"crs":"EPSG:4326"}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                        'valid'::text, NULL::timestamptz, NULL::timestamptz, 'reference'::text
                     )
                     """,
                     (entity_id, s.observed_at, s.longitude, now, provenance),
@@ -117,8 +119,9 @@ async def persist_rast_sites(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'parking_capacity', 'count', %s, 'reported',
-                            '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                            %s::text, 'parking_capacity'::text, 'count'::text, %s::text, 'reported'::text,
+                            '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                         )
                         """,
                         (entity_id, legacy_source, s.observed_at, s.capacity, now, provenance),
@@ -129,8 +132,9 @@ async def persist_rast_sites(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'parking_occupancy_pct', '%%', %s, %s,
-                            '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                            %s::text, 'parking_occupancy_pct'::text, '%%'::text, %s::text, %s::text,
+                            '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                         )
                         """,
                         (entity_id, legacy_source, basis, s.observed_at, s.occupancy_pct, now, provenance),
@@ -141,8 +145,9 @@ async def persist_rast_sites(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'parking_occupied', 'count', %s, %s,
-                            '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                            %s::text, 'parking_occupied'::text, 'count'::text, %s::text, %s::text,
+                            '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                         )
                         """,
                         (entity_id, legacy_source, basis, s.observed_at, s.occupied_spaces, now, provenance),
@@ -153,8 +158,9 @@ async def persist_rast_sites(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'parking_free', 'count', %s, %s,
-                            '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                            %s::text, 'parking_free'::text, 'count'::text, %s::text, %s::text,
+                            '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                         )
                         """,
                         (entity_id, legacy_source, basis, s.observed_at, s.free_spaces, now, provenance),
