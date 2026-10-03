@@ -177,8 +177,9 @@ async def persist_traffic_incidents(
                 await cur.execute(
                     """
                     SELECT write_measurement(
-                        %s, 'delay', 's', 'autobahn_api', 'observed',
-                        '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                        %s::text, 'delay'::text, 's'::text, 'autobahn_api'::text, 'observed'::text,
+                        '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                        'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                     )
                     """,
                     (
@@ -192,8 +193,9 @@ async def persist_traffic_incidents(
                 await cur.execute(
                     """
                     SELECT write_measurement(
-                        %s, 'active_incidents', 'count', 'autobahn_api', 'observed',
-                        '{}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                        %s::text, 'active_incidents'::text, 'count'::text, 'autobahn_api'::text, 'observed'::text,
+                        '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                        'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                     )
                     """,
                     (
@@ -243,8 +245,9 @@ async def persist_traffic_incidents(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'speed', 'km/h', %s, %s,
-                            %s::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                            %s::text, 'speed'::text, 'km/h'::text, %s::text, %s::text,
+                            %s::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                         )
                         """,
                         (
@@ -262,8 +265,9 @@ async def persist_traffic_incidents(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'free_flow_speed', 'km/h', %s, 'reference',
-                            %s::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                            %s::text, 'free_flow_speed'::text, 'km/h'::text, %s::text, 'reference'::text,
+                            %s::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'reference'::text
                         )
                         """,
                         (
@@ -280,8 +284,9 @@ async def persist_traffic_incidents(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'delay', 's', %s, %s,
-                            %s::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                            %s::text, 'delay'::text, 's'::text, %s::text, %s::text,
+                            %s::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                         )
                         """,
                         (
@@ -299,8 +304,9 @@ async def persist_traffic_incidents(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'congestion_ratio', 'ratio', %s, %s,
-                            '{"range": "0-1"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
+                            %s::text, 'congestion_ratio'::text, 'ratio'::text, %s::text, %s::text,
+                            '{"range": "0-1"}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
                         )
                         """,
                         (
@@ -317,8 +323,9 @@ async def persist_traffic_incidents(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'latitude', 'degrees', %s, 'reported',
-                            '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                            %s::text, 'latitude'::text, 'degrees'::text, %s::text, 'reported'::text,
+                            '{"crs": "EPSG:4326"}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'reference'::text
                         )
                         """,
                         (c.id, flow.source, now, c.lat, now, prov),
@@ -326,8 +333,9 @@ async def persist_traffic_incidents(
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s, 'longitude', 'degrees', %s, 'reported',
-                            '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s::jsonb, 'valid', NULL, NULL, 'reference'
+                            %s::text, 'longitude'::text, 'degrees'::text, %s::text, 'reported'::text,
+                            '{"crs": "EPSG:4326"}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'reference'::text
                         )
                         """,
                         (c.id, flow.source, now, c.lon, now, prov),
