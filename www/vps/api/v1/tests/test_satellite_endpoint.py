@@ -16,10 +16,11 @@ if "fastapi" not in sys.modules and find_spec("fastapi") is None:
         def post(self, *args, **kwargs):
             return lambda fn: fn
     class MockResponse:
-        def __init__(self, content=b"", status_code=200, headers=None):
+        def __init__(self, content=b"", status_code=200, headers=None, media_type=None):
             self.content = content
             self.status_code = status_code
             self.headers = headers or {}
+            self.media_type = media_type
     mock_fastapi = MagicMock()
     mock_fastapi.APIRouter = lambda *args, **kwargs: MockRouter()
     mock_fastapi.Response = MockResponse
@@ -45,6 +46,7 @@ if "dependencies" not in sys.modules:
     sys.modules["dependencies"] = mock_dep
 
 from endpoints.satellite import (
+    download_satellite_data,
     get_latest_satellite_scene,
     get_satellite_scenes,
     get_satellite_tile,
@@ -120,6 +122,60 @@ class SatelliteEndpointTests(unittest.IsolatedAsyncioTestCase):
         resp = await get_satellite_tile("latest", 12, 2150, 1400, self.pool, layer="ndvi")
         self.assertEqual(resp.status_code, 307)
         self.assertEqual(resp.headers.get("Location"), "https://example.org/ndvi.jpg")
+
+    async def test_download_satellite_data_json(self):
+        self.cursor.fetchall.return_value = [
+            {
+                "id": "satellite-scene-s2-20260615",
+                "name": "Sentinel-2 2026-06-15",
+                "metadata": {
+                    "scene_id": "s2-20260615",
+                    "date": "2026-06-15",
+                    "cloud_cover": 2.5,
+                    "ndvi_mean": 0.54,
+                    "assets": {"thumbnailUrl": "https://example.org/thumb.png"},
+                },
+            }
+        ]
+        resp = await download_satellite_data(
+            self.pool, start="2026-06-01", end="2026-06-30", layer="rgb", format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("open-ried-sentinel2-2026-06-01-to-2026-06-30.json", resp.headers.get("Content-Disposition", ""))
+
+    async def test_download_satellite_data_zip(self):
+        import io
+        import zipfile
+        from unittest.mock import patch
+
+        self.cursor.fetchall.return_value = [
+            {
+                "id": "satellite-scene-s2-20260615",
+                "name": "Sentinel-2 2026-06-15",
+                "metadata": {
+                    "scene_id": "s2-20260615",
+                    "date": "2026-06-15",
+                    "cloud_cover": 2.5,
+                    "ndvi_mean": 0.54,
+                    "assets": {"thumbnailUrl": "https://example.org/thumb.png"},
+                },
+            }
+        ]
+        with patch("urllib.request.urlopen") as mock_url:
+            mock_url.return_value.__enter__.return_value.read.return_value = b"fake-png-bytes"
+            resp = await download_satellite_data(
+                self.pool, start="2026-06-01", end="2026-06-30", layer="all", format="zip"
+            )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.headers.get("Content-Type"), "application/zip")
+        self.assertIn(".zip", resp.headers.get("Content-Disposition", ""))
+
+        # Verify ZIP structure
+        with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+            namelist = zf.namelist()
+            self.assertIn("manifest.json", namelist)
+            self.assertIn("README.txt", namelist)
+            self.assertTrue(any(name.startswith("scenes/") for name in namelist))
 
 
 if __name__ == "__main__":

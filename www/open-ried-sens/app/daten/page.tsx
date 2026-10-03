@@ -7,12 +7,14 @@ import {
   HeartHandshake,
   Layers,
   Radio,
+  Satellite,
   ShieldCheck,
   Sparkles,
   Zap,
 } from "lucide-react";
 import SiteHeader from "../components/SiteHeader";
 import HackathonDataSection from "./HackathonDataSection";
+import SatelliteDownloadSection from "./SatelliteDownloadSection";
 import ArchiveDownloads from "./ArchiveDownloads";
 import ApiDevToolsSection from "./ApiDevToolsSection";
 import CommunitySection from "./CommunitySection";
@@ -89,6 +91,12 @@ export default async function DataDocsPage() {
                 <Database className="w-4 h-4" /> CSV-Datensätze &amp; Download
               </a>
               <a
+                href="#satellit-download"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-xs sm:text-sm transition-colors border border-slate-700"
+              >
+                <Satellite className="w-4 h-4 text-cyan-400" /> Satelliten-Download
+              </a>
+              <a
                 href="#api-tools"
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-semibold text-xs sm:text-sm transition-colors border border-slate-700"
               >
@@ -126,7 +134,10 @@ export default async function DataDocsPage() {
         {/* 1. HACKATHON DATASETS & CSV DOWNLOADS */}
         <HackathonDataSection stations={stations} unavailable={stationsError} />
 
-        {/* 2. FULL MONTHLY ARCHIVES (UPLOADTHING) */}
+        {/* 2. SATELLITE EO TIME-SERIES & IMAGE DOWNLOADS (SENTINEL-2) */}
+        <SatelliteDownloadSection />
+
+        {/* 3. FULL MONTHLY ARCHIVES (UPLOADTHING) */}
         <Suspense
           fallback={
             <div className="p-8 rounded-3xl bg-slate-900/60 border border-slate-800 text-center text-slate-400 text-sm">

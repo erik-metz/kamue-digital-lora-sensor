@@ -28,12 +28,13 @@ export async function readCollected<T>(dataset: string, seconds = 300): Promise<
 
 export async function proxyBackend(path: string, seconds = 5) {
   try {
+    const timeoutMs = seconds === 0 ? 30000 : 10000;
     const response = await fetch(new URL(`/api/v1/${path}`, env.BACKEND_API_URL), {
-      next: { revalidate: seconds }, signal: AbortSignal.timeout(10000),
+      next: { revalidate: seconds }, signal: AbortSignal.timeout(timeoutMs),
     });
     if (!unexpired(response)) throw new Error("Stored data expired");
     const headers = new Headers();
-    for (const key of ["content-type", "etag", "x-source-updated-at", "x-collected-at", "x-data-source", "x-data-expires-at"]) {
+    for (const key of ["content-type", "content-disposition", "etag", "x-source-updated-at", "x-collected-at", "x-data-source", "x-data-expires-at"]) {
       const value = response.headers.get(key);
       if (value) headers.set(key, value);
     }
