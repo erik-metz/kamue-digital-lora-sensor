@@ -11,7 +11,6 @@ import {
   Building2,
   Calendar,
   CarFront,
-  CheckCircle2,
   CircleParking,
   CloudSun,
   Code2,
@@ -20,15 +19,12 @@ import {
   Cpu,
   Database,
   Droplets,
-  ExternalLink,
   FileText,
-  GraduationCap,
   Hammer,
   HeartHandshake,
   Layers,
   Map,
   MapPin,
-  Presentation,
   Radio,
   Sparkles,
   Sprout,
@@ -50,7 +46,8 @@ import SiteHeader from "./components/SiteHeader";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Open Ried | Das offene Daten- & Smart-Region-Portal für das Hessische Ried",
+  title:
+    "Open Ried | Das offene Daten- & Smart-Region-Portal für das Hessische Ried",
   description:
     "Zentrales Regional- und Datenportal für Bürstadt, Lampertheim & das Hessische Ried: Echtzeit-Umweltsensorik, vernetzte Mobilität, Demografie, Kommunalhaushalt, Bauen, Wohnen & freie Open-Data-APIs.",
 };
@@ -86,7 +83,8 @@ export default async function Home() {
 
           <div className="relative z-10 max-w-4xl space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-semibold">
-              <HeartHandshake className="w-4 h-4" /> Bürgerinitiative &amp; Open Data in Partnerschaft mit dem Kulturzentrum KAMÜ
+              <HeartHandshake className="w-4 h-4" /> Bürgerinitiative &amp; Open
+              Data in Partnerschaft mit dem Kulturzentrum KAMÜ
             </div>
 
             <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-100 leading-[1.15] tracking-tight">
@@ -97,10 +95,14 @@ export default async function Home() {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-3xl">
-              <strong>Vom Rohdaten-Schatz zu echten Lösungen für die Region:</strong> Wir verknüpfen
-              kontinuierliche <strong>Live-Sensorik</strong> (Klima, Feinstaub, Lärm, Seismik, Pegelstände) und
-              vernetzte Mobilität mit transparenten <strong>Kommunaldaten</strong> (Haushalte, Demografie, Wirtschaft, Bauen).
-              Initiiert als ehrenamtliche Bürgerinitiative im Kulturzentrum{" "}
+              <strong>
+                Vom Rohdaten-Schatz zu echten Lösungen für die Region:
+              </strong>{" "}
+              Wir verknüpfen kontinuierliche <strong>Live-Sensorik</strong>{" "}
+              (Klima, Feinstaub, Lärm, Seismik, Pegelstände) und vernetzte
+              Mobilität mit transparenten <strong>Kommunaldaten</strong>{" "}
+              (Haushalte, Demografie, Wirtschaft, Bauen). Initiiert als
+              ehrenamtliche Bürgerinitiative im Kulturzentrum{" "}
               <a
                 href="https://kamue.me"
                 target="_blank"
@@ -109,7 +111,8 @@ export default async function Home() {
               >
                 KAMÜ
               </a>{" "}
-              in Bürstadt – 100 % unabhängig, gemeinwohlorientiert und frei zugänglich.
+              in Bürstadt – 100 % unabhängig, gemeinwohlorientiert und frei
+              zugänglich.
             </p>
 
             {/* Quick Action Navigation Buttons */}
@@ -124,19 +127,22 @@ export default async function Home() {
                 href="#uebersicht"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-colors border border-slate-700"
               >
-                <Compass className="w-4 h-4 text-cyan-400" /> Wo findet man was? (Wegweiser)
+                <Compass className="w-4 h-4 text-cyan-400" /> Wo findet man was?
+                (Wegweiser)
               </a>
               <a
                 href="#projekt"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 font-semibold text-sm transition-colors border border-slate-700"
               >
-                <Sparkles className="w-4 h-4 text-emerald-400" /> Das Projekt &amp; Hackathon
+                <Sparkles className="w-4 h-4 text-emerald-400" /> Das Projekt
+                &amp; Hackathon
               </a>
               <Link
                 href="/sensor-bauen"
                 className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-slate-300 hover:text-emerald-400 font-medium text-sm transition-colors"
               >
-                <Wrench className="w-4 h-4 text-amber-400" /> Sensor selber bauen &rarr;
+                <Wrench className="w-4 h-4 text-amber-400" /> Sensor selber
+                bauen &rarr;
               </Link>
             </div>
 
@@ -145,9 +151,12 @@ export default async function Home() {
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
                 <Wifi className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-bold text-slate-200">Dichte Bürger-Sensorik</h4>
+                  <h4 className="text-sm font-bold text-slate-200">
+                    Dichte Bürger-Sensorik
+                  </h4>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    LoRaWAN-Funknetz, Citizen-Science-Kits, Feinstaub, Pegel, Bodenfeuchte &amp; Seismik.
+                    LoRaWAN-Funknetz, Citizen-Science-Kits, Feinstaub, Pegel,
+                    Bodenfeuchte &amp; Seismik.
                   </p>
                 </div>
               </div>
@@ -155,9 +164,12 @@ export default async function Home() {
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
                 <Calendar className="w-5 h-5 text-teal-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-bold text-slate-200">48h Ried-Hackathon</h4>
+                  <h4 className="text-sm font-bold text-slate-200">
+                    48h Ried-Hackathon
+                  </h4>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Gemeinsam im Kulturzentrum KAMÜ reale Werkzeuge für Schulen, Kommunen &amp; Bürger entwickeln.
+                    Gemeinsam im Kulturzentrum KAMÜ reale Werkzeuge für Schulen,
+                    Kommunen &amp; Bürger entwickeln.
                   </p>
                 </div>
               </div>
@@ -165,9 +177,12 @@ export default async function Home() {
               <div className="flex items-start gap-3 p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
                 <Database className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="text-sm font-bold text-slate-200">100 % Open Source &amp; 0 €</h4>
+                  <h4 className="text-sm font-bold text-slate-200">
+                    100 % Open Source &amp; 0 €
+                  </h4>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Keine Lizenzkosten, freie REST-APIs, offene Daten und kein Eingriff in Kommunalhaushalte.
+                    Keine Lizenzkosten, freie REST-APIs, offene Daten und kein
+                    Eingriff in Kommunalhaushalte.
                   </p>
                 </div>
               </div>
@@ -184,13 +199,16 @@ export default async function Home() {
               <Sparkles className="w-3.5 h-3.5" /> Die Vision der Initiative
             </div>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-100 tracking-tight">
-              Daten-Silos aufbrechen &amp; gemeinsam Neues für das Hessische Ried erarbeiten
+              Daten-Silos aufbrechen &amp; gemeinsam Neues für das Hessische
+              Ried erarbeiten
             </h2>
             <p className="text-base text-slate-300 leading-relaxed">
-              Unmengen an Daten existieren bereits in unserer Region – von Smart-City-Messungen bis zu
-              Wetterdiensten und Verkehrsverbünden –, doch sie schlummern oft in isolierten Silos. Gleichzeitig
-              klaffen im Riedkern erhebliche Daten-Blindflecke bei Feinstaub, Lärm und LoRaWAN-Empfang.
-              Unsere Initiative steht auf zwei sich gegenseitig verstärkenden Säulen:
+              Unmengen an Daten existieren bereits in unserer Region – von
+              Smart-City-Messungen bis zu Wetterdiensten und Verkehrsverbünden
+              –, doch sie schlummern oft in isolierten Silos. Gleichzeitig
+              klaffen im Riedkern erhebliche Daten-Blindflecke bei Feinstaub,
+              Lärm und LoRaWAN-Empfang. Unsere Initiative steht auf zwei sich
+              gegenseitig verstärkenden Säulen:
             </p>
           </div>
 
@@ -217,10 +235,13 @@ export default async function Home() {
                     Dichte Sensor-Messnetze &amp; Selberbauen
                   </h3>
                   <p className="text-sm text-slate-300 leading-relaxed">
-                    Wir überwinden weiße Flecken im Ried durch offene, kostengünstige Multisensor-Stationen.
-                    Ob Feinstaub (PM2.5/PM10), akustischer Lärmpegel, Bodenfeuchte für Baumbewässerung oder
-                    Raspberry-Shake-Seismometer: Bürgerinnen, Schüler und Vereine können ihre eigenen Sensoren
-                    in unseren Workshops im KAMÜ löten und ins freie LoRaWAN-Netz einbinden.
+                    Wir überwinden weiße Flecken im Ried durch offene,
+                    kostengünstige Multisensor-Stationen. Ob Feinstaub
+                    (PM2.5/PM10), akustischer Lärmpegel, Bodenfeuchte für
+                    Baumbewässerung oder Raspberry-Shake-Seismometer:
+                    Bürgerinnen, Schüler und Vereine können ihre eigenen
+                    Sensoren in unseren Workshops im KAMÜ löten und ins freie
+                    LoRaWAN-Netz einbinden.
                   </p>
                 </div>
 
@@ -244,7 +265,8 @@ export default async function Home() {
                     href="/sensor-bauen"
                     className="inline-flex items-center gap-2 text-sm font-bold text-emerald-400 hover:text-emerald-300 group-hover:translate-x-1 transition-transform"
                   >
-                    Bauanleitungen, Bauteilliste (BOM) &amp; Workshops entdecken &rarr;
+                    Bauanleitungen, Bauteilliste (BOM) &amp; Workshops entdecken
+                    &rarr;
                   </Link>
                 </div>
               </div>
@@ -262,7 +284,8 @@ export default async function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/30 to-transparent" />
                 <div className="absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-950/80 backdrop-blur-md border border-cyan-500/30 text-cyan-400 text-xs font-bold">
-                  <Code2 className="w-3.5 h-3.5" /> Säule 2 · Regionale Innovation
+                  <Code2 className="w-3.5 h-3.5" /> Säule 2 · Regionale
+                  Innovation
                 </div>
               </div>
 
@@ -272,10 +295,13 @@ export default async function Home() {
                     Der 48h Ried-Hackathon im Kulturzentrum KAMÜ
                   </h3>
                   <p className="text-sm text-slate-300 leading-relaxed">
-                    Rohdaten allein verändern noch nichts. Beim regionalen Bürger-Hackathon im historischen
-                    Getreidespeicher KAMÜ tüfteln Programmierer, Schüler, Bürgerinnen und Verwaltungsvertreter
-                    ein Wochenende lang an echten Werkzeugen: z. B. Schranken-Countdown-Bots für die Riedbahn,
-                    Lärm-Ampeln für Schulwege oder hitzebasierte Baumbewässerungs-Apps.
+                    Rohdaten allein verändern noch nichts. Beim regionalen
+                    Bürger-Hackathon im historischen Getreidespeicher KAMÜ
+                    tüfteln Programmierer, Schüler, Bürgerinnen und
+                    Verwaltungsvertreter ein Wochenende lang an echten
+                    Werkzeugen: z. B. Schranken-Countdown-Bots für die Riedbahn,
+                    Lärm-Ampeln für Schulwege oder hitzebasierte
+                    Baumbewässerungs-Apps.
                   </p>
                 </div>
 
@@ -322,8 +348,9 @@ export default async function Home() {
               Wo findet man was? Deine Navigation durch Open Ried
             </h2>
             <p className="text-sm sm:text-base text-slate-400 leading-relaxed">
-              Damit du schnell genau die Informationen, Karten oder Werkzeuge findest, die du suchst,
-              ist die Plattform in vier klare Themenbereiche gegliedert:
+              Damit du schnell genau die Informationen, Karten oder Werkzeuge
+              findest, die du suchst, ist die Plattform in vier klare
+              Themenbereiche gegliedert:
             </p>
           </div>
 
@@ -335,18 +362,22 @@ export default async function Home() {
                   1
                 </div>
                 <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Map className="w-4 h-4 text-emerald-400" /> Live-Karten &amp; Telemetrie
+                  <Map className="w-4 h-4 text-emerald-400" /> Live-Karten &amp;
+                  Telemetrie
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  <strong>Direkt als Nächstes auf dieser Seite:</strong> Interaktive Regionalkarte mit LoRaWAN-Umweltsensoren,
-                  Linienbussen in Echtzeit, VRNnextbike-Stationen, Pegelständen, Baustellen und BORIS-Bodenrichtwerten.
+                  <strong>Direkt als Nächstes auf dieser Seite:</strong>{" "}
+                  Interaktive Regionalkarte mit LoRaWAN-Umweltsensoren,
+                  Linienbussen in Echtzeit, VRNnextbike-Stationen, Pegelständen,
+                  Baustellen und BORIS-Bodenrichtwerten.
                 </p>
               </div>
               <a
                 href="#karte"
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 pt-2 border-t border-slate-800/80"
               >
-                <ArrowDown className="w-3.5 h-3.5" /> Direkt zur Live-Karte springen
+                <ArrowDown className="w-3.5 h-3.5" /> Direkt zur Live-Karte
+                springen
               </a>
             </div>
 
@@ -357,17 +388,39 @@ export default async function Home() {
                   2
                 </div>
                 <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-cyan-400" /> Themen- &amp; Fachportale
+                  <Building2 className="w-4 h-4 text-cyan-400" /> Themen- &amp;
+                  Fachportale
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Vertiefende Daten-Dashboards: Kommunalhaushalt Bürstadt &amp; Lampertheim (
-                  <Link href="/haushalt" className="text-cyan-400 hover:underline">/haushalt</Link>
+                  Vertiefende Daten-Dashboards: Kommunalhaushalt Bürstadt &amp;
+                  Lampertheim (
+                  <Link
+                    href="/haushalt"
+                    className="text-cyan-400 hover:underline"
+                  >
+                    /haushalt
+                  </Link>
                   ), Bauen &amp; Wohnen (
-                  <Link href="/bauen-wohnen" className="text-cyan-400 hover:underline">/bauen-wohnen</Link>
+                  <Link
+                    href="/bauen-wohnen"
+                    className="text-cyan-400 hover:underline"
+                  >
+                    /bauen-wohnen
+                  </Link>
                   ), Demografie (
-                  <Link href="/demografie" className="text-cyan-400 hover:underline">/demografie</Link>
+                  <Link
+                    href="/demografie"
+                    className="text-cyan-400 hover:underline"
+                  >
+                    /demografie
+                  </Link>
                   ), Wirtschaft (
-                  <Link href="/wirtschaft" className="text-cyan-400 hover:underline">/wirtschaft</Link>
+                  <Link
+                    href="/wirtschaft"
+                    className="text-cyan-400 hover:underline"
+                  >
+                    /wirtschaft
+                  </Link>
                   ) &amp; der Regionalatlas.
                 </p>
               </div>
@@ -386,11 +439,14 @@ export default async function Home() {
                   3
                 </div>
                 <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Database className="w-4 h-4 text-teal-400" /> Open Data &amp; REST-API
+                  <Database className="w-4 h-4 text-teal-400" /> Open Data &amp;
+                  REST-API
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Für Entwickler, Wissenschaft und Hackathon-Teams: Alle Telemetriedaten und Statistiken
-                  kostenfrei als JSON/CSV herunterladen, offene REST-APIs abfragen und Code-Snippets (Python, JS, cURL) nutzen.
+                  Für Entwickler, Wissenschaft und Hackathon-Teams: Alle
+                  Telemetriedaten und Statistiken kostenfrei als JSON/CSV
+                  herunterladen, offene REST-APIs abfragen und Code-Snippets
+                  (Python, JS, cURL) nutzen.
                 </p>
               </div>
               <Link
@@ -408,12 +464,19 @@ export default async function Home() {
                   4
                 </div>
                 <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                  <Hammer className="w-4 h-4 text-amber-400" /> Werkstatt &amp; Bildung
+                  <Hammer className="w-4 h-4 text-amber-400" /> Werkstatt &amp;
+                  Bildung
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Selbst mitmachen: Vollständige Bauanleitungen, Stücklisten (BOM) und 3D-Druckvorlagen für
-                  Bürger-Sensoren sowie Anmeldung zu kostenlosen Löt-Workshops im KAMÜ (
-                  <Link href="/sensor-bauen" className="text-amber-400 hover:underline">/sensor-bauen</Link>
+                  Selbst mitmachen: Vollständige Bauanleitungen, Stücklisten
+                  (BOM) und 3D-Druckvorlagen für Bürger-Sensoren sowie Anmeldung
+                  zu kostenlosen Löt-Workshops im KAMÜ (
+                  <Link
+                    href="/sensor-bauen"
+                    className="text-amber-400 hover:underline"
+                  >
+                    /sensor-bauen
+                  </Link>
                   ).
                 </p>
               </div>
@@ -434,14 +497,16 @@ export default async function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800 pb-4">
             <div>
               <div className="inline-flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase tracking-wider mb-1">
-                <Radio className="size-3.5 animate-pulse" /> Live-Telemetrie &amp; Regionalkarte
+                <Radio className="size-3.5 animate-pulse" /> Live-Telemetrie
+                &amp; Regionalkarte
               </div>
               <h2 className="text-2xl sm:text-4xl font-extrabold text-slate-100 tracking-tight">
                 Interaktive Live-Sensorkarte des Hessischen Rieds
               </h2>
               <p className="mt-1 text-sm sm:text-base text-slate-400 max-w-2xl">
-                Echtzeit-Messungen unserer Bürger- und Multisensorstationen kombiniert mit ÖPNV-Fahrzeugpositionen,
-                Bikesharing, Pegelständen, Baustellen und Bodenrichtwerten.
+                Echtzeit-Messungen unserer Bürger- und Multisensorstationen
+                kombiniert mit ÖPNV-Fahrzeugpositionen, Bikesharing,
+                Pegelständen, Baustellen und Bodenrichtwerten.
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-400">
@@ -473,7 +538,8 @@ export default async function Home() {
                 Themenbereiche &amp; Fachportale
               </h2>
               <p className="mt-1 text-sm text-slate-400">
-                Erkunde alle Facetten unserer Region – von Echtzeit-Messwerten bis zu amtlichen Statistiken.
+                Erkunde alle Facetten unserer Region – von Echtzeit-Messwerten
+                bis zu amtlichen Statistiken.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
@@ -481,7 +547,8 @@ export default async function Home() {
                 href="/regionalatlas"
                 className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/25 transition-all shadow-sm"
               >
-                <Layers className="size-3.5 text-emerald-400" /> Regionalatlas öffnen &rarr;
+                <Layers className="size-3.5 text-emerald-400" /> Regionalatlas
+                öffnen &rarr;
               </Link>
               <Link
                 href="/quellen"
@@ -507,7 +574,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Live-Wetter, Feinstaub, Ozon, Lärm, Erschütterungen, Bodenfeuchte und Pegelstände im Hessischen Ried.
+                  Live-Wetter, Feinstaub, Ozon, Lärm, Erschütterungen,
+                  Bodenfeuchte und Pegelstände im Hessischen Ried.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-emerald-400/80 pt-2 border-t border-slate-800/60">
@@ -529,7 +597,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Echtzeit-ÖPNV, Bahnübergangsmonitoring, VRNnextbike, ZAKB-Touren, Baustellen und Parkplatzbelegung.
+                  Echtzeit-ÖPNV, Bahnübergangsmonitoring, VRNnextbike,
+                  ZAKB-Touren, Baustellen und Parkplatzbelegung.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-cyan-400/80 pt-2 border-t border-slate-800/60">
@@ -551,7 +620,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Bodenrichtwertzonen (BORIS Hessen), Baugenehmigungen, Wohnungsbestand und Bebauungspläne.
+                  Bodenrichtwertzonen (BORIS Hessen), Baugenehmigungen,
+                  Wohnungsbestand und Bebauungspläne.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-amber-400/80 pt-2 border-t border-slate-800/60">
@@ -573,7 +643,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Einwohnerentwicklung, Altersstruktur, Wanderungssalden sowie Kita- und Schulstandorte.
+                  Einwohnerentwicklung, Altersstruktur, Wanderungssalden sowie
+                  Kita- und Schulstandorte.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-purple-400/80 pt-2 border-t border-slate-800/60">
@@ -595,7 +666,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Kommunalhaushalte von Bürstadt und Lampertheim, Hebesätze, Einnahmen, Ausgaben und Schuldenentwicklung.
+                  Kommunalhaushalte von Bürstadt und Lampertheim, Hebesätze,
+                  Einnahmen, Ausgaben und Schuldenentwicklung.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-emerald-400/80 pt-2 border-t border-slate-800/60">
@@ -617,7 +689,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Gewerbebetriebe, Industriezonen, Beschäftigungszahlen und wirtschaftliche Eckdaten der Ried-Kommunen.
+                  Gewerbebetriebe, Industriezonen, Beschäftigungszahlen und
+                  wirtschaftliche Eckdaten der Ried-Kommunen.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-blue-400/80 pt-2 border-t border-slate-800/60">
@@ -639,7 +712,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Vereinsleben, Abfallmengen, Wertstoffhöfe, Kulturveranstaltungen und Events des Kulturzentrums KAMÜ.
+                  Vereinsleben, Abfallmengen, Wertstoffhöfe,
+                  Kulturveranstaltungen und Events des Kulturzentrums KAMÜ.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-pink-400/80 pt-2 border-t border-slate-800/60">
@@ -661,7 +735,8 @@ export default async function Home() {
                   <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </h3>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Freie CSV- und JSON-Exporte aller Daten sowie offene REST-Programmierschnittstelle für Entwickler.
+                  Freie CSV- und JSON-Exporte aller Daten sowie offene
+                  REST-Programmierschnittstelle für Entwickler.
                 </p>
               </div>
               <span className="text-[11px] font-medium text-teal-400/80 pt-2 border-t border-slate-800/60">
@@ -680,8 +755,9 @@ export default async function Home() {
               Echtzeit-Telemetrie &amp; Smarte Sensorik
             </h2>
             <p className="text-base text-slate-400">
-              Unser offenes Netzwerk bündelt kontinuierliche Umwelt-, Mobilitäts-, Boden- und Geodaten aus
-              Multisensor-Stationen, Smart-City-Systemen, Pegelsonden und Seismometern.
+              Unser offenes Netzwerk bündelt kontinuierliche Umwelt-,
+              Mobilitäts-, Boden- und Geodaten aus Multisensor-Stationen,
+              Smart-City-Systemen, Pegelsonden und Seismometern.
             </p>
           </div>
 
@@ -697,17 +773,30 @@ export default async function Home() {
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
                   Präzise Erfassung von Temperatur, relativer Luftfeuchtigkeit,
-                  Niederschlagsmenge (Regen), UV-Index und barometrischem Luftdruck.
+                  Niederschlagsmenge (Regen), UV-Index und barometrischem
+                  Luftdruck.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">°C (Temperatur)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">% r.F. (Luftfeuchte)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">mm (Niederschlag)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">UV-Index</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">hPa (Luftdruck)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">
+                    °C (Temperatur)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">
+                    % r.F. (Luftfeuchte)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">
+                    mm (Niederschlag)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">
+                    UV-Index
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-amber-300/90 font-mono">
+                    hPa (Luftdruck)
+                  </span>
                 </div>
               </div>
             </div>
@@ -722,18 +811,31 @@ export default async function Home() {
                   Gase &amp; Luftqualität
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Messung von flüchtigen organischen Verbindungen (VOC), Stickoxiden (NOx),
-                  Stickstoffdioxid (NO₂), Ozon (O₃) und CO₂ für gesunde Außenluft.
+                  Messung von flüchtigen organischen Verbindungen (VOC),
+                  Stickoxiden (NOx), Stickstoffdioxid (NO₂), Ozon (O₃) und CO₂
+                  für gesunde Außenluft.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">VOC-Index</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">NOx-Index</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">ppm (CO₂)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">µg/m³ (NO₂, O₃)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">AQI (Index)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">
+                    VOC-Index
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">
+                    NOx-Index
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">
+                    ppm (CO₂)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">
+                    µg/m³ (NO₂, O₃)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-cyan-300/90 font-mono">
+                    AQI (Index)
+                  </span>
                 </div>
               </div>
             </div>
@@ -748,17 +850,28 @@ export default async function Home() {
                   Feinstaub (PM1.0 – PM10)
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Optische Lasermessung zur kontinuierlichen Analyse von Schwebstaub- und
-                  Partikelbelastungen in Wohngebieten und an Verkehrsknoten.
+                  Optische Lasermessung zur kontinuierlichen Analyse von
+                  Schwebstaub- und Partikelbelastungen in Wohngebieten und an
+                  Verkehrsknoten.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">PM2.5 (µg/m³)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">PM10 (µg/m³)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">PM1.0 / PM4.0</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">Partikel/cm³</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">
+                    PM2.5 (µg/m³)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">
+                    PM10 (µg/m³)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">
+                    PM1.0 / PM4.0
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-emerald-300/90 font-mono">
+                    Partikel/cm³
+                  </span>
                 </div>
               </div>
             </div>
@@ -773,17 +886,28 @@ export default async function Home() {
                   Akustische Lärmanalyse
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Digitales Messmikrofon mit intelligenter On-Device-Klassifikation zur
-                  Echtzeit-Unterscheidung lokaler Schall- und Lärmquellen.
+                  Digitales Messmikrofon mit intelligenter
+                  On-Device-Klassifikation zur Echtzeit-Unterscheidung lokaler
+                  Schall- und Lärmquellen.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">dB / dB(A) (Pegel)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">Kfz-Verkehr</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">Passanten / Sprache</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">Wind &amp; Natur</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">
+                    dB / dB(A) (Pegel)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">
+                    Kfz-Verkehr
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">
+                    Passanten / Sprache
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-purple-300/90 font-mono">
+                    Wind &amp; Natur
+                  </span>
                 </div>
               </div>
             </div>
@@ -798,17 +922,28 @@ export default async function Home() {
                   Erschütterungen &amp; Seismik
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Raspberry-Shake-Seismometer zur Erfassung von Mikroseismik, Erdbeben,
-                  Bodenerschütterungen und Hintergrund-Vibrationsrauschen im Oberrheingraben.
+                  Raspberry-Shake-Seismometer zur Erfassung von Mikroseismik,
+                  Erdbeben, Bodenerschütterungen und
+                  Hintergrund-Vibrationsrauschen im Oberrheingraben.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">µm/s (PGV Vibration)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">µm/s (RMS-Tremor)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">Counts (Wellenform)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">100 Hz MiniSEED</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">
+                    µm/s (PGV Vibration)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">
+                    µm/s (RMS-Tremor)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">
+                    Counts (Wellenform)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-pink-300/90 font-mono">
+                    100 Hz MiniSEED
+                  </span>
                 </div>
               </div>
             </div>
@@ -823,17 +958,27 @@ export default async function Home() {
                   Parkraum &amp; Stellplätze
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Smart-City-Überwachung von Parkplätzen und Parkierungszonen in Bürstadt und
-                  Lampertheim zur Reduzierung des Parksuchverkehrs.
+                  Smart-City-Überwachung von Parkplätzen und Parkierungszonen in
+                  Bürstadt und Lampertheim zur Reduzierung des Parksuchverkehrs.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Freie Plätze (Anzahl)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Belegte Plätze (Anzahl)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Gesamtkapazität</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">Auslastungsgrad (%)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">
+                    Freie Plätze (Anzahl)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">
+                    Belegte Plätze (Anzahl)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">
+                    Gesamtkapazität
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-violet-300/90 font-mono">
+                    Auslastungsgrad (%)
+                  </span>
                 </div>
               </div>
             </div>
@@ -848,18 +993,31 @@ export default async function Home() {
                   Verkehrsfluss &amp; Mobilität
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Automatisierte Zählung und Kategorisierung des Verkehrsaufkommens nach
-                  Fahrzeugarten, Radfahrern und Passanten an Hauptverkehrsachsen.
+                  Automatisierte Zählung und Kategorisierung des
+                  Verkehrsaufkommens nach Fahrzeugarten, Radfahrern und
+                  Passanten an Hauptverkehrsachsen.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">PKW &amp; LKW (Counts)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Busse &amp; Motorräder</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Fahrräder (Counts)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Passanten (Counts)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">Stunden- &amp; Tagessummen</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">
+                    PKW &amp; LKW (Counts)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">
+                    Busse &amp; Motorräder
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">
+                    Fahrräder (Counts)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">
+                    Passanten (Counts)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-orange-300/90 font-mono">
+                    Stunden- &amp; Tagessummen
+                  </span>
                 </div>
               </div>
             </div>
@@ -874,17 +1032,28 @@ export default async function Home() {
                   Boden &amp; Bewässerung
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Tiefengestaffelte Bodenfeuchte- und Saugspannungsmessung für bedarfsgerechte
-                  Stadtgrün- und Baumbewässerung sowie landwirtschaftliche Analysen.
+                  Tiefengestaffelte Bodenfeuchte- und Saugspannungsmessung für
+                  bedarfsgerechte Stadtgrün- und Baumbewässerung sowie
+                  landwirtschaftliche Analysen.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">Bodenfeuchte 30/60cm (%)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">% nFK (Feldkapazität)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">kPa (Saugspannung)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">°C (Bodentemperatur)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">
+                    Bodenfeuchte 30/60cm (%)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">
+                    % nFK (Feldkapazität)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">
+                    kPa (Saugspannung)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-lime-300/90 font-mono">
+                    °C (Bodentemperatur)
+                  </span>
                 </div>
               </div>
             </div>
@@ -899,16 +1068,25 @@ export default async function Home() {
                   Pegel &amp; Wasserstände
                 </h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Kontinuierliche Pegelüberwachung an Gewässern, Entwässerungsgräben und
-                  Rückhaltebecken zur Früherkennung von Starkregen- und Hochwasserrisiken.
+                  Kontinuierliche Pegelüberwachung an Gewässern,
+                  Entwässerungsgräben und Rückhaltebecken zur Früherkennung von
+                  Starkregen- und Hochwasserrisiken.
                 </p>
               </div>
               <div className="pt-3 border-t border-slate-800/60 space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Erfasste Einheiten &amp; Größen</div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                  Erfasste Einheiten &amp; Größen
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">m (Pegel-Delta)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">m (Wasserstand)</span>
-                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">cm (Wasseroberflächenabstand)</span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">
+                    m (Pegel-Delta)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">
+                    m (Wasserstand)
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md bg-slate-950/80 border border-slate-800 text-xs text-sky-300/90 font-mono">
+                    cm (Wasseroberflächenabstand)
+                  </span>
                 </div>
               </div>
             </div>
@@ -937,22 +1115,25 @@ export default async function Home() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-slate-800 pb-4">
             <div>
               <div className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">
-                <HeartHandshake className="size-3.5" /> Bürgerengagement &amp; Partner
+                <HeartHandshake className="size-3.5" /> Bürgerengagement &amp;
+                Partner
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-slate-100">
                 Die Köpfe hinter der Bürgerinitiative
               </h2>
               <p className="mt-1 text-sm text-slate-400 max-w-2xl">
-                Open Ried ist ein zu 100 % ehrenamtliches, parteiunabhängiges Gemeinwohl-Projekt in Partnerschaft
-                mit dem Kulturzentrum KAMÜ und der Bürgerstiftung Bürstadt.
+                Open Ried ist ein zu 100 % ehrenamtliches, parteiunabhängiges
+                Gemeinwohl-Projekt in Partnerschaft mit dem Kulturzentrum KAMÜ
+                und der Bürgerstiftung Bürstadt.
               </p>
             </div>
-            <Link
+            {/* <Link
               href="/pitch"
               className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 hover:text-emerald-400 hover:border-emerald-500/40 transition-colors"
             >
-              <Presentation className="w-3.5 h-3.5" /> Zu den Pitch-Decks &amp; Konzepten &rarr;
-            </Link>
+              <Presentation className="w-3.5 h-3.5" /> Zu den Pitch-Decks &amp;
+              Konzepten &rarr;
+            </Link> */}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -973,7 +1154,9 @@ export default async function Home() {
                       />
                     </div>
                     <div>
-                      <h3 className="text-base font-bold text-slate-100">{member.name}</h3>
+                      <h3 className="text-base font-bold text-slate-100">
+                        {member.name}
+                      </h3>
                       <div className="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3 h-3" /> {member.location}
                       </div>
@@ -1015,15 +1198,18 @@ export default async function Home() {
           <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
             <div className="space-y-3 max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
-                <HeartHandshake className="size-3.5" /> Gemeinwohl, Open Source &amp; Partizipation
+                <HeartHandshake className="size-3.5" /> Gemeinwohl, Open Source
+                &amp; Partizipation
               </div>
               <h3 className="text-2xl sm:text-3xl font-bold text-slate-100">
                 Sei beim nächsten Ried-Hackathon &amp; Workshop im KAMÜ dabei!
               </h3>
               <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                Ob Schüler, IT-Profi, Bastler oder neugieriger Bürger: Alle Messwerte, Baupläne und Quelltexte
-                sind 100 % Open Data und Open Source. Baue deinen eigenen Umweltsensor, bring deine Ideen für das
-                Ried ein oder entwickle mit uns nützliche Tools für unsere Heimat.
+                Ob Schüler, IT-Profi, Bastler oder neugieriger Bürger: Alle
+                Messwerte, Baupläne und Quelltexte sind 100 % Open Data und Open
+                Source. Baue deinen eigenen Umweltsensor, bring deine Ideen für
+                das Ried ein oder entwickle mit uns nützliche Tools für unsere
+                Heimat.
               </p>
             </div>
 
