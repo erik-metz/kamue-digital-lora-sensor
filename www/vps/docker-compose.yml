@@ -230,6 +230,31 @@ services:
       timescaledb:
         condition: service_healthy
 
+  ttnmapper-collector:
+    build:
+      context: ./ttnmapper-collector
+      dockerfile: Dockerfile
+    image: ghcr.io/erik-metz/open-ried-sens-ttnmapper-collector:latest
+    restart: unless-stopped
+    stop_grace_period: 60s
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      TTNMAPPER_POLL_SECONDS: ${TTNMAPPER_POLL_SECONDS:-900}
+      TTNMAPPER_CENTER_LAT: ${TTNMAPPER_CENTER_LAT:-49.64}
+      TTNMAPPER_CENTER_LON: ${TTNMAPPER_CENTER_LON:-8.53}
+      TTNMAPPER_RADIUS_METERS: ${TTNMAPPER_RADIUS_METERS:-25000}
+    volumes:
+      - ttnmapper_state:/data
+    depends_on:
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
   archive-worker:
     image: ghcr.io/erik-metz/open-ried-sens-archive-worker:latest
     profiles: ["archives"]
@@ -313,6 +338,7 @@ volumes:
   rast_state:
   opensensemap_state:
   uba_state:
+  ttnmapper_state:
   environment_state:
   certbot_www:
   certbot_etc:

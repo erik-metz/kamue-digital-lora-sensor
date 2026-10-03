@@ -319,14 +319,44 @@ Sobald neue Quellen im VPS angebunden sind, müssen diese transparent und nachvo
 
 ---
 
-### 6.5 Geplante Implementierungsschritte Phase 2
+---
 
-- [x] **Schritt 2.1: Copernicus CDSE / STAC Downloader**: Automatischer Abruf neuer wolkenfreier Sentinel-2 L2A Szenen für das Ried (Tile 32UMA/32UMV) via STAC-API (`registry-sync-worker/satellite.py`), Drei-Tabellen Ingestion (`entities: satellite_scene`, `readings: cloud_cover, vegetation_coverage`), Atomic Datasets (`environment/satellite/scenes`), Frontend `/quellen` aktualisiert.
-- [x] **Schritt 2.2: BBOX-Clipper & COG-Generator**: Ried-Zuschnitt und Berechnung des mittleren Vegetationsindex (`ndvi_mean`) sowie der Trockenstressfläche (`drought_stressed_area_ha`) für Agrar- und Forstflächen.
-- [x] **Schritt 2.3: Ingestion in das Three-Table Schema**: Speicherung von COG-Assets in `entities.metadata` und Persistierung der skalaren Kennzahlen `ndvi_mean` und `drought_stressed_area` via `write_measurement`.
-- [x] **Schritt 2.4: FastAPI Kachel-Endpunkt (COG Tile Server)**: Endpunkte `/api/v1/satellite/scenes`, `/api/v1/satellite/latest` und Kachel-Proxy `/api/v1/satellite/tiles/{scene_id}/{z}/{x}/{y}.png` in `endpoints/satellite.py`.
-- [x] **Schritt 2.5: Frontend-Integration**: Layer auf der Sensorkarte (`/karte`, `MapComponent.tsx`, `MapDarstellungBar.tsx`, `DashboardClient.tsx.tsx`) mit Echtfarben- (RGB) und NDVI-Rasterkachelung (`/api/satellite/tiles/...`) sowie interaktives Zeitreise- und Dürremonitoring-Modul im Regionalatlas (`SatelliteEarthObservationSection.tsx` auf `/regionalatlas`).
-- [x] **Schritt 2.6: ML-Vorbereitung (Historical Earth Observation DB)**: Standardisierte Schnittstelle für nachgelagerte PyTorch- und Scikit-Learn-Modelle (`satellite_ml.py`, `satellite_ml_train.py`, `test_satellite_ml.py`) zur Dürrestress-Klassifikation und Bodenfeuchte-Schätzung basierend auf dem Drei-Tabellen Core Schema.
+## 8. TTN Mapper & Packet Broker LoRaWAN-Ausbau (Phase 1 Erweiterung)
+
+* **Komponente:** `ttnmapper-collector` (`/www/vps/ttnmapper-collector`).
+* **Quellen:** 
+  - Packet Broker Mapper API (`https://mapper.packetbroker.net/api/v2/gateways`)
+  - TTN Mapper Kacheln (`https://tms.ttnmapper.org/circles/...`)
+* **Ziel:** Historisches und kontinuierliches Tracking des LoRaWAN-Gateway-Ausbaus und der Netzabdeckung im Hessischen Ried im Three-Table Core Schema.
+
+### 1. Entities
+* **Einzelne Gateways:**
+  - `id`: `lora:gateway:<eui_or_id>` (z.B. `lora:gateway:eui-58a0cbfffe801234`)
+  - `name`: z.B. *"LoRaWAN Gateway Bensheim"*
+  - `entity_type`: `lora_gateway`
+  - `metadata`: `{"net_id": "000013", "tenant_id": "ttn", "cluster_id": "eu1.cloud.thethings.network", "antenna_placement": "OUTDOOR", "updated_at": "..."}`
+* **Regionaler Ried-Ausbau-Bereich:**
+  - `id`: `lora:area:hessisches_ried`
+  - `name`: *"LoRaWAN-Ausbau Hessisches Ried"*
+  - `entity_type`: `lora_coverage_area`
+  - `metadata`: `{"region": "Hessisches Ried", "center_lat": 49.64, "center_lon": 8.53, "radius_meters": 25000, "source": "ttnmapper"}`
+
+### 2. Measurement Definitions & Readings (via `write_measurement`)
+* **Gateway-Metriken:**
+  - `latitude`: `degrees`, `reported`, `reference`
+  - `longitude`: `degrees`, `reported`, `reference`
+  - `altitude`: `m`, `reported`, `reference`
+  - `online_status`: `state`, `observed`, `state` (1.0 = online, 0.0 = offline)
+* **Regionale Aggregat-Metriken (Ausbau-Historie):**
+  - `active_gateways_count`: `count`, `observed`, `instantaneous`
+  - `total_gateways_count`: `count`, `observed`, `instantaneous`
+  - `outdoor_gateways_count`: `count`, `observed`, `instantaneous`
+  - `indoor_gateways_count`: `count`, `observed`, `instantaneous`
+  - `online_ratio`: `percent`, `observed`, `instantaneous`
+
+### 3. Frontend & Map Kompatibilität
+* **Ebene Sensorkarte:** `lora` TMS Tile Layer (`https://tms.ttnmapper.org/circles/...`) mit Live-Gateways.
+* **Kompatibilität:** Dual-Write in `sensor_metadata`, `sensor_data` und `sensor_latest` (`ttn-gw-<id>`), sodass bestehende Map- und API-Clients die Gateways sofort darstellen.
 
 
 

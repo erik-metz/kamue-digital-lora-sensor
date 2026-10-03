@@ -421,6 +421,17 @@ export default function MapComponent(props: MapProps) {
     const starkregenMinZoom = LAYER_MIN_ZOOM.starkregen ?? 12;
     if (layers.starkregen && zoom >= starkregenMinZoom) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
 
+    const loraMinZoom = LAYER_MIN_ZOOM.lora ?? 9;
+    if (layers.lora && zoom >= loraMinZoom) {
+      L.tileLayer("https://tms.ttnmapper.org/circles/network/NS_TTS_V3%3A%2F%2Fttn%40000013/{z}/{x}/{y}.png", {
+        opacity: 0.6,
+        maxNativeZoom: 19,
+        maxZoom: 20,
+        zIndex: 12,
+        attribution: '© <a href="https://ttnmapper.org" target="_blank" rel="noopener">TTN Mapper</a>',
+      }).addTo(group);
+    }
+
     // Copernicus Sentinel-2 Satellite Raster Tile Layer (RGB or NDVI)
     if (props.satelliteMode && props.satelliteMode !== "none") {
       const scene = props.satelliteSceneId ? encodeURIComponent(props.satelliteSceneId) : "latest";

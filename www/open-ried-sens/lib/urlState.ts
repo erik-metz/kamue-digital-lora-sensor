@@ -22,6 +22,7 @@ export const MAP_LAYER_IDS = [
   "trains",
   "crossings",
   "places",
+  "lora",
 ] as const;
 
 export type MapLayerId = (typeof MAP_LAYER_IDS)[number];
@@ -48,6 +49,7 @@ export const DEFAULT_MAP_LAYERS: Record<MapLayerId, boolean> = {
   trains: true,
   crossings: true,
   places: false,
+  lora: false,
 };
 
 export const DEFAULT_MAP_CENTER: [number, number] = [49.62, 8.46];

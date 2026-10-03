@@ -45,6 +45,7 @@ export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
   floods: 8,
   trains: 9,
   closures: 10,
+  lora: 9,
 
   // Municipal / City (Zoom 12-13)
   buses: 12,
@@ -216,6 +217,15 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     minZoom: LAYER_MIN_ZOOM.broadband,
     highlightColor: "border-purple-400 text-purple-300",
   },
+  lora: {
+    id: "lora",
+    label: "LoRaWAN & Heatmap",
+    icon: "📡",
+    category: "infrastructure",
+    description: "LoRaWAN Netzabdeckung, Gateways & TTN Mapper Heatmap im Ried",
+    minZoom: LAYER_MIN_ZOOM.lora,
+    highlightColor: "border-cyan-500 text-cyan-300",
+  },
 
   // Planning & Municipal
   boris: {
@@ -313,6 +323,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       trains: false,
       crossings: false,
       places: false,
+      lora: false,
     },
   },
   mobility: {
@@ -343,6 +354,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       trains: true,
       crossings: true,
       places: false,
+      lora: false,
     },
   },
   environment: {
@@ -373,6 +385,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       trains: false,
       crossings: false,
       places: false,
+      lora: false,
     },
   },
   planning: {
@@ -403,6 +416,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       trains: false,
       crossings: false,
       places: false,
+      lora: true,
     },
   },
 };
