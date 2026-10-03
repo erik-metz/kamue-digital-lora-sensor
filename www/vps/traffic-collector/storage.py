@@ -261,11 +261,11 @@ async def persist_traffic_incidents(
                             prov,
                         ),
                     )
-                    # Free flow speed (reference)
+                    # Free flow speed (reference value reported by flow model)
                     await cur.execute(
                         """
                         SELECT write_measurement(
-                            %s::text, 'free_flow_speed'::text, 'km/h'::text, %s::text, 'reference'::text,
+                            %s::text, 'free_flow_speed'::text, 'km/h'::text, %s::text, 'reported'::text,
                             %s::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
                             'valid'::text, NULL::timestamptz, NULL::timestamptz, 'reference'::text
                         )
