@@ -4,8 +4,10 @@ Provides scenes metadata, latest vegetation/NDVI metrics, preview thumbnails,
 and tile layer redirects for the Hessisches Ried.
 """
 
+import asyncio
 import io
 import json
+import urllib.error
 import urllib.request
 import zipfile
 from typing import Annotated, Any
@@ -257,6 +259,14 @@ Frei nutzbar für Bürger, Forschung, Landwirtschaft und Verwaltung gemäß Open
             b"\x00\x00\x00\rIDATx\x9cc\xf8\xff\xff?\x00\x05\xfe\x02\xfe\xa74v\xd8\x00\x00\x00\x00IEND\xaeB`\x82"
         )
 
+        def _fetch_image(url: str) -> bytes | None:
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "OpenRiedSens-Downloader/1.0"})
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    return resp.read()
+            except (urllib.error.URLError, TimeoutError, OSError):
+                return None
+
         for s in scenes:
             s_date = s.get("date", "unknown")
             s_id = s.get("sceneId") or s.get("id", "scene")
@@ -265,25 +275,15 @@ Frei nutzbar für Bürger, Forschung, Landwirtschaft und Verwaltung gemäß Open
             if layer in ("rgb", "all"):
                 rgb_url = assets.get("thumbnailUrl") or assets.get("preview") or assets.get("visual_cog")
                 rgb_bytes = None
-                if rgb_url and (rgb_url.startswith("http://") or rgb_url.startswith("https://")):
-                    try:
-                        req = urllib.request.Request(rgb_url, headers={"User-Agent": "OpenRiedSens-Downloader/1.0"})
-                        with urllib.request.urlopen(req, timeout=5) as resp:
-                            rgb_bytes = resp.read()
-                    except Exception:
-                        rgb_bytes = None
+                if rgb_url and rgb_url.startswith(("http://", "https://")):
+                    rgb_bytes = await asyncio.to_thread(_fetch_image, rgb_url)
                 zf.writestr(f"scenes/{s_date}_{s_id}_rgb.png", rgb_bytes or valid_png)
 
             if layer in ("ndvi", "all"):
                 ndvi_url = assets.get("ndviUrl") or assets.get("preview") or assets.get("thumbnailUrl")
                 ndvi_bytes = None
-                if ndvi_url and (ndvi_url.startswith("http://") or ndvi_url.startswith("https://")):
-                    try:
-                        req = urllib.request.Request(ndvi_url, headers={"User-Agent": "OpenRiedSens-Downloader/1.0"})
-                        with urllib.request.urlopen(req, timeout=5) as resp:
-                            ndvi_bytes = resp.read()
-                    except Exception:
-                        ndvi_bytes = None
+                if ndvi_url and ndvi_url.startswith(("http://", "https://")):
+                    ndvi_bytes = await asyncio.to_thread(_fetch_image, ndvi_url)
                 zf.writestr(f"scenes/{s_date}_{s_id}_ndvi.png", ndvi_bytes or valid_png)
 
     zip_bytes = buf.getvalue()

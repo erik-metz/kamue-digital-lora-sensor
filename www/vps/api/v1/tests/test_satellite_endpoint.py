@@ -9,18 +9,19 @@ if "psycopg_pool" not in sys.modules:
 if "psycopg" not in sys.modules:
     sys.modules["psycopg"] = MagicMock()
 
+class MockResponse:
+    def __init__(self, content=b"", status_code=200, headers=None, media_type=None):
+        self.content = content
+        self.status_code = status_code
+        self.headers = headers or {}
+        self.media_type = media_type
+
 if "fastapi" not in sys.modules and find_spec("fastapi") is None:
     class MockRouter:
         def get(self, *args, **kwargs):
             return lambda fn: fn
         def post(self, *args, **kwargs):
             return lambda fn: fn
-    class MockResponse:
-        def __init__(self, content=b"", status_code=200, headers=None, media_type=None):
-            self.content = content
-            self.status_code = status_code
-            self.headers = headers or {}
-            self.media_type = media_type
     mock_fastapi = MagicMock()
     mock_fastapi.APIRouter = lambda *args, **kwargs: MockRouter()
     mock_fastapi.Response = MockResponse
@@ -29,6 +30,8 @@ if "fastapi" not in sys.modules and find_spec("fastapi") is None:
     mock_fastapi.HTTPException = Exception
     mock_fastapi.status = MagicMock()
     sys.modules["fastapi"] = mock_fastapi
+elif "fastapi" in sys.modules and isinstance(sys.modules["fastapi"], MagicMock):
+    sys.modules["fastapi"].Response = MockResponse
 
 if "pydantic" not in sys.modules and find_spec("pydantic") is None:
     class MockBaseModel:

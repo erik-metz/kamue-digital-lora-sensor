@@ -9,7 +9,6 @@ Adheres strictly to the Three-Table Core Schema (entities, measurement_definitio
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 

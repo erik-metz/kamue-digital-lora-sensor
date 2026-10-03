@@ -19,7 +19,6 @@ worker_dir = os.path.join(script_dir, "..", "registry-sync-worker")
 sys.path.insert(0, worker_dir)
 
 from satellite_ml import (
-    FEATURE_NAMES,
     RiedEarthObservationDataset,
     build_ml_sample,
 )
@@ -91,7 +90,7 @@ def main():
     train_set, val_set, test_set = dataset.train_val_test_split(test_size=0.2, val_size=0.2)
     print(f"Dataset split: Train={len(train_set)}, Val={len(val_set)}, Test={len(test_set)}")
 
-    X_train, y_train, features = train_set.to_scikit_learn()
+    X_train, _y_train, features = train_set.to_scikit_learn()
     print(f"Feature matrix shape: {len(X_train)} x {len(features)}")
     print(f"Features: {', '.join(features)}")
 
