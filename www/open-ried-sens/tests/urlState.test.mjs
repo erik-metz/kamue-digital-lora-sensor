@@ -68,11 +68,12 @@ test("MAP_LAYER_IDS contains all 21 domain layers", () => {
   assert.ok(ids.includes("trains"));
 });
 
-test("DEFAULT_MAP_LAYERS disables energy, places, companies and crops by default to avoid cluttering standard view", () => {
+test("DEFAULT_MAP_LAYERS disables energy, places, companies, crops and nature by default to avoid cluttering standard view", () => {
   assert.equal(urlState.DEFAULT_MAP_LAYERS.energy, false);
   assert.equal(urlState.DEFAULT_MAP_LAYERS.places, false);
   assert.equal(urlState.DEFAULT_MAP_LAYERS.companies, false);
   assert.equal(urlState.DEFAULT_MAP_LAYERS.crops, false);
+  assert.equal(urlState.DEFAULT_MAP_LAYERS.nature, false);
 });
 
 test("parseMapSessionState parses valid coordinates, zoom, and mode", () => {
