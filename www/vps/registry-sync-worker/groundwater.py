@@ -158,7 +158,7 @@ async def import_groundwater(conn, client, source):
                         %s, %s, 'degrees', %s, 'reported',
                         '{"crs": "EPSG:4326"}'::jsonb,
                         %s, %s, %s,
-                        %s, 'valid', NULL, NULL, 'reference'
+                        %s::jsonb, 'valid', NULL, NULL, 'reference'
                     )""",
                     (
                         entity_key,

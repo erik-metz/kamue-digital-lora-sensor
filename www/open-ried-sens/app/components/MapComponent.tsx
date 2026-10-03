@@ -425,10 +425,10 @@ export default function MapComponent(props: MapProps) {
     if (props.satelliteMode && props.satelliteMode !== "none") {
       const scene = props.satelliteSceneId ? encodeURIComponent(props.satelliteSceneId) : "latest";
       L.tileLayer(`/api/satellite/tiles/${scene}/{z}/{x}/{y}.png?layer=${props.satelliteMode}`, {
-        maxZoom: 18,
+        maxZoom: 19,
         minZoom: 8,
-        bounds: [[49.50, 8.25], [49.85, 8.75]],
-        opacity: props.satelliteMode === "ndvi" ? 0.75 : 0.9,
+        opacity: props.satelliteMode === "ndvi" ? 0.82 : 1.0,
+        className: props.satelliteMode === "ndvi" ? "satellite-ndvi-tile-layer" : "satellite-rgb-tile-layer",
         attribution: '© <a href="https://dataspace.copernicus.eu" target="_blank" rel="noopener">Copernicus Sentinel-2</a> · ESA / EU',
       }).addTo(group);
     }

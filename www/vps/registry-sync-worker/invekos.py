@@ -214,7 +214,7 @@ async def import_invekos(conn, client, source):
                     %s, 'area', 'ha', %s, 'reported',
                     '{"source": "INVEKOS"}'::jsonb,
                     %s, %s, %s,
-                    %s, 'valid', NULL, NULL, 'reference'
+                    %s::jsonb, 'valid', NULL, NULL, 'reference'
                 )""",
                 (
                     entity_key,
@@ -233,7 +233,7 @@ async def import_invekos(conn, client, source):
                         %s, %s, 'degrees', %s, 'reported',
                         '{"crs": "EPSG:4326"}'::jsonb,
                         %s, %s, %s,
-                        %s, 'valid', NULL, NULL, 'reference'
+                        %s::jsonb, 'valid', NULL, NULL, 'reference'
                     )""",
                     (
                         entity_key,

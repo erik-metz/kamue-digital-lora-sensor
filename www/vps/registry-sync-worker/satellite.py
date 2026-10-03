@@ -214,7 +214,7 @@ async def import_satellite(conn, client, source):
                     %s, 'cloud_cover', '%%', %s, 'observed',
                     '{"satellite": "Sentinel-2"}'::jsonb,
                     %s, %s, %s,
-                    %s, 'valid', NULL, NULL, 'instantaneous'
+                    %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
                 )""",
                 (
                     entity_key,
@@ -233,7 +233,7 @@ async def import_satellite(conn, client, source):
                         %s, 'vegetation_coverage', '%%', %s, 'observed',
                         '{"satellite": "Sentinel-2"}'::jsonb,
                         %s, %s, %s,
-                        %s, 'valid', NULL, NULL, 'instantaneous'
+                        %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
                     )""",
                     (
                         entity_key,
@@ -252,7 +252,7 @@ async def import_satellite(conn, client, source):
                         %s, 'ndvi_mean', 'index', %s, 'observed',
                         '{"satellite": "Sentinel-2"}'::jsonb,
                         %s, %s, %s,
-                        %s, 'valid', NULL, NULL, 'instantaneous'
+                        %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
                     )""",
                     (
                         entity_key,
@@ -271,7 +271,7 @@ async def import_satellite(conn, client, source):
                         %s, 'drought_stressed_area', 'ha', %s, 'model',
                         '{"satellite": "Sentinel-2", "threshold_ndvi": 0.25}'::jsonb,
                         %s, %s, %s,
-                        %s, 'valid', NULL, NULL, 'instantaneous'
+                        %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
                     )""",
                     (
                         entity_key,
@@ -290,7 +290,7 @@ async def import_satellite(conn, client, source):
                         %s, %s, 'degrees', %s, 'reported',
                         '{"crs": "EPSG:4326"}'::jsonb,
                         %s, %s, %s,
-                        %s, 'valid', NULL, NULL, 'reference'
+                        %s::jsonb, 'valid', NULL, NULL, 'reference'
                     )""",
                     (
                         entity_key,

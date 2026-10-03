@@ -867,3 +867,12 @@
 .map-detail-card { min-width: 180px; max-width: 270px; line-height: 1.5; }
 .map-detail-card > strong { display: block; font-size: 15px; }
 .map-detail-card .map-detail-subtitle { color: #94a3b8; font-size: 11px; border-bottom: 1px solid #334155; padding-bottom: 8px; }
+
+/* Satellite & NDVI Earth Observation tile layers */
+.satellite-rgb-tile-layer {
+  filter: contrast(105%) brightness(102%);
+}
+.satellite-ndvi-tile-layer {
+  filter: contrast(145%) saturate(220%) hue-rotate(80deg);
+}
+

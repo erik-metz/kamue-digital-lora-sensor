@@ -192,6 +192,24 @@ class SatelliteEndpointTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("README.txt", namelist)
             self.assertTrue(any(name.startswith("scenes/") for name in namelist))
 
+    async def test_download_satellite_data_fallback_when_empty_db(self):
+        # Empty DB results
+        self.cursor.fetchall.return_value = []
+        self.cursor.fetchone.return_value = None
+        resp = await download_satellite_data(
+            self.pool, start="2026-06-01", end="2026-06-30", layer="rgb", format="json"
+        )
+        self.assertEqual(resp.status_code, 200)
+        body = getattr(resp, "body", None) or getattr(resp, "content", None) or b""
+        data = json.loads(body.decode("utf-8"))
+        self.assertGreater(data.get("scene_count", 0), 0)
+
+    async def test_get_satellite_scenes_fallback_when_empty_db(self):
+        self.cursor.fetchall.return_value = []
+        self.cursor.fetchone.return_value = None
+        data = await get_satellite_scenes(self.pool, limit=5)
+        self.assertGreater(len(data.get("scenes", [])), 0)
+
 
 if __name__ == "__main__":
     unittest.main()
