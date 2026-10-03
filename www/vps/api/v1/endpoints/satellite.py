@@ -221,6 +221,7 @@ async def download_satellite_data(
             media_type="application/json",
             headers={
                 "Content-Disposition": f'attachment; filename="open-ried-sentinel2-{start}-to-{end}.json"',
+                "Content-Type": "application/json",
                 "Cache-Control": "no-store",
             },
         )

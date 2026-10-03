@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from datetime import UTC, datetime
@@ -11,9 +12,13 @@ if "psycopg" not in sys.modules:
 
 class MockResponse:
     def __init__(self, content=b"", status_code=200, headers=None, media_type=None):
+        self.body = content
         self.content = content
         self.status_code = status_code
-        self.headers = headers or {}
+        self.headers = dict(headers or {})
+        if media_type:
+            self.headers.setdefault("Content-Type", media_type)
+            self.headers.setdefault("content-type", media_type)
         self.media_type = media_type
 
 if "fastapi" not in sys.modules and find_spec("fastapi") is None:
@@ -144,7 +149,11 @@ class SatelliteEndpointTests(unittest.IsolatedAsyncioTestCase):
             self.pool, start="2026-06-01", end="2026-06-30", layer="rgb", format="json"
         )
         self.assertEqual(resp.status_code, 200)
-        self.assertIn("open-ried-sentinel2-2026-06-01-to-2026-06-30.json", resp.headers.get("Content-Disposition", ""))
+        disp = resp.headers.get("Content-Disposition") or resp.headers.get("content-disposition") or ""
+        self.assertIn("open-ried-sentinel2-2026-06-01-to-2026-06-30.json", disp)
+        body = getattr(resp, "body", None) or getattr(resp, "content", None) or b""
+        data = json.loads(body.decode("utf-8"))
+        self.assertEqual(data.get("scene_count"), 1)
 
     async def test_download_satellite_data_zip(self):
         import io
@@ -170,11 +179,14 @@ class SatelliteEndpointTests(unittest.IsolatedAsyncioTestCase):
                 self.pool, start="2026-06-01", end="2026-06-30", layer="all", format="zip"
             )
         self.assertEqual(resp.status_code, 200)
-        self.assertEqual(resp.headers.get("Content-Type"), "application/zip")
-        self.assertIn(".zip", resp.headers.get("Content-Disposition", ""))
+        ctype = resp.headers.get("Content-Type") or resp.headers.get("content-type") or getattr(resp, "media_type", None)
+        self.assertEqual(ctype, "application/zip")
+        disp = resp.headers.get("Content-Disposition") or resp.headers.get("content-disposition") or ""
+        self.assertIn(".zip", disp)
 
         # Verify ZIP structure
-        with zipfile.ZipFile(io.BytesIO(resp.content)) as zf:
+        body = getattr(resp, "body", None) or getattr(resp, "content", None) or b""
+        with zipfile.ZipFile(io.BytesIO(body)) as zf:
             namelist = zf.namelist()
             self.assertIn("manifest.json", namelist)
             self.assertIn("README.txt", namelist)
