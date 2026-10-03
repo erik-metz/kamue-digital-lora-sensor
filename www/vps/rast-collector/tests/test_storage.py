@@ -68,10 +68,12 @@ class RastStorageTests(DatabaseCase):
         self.assertEqual(int(latest_occ), 81)
 
         # Check entities table if present
-        has_entities = await self.scalar(
-            "SELECT 1 FROM information_schema.tables WHERE table_name = 'entities'"
-        )
-        if has_entities:
+        row = await (
+            await self.conn.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_name = 'entities'"
+            )
+        ).fetchone()
+        if row:
             entity_name = await self.scalar(
                 "SELECT name FROM entities WHERE id=%s",
                 (f"sensor:{site.sensor_id}",),
