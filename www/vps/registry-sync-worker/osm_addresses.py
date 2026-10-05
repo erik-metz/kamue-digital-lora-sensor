@@ -17,6 +17,7 @@ def extract_addresses(path, source):
     coordinates = {}
     elements = []
     crossings = []
+    rail_edges = []
     regional_nodes = {}
     map_layers = {key: {'type': 'FeatureCollection', 'features': []} for key in ('nature', 'crops', 'wifi', 'energy', 'companies', 'places')}
 
@@ -146,6 +147,11 @@ def extract_addresses(path, source):
     class MapWays(osmium.SimpleHandler):
         def way(self, obj):
             tags = dict(obj.tags)
+            if tags.get('railway') == 'rail' and not tags.get('service'):
+                refs = [node.ref for node in obj.nodes]
+                for left, right in zip(refs, refs[1:]):
+                    if left in regional_nodes and right in regional_nodes:
+                        rail_edges.append([left, right, regional_nodes[left], regional_nodes[right]])
             kind = map_kind(tags)
             if not kind:
                 return
@@ -177,7 +183,7 @@ def extract_addresses(path, source):
             elements.append({'type': 'way', 'id': identity, 'center': {'lat': lat, 'lon': lon}, 'tags': tags})
     if not elements:
         raise ValueError('OSM extract contains no matching regional addresses')
-    return {'elements': elements, 'map_layers': map_layers, 'crossings': {'type': 'FeatureCollection', 'inventory_version': 2, 'features': crossings}, 'coverage': 'OSM address nodes and ways; not a complete address register'}
+    return {'elements': elements, 'map_layers': map_layers, 'crossings': {'type': 'FeatureCollection', 'inventory_version': 3, 'features': crossings, 'rail_edges': rail_edges}, 'coverage': 'OSM address nodes and ways; not a complete address register'}
 
 
 async def import_addresses(conn, client, source):
@@ -187,7 +193,7 @@ async def import_addresses(conn, client, source):
         AND fetched_at>NOW()-make_interval(secs => %s)
         AND EXISTS (SELECT 1 FROM collected_datasets c WHERE c.dataset='map/layers/crossings'
                     AND c.source_id=collected_datasets.source_id AND c.expires_at>NOW()
-                    AND c.data->>'inventory_version'='2')""",
+                    AND c.data->>'inventory_version'='3')""",
         (source['id'], source['url'], source.get('interval_seconds', 604800)))
     fresh = await cursor.fetchone()
     await conn.commit()

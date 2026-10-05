@@ -15,8 +15,13 @@ same name and barrier type represent one site, preserving their OSM member IDs.
 Unbarriered and undocumented crossings are excluded. Distinct nearby sites are
 clustered at smaller map scales and can be expanded.
 
-The train shape must be supplied by the provider and pass within 25 m of a site.
-Stop-to-stop chords, bus trajectories and waste tours never drive barrier states.
+The train shape must either be supplied by the provider or routed on connected
+OSM passenger railway edges, and pass within 25 m of a site. Missing provider
+shapes use the regional OSM extract: station endpoints must be within 250 m of
+the network and the connected path must not exceed 1.8 times the direct distance
+plus 500 m. Sidings are excluded. The same routed segments drive vehicle GPS
+interpolation and barrier passages. Unsupported segments, stop-to-stop chords,
+bus trajectories and waste tours never drive barrier states.
 The estimate uses the projected passage time plus collected delay: warning from
 120 seconds before passage, closed from 60 seconds before until 30 seconds after.
 Overlapping train windows keep the barrier closed. Fresh, uncancelled stored
@@ -53,7 +58,7 @@ selected expired entities retain accessible history but have no current reading.
 
 Deployment: update backend API, registry sync worker, frontend and nginx together.
 No new schema migration is needed on an existing canonical-core installation.
-The OSM collector refreshes an older crossing inventory once (inventory version 2),
+The OSM collector refreshes an older crossing inventory once (inventory version 3),
 then resumes its normal cadence. Check `/api/v1/movements/latest`, the SSE endpoint,
 `crossings_available`, and the canonical telemetry endpoint after deployment.
 CI/GHCR publication alone does not demonstrate that the VPS/frontend have restarted.

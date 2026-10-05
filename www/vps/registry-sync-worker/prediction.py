@@ -5,6 +5,7 @@ import math
 from datetime import UTC, datetime, timedelta
 
 from crossings import persist_crossings
+from rail_geometry import load_geometry
 from psycopg.types.json import Jsonb
 
 MODEL_VERSION = "schedule-polyline-v1"
@@ -106,6 +107,7 @@ async def store_position(
 
     if core_writes is None:
         core_writes = await core_writer_enabled(conn)
+        rail_geometry = await load_geometry(conn, now)
     if core_writes:
         await conn.execute("SELECT write_movement_position(%s)", (Jsonb({
             **data, 'entity_id': entity_id, 'payload_sha256': digest, 'metadata': metadata,
@@ -133,6 +135,7 @@ async def predict_tick(conn, now=None):
         )
         rows = await cursor.fetchall()
         core_writes = await core_writer_enabled(conn)
+        rail_geometry = await load_geometry(conn, now)
         for (
             source,
             trip,
@@ -146,6 +149,8 @@ async def predict_tick(conn, now=None):
             update_digest,
             delay_basis,
         ) in rows:
+            if kind == "train" and metadata.get("geometry_basis") == "stop_to_stop" and rail_geometry:
+                trajectory, _ = rail_geometry.trajectory(trajectory)
             position = position_at(trajectory, now.timestamp() - delay)
             if position is None:
                 continue

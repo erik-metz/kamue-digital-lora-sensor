@@ -6,8 +6,9 @@ from datetime import timedelta
 from itertools import pairwise
 
 from psycopg.types.json import Jsonb
+from rail_geometry import load_geometry
 
-MODEL_VERSION = "rail-barrier-window-v1"
+MODEL_VERSION = "rail-barrier-window-v2"
 BARRIERS = {"yes", "full", "half", "double_half"}
 _PASSAGES = OrderedDict()
 
@@ -15,6 +16,8 @@ _PASSAGES = OrderedDict()
 def route_passages(route, site):
     # A payload digest and service trajectory start identify immutable schedule
     # geometry. Cache only small projected time lists, never entire trajectories.
+    if route.get("rail_segments") is not None:
+        return [t for segment in route["rail_segments"] for t in passage_times(segment, site)]
     if len(route["trajectory"]) < 2:
         return []
     if "digest" not in route:
@@ -125,7 +128,7 @@ def estimate(site, routes, timestamp):
     for route in routes:
         if (
             route["kind"] != "train"
-            or route["metadata"].get("geometry_basis") != "provider_shape"
+            or (route["metadata"].get("geometry_basis") != "provider_shape" and not route.get("rail_segments"))
         ):
             continue
         passages = route_passages(route, site)
@@ -185,6 +188,11 @@ async def persist_crossings(conn, now):
         }
         for source, trip, digest, points, metadata, delay, update_digest in await cursor.fetchall()
     ]
+    geometry = await load_geometry(conn, now)
+    if geometry:
+        for route in routes:
+            if route["metadata"].get("geometry_basis") == "stop_to_stop":
+                _, route["rail_segments"] = geometry.trajectory(route["trajectory"])
     for site in barrier_sites(inventory[0].get("features", [])):
         entity = "crossing:" + site["id"]
         await conn.execute(
@@ -197,7 +205,7 @@ async def persist_crossings(conn, now):
         supported = [
             r
             for r in routes
-            if r["metadata"].get("geometry_basis") == "provider_shape"
+            if (r["metadata"].get("geometry_basis") == "provider_shape" or r.get("rail_segments"))
             and route_passages(r, site)
         ]
         provenance = {

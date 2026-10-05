@@ -16,6 +16,7 @@ def test_regional_nodes_and_way_centers_without_external_queries(tmp_path):
     <node id="3" lat="52" lon="10"><tag k="addr:city" v="Biblis"/><tag k="addr:street" v="Outside"/><tag k="addr:housenumber" v="1"/></node>
     <node id="13" lat="49.61" lon="8.41"><tag k="amenity" v="school"/><tag k="name" v="Testschule"/></node>
     <node id="12" lat="49.61" lon="8.41"><tag k="power" v="generator"/></node>
+    <way id="21"><nd ref="1"/><nd ref="10"/><nd ref="2"/><tag k="railway" v="rail"/></way>
     <way id="20"><nd ref="1"/><nd ref="2"/><nd ref="12"/><nd ref="1"/><tag k="landuse" v="farmland"/></way>
     <way id="5"><nd ref="1"/><nd ref="2"/><tag k="addr:city" v="Biblis"/><tag k="addr:street" v="Two"/><tag k="addr:housenumber" v="4"/></way>
     <way id="6"><nd ref="999"/><tag k="addr:city" v="Biblis"/><tag k="addr:street" v="Missing"/><tag k="addr:housenumber" v="4"/></way>
@@ -25,6 +26,8 @@ def test_regional_nodes_and_way_centers_without_external_queries(tmp_path):
     assert data['map_layers']['places']['features'][0]['properties']['name'] == 'Testschule'
     assert data['map_layers']['crops']['features'][0]['geometry']['type'] == 'Polygon'
     assert len(data['map_layers']['energy']['features']) == 1
+    assert len(data['crossings']['rail_edges']) == 2
+    assert data['crossings']['inventory_version'] == 3
     assert len(data['crossings']['features']) == 1
     crossing = data['crossings']['features'][0]
     assert crossing['geometry']['coordinates'] == [8.45, 49.64]
