@@ -2,7 +2,7 @@ import importlib.util
 import io
 import struct
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 from source import stream_samples
 from test_metrics import config
@@ -40,9 +40,26 @@ class DecoderTests(unittest.IsolatedAsyncioTestCase):
             struct.pack("<hi", 1, len(payload)) + payload,
             b"truncated",
         ]
-        with patch("source.websockets.connect", return_value=socket):
+        with patch("source.websockets.connect", return_value=socket) as connect:
             stream = stream_samples(station, 1000)
             self.assertEqual(await anext(stream), [(1000, -3), (1001, 0), (1002, 3)])
             with self.assertRaises(ValueError):
+                await anext(stream)
+            await stream.aclose()
+            self.assertIsNone(connect.call_args.kwargs["ping_timeout"])
+            self.assertEqual(connect.call_args.kwargs["ping_interval"], 20)
+
+    async def test_no_waveforms_reconnect_even_if_text_messages_arrive(self):
+        socket = AsyncMock()
+        socket.__aenter__.return_value = socket
+        socket.recv.side_effect = ["welcome", "notice"]
+        loop = Mock()
+        loop.time.side_effect = [0, 0, 91]
+        with (
+            patch("source.websockets.connect", return_value=socket),
+            patch("source.asyncio.get_running_loop", return_value=loop),
+        ):
+            stream = stream_samples(config(), 1000)
+            with self.assertRaisesRegex(TimeoutError, "No waveform"):
                 await anext(stream)
             await stream.aclose()

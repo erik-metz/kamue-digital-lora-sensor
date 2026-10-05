@@ -11,7 +11,7 @@ from pathlib import Path
 
 from buffer import Spool
 from config import Settings, station_settings_list
-from health import check_health, read_status, record_status
+from health import check_health, read_status, record_status, write_json
 from normalize import Windows
 from source import discover_station, stream_samples
 from storage import Writer
@@ -155,10 +155,48 @@ async def run(settings, duration=None):
         asyncio.create_task(run_station(config, stop))
         for config in station_settings_list(settings)
     ]
+
+    async def report():
+        previous = None
+        while not stop.is_set():
+            stations = {}
+            for config in station_settings_list(settings):
+                path = Path(settings.state_dir) / config.SENSOR_ID / "status.json"
+                stations[config.SHAKE_STATION] = (
+                    "healthy"
+                    if check_health(path, settings.SAMPLING_INTERVAL_SEC, 300) == 0
+                    else "stale"
+                )
+            summary = {"heartbeat": datetime.now(UTC).isoformat(), "stations": stations}
+            # A source outage is separate from a blocked destination writer.
+            blocked = False
+            for config in station_settings_list(settings):
+                directory = Path(settings.state_dir) / config.SENSOR_ID
+                state = read_status(directory / "spool.json")
+                if state.get("pending") and check_health(
+                    directory / "status.json", settings.SAMPLING_INTERVAL_SEC
+                ):
+                    blocked = True
+            summary["status"] = (
+                "unhealthy" if blocked or any(t.done() for t in tasks) else "healthy"
+            )
+            write_json(Path(settings.state_dir) / "collector-status.json", summary)
+            if stations != previous:
+                LOG.warning(
+                    "Station source health: %s", json.dumps(stations, sort_keys=True)
+                )
+                previous = stations
+            try:
+                await asyncio.wait_for(stop.wait(), timeout=30)
+            except TimeoutError:
+                pass
+
+    reporter = asyncio.create_task(report())
     try:
         await asyncio.gather(*tasks)
     finally:
         stop.set()
+        await asyncio.gather(reporter, return_exceptions=True)
         await asyncio.gather(*tasks, return_exceptions=True)
         if timer:
             timer.cancel()
@@ -180,16 +218,11 @@ def main():
     settings = Settings.from_env()
     configs = station_settings_list(settings)
     if args.healthcheck:
-        raise SystemExit(
-            max(
-                check_health(
-                    Path(settings.state_dir) / c.SENSOR_ID / "status.json",
-                    settings.SAMPLING_INTERVAL_SEC,
-                    source_max_age=300,
-                )
-                for c in configs
-            )
-        )
+        from health import check_collector_health
+
+        summary = read_status(Path(settings.state_dir) / "collector-status.json")
+        print(json.dumps(summary, sort_keys=True))
+        raise SystemExit(check_collector_health(summary))
     if args.input or args.dry_run:
         if not args.input or not args.dry_run or len(configs) != 1:
             parser.error(

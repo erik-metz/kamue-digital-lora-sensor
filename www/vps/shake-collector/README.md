@@ -17,3 +17,12 @@ SHAKE_STATIONS=R498E python main.py --dry-run --input samples.json
 Offline input is an array of `[unix_seconds, counts]` pairs and writes nothing. Use one station for replay. Live capture requires ObsPy; the production image installs it. Run tests using pytest with the collector directory on `PYTHONPATH`, or use the repository's `www/vps/test-collectors.sh` runner.
 
 Defaults include the ten configured stations (`R498E,R82E7,R79F9,RB012,R021A,R5DFB,RC017,R2852,RB8D1,SC342`), a five-second window, and direct database ingestion. API mode requires distinct `API_KEY` and `ADMIN_API_KEY`; registration preserves admin metadata.
+
+Docker health checks use `/data/collector-status.json`: a heartbeat must be less than
+90 seconds old, station tasks must be running, and pending writes must not be
+stalled for more than the existing write-health threshold (at least 300 seconds).
+Individual stations with observations older than 300 seconds are reported as
+`stale` in the healthcheck JSON and in logs when their state changes. A source
+outage alone does not fail collector liveness. WebSocket keepalive pings remain
+active without a Pong deadline; streams reconnect after 90 seconds without
+waveform samples. Durable replay watermarks remain unchanged.

@@ -68,7 +68,7 @@ async def stream_samples(config, start_timestamp=None):
         clean,
         subprotocols=["caps"],
         ping_interval=20,
-        ping_timeout=20,
+        ping_timeout=None,  # CAPS data activity below detects stalled streams.
         max_size=10 * 1024 * 1024,
         max_queue=4,
         open_timeout=30,
@@ -84,7 +84,10 @@ async def stream_samples(config, start_timestamp=None):
         await ws.send(
             f"begin request\ntime {start.strftime('%Y,%m,%d,%H,%M,%S')}:\nstream add {config.channel_identifier}\nend"
         )
+        last_samples = asyncio.get_running_loop().time()
         while True:
+            if asyncio.get_running_loop().time() - last_samples >= 90:
+                raise TimeoutError("No waveform samples received for 90 seconds")
             try:
                 msg = await asyncio.wait_for(ws.recv(), timeout=15)
             except TimeoutError:
@@ -114,4 +117,6 @@ async def stream_samples(config, start_timestamp=None):
                     )
             if offset != len(msg):
                 raise ValueError("Truncated CAPS frame")
+            if samples:
+                last_samples = asyncio.get_running_loop().time()
             yield samples

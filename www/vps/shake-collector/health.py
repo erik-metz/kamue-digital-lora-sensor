@@ -63,3 +63,14 @@ def check_health(path, poll_seconds, source_max_age=None):
         return 0 if 0 <= age <= max(300, 3 * poll_seconds) else 1
     except (KeyError, TypeError, ValueError):
         return 1
+
+
+def check_collector_health(summary):
+    """Source freshness is reported separately from collector liveness."""
+    try:
+        age = (
+            datetime.now(UTC) - datetime.fromisoformat(summary["heartbeat"])
+        ).total_seconds()
+        return 0 if summary.get("status") == "healthy" and 0 <= age <= 90 else 1
+    except (KeyError, TypeError, ValueError):
+        return 1
