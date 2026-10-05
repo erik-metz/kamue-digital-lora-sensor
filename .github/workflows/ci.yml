@@ -222,6 +222,30 @@ jobs:
       - run: npm run test:map
         working-directory: www/open-ried-sens
 
+  validate-ais-collector:
+    name: AIS collector tests
+    runs-on: ubuntu-latest
+    services:
+      timescaledb:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r www/vps/ais-collector/requirements.txt -r www/vps/api/requirements.txt ruff
+      - run: ruff check --config www/vps/pyproject.toml www/vps/ais-collector
+      - run: PYTHONPATH=www/vps/ais-collector:www/vps/api/v1:www/vps/tests python -m unittest discover -s www/vps/ais-collector/tests
+        env:
+          COLLECTOR_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
+          COLLECTOR_TEST_TIMESCALE: "1"
+
   validate-archive-worker:
     name: Archive export tests
     runs-on: ubuntu-latest
@@ -265,6 +289,7 @@ jobs:
       - validate-uba-collector
       - validate-ttnmapper-collector
       - validate-collector-storage
+      - validate-ais-collector
       - validate-archive-worker
       - validate-frontend-security
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -282,6 +307,13 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image AIS Collector
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/ais-collector
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-ais-collector:latest
 
       - name: Build and Push Docker Image API
         uses: docker/build-push-action@v6

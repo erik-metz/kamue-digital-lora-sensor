@@ -72,6 +72,7 @@ export default function MapComponent(props: MapProps) {
   const [positions, setPositions] = useState<Position[]>([]);
   const [publication, setPublication] = useState<LayerPublication>({ layers: {}, unavailable: [] });
   const [movementFailed, setMovementFailed] = useState(false);
+  const [shipSource, setShipSource] = useState<{ status: string; last_contact?: string } | null>(null);
   const [layersFailed, setLayersFailed] = useState(false);
   const [tilesMissing, setTilesMissing] = useState(false);
   const [loraTilesFailed, setLoraTilesFailed] = useState(false);
@@ -110,9 +111,9 @@ export default function MapComponent(props: MapProps) {
     let streaming = false;
     let lastEvent = 0;
     const stream = new EventSource("/api/mobility/stream");
-    const accept = (body: { positions: Position[]; crossings?: Crossing[] }) => {
+    const accept = (body: { positions: Position[]; crossings?: Crossing[]; ship_source?: { status: string; last_contact?: string } }) => {
       if (!Array.isArray(body.positions)) throw new Error("Invalid response");
-      setPositions(body.positions); setCrossings(body.crossings ?? []); setMovementFailed(false);
+      setPositions(body.positions); setCrossings(body.crossings ?? []); setShipSource(body.ship_source ?? null); setMovementFailed(false);
     };
     stream.onmessage = event => {
       try { accept(JSON.parse(event.data)); streaming = true; lastEvent = Date.now(); } catch { streaming = false; }
@@ -127,7 +128,7 @@ export default function MapComponent(props: MapProps) {
           if (!Array.isArray(body.positions)) throw new Error("Invalid response");
           if (!controller.signal.aborted) accept(body);
         } catch {
-          if (!controller.signal.aborted) { setPositions([]); setCrossings([]); setMovementFailed(true); }
+          if (!controller.signal.aborted) { setPositions([]); setCrossings([]); setShipSource(null); setMovementFailed(true); }
         }
       }
       if (!controller.signal.aborted) timer = setTimeout(poll, MOVEMENT_POLL_MS);
@@ -235,7 +236,7 @@ export default function MapComponent(props: MapProps) {
     const icons = vehicleIcons.current;
     const receivedAt = performance.now();
     for (const position of positions) {
-      const layerId = position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : "waste";
+      const layerId = position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : position.kind === "ship" ? "ships" : "waste";
       const enabled = layers[layerId];
       if (!enabled || !(Date.parse(position.valid_until) > Date.now()) ||
           !Number.isFinite(Date.parse(position.timestamp)) || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) continue;
@@ -243,11 +244,11 @@ export default function MapComponent(props: MapProps) {
       retained.add(key);
       const predicted = position.basis === "schedule_prediction";
       const style = mapSymbol(position.kind);
-      const title = `${style.label} ${position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
+      const title = `${style.label} ${position.name ?? position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
       const target = L.latLng(position.latitude, position.longitude);
       let marker = vehicleMarkers.current.get(key);
-      const iconKey = `${position.kind}:${position.line ?? ""}:${predicted}`;
-      const icon = () => L.divIcon({ html: placeMarker(position.kind, position.line || style.label, predicted),
+      const iconKey = `${position.kind}:${position.name ?? position.line ?? ""}:${predicted}:${position.heading_deg ?? position.course_deg ?? ""}`;
+      const icon = () => L.divIcon({ html: placeMarker(position.kind, position.name || position.line || style.label, predicted, position.heading_deg ?? position.course_deg),
         className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22] });
       if (!marker) {
         marker = L.marker(target, { icon: icon(), title, alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
@@ -258,11 +259,21 @@ export default function MapComponent(props: MapProps) {
         if (icons.get(key) !== iconKey) marker.setIcon(icon());
       }
       icons.set(key, iconKey);
-      motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.timestamp), receivedAt));
+      const previous = motions.get(key);
+      const shipGap = position.kind === "ship" && previous &&
+        (Date.parse(position.timestamp) - previous.sourceTime > 30_000 ||
+         marker.getLatLng().distanceTo(target) > 150);
+      motions.set(key, nextMotion(shipGap ? undefined : previous, target, Date.parse(position.timestamp), receivedAt));
       const popup = detailCard(`${style.symbol} ${title}`, predicted ? "Fahrplanprognose · keine GPS-Messung" : "Beobachtete Position", [
         ...(position.kind === "waste" && predicted ? ["Modell aus Abfuhrtagen: Straßenstichprobe, angenommene Reihenfolge und Zeiten (07–17 Uhr). Kein identifiziertes Müllfahrzeug."] : []),
         ...(typeof position.speed_kmh === "number" ? [`${predicted ? "Modellierte Geschwindigkeit" : "Geschwindigkeit"}: ${Math.round(position.speed_kmh)} km/h`] : []),
         ...(position.delay_basis === "next_reported_stop_approximation" ? [`Gemeldete Haltestellenverspätung: ${Math.round((position.delay_seconds ?? 0) / 60)} Min. (auf die Fahrt angenähert)`] : []),
+        ...(position.kind === "ship" ? [
+          `MMSI: ${position.mmsi ?? "unbekannt"}`,
+          `Kurs: ${position.course_deg !== undefined ? `${position.course_deg}°` : "unbekannt"}`,
+          ...(position.length_m && position.beam_m ? [`Abmessungen: ${position.length_m} × ${position.beam_m} m`] : []),
+          "Quelle: AISstream · gemeldete AIS-Position · Empfang kann lückenhaft sein.",
+        ] : []),
         "Darstellung geglättet zwischen empfangenen Positionen (leicht zeitversetzt).",
         `Stand: ${new Date(position.timestamp).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
         ...(position.geometry_basis === "stop_to_stop" ? ["Geradlinige Näherung zwischen Haltestellen; keine Streckengeometrie verfügbar."] : []),
@@ -567,13 +578,16 @@ export default function MapComponent(props: MapProps) {
     )}
     <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
-      <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung</p>
+      <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff</p>
       <p>Ⓗ Haltestelle · ⚡ Ladestation</p>
       <p>⛔ Sperrung · 🚧 Baustelle · 🚗 Verkehrsachse</p>
       <p className="mt-1">Symbol anklicken für Details und Abfahrten.</p>
       <p className="mt-1 text-slate-400">Gestrichelter Rand: Prognose · Durchgehend: beobachtet (Fahrzeuge)</p>
       {(missing.length > 0) && <p>Ohne aktuelle Quelle: {missing.map(id => mapSymbol(id).label).join(", ")}.</p>}
       </details>
+      {layers.ships && <p role="status">{shipSource?.status === "connected" && shipSource.last_contact && Date.parse(shipSource.last_contact) + 120000 > props.now
+        ? "AISstream verbunden · Empfang kann lückenhaft sein."
+        : "AIS-Empfang derzeit nicht verfügbar; letzte Positionen verfallen nach 10 Minuten."}</p>}
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
       {(layersFailed || missing.length > 0) && <p role="status">{missing.length || "Einige"} Ebenen ohne aktuelle Quelldaten – siehe Hinweise.</p>}
       {tilesMissing && <p role="status">Hintergrundkarten sind noch nicht verfügbar.</p>}

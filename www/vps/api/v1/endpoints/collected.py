@@ -177,7 +177,15 @@ async def mobility_snapshot(pool):
                     'status': {0: 'open', 1: 'closing_soon', 2: 'closed'}.get(state, 'unknown'),
                     'timestamp': row['observed_at'], 'valid_until': row['provenance']['valid_until'],
                     'basis': row['basis'], 'model_version': row['provenance']['model_version']})
-    return {'positions': positions, 'crossings': crossings, 'crossings_available': bool(ready and ready['ready'])}
+        source = await (await conn.execute("""SELECT received_at,status FROM collection_attempts
+            WHERE source_id='aisstream-rhein' ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
+    ship_source = {'status': 'unavailable', 'last_contact': None}
+    if source:
+        ship_source = {'status': 'connected' if source['status']=='success' and
+            source['received_at'] > datetime.now(UTC)-timedelta(seconds=120) else 'unavailable',
+            'last_contact': source['received_at']}
+    return {'positions': positions, 'crossings': crossings, 'crossings_available': bool(ready and ready['ready']),
+            'ship_source': ship_source}
 
 
 @router.get("/movements/latest")
@@ -244,7 +252,16 @@ async def movement_telemetry(entity_id: str, request: Request, pool=Depends(get_
                 AVG(value) AS avg_value FROM samples GROUP BY metric,unit,bucket ORDER BY bucket DESC LIMIT 5000""", (entity_id,start,end))
         history = await cursor.fetchall()
     # Current values have the same thirty-second lifetime as the streamed batch.
-    readings = [r for r in latest if r['quality']=='valid' and r['timestamp']+timedelta(seconds=30)>end]
+    # Ships have irregular radio updates. Reuse the collector's observation expiry,
+    # rather than hiding valid AIS readings after the transit model's 30-second tick.
+    expiry = end
+    if entity_id.startswith('movement:ais:'):
+        async with pool.connection() as conn:
+            row = await (await conn.execute("SELECT valid_until FROM movement_latest WHERE entity_id=%s AND basis='observed'",
+                (entity_id.removeprefix('movement:'),))).fetchone()
+            expiry = row['valid_until'] if row else end
+    readings = [r for r in latest if r['quality']=='valid' and
+        (expiry > end if entity_id.startswith('movement:ais:') else r['timestamp']+timedelta(seconds=30)>end)]
     return cached_response({'readings': readings, 'history': history, 'start': start, 'end': end,
         'historyMode': 'states' if entity_id.startswith('crossing:') else 'averages',
         'historyUnavailable': False, 'historyTruncated': len(history)>=10000,

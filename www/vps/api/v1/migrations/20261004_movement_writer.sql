@@ -16,7 +16,7 @@ DECLARE entity_key TEXT:='movement:'||(p_data->>'entity_id');
     metadata_value JSONB:=p_data->'metadata'; context_key TEXT; evidence JSONB;
 BEGIN
     IF p_data->>'basis' NOT IN ('observed','schedule_prediction')
-        OR p_data->>'kind' NOT IN ('bus','train','waste') THEN RAISE EXCEPTION 'Unsupported movement identity'; END IF;
+        OR p_data->>'kind' NOT IN ('bus','train','waste','ship') THEN RAISE EXCEPTION 'Unsupported movement identity'; END IF;
     INSERT INTO entities(id,name,entity_type,metadata)
     VALUES(entity_key,p_data->>'entity_id',CASE WHEN p_data->>'basis'='schedule_prediction'
         THEN 'service_trip' ELSE p_data->>'kind' END,

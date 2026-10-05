@@ -321,6 +321,30 @@ services:
       backend-api:
         condition: service_healthy
 
+  ais-collector:
+    build:
+      context: ./ais-collector
+    image: ghcr.io/erik-metz/open-ried-sens-ais-collector:latest
+    restart: unless-stopped
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      AIS_STREAM_API_KEY: ${AIS_STREAM_API_KEY:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/tmp/ais-heartbeat'); exit(0 if p.exists() and time.time()-p.stat().st_mtime<120 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      backend-api:
+        condition: service_healthy
+
   nginx:
     image: nginx:alpine
     restart: always

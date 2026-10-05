@@ -30,3 +30,13 @@ test('vehicle clicks use canonical entities and offer speed, delay and paired co
   assert.deepEqual(Array.from(nodes[0].readings,r=>r.metric),['speed','delay','latitude','longitude']);
   assert.match(nodes[0].address,/prognose/);
 });
+test('reported ships retain name, AIS source and canonical telemetry, then expire', () => {
+  const ship={id:'ais:211276280',kind:'ship',name:'HELENE',latitude:49.75521,longitude:8.472255,
+    timestamp:crossing.timestamp,valid_until:crossing.valid_until,basis:'observed',speed_kmh:1.3};
+  const node=model.mobilityNodes([ship],[],now)[0];
+  assert.equal(node.id,'movement:ais:211276280');
+  assert.equal(node.name,'Schiff HELENE');
+  assert.match(node.address,/AISstream/);
+  assert.equal(node.readings[0].value,1.3);
+  assert.equal(model.mobilityNodes([ship],[],now+30000).length,0);
+});
