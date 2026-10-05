@@ -6,24 +6,24 @@ CREATE TABLE IF NOT EXISTS movement_contexts (
 
 CREATE OR REPLACE FUNCTION movement_context_id(p_metadata JSONB)
 RETURNS TEXT LANGUAGE SQL IMMUTABLE STRICT AS $$
-    SELECT encode(sha256(convert_to((p_metadata-ARRAY['speed_kmh','delay_seconds'])::text,'UTF8')),'hex')
+    SELECT encode(sha256(convert_to((p_metadata-ARRAY['speed_kmh','delay_seconds','course_deg','altitude_baro_m','altitude_geom_m','vertical_rate_mps'])::text,'UTF8')),'hex')
 $$;
 
 CREATE OR REPLACE FUNCTION write_movement_position(p_data JSONB,p_backfill BOOLEAN DEFAULT FALSE)
 RETURNS VOID LANGUAGE plpgsql AS $$
 DECLARE entity_key TEXT:='movement:'||(p_data->>'entity_id');
     sample_time TIMESTAMPTZ:=(p_data->>'timestamp')::timestamptz;
-    metadata_value JSONB:=p_data->'metadata'; context_key TEXT; evidence JSONB;
+    metadata_value JSONB:=p_data->'metadata'; context_key TEXT; evidence JSONB; field RECORD;
 BEGIN
     IF p_data->>'basis' NOT IN ('observed','schedule_prediction')
-        OR p_data->>'kind' NOT IN ('bus','train','waste','ship') THEN RAISE EXCEPTION 'Unsupported movement identity'; END IF;
+        OR p_data->>'kind' NOT IN ('bus','train','waste','ship','aircraft') THEN RAISE EXCEPTION 'Unsupported movement identity'; END IF;
     INSERT INTO entities(id,name,entity_type,metadata)
     VALUES(entity_key,p_data->>'entity_id',CASE WHEN p_data->>'basis'='schedule_prediction'
         THEN 'service_trip' ELSE p_data->>'kind' END,
         jsonb_build_object('legacy_movement_id',p_data->>'entity_id','kind',p_data->>'kind'))
     ON CONFLICT(id) DO NOTHING;
     context_key:=movement_context_id(metadata_value);
-    INSERT INTO movement_contexts VALUES(context_key,metadata_value-ARRAY['speed_kmh','delay_seconds']) ON CONFLICT DO NOTHING;
+    INSERT INTO movement_contexts VALUES(context_key,metadata_value-ARRAY['speed_kmh','delay_seconds','course_deg','altitude_baro_m','altitude_geom_m','vertical_rate_mps']) ON CONFLICT DO NOTHING;
     evidence:=jsonb_build_object('payload_sha256',p_data->>'payload_sha256',
         'model_version',p_data->>'model_version','context_id',context_key,'kind',p_data->>'kind');
     PERFORM write_measurement(entity_key,'latitude','degrees',p_data->>'source_id',p_data->>'basis',
@@ -40,4 +40,16 @@ BEGIN
         PERFORM write_measurement(entity_key,'delay','s',p_data->>'source_id',p_data->>'basis','{}',
             sample_time,(metadata_value->>'delay_seconds')::numeric,NOW(),evidence,'valid',NULL,NULL,'instantaneous',p_backfill);
     END IF;
+    FOR field IN SELECT * FROM (VALUES
+        ('course_deg','course','degrees','{"reference":"true_north"}'::jsonb),
+        ('altitude_baro_m','altitude_baro','m','{"reference":"pressure_1013.25_hPa"}'::jsonb),
+        ('altitude_geom_m','altitude_geom','m','{"reference":"WGS84"}'::jsonb),
+        ('vertical_rate_mps','vertical_rate','m/s','{"reference":"barometric"}'::jsonb)
+    ) AS fields(key,metric,unit,dimensions) LOOP
+        IF jsonb_typeof(metadata_value->field.key)='number' THEN
+            PERFORM write_measurement(entity_key,field.metric,field.unit,p_data->>'source_id',p_data->>'basis',
+                field.dimensions,sample_time,(metadata_value->>field.key)::numeric,NOW(),evidence,
+                'valid',NULL,NULL,'instantaneous',p_backfill);
+        END IF;
+    END LOOP;
 END $$;

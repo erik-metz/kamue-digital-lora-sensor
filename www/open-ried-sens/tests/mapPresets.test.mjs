@@ -69,8 +69,8 @@ vm.runInNewContext(
 );
 const mapPresets = mapPresetsContext.exports;
 
-test("mapPresets covers all 24 MAP_LAYER_IDS with definitions and categories", () => {
-  assert.equal(urlState.MAP_LAYER_IDS.length, 24);
+test("mapPresets covers all 25 MAP_LAYER_IDS with definitions and categories", () => {
+  assert.equal(urlState.MAP_LAYER_IDS.length, 25);
   for (const layerId of urlState.MAP_LAYER_IDS) {
     const def = mapPresets.LAYER_DEFINITIONS[layerId];
     assert.ok(def, `Layer definition missing for ${layerId}`);
@@ -88,11 +88,11 @@ test("mapPresets covers 4 categories with valid items", () => {
   const infrastructure = mapPresets.getLayersByCategory("infrastructure");
   const planning = mapPresets.getLayersByCategory("planning");
 
-  assert.equal(mobility.length, 8);
+  assert.equal(mobility.length, 9);
   assert.equal(environment.length, 4);
   assert.equal(infrastructure.length, 6);
   assert.equal(planning.length, 6);
-  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 24);
+  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 25);
 });
 
 test("mapPresets defines all presets with full layer dictionaries", () => {
@@ -122,17 +122,17 @@ test("detectActivePreset identifies default and custom states", () => {
 
 test("countActiveLayers and countCategoryActiveLayers compute accurate numbers", () => {
   const allActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, true]));
-  assert.equal(mapPresets.countActiveLayers(allActive), 24);
+  assert.equal(mapPresets.countActiveLayers(allActive), 25);
 
   const noneActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, false]));
   assert.equal(mapPresets.countActiveLayers(noneActive), 0);
 
   const mobilityCounts = mapPresets.countCategoryActiveLayers("mobility", mapPresets.LAYER_PRESETS.mobility.layers);
-  assert.equal(mobilityCounts.total, 8);
-  assert.equal(mobilityCounts.active, 8);
+  assert.equal(mobilityCounts.total, 9);
+  assert.equal(mobilityCounts.active, 9);
 });
 
-test("LAYER_MIN_ZOOM and LAYER_DEFINITIONS minZoom correctly configure all 24 layers", () => {
+test("LAYER_MIN_ZOOM and LAYER_DEFINITIONS minZoom correctly configure all 25 layers", () => {
   assert.ok(mapPresets.LAYER_MIN_ZOOM);
   for (const layerId of urlState.MAP_LAYER_IDS) {
     const minZoom = mapPresets.LAYER_MIN_ZOOM[layerId];

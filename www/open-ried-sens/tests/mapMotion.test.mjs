@@ -44,3 +44,10 @@ test('ships snap after sparse reports but an older snapshot never rewinds them',
   assert.equal(nextMotion(initial,b,20000,10000,true).duration,0);
   assert.equal(nextMotion(initial,b,9000,10000,true),initial);
 });
+test('aircraft interpolate normal fast motion but snap after a reception gap', () => {
+  const initial=nextMotion(undefined,a,10000,0,'aircraft');
+  const flight={lat:49.63,lng:8.43};
+  assert.equal(nextMotion(initial,flight,25000,15000,'aircraft').duration,15000);
+  assert.equal(nextMotion(initial,flight,80000,70000,'aircraft').duration,0);
+  assert.equal(nextMotion(initial,{lat:50,lng:9},25000,15000,'aircraft').duration,0);
+});

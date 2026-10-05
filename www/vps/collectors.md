@@ -111,3 +111,13 @@ Regression coverage includes complete vs failed traffic snapshots, scoped resolu
 ### Local refactor verification (2026-09-16)
 
 99 tests passed: Smart City 33, Nextbike 8, Traffic 9, Shake 10, API 33, archive worker 6. All database integration tests ran against isolated PostgreSQL 14 schemas. One real MiniSEED decoder test was skipped locally because ObsPy is absent; CI installs it under Python 3.11. Local Python was 3.14, so this run does not substitute for the production-runtime/Timescale CI jobs. Changed Python files passed Ruff, Compose configuration validated, and `git diff --check` passed. No live upstream capture or production deployment was performed.
+
+## Flugverkehr über dem Ried
+
+Der eigenständige [aircraft-collector](aircraft-collector/README.md) erfasst frische
+ADS-B-/MLAT-Positionen über dem Ried via adsb.lol und schreibt sie in die gemeinsame
+Bewegungs- und Messwertpipeline. Die Karte erhält sie über den Mobilitätsstream.
+Abruf standardmäßig alle 15 Sekunden, Positionen maximal 60 Sekunden gültig,
+Quellenangabe adsb.lol / ODbL 1.0. Segelflugzeuge sind nur teilweise erfasst;
+OGN ist in diesem ersten Adapter noch nicht angebunden. Deployment benötigt beide
+API-Migrationen, den neuen Compose-Dienst und das aktualisierte Frontend.

@@ -179,13 +179,20 @@ async def mobility_snapshot(pool):
                     'basis': row['basis'], 'model_version': row['provenance']['model_version']})
         source = await (await conn.execute("""SELECT received_at,status FROM collection_attempts
             WHERE source_id='aisstream-rhein' ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
+        aircraft = await (await conn.execute("""SELECT received_at,status FROM collection_attempts
+            WHERE source_id='adsblol-ried' ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
+    aircraft_source = {'status': 'unavailable', 'last_contact': None}
+    if aircraft:
+        aircraft_source = {'status': 'connected' if aircraft['status']=='success' and
+            aircraft['received_at'] > datetime.now(UTC)-timedelta(seconds=60) else 'unavailable',
+            'last_contact': aircraft['received_at']}
     ship_source = {'status': 'unavailable', 'last_contact': None}
     if source:
         ship_source = {'status': 'connected' if source['status']=='success' and
             source['received_at'] > datetime.now(UTC)-timedelta(seconds=120) else 'unavailable',
             'last_contact': source['received_at']}
     return {'positions': positions, 'crossings': crossings, 'crossings_available': bool(ready and ready['ready']),
-            'ship_source': ship_source}
+            'ship_source': ship_source, 'aircraft_source': aircraft_source}
 
 
 @router.get("/movements/latest")
@@ -220,7 +227,7 @@ async def movement_telemetry(entity_id: str, request: Request, pool=Depends(get_
         cursor = await conn.execute("""SELECT DISTINCT ON (d.metric,d.unit) d.metric,d.unit,
             r.value,r.observed_at AS timestamp,d.basis,r.quality
             FROM measurement_definitions d JOIN latest_readings r ON r.measurement_id=d.id
-            WHERE d.entity_id=%s AND d.metric IN ('crossing_state','speed','delay','latitude','longitude')
+            WHERE d.entity_id=%s AND d.metric IN ('crossing_state','speed','delay','latitude','longitude','course','altitude_baro','altitude_geom','vertical_rate')
             ORDER BY d.metric,d.unit,CASE WHEN r.observed_at+INTERVAL '30 seconds'>NOW() THEN 0 ELSE 1 END,
                 CASE WHEN d.basis='observed' THEN 0 ELSE 1 END,r.observed_at DESC""", (entity_id,))
         latest = await cursor.fetchall()
@@ -245,7 +252,7 @@ async def movement_telemetry(entity_id: str, request: Request, pool=Depends(get_
             cursor = await conn.execute("""WITH samples AS (
                 SELECT DISTINCT ON (d.metric,d.unit,r.observed_at) d.metric,d.unit,r.observed_at,r.value
                 FROM measurement_definitions d JOIN readings r ON r.measurement_id=d.id
-                WHERE d.entity_id=%s AND d.metric IN ('speed','delay','latitude','longitude')
+                WHERE d.entity_id=%s AND d.metric IN ('speed','delay','latitude','longitude','altitude_baro','altitude_geom','vertical_rate')
                     AND r.quality='valid' AND r.observed_at BETWEEN %s AND %s
                 ORDER BY d.metric,d.unit,r.observed_at,CASE WHEN d.basis='observed' THEN 0 ELSE 1 END
             ) SELECT metric,unit,date_bin(INTERVAL '5 minutes',observed_at,TIMESTAMPTZ '2000-01-01') AS bucket,
@@ -255,13 +262,16 @@ async def movement_telemetry(entity_id: str, request: Request, pool=Depends(get_
     # Ships have irregular radio updates. Reuse the collector's observation expiry,
     # rather than hiding valid AIS readings after the transit model's 30-second tick.
     expiry = end
-    if entity_id.startswith('movement:ais:'):
+    observation_time = None
+    if entity_id.startswith(('movement:ais:', 'movement:aircraft:')):
         async with pool.connection() as conn:
-            row = await (await conn.execute("SELECT valid_until FROM movement_latest WHERE entity_id=%s AND basis='observed'",
+            row = await (await conn.execute("SELECT valid_until,timestamp FROM movement_latest WHERE entity_id=%s AND basis='observed'",
                 (entity_id.removeprefix('movement:'),))).fetchone()
             expiry = row['valid_until'] if row else end
+            observation_time = row['timestamp'] if row else None
     readings = [r for r in latest if r['quality']=='valid' and
-        (expiry > end if entity_id.startswith('movement:ais:') else r['timestamp']+timedelta(seconds=30)>end)]
+        (not entity_id.startswith('movement:aircraft:') or r['timestamp']==observation_time) and
+        (expiry > end if entity_id.startswith(('movement:ais:', 'movement:aircraft:')) else r['timestamp']+timedelta(seconds=30)>end)]
     return cached_response({'readings': readings, 'history': history, 'start': start, 'end': end,
         'historyMode': 'states' if entity_id.startswith('crossing:') else 'averages',
         'historyUnavailable': False, 'historyTruncated': len(history)>=10000,

@@ -7,6 +7,7 @@ export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color:
   places: { label: "Öffentlicher Ort", symbol: "🏫", color: "#38bdf8" },
   crossings: { label: "Bahnübergang", symbol: "🚧", color: "#fbbf24" },
   bus: { label: "Bus", symbol: "🚌", color: "#38bdf8" },
+  aircraft: { label: "Flugzeug", symbol: "✈", color: "#facc15" },
   ship: { label: "Schiff", symbol: "🚢", color: "#22d3ee" },
   train: { label: "Zug", symbol: "🚆", color: "#c084fc" },
   waste: { label: "Abfallsammlung", symbol: "🚛", color: "#fb923c" },
@@ -46,6 +47,11 @@ export function placeMarker(kind: string, label = "", predicted = false, directi
   const icon = document.createElement("span");
   icon.textContent = style.symbol;
   icon.setAttribute("aria-hidden", "true");
+  if (kind === "aircraft" && direction !== undefined && Number.isFinite(direction)) {
+    icon.style.display = "inline-block";
+    // The text airplane points east; track is clockwise from north.
+    icon.style.transform = `rotate(${direction - 90}deg)`;
+  }
   root.append(icon);
   if (kind === "ship" && direction !== undefined && Number.isFinite(direction) && direction >= 0 && direction < 360) {
     const arrow = document.createElement("span");

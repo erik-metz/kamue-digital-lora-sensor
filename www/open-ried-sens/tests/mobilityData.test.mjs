@@ -40,3 +40,31 @@ test('reported ships retain name, AIS source and canonical telemetry, then expir
   assert.equal(node.readings[0].value,1.3);
   assert.equal(model.mobilityNodes([ship],[],now+30000).length,0);
 });
+test('aircraft expose observed telemetry with separate altitude references and expire', () => {
+  const aircraft={id:'aircraft:3c6488',kind:'aircraft',name:'DLH1WP',latitude:49.65,longitude:8.45,
+    timestamp:crossing.timestamp,valid_until:crossing.valid_until,basis:'observed',speed_kmh:463,
+    altitude_baro_m:3048,altitude_geom_m:3200,vertical_rate_mps:-5.08};
+  const node=model.mobilityNodes([aircraft],[],now)[0];
+  assert.equal(node.id,'movement:aircraft:3c6488');
+  assert.equal(node.name,'Flugzeug DLH1WP');
+  assert.match(node.address,/adsb.lol/);
+  assert.deepEqual(Array.from(node.readings,r=>r.metric),['speed','altitude_baro','altitude_geom','vertical_rate','latitude','longitude']);
+  assert.equal(model.mobilityNodes([aircraft],[],now+30000).length,0);
+});
+const trails={exports:{}};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL('../lib/aircraftTrail.ts',import.meta.url),'utf8'),{
+  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
+}).outputText,trails);
+test('aircraft traces deduplicate, bound history and break on gaps and implausible jumps', () => {
+  const {updateAircraftTrail}=trails.exports;
+  const first={stamp:now,lat:49.65,lng:8.45};
+  let trail=updateAircraftTrail([],first,now);
+  assert.equal(updateAircraftTrail(trail,first,now+10000).length,1);
+  trail=updateAircraftTrail(trail,{...first,stamp:now+15000,lat:49.66},now+15000);
+  assert.equal(trail.length,2);
+  assert.equal(updateAircraftTrail(trail,{...first,stamp:now+90000},now+90000).length,1);
+  assert.equal(updateAircraftTrail(trail,{...first,stamp:now+30000,lat:50.65},now+30000).length,1);
+  for(let i=2;i<20;i++) trail=updateAircraftTrail(trail,{...first,stamp:now+i*1000},now+i*1000);
+  assert.ok(trail.length<=12);
+  assert.equal(updateAircraftTrail(trail,{...first,stamp:NaN},now+200000).length,0);
+});

@@ -15,6 +15,7 @@ import { TemperatureHeatmapLayer } from "@/lib/temperatureHeatmap";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, DEFAULT_MAP_LAYERS, type MapLayerId } from "@/lib/urlState";
 import { LAYER_MIN_ZOOM, isLayerZoomRestricted } from "@/lib/mapPresets";
 
+import { updateAircraftTrail, type TrailPoint } from "@/lib/aircraftTrail";
 import { crossingSites, crossingLabel, mobilityNodes, type Position, type Crossing } from "@/lib/mobilityData";
 
 export type { SensorNode } from "@/lib/mapData";
@@ -72,6 +73,9 @@ export default function MapComponent(props: MapProps) {
   const [positions, setPositions] = useState<Position[]>([]);
   const [publication, setPublication] = useState<LayerPublication>({ layers: {}, unavailable: [] });
   const [movementFailed, setMovementFailed] = useState(false);
+  const [aircraftSource, setAircraftSource] = useState<{ status: string; last_contact?: string } | null>(null);
+  const aircraftTrails = useRef(new Map<string, TrailPoint[]>());
+  const aircraftTrailLayers = useRef(new Map<string, L.Polyline>());
   const [shipSource, setShipSource] = useState<{ status: string; last_contact?: string } | null>(null);
   const [layersFailed, setLayersFailed] = useState(false);
   const [tilesMissing, setTilesMissing] = useState(false);
@@ -111,9 +115,9 @@ export default function MapComponent(props: MapProps) {
     let streaming = false;
     let lastEvent = 0;
     const stream = new EventSource("/api/mobility/stream");
-    const accept = (body: { positions: Position[]; crossings?: Crossing[]; ship_source?: { status: string; last_contact?: string } }) => {
+    const accept = (body: { positions: Position[]; crossings?: Crossing[]; ship_source?: { status: string; last_contact?: string }; aircraft_source?: { status: string; last_contact?: string } }) => {
       if (!Array.isArray(body.positions)) throw new Error("Invalid response");
-      setPositions(body.positions); setCrossings(body.crossings ?? []); setShipSource(body.ship_source ?? null); setMovementFailed(false);
+      setPositions(body.positions); setCrossings(body.crossings ?? []); setShipSource(body.ship_source ?? null); setAircraftSource(body.aircraft_source ?? null); setMovementFailed(false);
     };
     stream.onmessage = event => {
       try { accept(JSON.parse(event.data)); streaming = true; lastEvent = Date.now(); } catch { streaming = false; }
@@ -128,7 +132,7 @@ export default function MapComponent(props: MapProps) {
           if (!Array.isArray(body.positions)) throw new Error("Invalid response");
           if (!controller.signal.aborted) accept(body);
         } catch {
-          if (!controller.signal.aborted) { setPositions([]); setCrossings([]); setShipSource(null); setMovementFailed(true); }
+          if (!controller.signal.aborted) { setPositions([]); setCrossings([]); setShipSource(null); setAircraftSource(null); setMovementFailed(true); }
         }
       }
       if (!controller.signal.aborted) timer = setTimeout(poll, MOVEMENT_POLL_MS);
@@ -223,7 +227,13 @@ export default function MapComponent(props: MapProps) {
     const markers = vehicleMarkers.current;
     const motions = vehicleMotions.current;
     const icons = vehicleIcons.current;
-    return () => { group.remove(); markers.clear(); motions.clear(); icons.clear(); vehicleGroup.current = null; };
+    const trailLayers = aircraftTrailLayers.current;
+    const trails = aircraftTrails.current;
+    return () => {
+      group.remove(); markers.clear(); motions.clear(); icons.clear(); vehicleGroup.current = null;
+      for (const line of trailLayers.values()) line.remove();
+      trailLayers.clear(); trails.clear();
+    };
   }, [ready, clusteringReady]);
 
   // Retain marker instances and open dialogs across backend snapshots.
@@ -236,7 +246,7 @@ export default function MapComponent(props: MapProps) {
     const icons = vehicleIcons.current;
     const receivedAt = performance.now();
     for (const position of positions) {
-      const layerId = position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : position.kind === "ship" ? "ships" : "waste";
+      const layerId = position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : position.kind === "ship" ? "ships" : position.kind === "aircraft" ? "aircraft" : "waste";
       const enabled = layers[layerId];
       if (!enabled || !(Date.parse(position.valid_until) > Date.now()) ||
           !Number.isFinite(Date.parse(position.timestamp)) || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) continue;
@@ -259,11 +269,31 @@ export default function MapComponent(props: MapProps) {
         if (icons.get(key) !== iconKey) marker.setIcon(icon());
       }
       icons.set(key, iconKey);
-      motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.timestamp), receivedAt, position.kind === "ship"));
+      motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.timestamp), receivedAt, position.kind === "aircraft" ? "aircraft" : position.kind === "ship"));
+      if (position.kind === "aircraft") {
+        const bounded = updateAircraftTrail(aircraftTrails.current.get(key) ?? [],
+          { stamp: Date.parse(position.timestamp), lat: position.latitude, lng: position.longitude }, Date.now());
+        aircraftTrails.current.set(key, bounded);
+        let line = aircraftTrailLayers.current.get(key);
+        if (!line) {
+          line = L.polyline([], { color: style.color, weight: 2, opacity: .45, interactive: false }).addTo(instance);
+          aircraftTrailLayers.current.set(key, line);
+        }
+        line.setLatLngs(bounded.map(p => L.latLng(p.lat, p.lng)));
+      }
       const popup = detailCard(`${style.symbol} ${title}`, predicted ? "Fahrplanprognose · keine GPS-Messung" : "Beobachtete Position", [
         ...(position.kind === "waste" && predicted ? ["Modell aus Abfuhrtagen: Straßenstichprobe, angenommene Reihenfolge und Zeiten (07–17 Uhr). Kein identifiziertes Müllfahrzeug."] : []),
         ...(typeof position.speed_kmh === "number" ? [`${predicted ? "Modellierte Geschwindigkeit" : "Geschwindigkeit"}: ${Math.round(position.speed_kmh)} km/h`] : []),
         ...(position.delay_basis === "next_reported_stop_approximation" ? [`Gemeldete Haltestellenverspätung: ${Math.round((position.delay_seconds ?? 0) / 60)} Min. (auf die Fahrt angenähert)`] : []),
+        ...(position.kind === "aircraft" ? [
+          `ICAO: ${position.icao24 ?? "unbekannt"} · Kennzeichen: ${position.registration ?? "unbekannt"}`,
+          `Typ: ${position.aircraft_type ?? "unbekannt"} · Kurs: ${position.course_deg !== undefined ? `${Math.round(position.course_deg)}°` : "unbekannt"}`,
+          ...(position.altitude_baro_m !== undefined ? [`Druckhöhe: ${Math.round(position.altitude_baro_m)} m (Standarddruck 1013,25 hPa; keine Höhe über Grund)`] : []),
+          ...(position.altitude_geom_m !== undefined ? [`Geometrische Höhe: ${Math.round(position.altitude_geom_m)} m (WGS84; keine Höhe über Grund)`] : []),
+          ...(position.vertical_rate_mps !== undefined ? [`Steigrate: ${position.vertical_rate_mps} m/s (barometrisch)`] : []),
+          `Quelle: adsb.lol · ODbL 1.0 · ${position.reception === "mlat" ? "Position durch Multilateration" : "empfangene Flugposition"}`,
+          "Empfang kann lückenhaft sein; Segelflugzeuge sind nur teilweise erfasst. Flugspur zeigt empfangene Punkte, keine Flugroute.",
+        ] : []),
         ...(position.kind === "ship" ? [
           `MMSI: ${position.mmsi ?? "unbekannt"}`,
           `Kurs: ${position.course_deg !== undefined ? `${position.course_deg}°` : "unbekannt"}`,
@@ -282,6 +312,9 @@ export default function MapComponent(props: MapProps) {
     }
     for (const [key, marker] of vehicleMarkers.current) {
       if (!retained.has(key)) { vehicleGroup.current?.removeLayer(marker); vehicleMarkers.current.delete(key); motions.delete(key); icons.delete(key); }
+    }
+    for (const [key, line] of aircraftTrailLayers.current) {
+      if (!retained.has(key)) { line.remove(); aircraftTrailLayers.current.delete(key); aircraftTrails.current.delete(key); }
     }
     let frame = 0;
     let lastFrame = -Infinity;
@@ -327,6 +360,9 @@ export default function MapComponent(props: MapProps) {
         vehicleMarkers.current.delete(key);
         vehicleMotions.current.delete(key);
         vehicleIcons.current.delete(key);
+        aircraftTrailLayers.current.get(key)?.remove();
+        aircraftTrailLayers.current.delete(key);
+        aircraftTrails.current.delete(key);
       }
     }
   }, [positions, props.now]);
@@ -581,6 +617,9 @@ export default function MapComponent(props: MapProps) {
       <p className="mt-1 text-slate-400">Gestrichelter Rand: Prognose · Durchgehend: beobachtet (Fahrzeuge)</p>
       {(missing.length > 0) && <p>Ohne aktuelle Quelle: {missing.map(id => mapSymbol(id).label).join(", ")}.</p>}
       </details>
+      {layers.aircraft && <p role="status">{aircraftSource?.status === "connected" && aircraftSource.last_contact && Date.parse(aircraftSource.last_contact) + 60000 > props.now
+        ? "Empfangener Flugverkehr · adsb.lol · keine vollständige Erfassung."
+        : "Flugverkehrsdaten derzeit nicht verfügbar; Positionen verfallen nach 60 Sekunden."} <a href="https://www.adsb.lol/" target="_blank" rel="noreferrer">adsb.lol</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">ODbL 1.0</a></p>}
       {layers.ships && <p role="status">{shipSource?.status === "connected" && shipSource.last_contact && Date.parse(shipSource.last_contact) + 120000 > props.now
         ? "AISstream verbunden · Empfang kann lückenhaft sein."
         : "AIS-Empfang derzeit nicht verfügbar; letzte Positionen verfallen nach 10 Minuten."}</p>}
