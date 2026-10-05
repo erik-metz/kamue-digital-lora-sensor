@@ -3,6 +3,7 @@ from endpoints import (
     bikes,
     buses,
     collected,
+    data_exports,
     map_sensors,
     satellite,
     sensors,
@@ -20,6 +21,7 @@ api_router.include_router(satellite.router)
 api_router.include_router(sensors.router, tags=["Sensors Metadata"])
 api_router.include_router(telemetry.router, tags=["Telemetry Data"])
 api_router.include_router(archives.router)
+api_router.include_router(data_exports.router)
 api_router.include_router(map_sensors.router)
 api_router.include_router(waste_trucks.router)
 api_router.include_router(buses.router)

@@ -1,6 +1,6 @@
 type JsonObject = { [key: string]: unknown };
 
-const PUBLIC_TAGS = new Set(["Sensors Public", "Telemetry Public", "Archives Public"]);
+const PUBLIC_TAGS = new Set(["Sensors Public", "Telemetry Public", "Archives Public", "Downloads Public"]);
 export const PUBLIC_API_URL = "https://open-ried-sens.duckdns.org";
 
 function object(value: unknown): JsonObject {

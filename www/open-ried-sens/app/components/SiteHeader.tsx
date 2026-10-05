@@ -44,13 +44,13 @@ interface NavItem {
 export const REGIONALATLAS_NAV_SUBITEMS = [
   {
     href: "/regionalatlas",
-    label: "Übersicht & Hub",
+    label: "Übersicht",
     description: "Zahlen, Fakten & alle Fachbereiche",
     icon: LayoutGrid,
   },
   {
     href: "/termine",
-    label: "Termine & Events",
+    label: "Termine",
     description: "Veranstaltungskalender, Vereine & Feste",
     icon: CalendarDays,
   },
@@ -89,13 +89,13 @@ export const REGIONALATLAS_NAV_SUBITEMS = [
 const MAIN_NAV_ITEMS: NavItem[] = [
   {
     href: "/",
-    label: "Sensor-Karte",
+    label: "Karte",
     shortLabel: "Karte",
     icon: Radio,
   },
   {
     href: "/termine",
-    label: "Termine & Events",
+    label: "Termine",
     shortLabel: "Termine",
     icon: CalendarDays,
   },
@@ -108,14 +108,14 @@ const MAIN_NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/daten",
-    label: "Offene Daten & API",
+    label: "Offene Daten",
     shortLabel: "Offene Daten",
     icon: Database,
   },
   {
     href: "/sensor-bauen",
-    label: "Sensor bauen",
-    shortLabel: "Sensor-Bau",
+    label: "Mitmachen",
+    shortLabel: "Mitmachen",
     icon: Wrench,
     highlight: true,
   },
@@ -124,7 +124,7 @@ const MAIN_NAV_ITEMS: NavItem[] = [
 const SECONDARY_NAV_ITEMS: NavItem[] = [
   {
     href: "/quellen",
-    label: "Datenquellen & Pipeline",
+    label: "Quellen",
     shortLabel: "Quellen",
     icon: FileText,
   },
@@ -142,10 +142,17 @@ export default function SiteHeader({
   totalStations,
 }: SiteHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileAtlasOpen, setMobileAtlasOpen] = useState(true);
+  const [mobileAtlasOpen, setMobileAtlasOpen] = useState(false);
   const [desktopDropdownOpen, setDesktopDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const [navigationPath, setNavigationPath] = useState(pathname);
+
+  if (navigationPath !== pathname) {
+    setNavigationPath(pathname);
+    setMobileOpen(false);
+    setDesktopDropdownOpen(false);
+  }
 
   const isRegionalatlasActive =
     pathname === "/regionalatlas" ||
@@ -154,12 +161,6 @@ export default function SiteHeader({
     pathname?.startsWith("/haushalt") ||
     pathname?.startsWith("/wirtschaft") ||
     pathname?.startsWith("/statistik");
-
-  // Close mobile drawer & desktop dropdown on route change
-  useEffect(() => {
-    setMobileOpen(false);
-    setDesktopDropdownOpen(false);
-  }, [pathname]);
 
   // Handle click outside desktop dropdown
   useEffect(() => {
@@ -266,10 +267,10 @@ export default function SiteHeader({
 
                     {/* Flyout Dropdown Menu */}
                     {desktopDropdownOpen && (
-                      <div className="absolute top-full left-0 mt-1 w-72 rounded-2xl bg-slate-900/95 border border-slate-800 p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150">
+                      <div className="absolute top-full left-0 mt-1 w-64 rounded-2xl bg-slate-900/95 border border-slate-800 p-2 shadow-2xl backdrop-blur-xl z-50 animate-in fade-in-0 zoom-in-95 duration-150">
                         <div className="px-2.5 py-1.5 border-b border-slate-800/80 mb-1">
                           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                            Regionalatlas Fachbereiche
+                            Themen im Regionalatlas
                           </span>
                         </div>
                         <div className="space-y-0.5">
@@ -303,9 +304,6 @@ export default function SiteHeader({
                                 <div className="space-y-0.5">
                                   <div className="font-semibold text-xs leading-none">
                                     {sub.label}
-                                  </div>
-                                  <div className="text-[11px] text-slate-400 group-hover:text-slate-300 leading-tight">
-                                    {sub.description}
                                   </div>
                                 </div>
                               </Link>
@@ -455,7 +453,21 @@ export default function SiteHeader({
                     pathname === "/" ? "text-emerald-400" : "text-slate-400"
                   )}
                 />
-                <span>Sensor-Karte</span>
+                <span>Karte</span>
+              </Link>
+
+              <Link
+                href="/termine"
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                  pathname?.startsWith("/termine")
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-semibold"
+                    : "text-slate-300 hover:bg-slate-800/70 hover:text-emerald-300"
+                )}
+              >
+                <CalendarDays className="w-4 h-4 shrink-0" />
+                <span>Termine</span>
               </Link>
 
               {/* Regionalatlas with expandable sub-links */}
@@ -478,6 +490,7 @@ export default function SiteHeader({
                     type="button"
                     onClick={() => setMobileAtlasOpen((prev) => !prev)}
                     aria-label="Regionalatlas Untermenü ein-/ausklappen"
+                    aria-expanded={mobileAtlasOpen}
                     className="p-1 text-slate-400 hover:text-slate-200"
                   >
                     <ChevronDown
@@ -543,7 +556,7 @@ export default function SiteHeader({
                       : "text-slate-400"
                   )}
                 />
-                <span>Offene Daten &amp; API</span>
+                <span>Offene Daten</span>
               </Link>
 
               {/* Sensor bauen */}
@@ -565,7 +578,7 @@ export default function SiteHeader({
                       : "text-emerald-500"
                   )}
                 />
-                <span>Sensor bauen</span>
+                <span>Mitmachen</span>
               </Link>
             </nav>
           </div>

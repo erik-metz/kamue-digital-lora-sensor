@@ -488,6 +488,10 @@ async def get_emf_sites(pool: DbPool):
     provider_counts: dict[str, int] = {}
 
     for r in rows:
+        if isinstance(r, dict):
+            r = tuple(r[key] for key in (
+                "id", "name", "metadata", "latitude", "longitude", "max_height_m", "max_sa_h_m", "antenna_count"
+            ))
         meta = r[2] if isinstance(r[2], dict) else json.loads(r[2] or "{}")
         provs = meta.get("providers", [])
         for p in provs:

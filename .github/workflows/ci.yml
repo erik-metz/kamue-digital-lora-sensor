@@ -378,3 +378,11 @@ jobs:
           file: ./www/vps/registry-sync-worker/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-registry-sync-worker:latest
+
+      - name: Build and push EMF collector image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps/emf-collector
+          file: ./www/vps/emf-collector/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-emf-collector:latest

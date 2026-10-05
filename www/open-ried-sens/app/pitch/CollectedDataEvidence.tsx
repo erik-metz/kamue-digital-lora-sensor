@@ -1,83 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { previewCollectedData, evidenceExpired, type EvidencePreview } from "@/lib/pitchEvidence";
+import { useEffect, useRef, useState } from "react";
+import type { PitchWindowResult } from "@/lib/pitchWindow";
 
-const datasets = [
-  { path: "environment/flood/gauges", label: "Pegelstände" },
-  { path: "infrastructure/ev-charging", label: "Ladeinfrastruktur" },
-] as const;
+const metricNames: Record<string, string> = { temperature: "Temperatur", humidity: "Luftfeuchte", relative_humidity: "Luftfeuchte", water_level: "Wasserstand", river_level: "Pegel", river_water_level: "Pegel", PM25: "Feinstaub PM2.5", pm25: "Feinstaub PM2.5", PM10: "Feinstaub PM10", pm10: "Feinstaub PM10", pgv: "Bodenbewegung" };
+function time(value: string) { return new Date(value).toLocaleTimeString("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit", second: "2-digit" }); }
 
-type Evidence = {
-  label: string;
-  path: string;
-  status: "available" | "empty" | "unavailable";
-  preview?: EvidencePreview;
-  source?: string | null;
-  updated?: string | null;
-  collected?: string | null;
-};
-
-function formatTime(value?: string | null) {
-  if (!value || !Number.isFinite(Date.parse(value))) return "Nicht mitgeliefert";
-  return new Date(value).toLocaleString("de-DE", { timeZone: "Europe/Berlin" });
-}
-
-export default function CollectedDataEvidence() {
+export default function CollectedDataEvidence({ startedAt }: { startedAt: number }) {
+  const [data, setData] = useState<PitchWindowResult | null>(null);
+  const [error, setError] = useState(false);
+  const selected = useRef<string[] | null>(null);
   const [revision, setRevision] = useState(0);
-  const [results, setResults] = useState<Evidence[] | null>(null);
-  const [checkedAt, setCheckedAt] = useState<string | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    let disposed = false;
+    let timer: ReturnType<typeof setTimeout>;
     async function load() {
-      const next = await Promise.all(datasets.map(async (dataset): Promise<Evidence> => {
-        const base = { label: dataset.label, path: dataset.path };
-        try {
-          const response = await fetch(`/api/collected/${dataset.path}`, { signal: controller.signal, cache: "no-store" });
-          if (!response.ok || evidenceExpired(response.headers.get("x-data-expires-at"))) throw new Error("Unavailable");
-          const preview = previewCollectedData(await response.json());
-          return { ...base, status: preview ? "available" : "empty", preview: preview ?? undefined,
-            source: response.headers.get("x-data-source"), updated: response.headers.get("x-source-updated-at"), collected: response.headers.get("x-collected-at") };
-        } catch {
-          return { ...base, status: "unavailable" };
+      try {
+        const params = new URLSearchParams({ start: new Date(startedAt).toISOString() });
+        if (selected.current) params.set("stations", selected.current.join(","));
+        const response = await fetch(`/api/pitch-window?${params}`, { cache: "no-store", signal: controller.signal });
+        if (!response.ok) throw new Error("Unavailable");
+        const next: PitchWindowResult = await response.json();
+        if (!controller.signal.aborted) {
+          selected.current = next.stations.map((station) => station.id);
+          setData(next); setError(false);
         }
-      }));
-      clearTimeout(timeout);
-      if (!disposed) { setResults(next); setCheckedAt(new Date().toISOString()); }
+      } catch {
+        if (!controller.signal.aborted) { setData(null); setError(true); }
+      }
+      if (!controller.signal.aborted) timer = setTimeout(load, 30000);
     }
     void load();
-    return () => { disposed = true; controller.abort(); clearTimeout(timeout); };
-  }, [revision]);
-
-  function refresh() { setResults(null); setCheckedAt(null); setRevision((value) => value + 1); }
-
-  return <section className="space-y-5" aria-label="Prüfung gesammelter Quelldaten">
-    <div className="flex flex-wrap justify-between gap-3 items-center">
-      <p className="text-base text-slate-400">{checkedAt ? `Abfrage: ${formatTime(checkedAt)}` : "Datensätze werden abgefragt …"}</p>
-      <div className="flex items-center gap-4">
-        <Link href="/quellen" className="text-base text-emerald-400 underline">Alle Datenquellen</Link>
-        <button type="button" onClick={refresh} disabled={!results} className="rounded-lg border border-slate-600 px-4 py-2 text-base text-slate-100 disabled:opacity-50">Erneut prüfen</button>
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [startedAt, revision]);
+  const elapsed = data ? Math.max(0, Math.floor((Date.parse(data.checkedAt) - startedAt) / 1000)) : null;
+  const partial = data?.stations.some((station) => station.unavailable || station.truncated);
+  const successful = data?.stations.filter((station) => !station.unavailable).length ?? 0;
+  const retry = <button type="button" onClick={() => setRevision((value) => value + 1)} className="shrink-0 rounded-lg border border-slate-600 px-3 py-2 text-sm">Erneut abfragen</button>;
+  return <section className="space-y-3" aria-label="Echte Rohdaten seit Vortragsbeginn" aria-live="polite">
+    {!data ? <p className="py-8 text-xl text-slate-300">{error ? "Die Rohdaten sind momentan nicht abrufbar. Es wird keine Zahl geschätzt." : "Echte Rohdaten seit Vortragsbeginn werden abgefragt …"}</p> : <>
+      <div className="flex flex-wrap items-baseline gap-x-8 gap-y-2">
+        <p className="text-6xl md:text-7xl font-bold text-emerald-400">{partial ? "≥ " : ""}{data.count.toLocaleString("de-DE")}</p>
+        <div><p className="text-2xl font-semibold">Rohmesswerte während dieses Vortrags</p><p className="mt-1 text-base text-slate-400">{Math.floor((elapsed ?? 0) / 60)} Min. {(elapsed ?? 0) % 60} Sek. · {successful} von {data.stations.length} ausgewählten Stationen abgefragt</p></div>
       </div>
-    </div>
-    <div aria-live="polite" className="space-y-4">
-      {results?.map((result) => <article key={result.path} className="border-t border-slate-700 pt-4">
-        <div className="flex flex-wrap justify-between gap-3">
-          <h3 className="text-xl font-semibold text-slate-100">{result.label}</h3>
-          <p className={`text-lg ${result.status === "available" ? "text-emerald-400" : "text-amber-300"}`}>
-            {result.status === "available" ? "Gespeicherte Quelldaten abrufbar" : result.status === "empty" ? "Keine auswertbaren Einträge" : "Aktuell nicht abrufbar"}
-          </p>
-        </div>
-        {result.status === "available" && <>
-          <p className="mt-2 text-base text-slate-400">Quelle: {result.source || "Nicht mitgeliefert"} · Quellenstand: {formatTime(result.updated)} · Gesammelt: {formatTime(result.collected)}</p>
-          <dl className="mt-3 grid gap-3 sm:grid-cols-3">
-            {result.preview?.fields.map((field) => <div key={field.name} className="min-w-0"><dt title={field.name} className="text-sm text-slate-400 truncate">{field.name}</dt><dd title={field.value} className="text-lg text-slate-100 break-words line-clamp-2">{field.value}</dd></div>)}
-          </dl>
-        </>}
-      </article>)}
-    </div>
-    <p className="text-base text-slate-300">Gespeicherte Quelldaten. Quellenstand und Messzeit können voneinander abweichen.</p>
+      <p className="text-base text-slate-400">Messzeit zwischen {time(data.startedAt)} und {time(data.checkedAt)}. Automatische Aktualisierung alle 30 Sekunden.</p>
+      {partial && <p className="text-base text-amber-300">Teilansicht: Eine Station ist nicht erreichbar oder das Abfragelimit ist erreicht. Die Zahl ist eine Untergrenze.</p>}
+      {data.count === 0 ? <p className="text-lg text-slate-300">In diesem Zeitraum liegen für diese Stationen noch keine neuen Messwerte vor. Die Messintervalle unterscheiden sich je Quelle.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-base">
+        <thead className="text-sm text-slate-400"><tr><th className="py-2 font-normal">Station</th><th className="py-2 font-normal">Messgröße</th><th className="py-2 font-normal">Rohwert</th><th className="py-2 font-normal">Messzeit</th></tr></thead>
+        <tbody>{data.samples.map((row) => <tr key={JSON.stringify([row.sensor_id, row.metric, row.unit, row.timestamp])} className="border-t border-slate-800">
+          <td className="py-2 pr-4 max-w-[320px] truncate" title={row.station}>{row.station}</td><td className="py-2 pr-4">{metricNames[row.metric ?? ""] ?? row.metric ?? "Messwert"}</td><td className="py-2 pr-4 font-semibold">{row.value.toLocaleString("de-DE", { maximumFractionDigits: 6 })} {row.unit}</td><td className="py-2">{time(row.timestamp)}</td>
+        </tr>)}</tbody>
+      </table></div>}
+      <div className="flex flex-wrap items-center justify-between gap-3"><p className="max-w-4xl text-sm text-slate-400">Beispiel aus bis zu acht Stationen, keine Hochrechnung auf das gesamte Netz. Die Messzeit belegt den Zeitraum, nicht den Zeitpunkt des Datenimports.</p>{retry}</div>
+    </>}
+    {!data && retry}
   </section>;
 }

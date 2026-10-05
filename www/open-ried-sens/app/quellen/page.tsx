@@ -1,3 +1,5 @@
+import Link from "next/link";
+import RegionalCatalog from "./RegionalCatalog";
 import { proxyBackend } from "@/lib/collectedBackend";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -81,15 +83,12 @@ export default async function SourcesPage() {
             Datenquellen &amp; Erfassungsstatus
           </h1>
           <p className="text-slate-300 text-base sm:text-lg max-w-3xl leading-relaxed">
-            Die Erfassungsdienste laden Quelldaten in die Datenbank. Die Website liest gespeicherte Veröffentlichungen
-            über das Backend. Fehlende oder abgelaufene Daten werden als nicht verfügbar angezeigt.
+            Woher stammen die Daten im Ried? Hier findest du die regionalen Kataloge, Originalquellen und ihren letzten erfolgreichen Abruf.
           </p>
-          <p className="text-slate-400 text-sm max-w-3xl leading-relaxed">
-            Bewegungsprognosen werden gemeinsam für alle Besucher berechnet und gespeichert. Ihre Kennzeichnung
-            unterscheidet Fahrplanprognosen von gemeldeten Positionen. Statistische Veröffentlichungen behalten ihren
-            ursprünglichen Berichtszeitraum.
-          </p>
+          <Link href="/daten" className="inline-block text-sm text-emerald-300 hover:underline">Zu Downloads &amp; API →</Link>
         </div>
+
+        <RegionalCatalog />
 
         {/* Error State if Backend Status Unavailable */}
         {!sources ? (
@@ -113,10 +112,11 @@ export default async function SourcesPage() {
             <QuellenClient sources={sources} sensorCount={sensorCount} />
 
             {/* Technical Tabular Audit View */}
-            <section className="space-y-4 pt-6">
+            <details className="space-y-4 rounded-2xl border border-slate-800 p-5">
+              <summary className="cursor-pointer font-semibold text-slate-300">Technische Details zu den Abrufen</summary>
               <div className="space-y-1">
                 <h3 className="text-lg font-bold text-slate-200">
-                  Vollständige technische Übersicht (Tabellarischer Systemaudit)
+                  Abrufintervalle &amp; Zeitstempel
                 </h3>
                 <p className="text-xs text-slate-400">
                   Direkte Einsicht in Zeitstempel, Prüfintervalle und Fehlermeldungen für Systemadministratoren und Entwickler.
@@ -193,7 +193,7 @@ export default async function SourcesPage() {
                   </tbody>
                 </table>
               </div>
-            </section>
+            </details>
           </>
         )}
 

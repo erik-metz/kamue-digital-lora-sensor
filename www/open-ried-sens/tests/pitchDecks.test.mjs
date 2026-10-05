@@ -50,19 +50,7 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
     "Raspberryshaker must reference seismograph / vibrations in its title"
   );
 
-  // Check that speaker notes structure is present
-  assert.ok(
-    pitchDataSource.includes("speakerNotes"),
-    "pitchData.ts must include speaker notes"
-  );
-  assert.ok(
-    pitchDataSource.includes("elevatorPitch"),
-    "speaker notes must include elevatorPitch"
-  );
-  assert.ok(
-    pitchDataSource.includes("talkingPoints"),
-    "speaker notes must include talkingPoints"
-  );
+  assert.ok(!pitchDataSource.includes("speakerNotes"), "Speaker notes have been removed");
 });
 
 test("Core Team members (Rüdiger Engert, Michael Binzen, Erik Metz) are featured with photos", () => {
@@ -92,7 +80,7 @@ test("Core Team members (Rüdiger Engert, Michael Binzen, Erik Metz) are feature
     "Must feature Erik Metz MIT Digital Fellow background"
   );
   assert.ok(
-    pitchDataSource.includes("Wir leben im Ried"),
+    pitchDataSource.includes("Menschen aus der Region"),
     "Must emphasize living in the Ried"
   );
 
@@ -162,15 +150,16 @@ test("Pitch visual photo and diagram assets physically exist in public/pitch", (
   }
 });
 
-test("All decks tell the origin story, include collected data, and end with an ask", async () => {
+test("All decks tell the origin story, include collected data, and end with a raw-data bonus", async () => {
   const { PITCH_DECKS } = await import("../lib/pitchData.ts");
   for (const deck of PITCH_DECKS) {
     assert.deepEqual(deck.slides.slice(0, 4).map(slide => slide.id), ["team", "hackathon", "origin", "collected"].map(id => `${deck.slug}-${id}`));
-    assert.equal(deck.slides.at(-1).layout, "the-ask-commitment");
+    assert.equal(deck.slides.at(-2).layout, "the-ask-commitment");
+    assert.equal(deck.slides.at(-1).layout, "collected-evidence");
     assert.equal(deck.slides.filter(slide => slide.layout === "collected-evidence").length, 1);
     assert.equal(new Set(deck.slides.map(slide => slide.id)).size, deck.slides.length);
     assert.deepEqual(deck.slides.map(slide => slide.stepNumber), deck.slides.map((_, index) => index + 1));
-    assert.ok(deck.slides.every(slide => slide.speakerNotes.elevatorPitch));
+    assert.ok(deck.slides.every(slide => !("speakerNotes" in slide)));
     assert.doesNotMatch(JSON.stringify(deck), /0 € Kommunalkosten|Absolut ungefährlich|2,4 Millionen|garantiertes Erfolgserlebnis/);
   }
 });
@@ -183,20 +172,31 @@ test("Political asks prioritize raw data and conditionally usable infrastructure
   assert.match(asks[3].description, /Hauptpreises/);
 });
 
-test("Collected evidence rejects empty and error payloads and preserves actual values", async () => {
-  const { previewCollectedData, evidenceExpired } = await import("../lib/pitchEvidence.ts");
-  for (const payload of [null, [], {}, {error: "offline"}, {items: []}, "not JSON data"]) assert.equal(previewCollectedData(payload), null);
-  const preview = previewCollectedData([{station: "Teststation", value: 0, unit: "cm"}]);
-  assert.equal(preview.entries, 1);
-  assert.deepEqual(preview.fields.map(field => field.value), ["Teststation", "0", "cm"]);
-  assert.equal(evidenceExpired("2026-10-05T12:00:00Z", Date.parse("2026-10-05T12:00:00Z")), true);
-  const gauge = previewCollectedData([{name: "WORMS", current_level_m: -0.24, updated_at: "2026-10-05T07:30:00Z"}]);
-  assert.deepEqual(gauge.fields.map(field => field.value), ["WORMS", "-0.24", "2026-10-05T07:30:00Z"]);
-  const inventory = previewCollectedData({stations: [{operator: "Betreiber", address: "Straße 1", municipality: "Bürstadt", availablePoints: null}]});
-  assert.deepEqual(inventory.fields.map(field => field.value), ["Betreiber", "Straße 1", "Bürstadt"]);
-  assert.equal(evidenceExpired("invalid"), true);
-  assert.equal(evidenceExpired(null), false);
-  assert.equal(evidenceExpired("2026-10-05T12:01:00Z", Date.parse("2026-10-05T12:00:00Z")), false);
+test("Bonus counts only actual raw rows inside the presentation window", async () => {
+  const { rawReadingsInWindow, presentationStart } = await import("../lib/pitchWindow.ts");
+  const start = Date.parse("2026-10-05T08:00:00Z"), end = start + 600000;
+  const row = {sensor_id: "test", metric: "temperature", value: 0, unit: "°C", timestamp: "2026-10-05T08:05:00Z"};
+  assert.deepEqual(rawReadingsInWindow([row, row, {...row, timestamp: "2026-10-05T07:59:00Z"}, {...row, timestamp: "2026-10-05T08:11:00Z"}], "test", start, end), [row]);
+  assert.deepEqual(rawReadingsInWindow([], "test", start, end), []);
+  assert.throws(() => rawReadingsInWindow({error: "offline"}, "test", start, end));
+  assert.throws(() => rawReadingsInWindow([{...row, sensor_id: "wrong"}], "test", start, end));
+  assert.equal(presentationStart("2026-10-05T08:00:00Z", end), start);
+  assert.equal(presentationStart("2026-10-05T08:11:00Z", end), null);
+  assert.equal(presentationStart("2026-10-04T08:00:00Z", end), null);
+});
+
+test("The political ask stays together and handouts belong to the hub", async () => {
+  const { POLITIK_DECK } = await import("../lib/pitchData.ts");
+  assert.equal(POLITIK_DECK.slides.length, 8);
+  assert.equal(POLITIK_DECK.slides.filter(slide => slide.specificAsks).length, 1);
+  assert.match(POLITIK_DECK.slides[6].specificAsks[0].description, /Smart-City-Dashboard/);
+  assert.ok(POLITIK_DECK.slides[2].website.src.endsWith("dashboard_uebersicht"));
+  assert.ok(POLITIK_DECK.slides[3].website.src.endsWith("#ried-map"));
+  const client = fs.readFileSync(path.join(__dirname, "../app/pitch/[slug]/PitchDeckClient.tsx"), "utf8");
+  assert.doesNotMatch(client, /speakerNotes|Tonspur|HandoutModal|aria-pressed|agreedAsks/);
+  const hub = fs.readFileSync(path.join(__dirname, "../app/pitch/PitchHubClient.tsx"), "utf8");
+  assert.match(hub, /HandoutModal/);
+  assert.match(hub, /setHandoutDeck\(deck\)/);
 });
 
 test("HandoutModal component exists and provides Ink-Saver white print mode", () => {

@@ -6,6 +6,7 @@ import math
 from datetime import UTC, datetime
 
 from dependencies import get_db_pool
+from endpoints.infrastructure import get_emf_sites
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.encoders import jsonable_encoder
 from measurement_reads import core_reads, read_sql
@@ -84,6 +85,8 @@ def cached_response(data, request, seconds, headers=None):
 async def dataset_publication(
     dataset: str, request: Request, pool=Depends(get_db_pool)
 ):
+    if dataset == "infrastructure/emf":
+        return cached_response(await get_emf_sites(pool), request, 300)
     municipality = None
     parts = dataset.split("/")
     if len(parts) == 3 and parts[0] == "demographics" and parts[2] == "commuters":
@@ -285,6 +288,7 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         "traffic",
         "stops",
         "lora",
+        "emf",
     }
     async with pool.connection() as conn:
         cursor = await conn.execute(
@@ -326,8 +330,21 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         for r in rows
         if r["dataset"].startswith("map/layers/")
     }
+    emf = await get_emf_sites(pool)
+    emf_features = [
+        {"type": "Feature", "geometry": {"type": "Point", "coordinates": [site.longitude, site.latitude]},
+         "properties": site.model_dump()}
+        for site in emf.sites
+        if site.latitude is not None and site.longitude is not None
+        and math.isfinite(site.latitude) and math.isfinite(site.longitude)
+    ]
+    if emf_features:
+        layers["emf"] = {"type": "FeatureCollection", "features": emf_features}
     gateway_features = []
     for gateway in gateways:
+        # Only a confirmed online status represents active infrastructure.
+        if gateway["online_status"] != 1:
+            continue
         lat, lon = gateway["latitude"], gateway["longitude"]
         if lat is None or lon is None:
             continue
@@ -335,16 +352,17 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
             continue
         metadata = gateway["metadata"] or {}
-        status = gateway["online_status"]
         gateway_features.append({
             "type": "Feature",
             "geometry": {"type": "Point", "coordinates": [lon, lat]},
             "properties": {
                 **metadata, "id": gateway["id"], "name": gateway["name"],
                 "kind": "lora_gateway",
-                "online_status": "Unbekannt" if status is None else "Online" if status == 1 else "Offline",
+                "online_status": "Online",
             },
         })
+    # Do not fall back to a historical map dataset when no gateways are online.
+    layers.pop("lora", None)
     if gateway_features:
         layers["lora"] = {"type": "FeatureCollection", "features": gateway_features}
     incident_features = []

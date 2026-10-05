@@ -89,6 +89,7 @@ export default function HandoutModal({ deck, onClose }: HandoutModalProps) {
           {/* Close Button */}
           <button
             onClick={onClose}
+            aria-label="Handout schließen"
             className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-slate-100 transition-colors"
           >
             <X className="w-4 h-4" />

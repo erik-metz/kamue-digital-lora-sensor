@@ -38,8 +38,8 @@ function CategoryIcon({ category }: { category: Category }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0" aria-hidden="true"><path d={CATEGORIES[category].path} /></svg>;
 }
 
-type Props = { nodes: StationNode[]; loadFailed?: boolean; readingsAvailable?: boolean };
-export default function DashboardClient({ nodes: initialNodes, loadFailed = false, readingsAvailable = true }: Props) {
+type Props = { nodes: StationNode[]; loadFailed?: boolean; readingsAvailable?: boolean; showIntro?: boolean };
+export default function DashboardClient({ nodes: initialNodes, loadFailed = false, readingsAvailable = true, showIntro = true }: Props) {
   const [data, setData] = useState({ nodes: initialNodes, readingsAvailable });
   const [updateFailed, setUpdateFailed] = useState(loadFailed);
   const [now, setNow] = useState(() => Date.now());
@@ -186,13 +186,13 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
   };
 
   return <>
-    <div className="border-b border-slate-800 pb-4">
+    {showIntro && <div className="border-b border-slate-800 pb-4">
       <div className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-1"><Zap className="size-4" /> Regional-Dashboard</div>
       <h2 className="text-2xl sm:text-3xl font-bold">Interaktive Karte &amp; Messdaten aus dem Hessischen Ried</h2>
       <p className="mt-2 text-sm text-slate-400">Entdecke die Region nach Themen: Filtere Sensorstationen, aktiviere Kartenebenen für ÖPNV-Busse, Straßensperrungen, Bahnübergänge, ZAKB-Touren oder Unternehmen und teile individuelle Ansichten per Link.</p>
-    </div>
+    </div>}
     {updateFailed ? <p role="alert" className="rounded-xl border border-amber-700/50 bg-amber-950/20 p-3 text-sm text-amber-200">Die Kartendaten konnten nicht aktualisiert werden. {nodes.length ? "Zuletzt geladene Standorte bleiben sichtbar." : "Bitte versuche es später erneut."}</p> : null}
-    {!data.readingsAvailable ? <p role="status" className="text-sm text-amber-200">Standorte verfügbar. Für Messwerte und Messwertfarben muss die neue Backend-Version bereitgestellt werden.</p> : null}
+    {!data.readingsAvailable ? <p role="status" className="text-sm text-amber-200">Messwerte sind derzeit nicht verfügbar. Du kannst die Standorte auf der Karte erkunden.</p> : null}
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -250,6 +250,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         zoom={viewport.z}
       />
 
+      <div id="ried-map">
       <MapComponent
         nodes={mapNodes}
         categories={categories}
@@ -273,6 +274,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         }}
         onActiveClosuresCountChange={setActiveClosuresCount}
       />
+      </div>
       {filtered.length > mapNodes.length && <p className="text-xs text-slate-400">{filtered.length - mapNodes.length} Stationen außerhalb des Ried-Kartenbereichs oder ohne Position sind unter „Messwerte & Zeitverlauf“ auswählbar.</p>}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400" aria-label="Kartenlegende">
         {satelliteMode === "ndvi" && (
@@ -320,4 +322,3 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
     )}
   </>;
 }
-

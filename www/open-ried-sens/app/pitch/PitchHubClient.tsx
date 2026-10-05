@@ -16,15 +16,17 @@ import {
   ArrowRight,
   Info,
   Clock,
-  Mic,
+  FileText,
   MonitorPlay,
 } from "lucide-react";
-import { PITCH_DECKS, MAP_EVIDENCE_ITEMS } from "@/lib/pitchData";
+import { PITCH_DECKS, MAP_EVIDENCE_ITEMS, type PitchDeck } from "@/lib/pitchData";
+import HandoutModal from "./HandoutModal";
 import MapEvidenceViewer from "./MapEvidenceViewer";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 
 export default function PitchHubClient() {
+  const [handoutDeck, setHandoutDeck] = useState<PitchDeck | null>(null);
   const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
 
   function handleCopy(slug: string) {
@@ -103,11 +105,11 @@ export default function PitchHubClient() {
 
           <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-sky-400">
-              <Mic className="w-4 h-4" />
-              <span>Tonspur für Referenten</span>
+              <FileText className="w-4 h-4" />
+              <span>Handouts je Zielgruppe</span>
             </div>
             <p className="text-xs text-slate-300">
-              Zuschaltbarer Spickzettel [N] mit Elevator Pitch, Kernargumenten, Gesprächsimpulsen und lokalem Ried-Bezug auf jeder Folie.
+              Das druckbare One-Pager-Handout öffnest du direkt bei der jeweiligen Präsentation auf dieser Übersicht.
             </p>
           </div>
 
@@ -117,7 +119,7 @@ export default function PitchHubClient() {
               <span>Daten und Quellen</span>
             </div>
             <p className="text-xs text-slate-300">
-              Die Quellenprüfung zeigt tatsächlich verfügbare Datensätze und ihren Stand. Fehlende Daten bleiben als solche erkennbar.
+              Die Bonusfolie zeigt echte Rohmesswerte seit Vortragsbeginn. Fehlende Daten bleiben als solche erkennbar.
             </p>
           </div>
         </div>
@@ -201,6 +203,7 @@ export default function PitchHubClient() {
                     </button>
                   </div>
 
+                  <button type="button" onClick={() => setHandoutDeck(deck)} className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 py-2.5 text-sm text-slate-200" aria-label={`One-Pager-Handout: ${deck.badge}`}><FileText className="h-4 w-4" />One-Pager-Handout</button>
                   <div className="flex items-center justify-between text-[11px] text-slate-400 px-1 pt-1">
                     <span className="font-mono text-slate-400">/pitch/{deck.slug}</span>
                     <Link
@@ -243,13 +246,12 @@ export default function PitchHubClient() {
               <strong className="text-slate-100 block text-sm font-semibold">1. Beamer & Shortcuts nutzen</strong>
               <p className="leading-relaxed">
                 Drücke <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-[11px] text-slate-200">F</kbd> für Vollbildmodus. 
-                Mit <kbd className="bg-slate-800 px-1.5 py-0.5 rounded text-[11px] text-slate-200">N</kbd> schaltest du die Tonspur-Notizen diskret ein oder aus. 
                 Navigation klappt mit den Pfeiltasten oder der Leertaste.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
-              <strong className="text-slate-100 block text-sm font-semibold">2. Tonspur steht im Mittelpunkt</strong>
+              <strong className="text-slate-100 block text-sm font-semibold">2. Frei erzählen</strong>
               <p className="leading-relaxed">
                 Lies niemals die Folien ab! Die Slides liefern visuelle Anker (Zahlen, Karten, Stichworte). Deine Stimme und Begeisterung für das Projekt tragen den Vortrag.
               </p>
@@ -273,6 +275,7 @@ export default function PitchHubClient() {
       </main>
 
       <SiteFooter />
+      {handoutDeck && <HandoutModal deck={handoutDeck} onClose={() => setHandoutDeck(null)} />}
     </div>
   );
 }

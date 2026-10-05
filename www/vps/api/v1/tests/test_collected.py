@@ -1,7 +1,7 @@
 import json
 import unittest
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from endpoints.collected import dataset_publication, movements
 from fastapi import HTTPException
@@ -21,6 +21,28 @@ def pool_for(row=None,rows=None):
 
 
 class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
+    async def asyncSetUp(self):
+        from endpoints.infrastructure import EmfSitesSummary
+        self.emf_mock = patch("endpoints.collected.get_emf_sites", new_callable=AsyncMock)
+        self.emf = self.emf_mock.start()
+        self.emf.return_value = EmfSitesSummary(total_sites=0, providers={}, sites=[])
+        self.addCleanup(self.emf_mock.stop)
+
+    async def test_emf_sites_reach_map_and_infrastructure(self):
+        from endpoints.collected import map_layers
+        from endpoints.infrastructure import EmfSitesSummary, EmfSiteResponse
+        self.emf.return_value = EmfSitesSummary(total_sites=1, providers={}, sites=[
+            EmfSiteResponse(id="bnetza:emf:123", name="Funkanlage", fid=123,
+                            latitude=49.65, longitude=8.45, antenna_count=3)])
+        pool, _ = pool_for(rows=[])
+        body = json.loads((await map_layers(request(), pool)).body)
+        feature = body["layers"]["emf"]["features"][0]
+        self.assertEqual(feature["geometry"]["coordinates"], [8.45, 49.65])
+        self.assertEqual(feature["properties"]["antenna_count"], 3)
+        self.assertNotIn("emf", body["unavailable"])
+        summary = json.loads((await dataset_publication("infrastructure/emf", request(), pool)).body)
+        self.assertEqual(summary["total_sites"], 1)
+
     async def test_missing_and_expired_publications_are_unavailable(self):
         now=datetime.now(UTC)
         for row in [None,{'expires_at':now-timedelta(seconds=1),'source_updated_at':now-timedelta(days=1)}]:
@@ -79,14 +101,38 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
         gateways.fetchall = AsyncMock(return_value=[
             {'id': 'lora:gateway:lorsch', 'name': 'Gateway Lorsch',
              'metadata': {'gateway_id': 'lorsch', 'antenna_placement': 'OUTDOOR'},
+             'latitude': 49.653, 'longitude': 8.568, 'online_status': 1},
+            {'id': 'lora:gateway:offline', 'name': 'Offline', 'metadata': {},
              'latitude': 49.653, 'longitude': 8.568, 'online_status': 0},
+            {'id': 'lora:gateway:unknown', 'name': 'Unknown', 'metadata': {},
+             'latitude': 49.653, 'longitude': 8.568, 'online_status': None},
             {'id': 'lora:gateway:invalid', 'name': 'Invalid', 'metadata': {},
-             'latitude': float('nan'), 'longitude': 8.568, 'online_status': None},
+             'latitude': float('nan'), 'longitude': 8.568, 'online_status': 1},
         ])
         conn.execute.side_effect = [publications, gateways, traffic, closures]
         body = json.loads((await map_layers(request(), pool)).body)
         features = body['layers']['lora']['features']
         self.assertEqual(len(features), 1)
         self.assertEqual(features[0]['geometry']['coordinates'], [8.568, 49.653])
-        self.assertEqual(features[0]['properties']['online_status'], 'Offline')
+        self.assertEqual(features[0]['properties']['online_status'], 'Online')
         self.assertNotIn('lora', body['unavailable'])
+
+    async def test_no_online_gateways_does_not_restore_historical_dataset(self):
+        from endpoints.collected import map_layers
+        pool, conn = pool_for()
+        publications, gateways, traffic, closures = [MagicMock() for _ in range(4)]
+        publications.fetchall = AsyncMock(return_value=[{
+            'dataset': 'map/layers/lora',
+            'expires_at': datetime.now(UTC) + timedelta(hours=1),
+            'data': {'type': 'FeatureCollection', 'features': [{'id': 'historical'}]},
+        }])
+        gateways.fetchall = AsyncMock(return_value=[{
+            'id': 'lora:gateway:offline', 'name': 'Offline', 'metadata': {},
+            'latitude': 49.653, 'longitude': 8.568, 'online_status': 0,
+        }])
+        for cursor in [traffic, closures]:
+            cursor.fetchall = AsyncMock(return_value=[])
+        conn.execute.side_effect = [publications, gateways, traffic, closures]
+        body = json.loads((await map_layers(request(), pool)).body)
+        self.assertNotIn('lora', body['layers'])
+        self.assertIn('lora', body['unavailable'])

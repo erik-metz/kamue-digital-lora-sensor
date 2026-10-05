@@ -93,6 +93,7 @@ export interface SpecificAskItem {
 
 export type SlideLayout =
   | "story"
+  | "website"
   | "one-pager-hero"
   | "blindspot-evidence"
   | "value-prop-split"
@@ -118,6 +119,7 @@ export interface PitchSlide {
   title: string;
   lead: string;
   layout: SlideLayout;
+  website?: { src: string; title: string };
   imageVisual?: {
     src: string;
     alt: string;
@@ -135,12 +137,6 @@ export interface PitchSlide {
   competitivePoints?: CompetitiveMatrixPoint[];
   stemSkills?: StemSkillItem[];
   specificAsks?: SpecificAskItem[];
-  speakerNotes: {
-    elevatorPitch: string;
-    talkingPoints: string[];
-    audienceEngagement: string;
-    localHook?: string;
-  };
   callToAction?: {
     primaryText: string;
     primaryHref: string;
@@ -206,8 +202,8 @@ export const POLITIK_DECK: PitchDeck = {
   "category": "politik",
   "badge": "Politik",
   "accentColor": "emerald",
-  "estimatedMinutes": 12,
-  "summary": "Rohdatenzugang zuerst, geeignete Funkinfrastruktur als zweiter Schritt. Weitere Kontakte und Hackathon-Unterstützung ergänzen die Kooperation.",
+  "estimatedMinutes": 10,
+  "summary": "Rohdatenzugang zuerst, geeignete Funkinfrastruktur als zweiter Schritt. Alle Bitten auf einen Blick und echte Rohmesswerte zum Abschluss. Weitere Kontakte und Hackathon-Unterstützung ergänzen die Kooperation.",
   "slides": [
     {
       "id": "politik-team",
@@ -218,13 +214,7 @@ export const POLITIK_DECK: PitchDeck = {
       "lead": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
       "layout": "team-showcase",
       "teamMembers": CORE_TEAM_MEMBERS,
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      "bullets": []
     },
     {
       "id": "politik-hackathon",
@@ -232,27 +222,18 @@ export const POLITIK_DECK: PitchDeck = {
       "stepLabel": "02",
       "eyebrow": "Open Ried Sens",
       "title": "Was ist ein Hackathon?",
-      "lead": "Menschen mit unterschiedlichen Erfahrungen arbeiten für eine begrenzte Zeit gemeinsam an Ideen und ersten Prototypen.",
+      "lead": "Ein Hackathon bringt Menschen zusammen, um gemeinsam an Ideen für unsere Region zu arbeiten.",
       "layout": "story",
       "bullets": [
         {
-          "title": "Mitmachen",
-          "description": "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein."
+          "title": "Gemeinsam an regionalen Fragen arbeiten",
+          "description": "Bürger, Jugendliche, Entwickler und Fachleute lernen voneinander und entwickeln erste Prototypen."
         },
         {
-          "title": "Gemeinsam ausprobieren",
-          "description": "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
+          "title": "Kostenlos für die Politik",
+          "description": "Wir organisieren den Hackathon als Bürgerinitiative. Die Politik kann ihn ohne verpflichtenden finanziellen Beitrag unterstützen."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir haben uns zusammengefunden, um einen Hackathon zu organisieren. Dafür suchen wir Daten und Fragestellungen aus unserer Umgebung. Die Ergebnisse bleiben offen: Erste Prototypen sind möglich, fertige Lösungen sind kein Versprechen.",
-        "talkingPoints": [
-          "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein.",
-          "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/hackathon-kamue-community.jpg",
         "alt": "Illustration gemeinsamer Projektarbeit beim Hackathon",
@@ -264,27 +245,12 @@ export const POLITIK_DECK: PitchDeck = {
       "stepNumber": 3,
       "stepLabel": "03",
       "eyebrow": "Open Ried Sens",
-      "title": "Vorhandene Daten als Ausgangspunkt",
-      "lead": "Das Smart-City-Projekt von Bürstadt und Lampertheim hat Messdaten geschaffen. Wir möchten als Bürger mehr damit anfangen.",
-      "layout": "story",
-      "bullets": [
-        {
-          "title": "Was wir sehen",
-          "description": "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung."
-        },
-        {
-          "title": "Was wir ergänzen möchten",
-          "description": "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir knüpfen an die Arbeit der beiden Städte an. Aus Bürgersicht möchten wir besser verstehen, wie wir die Daten weiterverwenden können. Welche Rohdaten zugänglich sind, wollen wir mit den Verantwortlichen klären. Die Website smartcity-system.de/buerstadt ist eine bisherige Referenz im Projekt, der genaue Datenumfang muss gemeinsam geklärt werden.",
-        "talkingPoints": [
-          "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung.",
-          "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
+      "title": "Die Daten aus dem Smart-City-Projekt",
+      "lead": "Bürstadt und Lampertheim haben Messdaten geschaffen. Wir möchten die dahinterliegenden Rohdaten für eigene Auswertungen nutzen.",
+      "layout": "website",
+      "website": {
+        "src": "https://smartcity-system.de/buerstadt/dashboard_uebersicht",
+        "title": "Smart-City-Dashboard Bürstadt und Lampertheim"
       }
     },
     {
@@ -293,191 +259,89 @@ export const POLITIK_DECK: PitchDeck = {
       "stepLabel": "04",
       "eyebrow": "Open Ried Sens",
       "title": "Unsere Datenbasis für den Hackathon",
-      "lead": "Unsere Website bündelt bereits weitere regionale Daten für den Hackathon.",
-      "layout": "story",
-      "bullets": [
-        {
-          "title": "Umwelt und Region",
-          "description": "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen."
-        },
-        {
-          "title": "Mobilität und Infrastruktur",
-          "description": "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen."
-        },
-        {
-          "title": "Ein Ausgangspunkt für Teams",
-          "description": "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
-        }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir beginnen nicht bei null. Die Website bündelt bereits weitere Daten für den Hackathon. Gesammelte Daten sind je nach Quelle Messwerte, aktuelle Zustände oder Statistiken. Das ist noch kein direkter Zugriff auf alle gewünschten Smart-City-, Bahn-, Bus- oder Müllfahrzeug-Rohdaten.",
-        "talkingPoints": [
-          "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen.",
-          "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen.",
-          "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
-      "callToAction": {
-        "primaryText": "Gesammelte Daten und Quellen ansehen",
-        "primaryHref": "/quellen"
+      "lead": "Wir haben uns zum Ziel gemacht, weitere Open-Data-Daten für das Ried zu sammeln. Daraus ist die Open-Ried-Sens-Website als Datenbasis für den Hackathon entstanden.",
+      "layout": "website",
+      "website": {
+        "src": "/?cats=all#ried-map",
+        "title": "Open Ried Sens: Karte der gesammelten Regionaldaten"
       }
     },
     {
       "id": "politik-sensors",
-      "stepNumber": 5,
-      "stepLabel": "05",
-      "eyebrow": "Open Ried Sens",
-      "title": "Eigene Sensoren für das ganze Ried",
-      "lead": "Säule 1: Bürger bauen Sensoren und ergänzen die regionale Datenbasis.",
+      "title": "Sensorbau als gemeinsames Schülerprojekt",
+      "lead": "Für das ganze Ried fehlen uns noch ausreichend zugängliche Rohdaten. Deshalb möchten wir als Bürgerinitiative eigene smarte Sensoren bauen.",
       "layout": "story",
+      "eyebrow": "Open Ried Sens",
       "bullets": [
         {
-          "title": "Mehr Orte einbeziehen",
-          "description": "Bürstadt und Lampertheim sind der Ausgangspunkt. Auch Nordheim, Wattenheim, Biblis, Groß-Rohrheim, Hofheim und Rosengarten gehören in unseren Blick."
+          "title": "Mit Schulen und Interessierten",
+          "description": "Jugendliche bauen Sensoren gemeinsam mit uns. VHS und weitere Interessierte können ebenfalls mitmachen."
         },
         {
-          "title": "Messen und weiterforschen",
-          "description": "Säule 2: Beim Hackathon können Teams eigene und vorhandene Daten gemeinsam untersuchen."
+          "title": "Weitere Umweltdaten sammeln",
+          "description": "Zum Beispiel Feinstaub und Luftqualität in Bürstadt und im Ried messen. Die Daten können Teams beim Hackathon untersuchen."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Säule 1: Bürger bauen Sensoren und ergänzen die regionale Datenbasis.",
-        "talkingPoints": [
-          "Bürstadt und Lampertheim sind der Ausgangspunkt. Auch Nordheim, Wattenheim, Biblis, Groß-Rohrheim, Hofheim und Rosengarten gehören in unseren Blick.",
-          "Säule 2: Beim Hackathon können Teams eigene und vorhandene Daten gemeinsam untersuchen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/sensor-hardware-kit.jpg",
-        "alt": "Sensorbausatz der Initiative",
-        "caption": "Bausatz und Messumfang gemeinsam für den Pilot festlegen"
-      }
+        "alt": "Sensorbausatz für das gemeinsame Bildungsprojekt",
+        "caption": "Eigene Messstationen ergänzen vorhandene Daten."
+      },
+      "stepNumber": 5,
+      "stepLabel": "05"
     },
     {
       "id": "politik-school-bridge",
-      "stepNumber": 6,
-      "stepLabel": "06",
-      "eyebrow": "Open Ried Sens",
-      "title": "Sensorbau gemeinsam mit Schulen",
-      "lead": "Ein erster Projekttag verbindet digitale Bildung mit der Bürgerinitiative.",
+      "title": "So könnte ein erster Projekttag aussehen",
+      "lead": "Mit einer Partnerschule beginnen und später weitere Schulen im Ried einbeziehen.",
       "layout": "story",
+      "eyebrow": "Open Ried Sens",
       "bullets": [
         {
-          "title": "Interesse genügt",
-          "description": "Über Lehrkräfte, MINT-AGs und Jugend forscht interessierte Jugendliche erreichen. Später mehrere Schulen einbeziehen."
+          "title": "Gemeinsam bauen und verstehen",
+          "description": "Interessierte Jugendliche über Lehrkräfte, MINT-AGs oder Jugend forscht ansprechen. Betreuung, Material und Finanzierung vorab gemeinsam planen."
         },
         {
           "title": "Zu Hause weiterforschen",
-          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Das kann auch Nachbarn und Freunde auf den Hackathon aufmerksam machen."
+          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Jugendliche zeigen ihre Ergebnisse und laden Familie und Nachbarn zum Hackathon ein."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Ein erster Projekttag verbindet digitale Bildung mit der Bürgerinitiative.",
-        "talkingPoints": [
-          "Über Lehrkräfte, MINT-AGs und Jugend forscht interessierte Jugendliche erreichen. Später mehrere Schulen einbeziehen.",
-          "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Das kann auch Nachbarn und Freunde auf den Hackathon aufmerksam machen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/schul-stem-workshop.jpg",
-        "alt": "Illustration eines Sensorbau-Workshops",
-        "caption": "Vorschlag: ein erster gemeinsam geplanter Projekttag"
-      }
-    },
-    {
-      "id": "politik-data-check",
-      "stepNumber": 7,
-      "stepLabel": "07",
-      "eyebrow": "Open Ried Sens",
-      "title": "Gesammelte Daten im Quellencheck",
-      "lead": "Echte gespeicherte Quelldaten mit Herkunft und Quellenstand.",
-      "layout": "collected-evidence",
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Diese Ansicht fragt echte Datensätze der Website ab. Sie zeigt Quelle, Quellenstand und einen Ausschnitt der Antwort. Fehlende oder nicht erreichbare Daten bleiben sichtbar. Es werden keine Müllleerungen, Zugfahrten oder Funkpakete aus der Vortragsdauer errechnet. Die Demo ist ein optionaler Blick auf den Stand der Website, kein Beweis für die noch gewünschten Rohdatenzugänge.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
-    },
-    {
-      "id": "politik-raw-data",
-      "stepNumber": 8,
-      "stepLabel": "08",
-      "eyebrow": "Open Ried Sens",
-      "title": "Unsere wichtigste Bitte: Rohdatenzugang",
-      "lead": "Wir möchten die Daten des gemeinsamen Projekts selbst untersuchen und für den Hackathon nutzen.",
-      "layout": "the-ask-commitment",
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Wir möchten die Daten des gemeinsamen Projekts selbst untersuchen und für den Hackathon nutzen.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
+        "alt": "Illustration eines möglichen Schulprojekttags",
+        "caption": "Interesse genügt. Vorkenntnisse sind keine Voraussetzung."
       },
+      "stepNumber": 6,
+      "stepLabel": "06"
+    },
+    {
+      "id": "politik-ask",
+      "title": "Unsere vier Bitten an die Politik",
+      "lead": "Am wichtigsten sind Rohdaten aus dem Smart-City-Projekt und der Zugang zur geeigneten Funkinfrastruktur.",
+      "layout": "the-ask-commitment",
+      "eyebrow": "Open Ried Sens",
+      "bullets": [],
       "specificAsks": [
         {
           "id": "ask-rohdaten",
           "title": "1. Rohdaten des Smart-City-Projekts",
-          "description": "Zugang zu verfügbaren Einzelmessungen mit Zeitstempeln, Datenbeschreibung und geklärten Nutzungsbedingungen. Dafür einen technischen Ansprechpartner benennen.",
+          "description": "Rohdaten aus dem zuvor gezeigten Smart-City-Dashboard Bürstadt/Lampertheim: Einzelmessungen mit Zeitstempeln und geklärten Nutzungsbedingungen.",
           "commitmentType": "daten",
           "tag": "Höchste Priorität",
           "actionText": "Datenansprechpartner benennen"
-        }
-      ]
-    },
-    {
-      "id": "politik-network",
-      "stepNumber": 9,
-      "stepLabel": "09",
-      "eyebrow": "Open Ried Sens",
-      "title": "Unsere zweite Bitte: Sensoren anbinden",
-      "lead": "Die vorhandene Funktechnik ist noch zu klären. Falls sie geeignet ist, möchten wir daran anknüpfen.",
-      "layout": "the-ask-commitment",
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Die vorhandene Funktechnik ist noch zu klären. Falls sie geeignet ist, möchten wir daran anknüpfen.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
-      "specificAsks": [
+        },
         {
           "id": "ask-infrastruktur",
           "title": "2. Vorhandene Funkinfrastruktur nutzen",
-          "description": "Technik und Betreiber klären. Falls ein geeignetes LoRaWAN-Netz besteht, einen eigenen Sensor testweise anbinden und die Teilnahmebedingungen abstimmen.",
+          "description": "Funktechnik und Betreiber klären. Falls ein geeignetes LoRaWAN-Netz vorhanden ist, unsere Sensoren testweise anbinden.",
           "commitmentType": "infrastruktur",
           "tag": "Zweite Priorität",
           "actionText": "Netzprüfung vereinbaren"
-        }
-      ]
-    },
-    {
-      "id": "politik-next-step",
-      "stepNumber": 10,
-      "stepLabel": "10",
-      "eyebrow": "Open Ried Sens",
-      "title": "Weitere Unterstützung und nächster Schritt",
-      "lead": "Zuerst einen Datenansprechpartner und einen Termin zur Netzprüfung vereinbaren. Weitere Unterstützung ist willkommen.",
-      "layout": "the-ask-commitment",
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Zuerst einen Datenansprechpartner und einen Termin zur Netzprüfung vereinbaren. Weitere Unterstützung ist willkommen.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
-      "specificAsks": [
+        },
         {
           "id": "ask-live-daten",
           "title": "3. Kontakte zu weiteren Datenanbietern",
-          "description": "Fürsprache bei Bahn, VRN und ZAKB für Bahnhöfe, Züge, Bahnübergänge, Busse und Müllfahrzeuge. Datenfreigaben entscheiden die jeweiligen Anbieter.",
+          "description": "Kontakte zu Bahn, VRN und ZAKB vermitteln, um weitere Daten zu Verkehr und Müllfahrzeugen zu erschließen.",
           "commitmentType": "daten",
           "tag": "Ergänzende Unterstützung",
           "actionText": "Termin vereinbaren"
@@ -485,16 +349,24 @@ export const POLITIK_DECK: PitchDeck = {
         {
           "id": "ask-praesenz",
           "title": "4. Bürgermeister beim Hackathon",
-          "description": "Ein oder beide Bürgermeister zur Eröffnung einladen. Eine Keynote, Schirmherrschaft oder Unterstützung des Hauptpreises wäre willkommen.",
+          "description": "Ein oder beide Bürgermeister zur Eröffnung einladen. Keynote oder Unterstützung des Hauptpreises sind willkommen.",
           "commitmentType": "praesenz",
           "tag": "Optional",
           "actionText": "Beteiligung besprechen"
         }
       ],
-      "callToAction": {
-        "primaryText": "Kooperationsgespräch vereinbaren",
-        "primaryHref": "mailto:info@open-ried.de?subject=Ried-Hackathon"
-      }
+      "stepNumber": 7,
+      "stepLabel": "07"
+    },
+    {
+      "id": "politik-bonus",
+      "title": "Während unseres Vortrags: neue Messwerte",
+      "lead": "Zum Abschluss sehen wir, welche echten Rohmesswerte seit Beginn dieses Vortrags abrufbar sind.",
+      "layout": "collected-evidence",
+      "eyebrow": "Open Ried Sens",
+      "bullets": [],
+      "stepNumber": 8,
+      "stepLabel": "08"
     }
   ]
 };
@@ -519,13 +391,7 @@ export const SCHULEN_DECK: PitchDeck = {
       "lead": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
       "layout": "team-showcase",
       "teamMembers": CORE_TEAM_MEMBERS,
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      "bullets": []
     },
     {
       "id": "schulen-hackathon",
@@ -533,27 +399,18 @@ export const SCHULEN_DECK: PitchDeck = {
       "stepLabel": "02",
       "eyebrow": "Open Ried Sens",
       "title": "Was ist ein Hackathon?",
-      "lead": "Menschen mit unterschiedlichen Erfahrungen arbeiten für eine begrenzte Zeit gemeinsam an Ideen und ersten Prototypen.",
+      "lead": "Ein Hackathon bringt Menschen zusammen, um gemeinsam an Ideen für unsere Region zu arbeiten.",
       "layout": "story",
       "bullets": [
         {
-          "title": "Mitmachen",
-          "description": "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein."
+          "title": "Gemeinsam an regionalen Fragen arbeiten",
+          "description": "Bürger, Jugendliche, Entwickler und Fachleute lernen voneinander und entwickeln erste Prototypen."
         },
         {
-          "title": "Gemeinsam ausprobieren",
-          "description": "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
+          "title": "Kostenlos für die Politik",
+          "description": "Wir organisieren den Hackathon als Bürgerinitiative. Die Politik kann ihn ohne verpflichtenden finanziellen Beitrag unterstützen."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir haben uns zusammengefunden, um einen Hackathon zu organisieren. Dafür suchen wir Daten und Fragestellungen aus unserer Umgebung. Die Ergebnisse bleiben offen: Erste Prototypen sind möglich, fertige Lösungen sind kein Versprechen.",
-        "talkingPoints": [
-          "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein.",
-          "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/hackathon-kamue-community.jpg",
         "alt": "Illustration gemeinsamer Projektarbeit beim Hackathon",
@@ -565,27 +422,12 @@ export const SCHULEN_DECK: PitchDeck = {
       "stepNumber": 3,
       "stepLabel": "03",
       "eyebrow": "Open Ried Sens",
-      "title": "Vorhandene Daten als Ausgangspunkt",
-      "lead": "Das Smart-City-Projekt von Bürstadt und Lampertheim hat Messdaten geschaffen. Wir möchten als Bürger mehr damit anfangen.",
-      "layout": "story",
-      "bullets": [
-        {
-          "title": "Was wir sehen",
-          "description": "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung."
-        },
-        {
-          "title": "Was wir ergänzen möchten",
-          "description": "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir knüpfen an die Arbeit der beiden Städte an. Aus Bürgersicht möchten wir besser verstehen, wie wir die Daten weiterverwenden können. Welche Rohdaten zugänglich sind, wollen wir mit den Verantwortlichen klären. Die Website smartcity-system.de/buerstadt ist eine bisherige Referenz im Projekt, der genaue Datenumfang muss gemeinsam geklärt werden.",
-        "talkingPoints": [
-          "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung.",
-          "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
+      "title": "Die Daten aus dem Smart-City-Projekt",
+      "lead": "Bürstadt und Lampertheim haben Messdaten geschaffen. Wir möchten die dahinterliegenden Rohdaten für eigene Auswertungen nutzen.",
+      "layout": "website",
+      "website": {
+        "src": "https://smartcity-system.de/buerstadt/dashboard_uebersicht",
+        "title": "Smart-City-Dashboard Bürstadt und Lampertheim"
       }
     },
     {
@@ -594,74 +436,65 @@ export const SCHULEN_DECK: PitchDeck = {
       "stepLabel": "04",
       "eyebrow": "Open Ried Sens",
       "title": "Unsere Datenbasis für den Hackathon",
-      "lead": "Unsere Website bündelt bereits weitere regionale Daten für den Hackathon.",
+      "lead": "Wir haben uns zum Ziel gemacht, weitere Open-Data-Daten für das Ried zu sammeln. Daraus ist die Open-Ried-Sens-Website als Datenbasis für den Hackathon entstanden.",
+      "layout": "website",
+      "website": {
+        "src": "/?cats=all#ried-map",
+        "title": "Open Ried Sens: Karte der gesammelten Regionaldaten"
+      }
+    },
+    {
+      "id": "schulen-sensors",
+      "title": "Sensorbau als gemeinsames Schülerprojekt",
+      "lead": "Für das ganze Ried fehlen uns noch ausreichend zugängliche Rohdaten. Deshalb möchten wir als Bürgerinitiative eigene smarte Sensoren bauen.",
       "layout": "story",
+      "eyebrow": "Open Ried Sens",
       "bullets": [
         {
-          "title": "Umwelt und Region",
-          "description": "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen."
+          "title": "Mit Schulen und Interessierten",
+          "description": "Jugendliche bauen Sensoren gemeinsam mit uns. VHS und weitere Interessierte können ebenfalls mitmachen."
         },
         {
-          "title": "Mobilität und Infrastruktur",
-          "description": "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen."
-        },
-        {
-          "title": "Ein Ausgangspunkt für Teams",
-          "description": "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
+          "title": "Weitere Umweltdaten sammeln",
+          "description": "Zum Beispiel Feinstaub und Luftqualität in Bürstadt und im Ried messen. Die Daten können Teams beim Hackathon untersuchen."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir beginnen nicht bei null. Die Website bündelt bereits weitere Daten für den Hackathon. Gesammelte Daten sind je nach Quelle Messwerte, aktuelle Zustände oder Statistiken. Das ist noch kein direkter Zugriff auf alle gewünschten Smart-City-, Bahn-, Bus- oder Müllfahrzeug-Rohdaten.",
-        "talkingPoints": [
-          "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen.",
-          "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen.",
-          "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
+      "imageVisual": {
+        "src": "/pitch/sensor-hardware-kit.jpg",
+        "alt": "Sensorbausatz für das gemeinsame Bildungsprojekt",
+        "caption": "Eigene Messstationen ergänzen vorhandene Daten."
       },
-      "callToAction": {
-        "primaryText": "Gesammelte Daten und Quellen ansehen",
-        "primaryHref": "/quellen"
-      }
+      "stepNumber": 5,
+      "stepLabel": "05"
     },
     {
       "id": "schulen-school-bridge",
-      "stepNumber": 5,
-      "stepLabel": "05",
-      "eyebrow": "Open Ried Sens",
-      "title": "Sensorbau gemeinsam mit Schulen",
-      "lead": "Ein erster Projekttag verbindet digitale Bildung mit der Bürgerinitiative.",
+      "title": "So könnte ein erster Projekttag aussehen",
+      "lead": "Mit einer Partnerschule beginnen und später weitere Schulen im Ried einbeziehen.",
       "layout": "story",
+      "eyebrow": "Open Ried Sens",
       "bullets": [
         {
-          "title": "Interesse genügt",
-          "description": "Über Lehrkräfte, MINT-AGs und Jugend forscht interessierte Jugendliche erreichen. Später mehrere Schulen einbeziehen."
+          "title": "Gemeinsam bauen und verstehen",
+          "description": "Interessierte Jugendliche über Lehrkräfte, MINT-AGs oder Jugend forscht ansprechen. Betreuung, Material und Finanzierung vorab gemeinsam planen."
         },
         {
           "title": "Zu Hause weiterforschen",
-          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Das kann auch Nachbarn und Freunde auf den Hackathon aufmerksam machen."
+          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Jugendliche zeigen ihre Ergebnisse und laden Familie und Nachbarn zum Hackathon ein."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Ein erster Projekttag verbindet digitale Bildung mit der Bürgerinitiative.",
-        "talkingPoints": [
-          "Über Lehrkräfte, MINT-AGs und Jugend forscht interessierte Jugendliche erreichen. Später mehrere Schulen einbeziehen.",
-          "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Das kann auch Nachbarn und Freunde auf den Hackathon aufmerksam machen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/schul-stem-workshop.jpg",
-        "alt": "Illustration eines Sensorbau-Workshops",
-        "caption": "Vorschlag: ein erster gemeinsam geplanter Projekttag"
-      }
+        "alt": "Illustration eines möglichen Schulprojekttags",
+        "caption": "Interesse genügt. Vorkenntnisse sind keine Voraussetzung."
+      },
+      "stepNumber": 6,
+      "stepLabel": "06"
     },
     {
       "id": "schulen-learning",
-      "stepNumber": 6,
-      "stepLabel": "06",
+      "stepNumber": 7,
+      "stepLabel": "07",
       "eyebrow": "Open Ried Sens",
       "title": "Was Jugendliche dabei lernen",
       "lead": "Ein überschaubarer Einstieg, mit Raum für Vertiefung.",
@@ -675,21 +508,12 @@ export const SCHULEN_DECK: PitchDeck = {
           "title": "Messwerte verstehen",
           "description": "Messprinzip und Grenzen kennenlernen, Werte vergleichen und eigene Fragen untersuchen."
         }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Ein überschaubarer Einstieg, mit Raum für Vertiefung.",
-        "talkingPoints": [
-          "Sensor und Gehäuse zusammenbauen, Werkzeuge unter Anleitung verwenden.",
-          "Messprinzip und Grenzen kennenlernen, Werte vergleichen und eigene Fragen untersuchen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      ]
     },
     {
       "id": "schulen-pilot",
-      "stepNumber": 7,
-      "stepLabel": "07",
+      "stepNumber": 8,
+      "stepLabel": "08",
       "eyebrow": "Open Ried Sens",
       "title": "Ein erster Projekttag",
       "lead": "Mit einer Partnerschule starten und den Umfang gemeinsam festlegen.",
@@ -703,32 +527,7 @@ export const SCHULEN_DECK: PitchDeck = {
           "title": "Finanzierung klären",
           "description": "Wir fordern kein Schulbudget. Firmenpaten, Fördervereine oder andere Beiträge sollen die Bausätze ermöglichen. Zusagen vor der Ausschreibung klären."
         }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Mit einer Partnerschule starten und den Umfang gemeinsam festlegen.",
-        "talkingPoints": [
-          "Altersgruppe, Betreuung, Räume, Werkzeuge und Material abstimmen.",
-          "Wir fordern kein Schulbudget. Firmenpaten, Fördervereine oder andere Beiträge sollen die Bausätze ermöglichen. Zusagen vor der Ausschreibung klären."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
-    },
-    {
-      "id": "schulen-data-check",
-      "stepNumber": 8,
-      "stepLabel": "08",
-      "eyebrow": "Open Ried Sens",
-      "title": "Gesammelte Daten im Quellencheck",
-      "lead": "Echte gespeicherte Quelldaten mit Herkunft und Quellenstand.",
-      "layout": "collected-evidence",
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Diese Ansicht fragt echte Datensätze der Website ab. Sie zeigt Quelle, Quellenstand und einen Ausschnitt der Antwort. Fehlende oder nicht erreichbare Daten bleiben sichtbar. Es werden keine Müllleerungen, Zugfahrten oder Funkpakete aus der Vortragsdauer errechnet. Die Demo ist ein optionaler Blick auf den Stand der Website, kein Beweis für die noch gewünschten Rohdatenzugänge.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      ]
     },
     {
       "id": "schulen-next-step",
@@ -739,12 +538,6 @@ export const SCHULEN_DECK: PitchDeck = {
       "lead": "Eine Kontaktlehrkraft benennen und einen ersten Planungstermin vereinbaren.",
       "layout": "the-ask-commitment",
       "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Eine Kontaktlehrkraft benennen und einen ersten Planungstermin vereinbaren.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "specificAsks": [
         {
           "id": "school-day",
@@ -762,11 +555,17 @@ export const SCHULEN_DECK: PitchDeck = {
           "tag": "Nächster Schritt",
           "actionText": "Termin vereinbaren"
         }
-      ],
-      "callToAction": {
-        "primaryText": "Projekttag gemeinsam planen",
-        "primaryHref": "mailto:info@open-ried.de?subject=Ried-Hackathon"
-      }
+      ]
+    },
+    {
+      "id": "schulen-bonus",
+      "title": "Während unseres Vortrags: neue Messwerte",
+      "lead": "Zum Abschluss sehen wir, welche echten Rohmesswerte seit Beginn dieses Vortrags abrufbar sind.",
+      "layout": "collected-evidence",
+      "eyebrow": "Open Ried Sens",
+      "bullets": [],
+      "stepNumber": 10,
+      "stepLabel": "10"
     }
   ]
 };
@@ -791,13 +590,7 @@ export const VHS_DECK: PitchDeck = {
       "lead": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
       "layout": "team-showcase",
       "teamMembers": CORE_TEAM_MEMBERS,
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      "bullets": []
     },
     {
       "id": "vhs-hackathon",
@@ -805,27 +598,18 @@ export const VHS_DECK: PitchDeck = {
       "stepLabel": "02",
       "eyebrow": "Open Ried Sens",
       "title": "Was ist ein Hackathon?",
-      "lead": "Menschen mit unterschiedlichen Erfahrungen arbeiten für eine begrenzte Zeit gemeinsam an Ideen und ersten Prototypen.",
+      "lead": "Ein Hackathon bringt Menschen zusammen, um gemeinsam an Ideen für unsere Region zu arbeiten.",
       "layout": "story",
       "bullets": [
         {
-          "title": "Mitmachen",
-          "description": "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein."
+          "title": "Gemeinsam an regionalen Fragen arbeiten",
+          "description": "Bürger, Jugendliche, Entwickler und Fachleute lernen voneinander und entwickeln erste Prototypen."
         },
         {
-          "title": "Gemeinsam ausprobieren",
-          "description": "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
+          "title": "Kostenlos für die Politik",
+          "description": "Wir organisieren den Hackathon als Bürgerinitiative. Die Politik kann ihn ohne verpflichtenden finanziellen Beitrag unterstützen."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir haben uns zusammengefunden, um einen Hackathon zu organisieren. Dafür suchen wir Daten und Fragestellungen aus unserer Umgebung. Die Ergebnisse bleiben offen: Erste Prototypen sind möglich, fertige Lösungen sind kein Versprechen.",
-        "talkingPoints": [
-          "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein.",
-          "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/hackathon-kamue-community.jpg",
         "alt": "Illustration gemeinsamer Projektarbeit beim Hackathon",
@@ -837,27 +621,12 @@ export const VHS_DECK: PitchDeck = {
       "stepNumber": 3,
       "stepLabel": "03",
       "eyebrow": "Open Ried Sens",
-      "title": "Vorhandene Daten als Ausgangspunkt",
-      "lead": "Das Smart-City-Projekt von Bürstadt und Lampertheim hat Messdaten geschaffen. Wir möchten als Bürger mehr damit anfangen.",
-      "layout": "story",
-      "bullets": [
-        {
-          "title": "Was wir sehen",
-          "description": "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung."
-        },
-        {
-          "title": "Was wir ergänzen möchten",
-          "description": "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir knüpfen an die Arbeit der beiden Städte an. Aus Bürgersicht möchten wir besser verstehen, wie wir die Daten weiterverwenden können. Welche Rohdaten zugänglich sind, wollen wir mit den Verantwortlichen klären. Die Website smartcity-system.de/buerstadt ist eine bisherige Referenz im Projekt, der genaue Datenumfang muss gemeinsam geklärt werden.",
-        "talkingPoints": [
-          "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung.",
-          "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
+      "title": "Die Daten aus dem Smart-City-Projekt",
+      "lead": "Bürstadt und Lampertheim haben Messdaten geschaffen. Wir möchten die dahinterliegenden Rohdaten für eigene Auswertungen nutzen.",
+      "layout": "website",
+      "website": {
+        "src": "https://smartcity-system.de/buerstadt/dashboard_uebersicht",
+        "title": "Smart-City-Dashboard Bürstadt und Lampertheim"
       }
     },
     {
@@ -866,41 +635,41 @@ export const VHS_DECK: PitchDeck = {
       "stepLabel": "04",
       "eyebrow": "Open Ried Sens",
       "title": "Unsere Datenbasis für den Hackathon",
-      "lead": "Unsere Website bündelt bereits weitere regionale Daten für den Hackathon.",
-      "layout": "story",
-      "bullets": [
-        {
-          "title": "Umwelt und Region",
-          "description": "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen."
-        },
-        {
-          "title": "Mobilität und Infrastruktur",
-          "description": "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen."
-        },
-        {
-          "title": "Ein Ausgangspunkt für Teams",
-          "description": "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
-        }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir beginnen nicht bei null. Die Website bündelt bereits weitere Daten für den Hackathon. Gesammelte Daten sind je nach Quelle Messwerte, aktuelle Zustände oder Statistiken. Das ist noch kein direkter Zugriff auf alle gewünschten Smart-City-, Bahn-, Bus- oder Müllfahrzeug-Rohdaten.",
-        "talkingPoints": [
-          "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen.",
-          "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen.",
-          "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
-      "callToAction": {
-        "primaryText": "Gesammelte Daten und Quellen ansehen",
-        "primaryHref": "/quellen"
+      "lead": "Wir haben uns zum Ziel gemacht, weitere Open-Data-Daten für das Ried zu sammeln. Daraus ist die Open-Ried-Sens-Website als Datenbasis für den Hackathon entstanden.",
+      "layout": "website",
+      "website": {
+        "src": "/?cats=all#ried-map",
+        "title": "Open Ried Sens: Karte der gesammelten Regionaldaten"
       }
     },
     {
-      "id": "vhs-course",
+      "id": "vhs-sensors",
+      "title": "Sensorbau als gemeinsames Schülerprojekt",
+      "lead": "Für das ganze Ried fehlen uns noch ausreichend zugängliche Rohdaten. Deshalb möchten wir als Bürgerinitiative eigene smarte Sensoren bauen.",
+      "layout": "story",
+      "eyebrow": "Open Ried Sens",
+      "bullets": [
+        {
+          "title": "Mit Schulen und Interessierten",
+          "description": "Jugendliche bauen Sensoren gemeinsam mit uns. VHS und weitere Interessierte können ebenfalls mitmachen."
+        },
+        {
+          "title": "Weitere Umweltdaten sammeln",
+          "description": "Zum Beispiel Feinstaub und Luftqualität in Bürstadt und im Ried messen. Die Daten können Teams beim Hackathon untersuchen."
+        }
+      ],
+      "imageVisual": {
+        "src": "/pitch/sensor-hardware-kit.jpg",
+        "alt": "Sensorbausatz für das gemeinsame Bildungsprojekt",
+        "caption": "Eigene Messstationen ergänzen vorhandene Daten."
+      },
       "stepNumber": 5,
-      "stepLabel": "05",
+      "stepLabel": "05"
+    },
+    {
+      "id": "vhs-course",
+      "stepNumber": 6,
+      "stepLabel": "06",
       "eyebrow": "Open Ried Sens",
       "title": "Unser Vorschlag für einen Sensorkurs",
       "lead": "In drei Terminen schrittweise bauen, Messwerte verstehen und gemeinsam auswerten.",
@@ -915,15 +684,6 @@ export const VHS_DECK: PitchDeck = {
           "description": "Eigene Werte verstehen und Fragen entwickeln. Dauer und Schwierigkeitsgrad im Pilot erproben."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "In drei Terminen schrittweise bauen, Messwerte verstehen und gemeinsam auswerten.",
-        "talkingPoints": [
-          "Werkzeuge kennenlernen, Sensor montieren und eine geeignete Verbindung prüfen.",
-          "Eigene Werte verstehen und Fragen entwickeln. Dauer und Schwierigkeitsgrad im Pilot erproben."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/sensor-hardware-kit.jpg",
         "alt": "Sensorbausatz für einen möglichen VHS-Kurs"
@@ -931,8 +691,8 @@ export const VHS_DECK: PitchDeck = {
     },
     {
       "id": "vhs-course-plan",
-      "stepNumber": 6,
-      "stepLabel": "06",
+      "stepNumber": 7,
+      "stepLabel": "07",
       "eyebrow": "Open Ried Sens",
       "title": "Nach dem Kurs weiterforschen",
       "lead": "Eine eigene Station kann zum Einstieg in Bürgerwissenschaft und den Hackathon werden.",
@@ -946,32 +706,7 @@ export const VHS_DECK: PitchDeck = {
           "title": "Kursorganisation",
           "description": "Räume, Dozenten, Werkzeuge, Materialkosten, Gebühren und Ausschreibungsfrist gemeinsam abstimmen."
         }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Eine eigene Station kann zum Einstieg in Bürgerwissenschaft und den Hackathon werden.",
-        "talkingPoints": [
-          "Geeigneten Standort und Verbindung prüfen. Ergebnisse mit anderen Teilnehmenden teilen.",
-          "Räume, Dozenten, Werkzeuge, Materialkosten, Gebühren und Ausschreibungsfrist gemeinsam abstimmen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
-    },
-    {
-      "id": "vhs-data-check",
-      "stepNumber": 7,
-      "stepLabel": "07",
-      "eyebrow": "Open Ried Sens",
-      "title": "Gesammelte Daten im Quellencheck",
-      "lead": "Echte gespeicherte Quelldaten mit Herkunft und Quellenstand.",
-      "layout": "collected-evidence",
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Diese Ansicht fragt echte Datensätze der Website ab. Sie zeigt Quelle, Quellenstand und einen Ausschnitt der Antwort. Fehlende oder nicht erreichbare Daten bleiben sichtbar. Es werden keine Müllleerungen, Zugfahrten oder Funkpakete aus der Vortragsdauer errechnet. Die Demo ist ein optionaler Blick auf den Stand der Website, kein Beweis für die noch gewünschten Rohdatenzugänge.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      ]
     },
     {
       "id": "vhs-next-step",
@@ -982,12 +717,6 @@ export const VHS_DECK: PitchDeck = {
       "lead": "Einen Pilotkurs gemeinsam konkretisieren und anschließend die Aufnahme ins Programm prüfen.",
       "layout": "the-ask-commitment",
       "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Einen Pilotkurs gemeinsam konkretisieren und anschließend die Aufnahme ins Programm prüfen.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "specificAsks": [
         {
           "id": "vhs-program",
@@ -1005,11 +734,17 @@ export const VHS_DECK: PitchDeck = {
           "tag": "Nächster Schritt",
           "actionText": "Termin vereinbaren"
         }
-      ],
-      "callToAction": {
-        "primaryText": "Pilotkurs besprechen",
-        "primaryHref": "mailto:info@open-ried.de?subject=Ried-Hackathon"
-      }
+      ]
+    },
+    {
+      "id": "vhs-bonus",
+      "title": "Während unseres Vortrags: neue Messwerte",
+      "lead": "Zum Abschluss sehen wir, welche echten Rohmesswerte seit Beginn dieses Vortrags abrufbar sind.",
+      "layout": "collected-evidence",
+      "eyebrow": "Open Ried Sens",
+      "bullets": [],
+      "stepNumber": 9,
+      "stepLabel": "09"
     }
   ]
 };
@@ -1034,13 +769,7 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
       "lead": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
       "layout": "team-showcase",
       "teamMembers": CORE_TEAM_MEMBERS,
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Wir sind drei Menschen aus der Region und möchten gemeinsam einen Hackathon für das Ried organisieren.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      "bullets": []
     },
     {
       "id": "wirtschaft-hackathon",
@@ -1048,27 +777,18 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
       "stepLabel": "02",
       "eyebrow": "Open Ried Sens",
       "title": "Was ist ein Hackathon?",
-      "lead": "Menschen mit unterschiedlichen Erfahrungen arbeiten für eine begrenzte Zeit gemeinsam an Ideen und ersten Prototypen.",
+      "lead": "Ein Hackathon bringt Menschen zusammen, um gemeinsam an Ideen für unsere Region zu arbeiten.",
       "layout": "story",
       "bullets": [
         {
-          "title": "Mitmachen",
-          "description": "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein."
+          "title": "Gemeinsam an regionalen Fragen arbeiten",
+          "description": "Bürger, Jugendliche, Entwickler und Fachleute lernen voneinander und entwickeln erste Prototypen."
         },
         {
-          "title": "Gemeinsam ausprobieren",
-          "description": "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
+          "title": "Kostenlos für die Politik",
+          "description": "Wir organisieren den Hackathon als Bürgerinitiative. Die Politik kann ihn ohne verpflichtenden finanziellen Beitrag unterstützen."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir haben uns zusammengefunden, um einen Hackathon zu organisieren. Dafür suchen wir Daten und Fragestellungen aus unserer Umgebung. Die Ergebnisse bleiben offen: Erste Prototypen sind möglich, fertige Lösungen sind kein Versprechen.",
-        "talkingPoints": [
-          "Schüler, Bürger, Entwickler und Menschen mit Fachwissen bringen ihre Perspektiven ein.",
-          "Eine regionale Frage untersuchen, eine Idee entwickeln und Ergebnisse vorstellen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/hackathon-kamue-community.jpg",
         "alt": "Illustration gemeinsamer Projektarbeit beim Hackathon",
@@ -1080,27 +800,12 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
       "stepNumber": 3,
       "stepLabel": "03",
       "eyebrow": "Open Ried Sens",
-      "title": "Vorhandene Daten als Ausgangspunkt",
-      "lead": "Das Smart-City-Projekt von Bürstadt und Lampertheim hat Messdaten geschaffen. Wir möchten als Bürger mehr damit anfangen.",
-      "layout": "story",
-      "bullets": [
-        {
-          "title": "Was wir sehen",
-          "description": "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung."
-        },
-        {
-          "title": "Was wir ergänzen möchten",
-          "description": "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir knüpfen an die Arbeit der beiden Städte an. Aus Bürgersicht möchten wir besser verstehen, wie wir die Daten weiterverwenden können. Welche Rohdaten zugänglich sind, wollen wir mit den Verantwortlichen klären. Die Website smartcity-system.de/buerstadt ist eine bisherige Referenz im Projekt, der genaue Datenumfang muss gemeinsam geklärt werden.",
-        "talkingPoints": [
-          "Im bisherigen Dashboard stehen uns aggregierte Darstellungen zur Verfügung.",
-          "Einzelmessungen selbst auswerten und mit weiteren regionalen Daten verbinden."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
+      "title": "Die Daten aus dem Smart-City-Projekt",
+      "lead": "Bürstadt und Lampertheim haben Messdaten geschaffen. Wir möchten die dahinterliegenden Rohdaten für eigene Auswertungen nutzen.",
+      "layout": "website",
+      "website": {
+        "src": "https://smartcity-system.de/buerstadt/dashboard_uebersicht",
+        "title": "Smart-City-Dashboard Bürstadt und Lampertheim"
       }
     },
     {
@@ -1109,74 +814,65 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
       "stepLabel": "04",
       "eyebrow": "Open Ried Sens",
       "title": "Unsere Datenbasis für den Hackathon",
-      "lead": "Unsere Website bündelt bereits weitere regionale Daten für den Hackathon.",
+      "lead": "Wir haben uns zum Ziel gemacht, weitere Open-Data-Daten für das Ried zu sammeln. Daraus ist die Open-Ried-Sens-Website als Datenbasis für den Hackathon entstanden.",
+      "layout": "website",
+      "website": {
+        "src": "/?cats=all#ried-map",
+        "title": "Open Ried Sens: Karte der gesammelten Regionaldaten"
+      }
+    },
+    {
+      "id": "wirtschaft-sensors",
+      "title": "Sensorbau als gemeinsames Schülerprojekt",
+      "lead": "Für das ganze Ried fehlen uns noch ausreichend zugängliche Rohdaten. Deshalb möchten wir als Bürgerinitiative eigene smarte Sensoren bauen.",
       "layout": "story",
+      "eyebrow": "Open Ried Sens",
       "bullets": [
         {
-          "title": "Umwelt und Region",
-          "description": "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen."
+          "title": "Mit Schulen und Interessierten",
+          "description": "Jugendliche bauen Sensoren gemeinsam mit uns. VHS und weitere Interessierte können ebenfalls mitmachen."
         },
         {
-          "title": "Mobilität und Infrastruktur",
-          "description": "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen."
-        },
-        {
-          "title": "Ein Ausgangspunkt für Teams",
-          "description": "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
+          "title": "Weitere Umweltdaten sammeln",
+          "description": "Zum Beispiel Feinstaub und Luftqualität in Bürstadt und im Ried messen. Die Daten können Teams beim Hackathon untersuchen."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir beginnen nicht bei null. Die Website bündelt bereits weitere Daten für den Hackathon. Gesammelte Daten sind je nach Quelle Messwerte, aktuelle Zustände oder Statistiken. Das ist noch kein direkter Zugriff auf alle gewünschten Smart-City-, Bahn-, Bus- oder Müllfahrzeug-Rohdaten.",
-        "talkingPoints": [
-          "Zum Beispiel Pegelstände, Grundwasser und regionale Flächeninformationen.",
-          "Verkehr, Haltestellen und Infrastruktur ergänzen die Umweltinformationen.",
-          "Die Daten helfen beim Entwickeln eigener Fragen. Kommunale Rohdaten sollen sie ergänzen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
+      "imageVisual": {
+        "src": "/pitch/sensor-hardware-kit.jpg",
+        "alt": "Sensorbausatz für das gemeinsame Bildungsprojekt",
+        "caption": "Eigene Messstationen ergänzen vorhandene Daten."
       },
-      "callToAction": {
-        "primaryText": "Gesammelte Daten und Quellen ansehen",
-        "primaryHref": "/quellen"
-      }
+      "stepNumber": 5,
+      "stepLabel": "05"
     },
     {
       "id": "wirtschaft-school-bridge",
-      "stepNumber": 5,
-      "stepLabel": "05",
-      "eyebrow": "Open Ried Sens",
-      "title": "Sensorbau gemeinsam mit Schulen",
-      "lead": "Ein erster Projekttag verbindet digitale Bildung mit der Bürgerinitiative.",
+      "title": "So könnte ein erster Projekttag aussehen",
+      "lead": "Mit einer Partnerschule beginnen und später weitere Schulen im Ried einbeziehen.",
       "layout": "story",
+      "eyebrow": "Open Ried Sens",
       "bullets": [
         {
-          "title": "Interesse genügt",
-          "description": "Über Lehrkräfte, MINT-AGs und Jugend forscht interessierte Jugendliche erreichen. Später mehrere Schulen einbeziehen."
+          "title": "Gemeinsam bauen und verstehen",
+          "description": "Interessierte Jugendliche über Lehrkräfte, MINT-AGs oder Jugend forscht ansprechen. Betreuung, Material und Finanzierung vorab gemeinsam planen."
         },
         {
           "title": "Zu Hause weiterforschen",
-          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Das kann auch Nachbarn und Freunde auf den Hackathon aufmerksam machen."
+          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Jugendliche zeigen ihre Ergebnisse und laden Familie und Nachbarn zum Hackathon ein."
         }
       ],
-      "speakerNotes": {
-        "elevatorPitch": "Ein erster Projekttag verbindet digitale Bildung mit der Bürgerinitiative.",
-        "talkingPoints": [
-          "Über Lehrkräfte, MINT-AGs und Jugend forscht interessierte Jugendliche erreichen. Später mehrere Schulen einbeziehen.",
-          "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Das kann auch Nachbarn und Freunde auf den Hackathon aufmerksam machen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "imageVisual": {
         "src": "/pitch/schul-stem-workshop.jpg",
-        "alt": "Illustration eines Sensorbau-Workshops",
-        "caption": "Vorschlag: ein erster gemeinsam geplanter Projekttag"
-      }
+        "alt": "Illustration eines möglichen Schulprojekttags",
+        "caption": "Interesse genügt. Vorkenntnisse sind keine Voraussetzung."
+      },
+      "stepNumber": 6,
+      "stepLabel": "06"
     },
     {
       "id": "wirtschaft-participation",
-      "stepNumber": 6,
-      "stepLabel": "06",
+      "stepNumber": 7,
+      "stepLabel": "07",
       "eyebrow": "Open Ried Sens",
       "title": "So kann Ihr Betrieb mitmachen",
       "lead": "Regionale Bildungsförderung ist ein konkreter Beitrag zu CSR (Corporate Social Responsibility).",
@@ -1190,21 +886,12 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
           "title": "Fachwissen einbringen",
           "description": "Mentoren oder eine geeignete Firmen-Challenge anbieten. Ein Workshop mit Azubis ist eine weitere Möglichkeit."
         }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Regionale Bildungsförderung ist ein konkreter Beitrag zu CSR (Corporate Social Responsibility).",
-        "talkingPoints": [
-          "Material für Schüler, Sachpreise oder Catering ermöglichen. Umfang und Kosten gemeinsam festlegen.",
-          "Mentoren oder eine geeignete Firmen-Challenge anbieten. Ein Workshop mit Azubis ist eine weitere Möglichkeit."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      ]
     },
     {
       "id": "wirtschaft-scope",
-      "stepNumber": 7,
-      "stepLabel": "07",
+      "stepNumber": 8,
+      "stepLabel": "08",
       "eyebrow": "Open Ried Sens",
       "title": "Ein passender erster Beitrag",
       "lead": "Wir stimmen eine überschaubare Beteiligung mit Ihnen ab.",
@@ -1218,32 +905,7 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
           "title": "Für Stadtwerke",
           "description": "Datenzugänge, Betreiberwissen oder Infrastruktur prüfen. LoRaWAN einfach erklärt: Funk für kleine Sensorpakete, dessen Empfang und Bedingungen wir am Standort testen müssen."
         }
-      ],
-      "speakerNotes": {
-        "elevatorPitch": "Wir stimmen eine überschaubare Beteiligung mit Ihnen ab.",
-        "talkingPoints": [
-          "Einen Projekttag oder Hackathon-Beitrag wählen. Bausatzkosten prüfen, bevor ein Komplettpreis zugesagt wird.",
-          "Datenzugänge, Betreiberwissen oder Infrastruktur prüfen. LoRaWAN einfach erklärt: Funk für kleine Sensorpakete, dessen Empfang und Bedingungen wir am Standort testen müssen."
-        ],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
-    },
-    {
-      "id": "wirtschaft-data-check",
-      "stepNumber": 8,
-      "stepLabel": "08",
-      "eyebrow": "Open Ried Sens",
-      "title": "Gesammelte Daten im Quellencheck",
-      "lead": "Echte gespeicherte Quelldaten mit Herkunft und Quellenstand.",
-      "layout": "collected-evidence",
-      "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Diese Ansicht fragt echte Datensätze der Website ab. Sie zeigt Quelle, Quellenstand und einen Ausschnitt der Antwort. Fehlende oder nicht erreichbare Daten bleiben sichtbar. Es werden keine Müllleerungen, Zugfahrten oder Funkpakete aus der Vortragsdauer errechnet. Die Demo ist ein optionaler Blick auf den Stand der Website, kein Beweis für die noch gewünschten Rohdatenzugänge.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      }
+      ]
     },
     {
       "id": "wirtschaft-next-step",
@@ -1254,12 +916,6 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
       "lead": "Eine Beteiligungsform wählen und einen Ansprechpartner für die Ausarbeitung benennen.",
       "layout": "the-ask-commitment",
       "bullets": [],
-      "speakerNotes": {
-        "elevatorPitch": "Eine Beteiligungsform wählen und einen Ansprechpartner für die Ausarbeitung benennen.",
-        "talkingPoints": [],
-        "audienceEngagement": "Den nächsten Schritt gemeinsam konkretisieren.",
-        "localHook": "Wir leben im Ried. Das KAMÜ in Bürstadt ist unser Treffpunkt."
-      },
       "specificAsks": [
         {
           "id": "business-sponsor",
@@ -1277,11 +933,17 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
           "tag": "Nächster Schritt",
           "actionText": "Termin vereinbaren"
         }
-      ],
-      "callToAction": {
-        "primaryText": "Beteiligung besprechen",
-        "primaryHref": "mailto:info@open-ried.de?subject=Ried-Hackathon"
-      }
+      ]
+    },
+    {
+      "id": "wirtschaft-bonus",
+      "title": "Während unseres Vortrags: neue Messwerte",
+      "lead": "Zum Abschluss sehen wir, welche echten Rohmesswerte seit Beginn dieses Vortrags abrufbar sind.",
+      "layout": "collected-evidence",
+      "eyebrow": "Open Ried Sens",
+      "bullets": [],
+      "stepNumber": 10,
+      "stepLabel": "10"
     }
   ]
 };
@@ -1289,5 +951,5 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
 export const PITCH_DECKS: PitchDeck[] = [POLITIK_DECK, SCHULEN_DECK, VHS_DECK, WIRTSCHAFT_DECK];
 
 export function getPitchDeckBySlug(slug: string): PitchDeck | undefined {
-  return PITCH_DECKS.find((deck) => deck.slug === slug);
+ return PITCH_DECKS.find((deck) => deck.slug === slug);
 }

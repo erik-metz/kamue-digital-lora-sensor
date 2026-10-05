@@ -179,3 +179,11 @@ Technikreserve statt Technikblock: Bausatz und Stückliste, Funkdetails, Datenfo
 ## Umsetzung nach Ergänzung des Nutzers
 
 Alle vier Decks wurden umgebaut. Die gemeinsame vierte Folie zeigt die bereits über die Website gesammelte Datenbasis für den Hackathon. Politik umfasst nun zehn Folien, Schulen neun, VHS acht und Wirtschaft neun, jeweils einschließlich einer Quellenprüfung vor dem abschließenden Ask. Der simulierte Ticker und seine Bonusdarstellung wurden entfernt. Die Quellenprüfung fragt tatsächliche gesammelte Datensätze ab und zeigt Quellenstand, Abrufstatus und einen Antwortausschnitt. Handouts übernehmen die aktuellen Inhalte und sämtliche politischen Bitten. Die oben dokumentierte Bestandsprüfung beschreibt den Zustand vor dieser Umsetzung.
+
+## Überarbeitung nach Folienfeedback vom 5. Oktober 2026
+
+Die Politik-Präsentation umfasst acht Folien: Team, Hackathon und regionaler Mehrwert, vorhandenes Smart-City-Dashboard, Entstehung und Datenbasis von Open Ried Sens, Schülerprojekt zum Sensorbau, konkreter Projekttag, alle vier politischen Anliegen gemeinsam und abschließend echte Rohmesswerte seit Vortragsbeginn. Schülerprojekt und Ablauf sind getrennt; die Ortsliste wird durch das gesamte Ried ersetzt. Die Unterstützung des Hackathons erfordert keinen finanziellen Beitrag der Politik.
+
+Die anderen drei Präsentationen übernehmen den gemeinsamen Einstieg, die Website-Ansichten, den Schülerprojekt-Gedanken und die abschließende Bonusfolie. Ihre spezifischen Anliegen bleiben jeweils auf einer gemeinsamen Folie. Tonspur und interaktive Ask-Checkboxen entfallen. Die One-Pager-Handouts sind direkt auf der Pitch-Übersicht erreichbar.
+
+Die Bonusfolie fragt die bestehende Rohdaten-API für bis zu acht ausgewählte Messstationen im Zeitfenster seit dem Öffnen der Präsentation ab. Sie zeigt echte Werte, Einheiten, Messzeiten und die Anzahl der Messzeilen. Fehlende Daten werden nicht geschätzt; Teilfehler und Abfragelimits werden als Untergrenze ausgewiesen. Das Zeitfenster bezieht sich auf den Messzeitpunkt, nicht auf einen unbekannten Importzeitpunkt. Die eigene Website wird im gleichen Host mit dem Kartenanker `ried-map` eingebettet, damit sowohl Vorschau als auch Veröffentlichung direkt die Karte zeigen.
