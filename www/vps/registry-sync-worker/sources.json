@@ -1,6 +1,77 @@
 {
   "sources": [
     {
+      "id": "db-openstation-netex",
+      "group": "transport",
+      "adapter": "db-netex",
+      "enabled": true,
+      "url": "https://bahnhof.de/daten/netex",
+      "mobilithek_id": "879076212433727488",
+      "interval_seconds": 86400,
+      "max_age_seconds": 604800,
+      "station_names": [
+        "Frankfurt (Main) Hbf",
+        "Biblis",
+        "Bobstadt",
+        "Bürstadt",
+        "Lampertheim",
+        "Hofheim (Ried)",
+        "Groß Rohrheim",
+        "Mannheim Hbf"
+      ],
+      "http_retries": 2
+    },
+    {
+      "id": "db-openstation-siri-fm",
+      "group": "transport",
+      "adapter": "db-siri-fm",
+      "enabled": true,
+      "url": "https://bahnhof.de/daten/siri-lite/fm.xml",
+      "mobilithek_id": "930558234532405248",
+      "interval_seconds": 60,
+      "max_age_seconds": 300,
+      "http_retries": 1
+    },
+    {
+      "id": "db-fasta",
+      "group": "transport",
+      "adapter": "db-fasta",
+      "enabled": false,
+      "url": "https://apis.deutschebahn.com/db-api-marketplace/apis/fasta/v2/facilities",
+      "interval_seconds": 60,
+      "max_age_seconds": 180,
+      "station_numbers": [],
+      "header_env": {
+        "DB-Client-ID": "DB_CLIENT_ID",
+        "DB-Api-Key": "DB_API_KEY"
+      },
+      "reason": "Optional REST alternative; requires DB subscription, credentials and station_numbers from OpenStation (not EVA)."
+    },
+    {
+      "id": "db-ris-stations",
+      "group": "transport",
+      "adapter": "db-ris-stations",
+      "enabled": false,
+      "url": "https://apis.deutschebahn.com/db-api-marketplace/apis/ris-stations/v1/stop-places",
+      "interval_seconds": 86400,
+      "max_age_seconds": 604800,
+      "eva_numbers": [
+        "8000105",
+        "8000503",
+        "8001034",
+        "8000360",
+        "8003503",
+        "8002934",
+        "8002391",
+        "8000244"
+      ],
+      "header_env": {
+        "DB-Client-ID": "DB_CLIENT_ID",
+        "DB-Api-Key": "DB_API_KEY"
+      },
+      "reason": "Requires subscribed RIS::Stations product and DB_CLIENT_ID/DB_API_KEY; REST response contract must be confirmed for the subscription before enabling."
+    },
+    {
       "id": "osm-regional-addresses",
       "group": "waste",
       "adapter": "osm-addresses",

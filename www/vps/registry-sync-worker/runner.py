@@ -13,6 +13,7 @@ from pathlib import Path
 import httpx
 import psycopg
 from adapters import import_cross7, import_lampertheim_events, import_tiles
+from bahn import import_fasta, import_netex, import_ris_stations, import_siri
 from budgets import import_biblis_budget
 from chargers import import_chargers
 from config import Settings
@@ -31,6 +32,10 @@ from zakb import import_zakb
 
 LOG = logging.getLogger(__name__)
 ADAPTERS = {
+    "db-netex": import_netex,
+    "db-siri-fm": import_siri,
+    "db-fasta": import_fasta,
+    "db-ris-stations": import_ris_stations,
     "osm-addresses": import_addresses,
     "biblis-budget": import_biblis_budget,
     "json": import_json,
@@ -157,7 +162,7 @@ async def sleep_until_stop(stop, seconds):
 async def bounded_collect(source, settings, slots, gtfs_slot):
     # Acquire the GTFS gate first so a second large import cannot occupy a
     # general slot while waiting. National feeds are expensive to parse.
-    if source["adapter"] in {"gtfs", "osm-addresses"}:
+    if source["adapter"] in {"gtfs", "osm-addresses", "db-netex"}:
         async with gtfs_slot, slots:
             return await collect(source, settings)
     async with slots:
@@ -233,6 +238,6 @@ async def main():
     await asyncio.gather(
         prediction_loop(settings, stop),
         *(source_loop(s, settings, stop,
-                      realtime_slot if s["adapter"] == "gtfs-rt" else slots,
+                      realtime_slot if s["adapter"] in {"gtfs-rt", "db-siri-fm", "db-fasta"} else slots,
                       gtfs_slot) for s in manifest),
     )

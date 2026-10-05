@@ -58,6 +58,11 @@ async def _acquire_once(conn, client, source, url=None, *, form=None):
     if urlsplit(target).scheme != "https":
         raise ValueError("Collector source must use HTTPS")
     headers = dict(source.get("headers", {}))
+    for header, variable in source.get("header_env", {}).items():
+        value = os.environ.get(variable)
+        if not value:
+            raise ValueError("Required source credential missing")
+        headers[header] = value
     if source.get("token_env"):
         token = os.environ[source["token_env"]]
         headers["Authorization"] = f"Bearer {token}"

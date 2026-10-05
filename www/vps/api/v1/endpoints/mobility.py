@@ -114,12 +114,12 @@ ACTIVE_CROSSINGS = [
 ]
 
 STATIONS = [
-    {"id": "biblis", "name": "Biblis", "eva_number": "8000072", "line": "Riedbahn", "latitude": 49.6886, "longitude": 8.4485},
+    {"id": "biblis", "name": "Biblis", "eva_number": "8000503", "line": "Riedbahn", "latitude": 49.6886, "longitude": 8.4485},
     {"id": "bobstadt", "name": "Bobstadt", "eva_number": "8001034", "line": "Riedbahn", "latitude": 49.6631, "longitude": 8.4468},
-    {"id": "buerstadt-oben", "name": "Bürstadt (Oben - Riedbahn)", "eva_number": "8000143", "line": "Riedbahn", "latitude": 49.6458, "longitude": 8.4563},
-    {"id": "lampertheim", "name": "Lampertheim", "eva_number": "8003666", "line": "Riedbahn", "latitude": 49.5980, "longitude": 8.4760},
-    {"id": "hofheim", "name": "Hofheim (Ried)", "eva_number": "8002900", "line": "Nibelungenbahn", "latitude": 49.6588, "longitude": 8.4115},
-    {"id": "buerstadt-unten", "name": "Bürstadt (Unten - Nibelungenbahn)", "eva_number": "8000143", "line": "Nibelungenbahn", "latitude": 49.6456, "longitude": 8.4564},
+    {"id": "buerstadt-oben", "name": "Bürstadt (Oben - Riedbahn)", "eva_number": "8000360", "line": "Riedbahn", "latitude": 49.6458, "longitude": 8.4563},
+    {"id": "lampertheim", "name": "Lampertheim", "eva_number": "8003503", "line": "Riedbahn", "latitude": 49.5980, "longitude": 8.4760},
+    {"id": "hofheim", "name": "Hofheim (Ried)", "eva_number": "8002934", "line": "Nibelungenbahn", "latitude": 49.6588, "longitude": 8.4115},
+    {"id": "buerstadt-unten", "name": "Bürstadt (Unten - Nibelungenbahn)", "eva_number": "8000360", "line": "Nibelungenbahn", "latitude": 49.6456, "longitude": 8.4564},
 ]
 
 
