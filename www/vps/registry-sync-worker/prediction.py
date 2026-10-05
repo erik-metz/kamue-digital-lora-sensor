@@ -107,7 +107,6 @@ async def store_position(
 
     if core_writes is None:
         core_writes = await core_writer_enabled(conn)
-        rail_geometry = await load_geometry(conn, now)
     if core_writes:
         await conn.execute("SELECT write_movement_position(%s)", (Jsonb({
             **data, 'entity_id': entity_id, 'payload_sha256': digest, 'metadata': metadata,
