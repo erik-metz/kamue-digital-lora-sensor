@@ -11,16 +11,16 @@ export default function HeaderLogo() {
           <span className="font-bold text-base sm:text-lg text-slate-100 tracking-tight whitespace-nowrap">
             Open Ried Sens
           </span>
-          <span className="hidden sm:inline-flex items-center text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
+          {/* <span className="hidden sm:inline-flex items-center text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
             Bürstadt &amp; Lampertheim
-          </span>
+          </span> */}
         </div>
         <span className="text-[11px] text-slate-400 font-medium hidden 2xl:block truncate whitespace-nowrap leading-tight">
           Initiative von{" "}
-          <span className="text-emerald-400">KAMÜ Kulturzentrum</span> &amp; Bürger/innen
+          <span className="text-emerald-400">KAMÜ Kulturzentrum</span> &amp;
+          Bürger/innen
         </span>
       </div>
     </div>
   );
 }
-

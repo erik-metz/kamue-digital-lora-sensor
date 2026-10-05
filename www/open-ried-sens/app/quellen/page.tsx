@@ -77,7 +77,7 @@ export default async function SourcesPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
             <Database className="w-4 h-4" />
-            <span>Offene Infrastruktur &amp; Messdaten</span>
+            <span>Herkunft &amp; Aktualität</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-100 tracking-tight">
             Datenquellen &amp; Erfassungsstatus
@@ -98,8 +98,7 @@ export default async function SourcesPage() {
           >
             <Activity className="w-5 h-5 shrink-0 text-rose-400" />
             <span>
-              Der gespeicherte Erfassungsstatus ist aktuell <strong>nicht erreichbar</strong>. Das Backend führt
-              möglicherweise Wartungsarbeiten durch oder die Datenbankverbindung wird neu aufgebaut.
+              Der Erfassungsstatus ist momentan <strong>nicht erreichbar</strong>. Bitte später erneut versuchen.
             </span>
           </div>
         ) : sources.length === 0 ? (
@@ -109,7 +108,7 @@ export default async function SourcesPage() {
         ) : (
           <>
             {/* Interactive Dashboard with Timeframes, Volumes, Graphics & Cards */}
-            <QuellenClient sources={sources} sensorCount={sensorCount} />
+            <QuellenClient sources={sources} />
 
             {/* Technical Tabular Audit View */}
             <details className="space-y-4 rounded-2xl border border-slate-800 p-5">
@@ -119,7 +118,7 @@ export default async function SourcesPage() {
                   Abrufintervalle &amp; Zeitstempel
                 </h3>
                 <p className="text-xs text-slate-400">
-                  Direkte Einsicht in Zeitstempel, Prüfintervalle und Fehlermeldungen für Systemadministratoren und Entwickler.
+                  Zeitstempel, Prüfintervalle und Fehlermeldungen je Quelle.
                 </p>
               </div>
 

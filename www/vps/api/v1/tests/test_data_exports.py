@@ -9,7 +9,6 @@ from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
-from unittest.mock import patch
 
 from fastapi import HTTPException
 from psycopg.rows import dict_row
@@ -62,8 +61,9 @@ class ExportDatabaseTests(DatabaseCase):
             '{}'::jsonb,'2030-01-15T12:00:00Z',%s::numeric,'2030-01-15T12:01:00Z','{}'::jsonb)""",
                                 (entity, metric, basis, value))
 
-    def unzip(self, response):
-        with zipfile.ZipFile(io.BytesIO(response.body)) as archive:
+    async def unzip(self, response):
+        data = response.body if hasattr(response, "body") else b"".join([chunk async for chunk in response.body_iterator])
+        with zipfile.ZipFile(io.BytesIO(data)) as archive:
             tables = {name: list(csv.DictReader(io.StringIO(archive.read(name).decode('utf-8-sig'))))
                       for name in archive.namelist() if name.endswith('.csv')}
             manifest = json.loads(archive.read('manifest.json'))
@@ -75,7 +75,7 @@ class ExportDatabaseTests(DatabaseCase):
         await self.conn.execute("INSERT INTO sensor_metadata(id,friendly_name,is_hidden) VALUES ('hidden','Hidden',true)")
         await self.reading('sensor:hidden')
         response = await download_data(sample=True, pool=self.pool)
-        tables, manifest = self.unzip(response)
+        tables, manifest = await self.unzip(response)
         self.assertEqual(set(tables), {'entities.csv', 'measurement_definitions.csv', 'readings.csv'})
         self.assertEqual([r['id'] for r in tables['entities.csv']], ['public'])
         definition = tables['measurement_definitions.csv'][0]
@@ -88,7 +88,7 @@ class ExportDatabaseTests(DatabaseCase):
         await self.reading('a')
         await self.reading('b', metric='soil_temperature', basis='model')
         await self.reading('c', metric='humidity')
-        tables, manifest = self.unzip(await download_data(topic='temperature', sample=False,
+        tables, manifest = await self.unzip(await download_data(topic='temperature', sample=False,
             start=date(2030,1,1), end=date(2030,1,31), pool=self.pool))
         self.assertEqual({r['id'] for r in tables['entities.csv']}, {'a', 'b'})
         self.assertEqual({r['basis'] for r in tables['measurement_definitions.csv']}, {'model', 'observed'})
@@ -99,25 +99,37 @@ class ExportDatabaseTests(DatabaseCase):
         await self.reading('traffic', metric='traffic_total_hourly', kind='sensor')
         # Canonical legacy sensors require a currently public sensor entry.
         await self.reading('weather')
-        tables, _ = self.unzip(await download_data(topic='mobility', sample=False,
+        tables, _ = await self.unzip(await download_data(topic='mobility', sample=False,
             start=date(2030,1,1), end=date(2030,1,31), pool=self.pool))
         self.assertEqual({r['id'] for r in tables['entities.csv']}, {'trip', 'traffic'})
         self.assertIn('schedule_prediction', {r['basis'] for r in tables['measurement_definitions.csv']})
 
-    async def test_full_export_is_rejected_instead_of_truncated(self):
+    async def test_full_export_streams_every_batch_without_a_row_limit(self):
         await self.reading('a')
-        await self.reading('b')
-        with patch('endpoints.data_exports.MAX_READINGS', 1):
-            with self.assertRaises(HTTPException) as error:
-                await download_data(topic='all', sample=False, start=date(2030,1,1), end=date(2030,1,31), pool=self.pool)
-        self.assertEqual(error.exception.status_code, 422)
+        definition = (await (await self.conn.execute('SELECT id FROM measurement_definitions')).fetchone())['id']
+        await self.conn.execute("""INSERT INTO readings(measurement_id,observed_at,value)
+            SELECT %s,'2030-01-16'::timestamptz + n*interval '1 second',n
+            FROM generate_series(1,2500) n""", (definition,))
+        response = await download_data(topic='temperature', sample=False, start=date(2030,1,1), end=date(2030,1,31), pool=self.pool)
+        self.assertTrue(hasattr(response, 'body_iterator'))
+        tables, manifest = await self.unzip(response)
+        self.assertEqual(len(tables['readings.csv']), 2501)
+        self.assertEqual(manifest['tables']['readings'], 2501)
+        self.assertTrue(manifest['complete'])
+
+    async def test_availability_check_does_not_generate_a_zip(self):
+        await self.reading('a')
+        response = await download_data(topic='temperature', sample=False, check=True,
+            start=date(2030,1,1), end=date(2030,1,31), pool=self.pool)
+        self.assertEqual(json.loads(response.body), {'available': True})
+        self.assertNotIn('content-disposition', response.headers)
 
     async def test_roadworks_overlap_and_singular_provider_category(self):
         for identifier, cause in [('work','roadwork'), ('closed','closure'), ('jam','congestion')]:
             await self.conn.execute("""INSERT INTO traffic_incidents
                 (id,road_name,direction,location_from,location_to,start_time,end_time,last_seen_at,cause_type)
                 VALUES (%s,'A67','north','a','b','2029-12-20','2030-01-20','2030-01-15',%s)""", (identifier, cause))
-        tables, _ = self.unzip(await download_data(topic='roadworks', sample=False,
+        tables, _ = await self.unzip(await download_data(topic='roadworks', sample=False,
             start=date(2030,1,1), end=date(2030,1,31), pool=self.pool))
         self.assertEqual({r['id'] for r in tables['traffic_incidents.csv']}, {'work','closed'})
         self.assertEqual(tables['readings.csv'], [])

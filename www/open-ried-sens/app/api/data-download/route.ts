@@ -5,10 +5,11 @@ const TOPICS = new Set(["all", "temperature", "mobility", "roadworks"]);
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const sample = params.get("sample") === "1";
+  const check = params.get("check") === "1";
   const topic = params.get("topic") || "all";
   const error = (message: string, status: number) => Response.json({ error: message }, { status });
   if (!TOPICS.has(topic)) return error("Bitte ein gültiges Thema auswählen.", 400);
-  const query = new URLSearchParams({ topic, sample: String(sample) });
+  const query = new URLSearchParams({ topic, sample: String(sample), check: String(check) });
   if (!sample) {
     for (const key of ["start", "end"]) {
       const value = params.get(key) || "";
@@ -21,22 +22,31 @@ export async function GET(request: Request) {
     const days = (Date.parse(query.get("end")!) - Date.parse(query.get("start")!)) / 86400000;
     if (days < 0 || days >= 31) return error("Bitte einen Zeitraum von höchstens 31 Tagen wählen (Start vor Ende).", 400);
   }
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
   try {
     const url = new URL("/api/v1/downloads", env.BACKEND_API_URL);
     url.search = query.toString();
-    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(45000) });
+    const response = await fetch(url, { cache: "no-store", signal: AbortSignal.any([controller.signal, request.signal]) });
+    clearTimeout(timeout);
     if (!response.ok) {
       const body = await response.json().catch(() => null);
       return error(typeof body?.detail === "string" ? body.detail : "Daten konnten nicht geladen werden. Bitte später erneut versuchen.", response.status);
     }
+    if (check) {
+      const body = await response.json();
+      if (body.available !== true) throw new Error("Invalid availability response");
+      return Response.json({ available: true }, { headers: { "Cache-Control": "no-store" } });
+    }
     if (!response.headers.get("Content-Type")?.startsWith("application/zip")) throw new Error("Invalid download format");
-    // Stream the bounded backend ZIP instead of buffering a second copy here.
+    // Stream the ZIP; the timeout applies to response headers, not the download duration.
     return new Response(response.body, { headers: {
       "Content-Type": "application/zip",
       "Content-Disposition": `attachment; filename="open-ried-sens-${sample ? "sample" : `${topic}-${query.get("start")}-${query.get("end")}`}.zip"`,
       "Cache-Control": "no-store",
     } });
   } catch {
+    clearTimeout(timeout);
     return error("Der Datenexport ist momentan nicht erreichbar. Bitte später erneut versuchen.", 502);
   }
 }

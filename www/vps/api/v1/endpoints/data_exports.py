@@ -1,4 +1,4 @@
-"""Bounded public downloads of related core tables; never truncate a full export."""
+"""Public related-table samples and bounded-memory streaming ZIP downloads."""
 
 import csv
 import io
@@ -9,11 +9,11 @@ from typing import Literal
 
 from dependencies import get_db_pool
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from psycopg.errors import QueryCanceled, UndefinedTable
-from starlette.responses import Response
+from starlette.responses import Response, StreamingResponse
 
 router = APIRouter(tags=["Downloads Public"])
-MAX_READINGS = 50_000
 SAMPLE_SIZE = 300
 
 # A hidden/deleted legacy sensor must stay hidden even during the core migration.
@@ -92,8 +92,7 @@ GTFS-Fahrplandateien und Satellitenbilder sind nicht Bestandteil dieses Pakets.
 
 manifest.json nennt Umfang, Auswahl und Erstellungszeit. Themen-Exporte sind vollständig
 für die Auswahl im kanonischen Drei-Tabellen-Bestand zum Exportzeitpunkt. Noch nicht
-migrierte Daten sind nicht enthalten. Größere Auswahlen werden mit einem Fehler abgelehnt,
-niemals still abgeschnitten. Temperaturen können Luft-, Boden- und Modellwerte umfassen;
+migrierte Daten sind nicht enthalten. Themen-Exporte werden ohne Zeilenlimit gestreamt. Temperaturen können Luft-, Boden- und Modellwerte umfassen;
 beachte metric, dimensions und basis für die Interpretation.
 
 Quellen und Nutzungsbedingungen: siehe /quellen auf der Projektwebsite
@@ -112,74 +111,164 @@ Text mit Formelzeichen wird für Tabellenprogramme mit einem Apostroph geschütz
 def export_range(start, end, sample):
     if sample:
         return None, None
-    if start is None or end is None or start > end or (end - start).days >= 31:
+    if start is None or end is None or end == date.max or start > end or (end - start).days >= 31:
         raise HTTPException(400, 'Bitte einen gültigen Zeitraum von höchstens 31 Tagen wählen.')
     return (datetime.combine(start, datetime.min.time(), UTC),
             datetime.combine(end + timedelta(days=1), datetime.min.time(), UTC))
+
+
+class ZipBuffer(io.RawIOBase):
+    """Unseekable ZIP sink: retain only the compressed output of one DB batch."""
+    def __init__(self):
+        self.chunks = []
+        self.position = 0
+
+    def writable(self):
+        return True
+
+    def tell(self):
+        return self.position
+
+    def write(self, data):
+        self.chunks.append(data)
+        self.position += len(data)
+        return len(data)
+
+    def take(self):
+        data = b''.join(self.chunks)
+        self.chunks.clear()
+        return data
+
+
+def topic_condition(topic):
+    return TEMPERATURE if topic == 'temperature' else MOBILITY if topic == 'mobility' else 'TRUE'
+
+
+def export_queries(topic, start, end):
+    """Fixed table/column names; all user input is passed as query parameters."""
+    scope = f"{PUBLIC} AND {topic_condition(topic)}"
+    if topic == 'roadworks':
+        scope += ' AND FALSE'
+    matching = f"""SELECT d.id FROM measurement_definitions d JOIN entities e ON e.id=d.entity_id
+        WHERE {scope} AND EXISTS (SELECT 1 FROM readings r WHERE r.measurement_id=d.id
+            AND r.observed_at >= %s AND r.observed_at < %s)"""
+    queries = [
+        ('entities', ENTITY_COLUMNS, f"""SELECT e.id,e.name,e.entity_type,e.metadata FROM entities e
+            WHERE EXISTS (SELECT 1 FROM measurement_definitions linked
+                WHERE linked.entity_id=e.id AND linked.id IN ({matching})) ORDER BY e.id""", (start, end)),
+        ('measurement_definitions', DEFINITION_COLUMNS,
+            f'SELECT * FROM measurement_definitions WHERE id IN ({matching}) ORDER BY id', (start, end)),
+        ('readings', READING_COLUMNS, f"""SELECT r.* FROM readings r
+            JOIN measurement_definitions d ON d.id=r.measurement_id JOIN entities e ON e.id=d.entity_id
+            WHERE {scope} AND r.observed_at >= %s AND r.observed_at < %s
+            ORDER BY r.observed_at,r.measurement_id""", (start, end)),
+    ]
+    if topic in {'all', 'mobility', 'roadworks'}:
+        for table, columns in (('street_closures', CLOSURE_COLUMNS), ('traffic_incidents', INCIDENT_COLUMNS)):
+            condition = "AND cause_type IN ('roadwork','roadworks','closure')" if topic == 'roadworks' and table == 'traffic_incidents' else ''
+            queries.append((table, columns, f"""SELECT {','.join(columns)} FROM {table}
+                WHERE start_time < %s AND (end_time IS NULL OR end_time >= %s)
+                {condition} ORDER BY start_time,id""", (end, start)))
+    return queries
+
+
+async def stream_export(pool, topic, start, end):
+    """One read snapshot; cursors bound memory regardless of the reading count.
+
+    A failed or interrupted stream has no manifest/completed ZIP directory and
+    must be retried. Cleanup releases the snapshot on disconnect or failure.
+    """
+    sink = ZipBuffer()
+    async with pool.connection() as conn:
+        async with conn.transaction():
+            await conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+            await conn.execute("SET LOCAL statement_timeout = '25s'")
+            generated_at = (await (await conn.execute('SELECT transaction_timestamp() AS time')).fetchone())['time']
+            counts = {}
+            archive = zipfile.ZipFile(sink, 'w', compression=zipfile.ZIP_DEFLATED)
+            try:
+                for index, (name, columns, statement, params) in enumerate(export_queries(topic, start, end)):
+                    counts[name] = 0
+                    with archive.open(f'{name}.csv', 'w', force_zip64=True) as output:
+                        output.write(csv_bytes([], columns))
+                        yield sink.take()
+                        async with conn.cursor(name=f'public_export_{index}') as cursor:
+                            await cursor.execute(statement, params)
+                            while batch := await cursor.fetchmany(1000):
+                                output.write(csv_bytes(batch, columns).split(b'\r\n', 1)[1])
+                                counts[name] += len(batch)
+                                if chunk := sink.take():
+                                    yield chunk
+                    if chunk := sink.take():
+                        yield chunk
+                # Reuse the same documentation and manifest format as the sample.
+                documentation = package({}, sample=False, topic=topic, start=start, end=end, generated_at=generated_at)
+                with zipfile.ZipFile(io.BytesIO(documentation)) as reference:
+                    archive.writestr('README.txt', reference.read('README.txt'))
+                    manifest = json.loads(reference.read('manifest.json'))
+                manifest['tables'] = counts
+                manifest['complete'] = True
+                archive.writestr('manifest.json', json.dumps(manifest, ensure_ascii=False, indent=2))
+            finally:
+                archive.close()
+            if chunk := sink.take():
+                yield chunk
 
 
 @router.get('/downloads', summary='Download related public CSV tables as ZIP')
 async def download_data(
     topic: Literal['all', 'temperature', 'mobility', 'roadworks'] = 'all',
     sample: bool = False, start: date | None = None, end: date | None = None,
-    pool=Depends(get_db_pool),
+    check: bool = False, pool=Depends(get_db_pool),
 ):
     start_time, end_time = export_range(start, end, sample)
-    tables = {}
+    if sample:
+        topic = 'all'
     try:
         async with pool.connection() as conn:
             async with conn.transaction():
                 await conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
                 await conn.execute("SET LOCAL statement_timeout = '25s'")
-                generated_at = (await (await conn.execute('SELECT transaction_timestamp() AS time')).fetchone())['time']
-                # Latest per definition gives the sample diverse metrics and usable references.
-                if sample:
-                    cursor = await conn.execute(f"""SELECT r.* FROM measurement_definitions d
+                if not sample:
+                    queries = export_queries(topic, start_time, end_time)
+                    # Validate that there is data before the browser starts a download.
+                    # Only check the reading/meldung queries, not repeated metadata joins.
+                    exists = False
+                    for _, _, statement, params in queries[2:]:
+                        if await (await conn.execute(statement.rsplit(' ORDER BY', 1)[0] + ' LIMIT 1', params)).fetchone():
+                            exists = True
+                            break
+                    if not exists:
+                        raise HTTPException(404, 'Für diese Auswahl sind keine öffentlichen Daten im Exportbestand vorhanden.')
+                    if check:
+                        return Response('{"available":true}', media_type='application/json', headers={'Cache-Control': 'no-store'})
+                else:
+                    generated_at = (await (await conn.execute('SELECT transaction_timestamp() AS time')).fetchone())['time']
+                    readings = await (await conn.execute(f"""SELECT r.* FROM measurement_definitions d
                         JOIN entities e ON e.id=d.entity_id
                         JOIN latest_readings l ON l.measurement_id=d.id
                         JOIN readings r ON r.measurement_id=l.measurement_id AND r.observed_at=l.observed_at
-                        WHERE {PUBLIC} ORDER BY md5(d.id::text) LIMIT %s""", (SAMPLE_SIZE,))
-                    readings = await cursor.fetchall()
-                elif topic == 'roadworks':
-                    readings = []
-                else:
-                    topic_sql = TEMPERATURE if topic == 'temperature' else MOBILITY if topic == 'mobility' else 'TRUE'
-                    cursor = await conn.execute(f"""SELECT r.* FROM readings r
-                        JOIN measurement_definitions d ON d.id=r.measurement_id
-                        JOIN entities e ON e.id=d.entity_id
-                        WHERE {PUBLIC} AND {topic_sql} AND r.observed_at >= %s AND r.observed_at < %s
-                        ORDER BY r.observed_at,r.measurement_id LIMIT %s""",
-                        (start_time, end_time, MAX_READINGS + 1))
-                    readings = await cursor.fetchall()
-                if len(readings) > MAX_READINGS:
-                    raise HTTPException(422, 'Die Auswahl enthält mehr als 50.000 Messwerte. Bitte Zeitraum oder Thema eingrenzen. Es wurde keine unvollständige Datei erstellt.')
-                ids = sorted({r['measurement_id'] for r in readings})
-                definitions = await (await conn.execute(
-                    'SELECT * FROM measurement_definitions WHERE id=ANY(%s::bigint[]) ORDER BY id', (ids,))).fetchall()
-                entity_ids = sorted({d['entity_id'] for d in definitions})
-                entities = await (await conn.execute(
-                    'SELECT id,name,entity_type,metadata FROM entities WHERE id=ANY(%s::text[]) ORDER BY id', (entity_ids,))).fetchall()
-                tables.update(entities=(entities, ENTITY_COLUMNS),
-                              measurement_definitions=(definitions, DEFINITION_COLUMNS),
-                              readings=(readings, READING_COLUMNS))
-                if not sample and topic in {'all', 'mobility', 'roadworks'}:
-                    for table, columns in (('street_closures', CLOSURE_COLUMNS), ('traffic_incidents', INCIDENT_COLUMNS)):
-                        condition = "AND cause_type IN ('roadwork','roadworks','closure')" if topic == 'roadworks' and table == 'traffic_incidents' else ''
-                        rows = await (await conn.execute(f"""SELECT {','.join(columns)} FROM {table}
-                            WHERE start_time < %s AND (end_time IS NULL OR end_time >= %s)
-                            {condition} ORDER BY start_time,id LIMIT %s""",
-                            (end_time, start_time, MAX_READINGS + 1))).fetchall()
-                        if len(rows) > MAX_READINGS:
-                            raise HTTPException(422, 'Zu viele Meldungen. Bitte den Zeitraum verkürzen; der Export wurde nicht abgeschnitten.')
-                        tables[table] = (rows, columns)
-                if not any(rows for rows, _ in tables.values()):
-                    raise HTTPException(404, 'Für diese Auswahl sind keine öffentlichen Daten im Exportbestand vorhanden.')
+                        WHERE {PUBLIC} ORDER BY md5(d.id::text) LIMIT %s""", (SAMPLE_SIZE,))).fetchall()
+                    if not readings:
+                        raise HTTPException(404, 'Für diese Auswahl sind keine öffentlichen Daten im Exportbestand vorhanden.')
+                    if check:
+                        return Response('{"available":true}', media_type='application/json', headers={'Cache-Control': 'no-store'})
+                    ids = sorted({r['measurement_id'] for r in readings})
+                    definitions = await (await conn.execute(
+                        'SELECT * FROM measurement_definitions WHERE id=ANY(%s::bigint[]) ORDER BY id', (ids,))).fetchall()
+                    entities = await (await conn.execute(
+                        'SELECT id,name,entity_type,metadata FROM entities WHERE id=ANY(%s::text[]) ORDER BY id',
+                        (sorted({d['entity_id'] for d in definitions}),))).fetchall()
+                    tables = dict(entities=(entities, ENTITY_COLUMNS),
+                                  measurement_definitions=(definitions, DEFINITION_COLUMNS),
+                                  readings=(readings, READING_COLUMNS))
     except UndefinedTable:
         raise HTTPException(503, 'Der Drei-Tabellen-Export ist auf dem Backend noch nicht eingerichtet.') from None
     except QueryCanceled:
         raise HTTPException(503, 'Die Auswahl dauert zu lange. Bitte den Zeitraum eingrenzen.') from None
-    data = package(tables, sample=sample, topic=topic, start=start_time, end=end_time, generated_at=generated_at)
     filename = f'open-ried-sens-{ "sample" if sample else topic + "-" + start.isoformat() + "-" + end.isoformat() }.zip'
-    return Response(data, media_type='application/zip', headers={
-        'Content-Disposition': f'attachment; filename="{filename}"', 'Cache-Control': 'no-store',
-    })
+    headers = {'Content-Disposition': f'attachment; filename="{filename}"', 'Cache-Control': 'no-store'}
+    if sample:
+        data = await run_in_threadpool(package, tables, sample=True, topic=topic, start=None, end=None, generated_at=generated_at)
+        return Response(data, media_type='application/zip', headers=headers)
+    return StreamingResponse(stream_export(pool, topic, start_time, end_time), media_type='application/zip', headers=headers)

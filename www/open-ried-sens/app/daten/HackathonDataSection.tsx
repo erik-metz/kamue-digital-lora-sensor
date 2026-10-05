@@ -13,20 +13,20 @@ export default function HackathonDataSection() {
     setBusy(true);
     setMessage("");
     try {
-      const response = await fetch(`/api/data-download?${params}`, { signal: AbortSignal.timeout(60000) });
+      const validation = new URLSearchParams(params);
+      validation.set("check", "1");
+      const response = await fetch(`/api/data-download?${validation}`, { signal: AbortSignal.timeout(60000) });
       if (!response.ok) {
         const body = await response.json();
         throw new Error(body.error || "Download fehlgeschlagen.");
       }
-      const url = URL.createObjectURL(await response.blob());
       const link = document.createElement("a");
-      link.href = url;
-      link.download = response.headers.get("Content-Disposition")?.match(/filename="([^\"]+)"/)?.[1] || "open-ried-sens.zip";
+      link.href = `/api/data-download?${params}`;
+      link.download = "";
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-      setMessage("Die ZIP-Datei wurde zum Download bereitgestellt.");
+      setMessage("Der Download wurde gestartet. Den Fortschritt findest du in den Downloads deines Browsers.");
     } catch (error) {
       setMessage(error instanceof Error && error.name !== "TimeoutError" ? error.message : "Der Download dauert zu lange. Bitte einen kürzeren Zeitraum wählen oder erneut versuchen.");
     } finally {
@@ -41,7 +41,7 @@ export default function HackathonDataSection() {
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Mit einer Stichprobe starten</h3>
           <p className="max-w-2xl text-sm text-slate-300">Drei zusammengehörige CSV-Dateien: Messpunkte, Messgrößen und Messwerte. Mit IDs zum Verknüpfen und einer kurzen Anleitung im ZIP.</p>
-          <p className="text-xs text-slate-400">Bis zu 300 Messgrößen mit je einem aktuellen gespeicherten Wert. Eine Stichprobe, kein vollständiger Datenbestand.</p>
+          <p className="text-xs text-slate-400">Bis zu 300 Messgrößen mit je einem zuletzt gespeicherten Wert. Eine Stichprobe, kein vollständiger Datenbestand.</p>
         </div>
         <button type="button" disabled={busy} onClick={() => void download(new URLSearchParams({ sample: "1" }))} className={`${buttonClass} shrink-0 bg-emerald-400 text-slate-950 hover:bg-emerald-300`}>Stichprobe laden (ZIP)</button>
       </div>
@@ -53,7 +53,7 @@ export default function HackathonDataSection() {
       }} className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 space-y-4">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold">Thema &amp; Zeitraum wählen</h3>
-          <p className="text-sm text-slate-300">Alle öffentlichen Messpunkte des gewählten Themas gemeinsam herunterladen.</p>
+          <p className="text-sm text-slate-300">Öffentliche Daten des gewählten Themas aus dem Drei-Tabellen-Bestand gemeinsam herunterladen.</p>
         </div>
         <fieldset disabled={busy} className="grid gap-4 sm:grid-cols-3">
           <legend className="sr-only">Export auswählen</legend>
@@ -72,10 +72,10 @@ export default function HackathonDataSection() {
             <input type="date" name="end" required className={inputClass} />
           </label>
         </fieldset>
-        <p className="text-xs text-slate-400">Bis zu 31 Tage und 50.000 Messwerte pro Export. Größere Auswahlen werden nicht abgeschnitten. Baustellen und Sperrungen enthalten gespeicherte Meldungen, deren Gültigkeit den Zeitraum überlappt.</p>
+        <p className="text-xs text-slate-400">Bis zu 31 Tage pro Export, ohne Zeilenlimit. Baustellen und Sperrungen enthalten gespeicherte Meldungen, deren Gültigkeit den Zeitraum überlappt.</p>
         <button type="submit" disabled={busy} className={`${buttonClass} border border-slate-700 text-emerald-300 hover:bg-slate-800`}>Auswahl laden (ZIP)</button>
       </form>
-      <p role="status" aria-live="polite" className="text-sm text-slate-300">{busy ? "Datenpaket wird erstellt …" : message}</p>
+      <p role="status" aria-live="polite" className="text-sm text-slate-300">{busy ? "Auswahl wird geprüft …" : message}</p>
       <p className="text-sm text-slate-400">Für den Hackathon: Ein Paket für den gewünschten Zeitraum laden und gemeinsam im lokalen Netzwerk bereitstellen. Langfristige Sensordaten findest du in den UploadThing-Archiven.</p>
     </section>
   );

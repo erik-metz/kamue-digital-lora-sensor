@@ -207,6 +207,13 @@ class InfrastructureTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(site.max_height_m, 24.5)
         self.assertEqual(site.max_safety_distance_h_m, 5.2)
         self.assertEqual(site.antenna_count, 6)
+        # Production connections use psycopg's dict_row factory.
+        self.cursor.fetchall.return_value = [dict(zip(
+            ("id", "name", "metadata", "latitude", "longitude", "max_height_m", "max_sa_h_m", "antenna_count"),
+            (site.id, site.name, meta, 49.5947, 8.4683, 24.5, 5.2, 6),
+        ))]
+        dict_result = await get_emf_sites(self.pool)
+        self.assertEqual(dict_result, result)
 
 
 if __name__ == "__main__":
