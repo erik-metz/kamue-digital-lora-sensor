@@ -36,3 +36,11 @@ test('stationary vehicles do not run an animation loop', () => {
   const initial = nextMotion(undefined, a, 10000, 0);
   assert.equal(nextMotion(initial, a, 20000, 10000).duration, 0);
 });
+test('ships snap after sparse reports but an older snapshot never rewinds them', () => {
+  const initial=nextMotion(undefined,a,10000,0,true);
+  const nearby={lat:49.6001,lng:8.4001};
+  assert.equal(nextMotion(initial,nearby,20000,10000,true).duration,10000);
+  assert.equal(nextMotion(initial,nearby,41000,10000,true).duration,0);
+  assert.equal(nextMotion(initial,b,20000,10000,true).duration,0);
+  assert.equal(nextMotion(initial,b,9000,10000,true),initial);
+});

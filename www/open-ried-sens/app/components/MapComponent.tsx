@@ -259,11 +259,7 @@ export default function MapComponent(props: MapProps) {
         if (icons.get(key) !== iconKey) marker.setIcon(icon());
       }
       icons.set(key, iconKey);
-      const previous = motions.get(key);
-      const shipGap = position.kind === "ship" && previous &&
-        (Date.parse(position.timestamp) - previous.sourceTime > 30_000 ||
-         marker.getLatLng().distanceTo(target) > 150);
-      motions.set(key, nextMotion(shipGap ? undefined : previous, target, Date.parse(position.timestamp), receivedAt));
+      motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.timestamp), receivedAt, position.kind === "ship"));
       const popup = detailCard(`${style.symbol} ${title}`, predicted ? "Fahrplanprognose · keine GPS-Messung" : "Beobachtete Position", [
         ...(position.kind === "waste" && predicted ? ["Modell aus Abfuhrtagen: Straßenstichprobe, angenommene Reihenfolge und Zeiten (07–17 Uhr). Kein identifiziertes Müllfahrzeug."] : []),
         ...(typeof position.speed_kmh === "number" ? [`${predicted ? "Modellierte Geschwindigkeit" : "Geschwindigkeit"}: ${Math.round(position.speed_kmh)} km/h`] : []),

@@ -17,7 +17,7 @@ export function motionPoint(motion: MarkerMotion, now: number): MotionPoint {
   };
 }
 
-export function nextMotion(previous: MarkerMotion | undefined, target: MotionPoint, sourceTime: number, now: number): MarkerMotion {
+export function nextMotion(previous: MarkerMotion | undefined, target: MotionPoint, sourceTime: number, now: number, ship = false): MarkerMotion {
   // A cached or out-of-order response must not rewind or restart an animation.
   if (previous && (!Number.isFinite(sourceTime) || sourceTime <= previous.sourceTime)) return previous;
   if (!previous) return { from: target, to: target, startedAt: now, duration: 0, sourceTime };
@@ -26,6 +26,6 @@ export function nextMotion(previous: MarkerMotion | undefined, target: MotionPoi
   const distance = Math.hypot((target.lat - from.lat) * 111_000,
     (target.lng - from.lng) * 111_000 * Math.cos(target.lat * Math.PI / 180));
   // Long outages and large corrections should not produce a fictional journey.
-  const duration = elapsed > 60_000 || distance > 2_000 || distance < .01 ? 0 : Math.min(30_000, Math.max(MOVEMENT_POLL_MS, elapsed));
+  const duration = elapsed > (ship ? 30_000 : 60_000) || distance > (ship ? 150 : 2_000) || distance < .01 ? 0 : Math.min(30_000, Math.max(MOVEMENT_POLL_MS, elapsed));
   return { from, to: target, startedAt: now, duration, sourceTime };
 }
