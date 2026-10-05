@@ -151,3 +151,13 @@ test("SENSOR_CATEGORY_MIN_ZOOM specifies valid zoom thresholds for all categorie
   }
 });
 
+
+test("only raster overlays restrict their overview by zoom", () => {
+  for (const id of urlState.MAP_LAYER_IDS) {
+    for (let zoom = 8; zoom <= 19; zoom++) {
+      assert.equal(mapPresets.isLayerZoomRestricted(id, zoom),
+        (id === "starkregen" || id === "lora") && zoom < mapPresets.LAYER_MIN_ZOOM[id],
+        `${id} at zoom ${zoom}`);
+    }
+  }
+});

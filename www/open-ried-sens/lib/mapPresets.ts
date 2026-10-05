@@ -70,6 +70,12 @@ export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
   devplans: 14,
 };
 
+// Vector layers stay visible; these thresholds control their overview styling.
+// Raster overlays cannot provide an overview below their supported zoom.
+export function isLayerZoomRestricted(id: MapLayerId, zoom: number): boolean {
+  return (id === "starkregen" || id === "lora") && zoom < LAYER_MIN_ZOOM[id];
+}
+
 export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
   places: {
     id: "places",
@@ -120,7 +126,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Haltestellen",
     icon: "🚏",
     category: "mobility",
-    description: "VRN-Bushaltestellen mit Richtungssteigen & Abfahrten (sichtbar ab Zoom 14)",
+    description: "VRN-Bushaltestellen mit Richtungssteigen & Abfahrten",
     minZoom: LAYER_MIN_ZOOM.stops,
     highlightColor: "border-amber-500 text-amber-300",
   },
@@ -176,7 +182,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Agrarkulturen",
     icon: "🌾",
     category: "environment",
-    description: "Spargelanbau, Gemüseflächen und Ackerschläge im Ried (sichtbar ab Zoom 14)",
+    description: "Spargelanbau, Gemüseflächen und Ackerschläge im Ried",
     minZoom: LAYER_MIN_ZOOM.crops,
     highlightColor: "border-purple-400 text-purple-300",
   },

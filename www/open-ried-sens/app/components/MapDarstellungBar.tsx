@@ -15,6 +15,7 @@ import {
 import type { MapMode } from "@/lib/mapData";
 import { MAP_LAYER_IDS, type MapLayerId, DEFAULT_MAP_LAYERS } from "@/lib/urlState";
 import {
+  isLayerZoomRestricted,
   LAYER_CATEGORIES,
   LAYER_DEFINITIONS,
   LAYER_PRESETS,
@@ -365,13 +366,13 @@ export default function MapDarstellungBar({
                   <div className="flex flex-col gap-1.5">
                     {catLayers.map((layerMeta) => {
                       const isEnabled = Boolean(layers[layerMeta.id]);
-                      const isZoomRestricted = layerMeta.minZoom && zoom < layerMeta.minZoom;
+                      const isZoomRestricted = isLayerZoomRestricted(layerMeta.id, zoom);
 
                       let extraBadge = "";
                       if (layerMeta.id === "closures" && activeClosuresCount > 0) {
                         extraBadge = ` (${activeClosuresCount})`;
-                      } else if (layerMeta.minZoom) {
-                        extraBadge = zoom >= layerMeta.minZoom ? "" : ` ≥Z${layerMeta.minZoom}`;
+                      } else if (isZoomRestricted) {
+                        extraBadge = " · Details beim Hineinzoomen";
                       }
 
                       return (
@@ -385,7 +386,7 @@ export default function MapDarstellungBar({
                               : "bg-slate-950/40 border border-slate-800/70 text-slate-400 hover:bg-slate-900 hover:text-slate-300"
                           }`}
                           title={`${layerMeta.label}: ${layerMeta.description}${
-                            isZoomRestricted ? ` (Zoomstufe ${zoom} < ${layerMeta.minZoom})` : ""
+                            isZoomRestricted ? ` (Details ab Zoom ${layerMeta.minZoom})` : ""
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">

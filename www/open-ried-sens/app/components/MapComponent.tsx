@@ -10,10 +10,10 @@ import { motionPoint, nextMotion, MOVEMENT_POLL_MS, type MarkerMotion } from "@/
 import { detailCard, featureCard, featureKind, mapSymbol, placeMarker } from "@/lib/mapPresentation";
 import { useEffect, useRef, useState } from "react";
 import type { GeoJsonObject } from "geojson";
-import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, SENSOR_CATEGORY_MIN_ZOOM, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer } from "@/lib/temperatureHeatmap";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, DEFAULT_MAP_LAYERS, type MapLayerId } from "@/lib/urlState";
-import { LAYER_MIN_ZOOM } from "@/lib/mapPresets";
+import { LAYER_MIN_ZOOM, isLayerZoomRestricted } from "@/lib/mapPresets";
 
 export type { SensorNode } from "@/lib/mapData";
 interface MapProps {
@@ -164,7 +164,6 @@ export default function MapComponent(props: MapProps) {
       return target;
     }
     const points: { lat: number; lng: number; temp: number }[] = [];
-    const isSoleCategory = props.categories.length === 1;
     for (const node of props.nodes) {
       const category = markerCategory(node, props.categories);
       if (!category || !props.categories.includes(category)) continue;
@@ -175,10 +174,6 @@ export default function MapComponent(props: MapProps) {
       if (props.mode === "temperature") {
         if (!reading) continue;
         if (fresh) points.push({ lat: node.lat, lng: node.lng, temp: reading.value });
-      }
-      const minCategoryZoom = isSoleCategory ? 8 : (SENSOR_CATEGORY_MIN_ZOOM[category] ?? 8);
-      if (props.mode !== "temperature" && zoom < minCategoryZoom && node.id !== props.selectedNodeId) {
-        continue;
       }
       const color = props.mode === "temperature" && reading ? (muted ? "#94a3b8" : temperatureColor(reading.value)) : CATEGORIES[category].color;
       const label = zoom >= (props.mode === "temperature" ? 15 : 16) ? valueLabel(reading, node.readings) : "";
@@ -228,8 +223,7 @@ export default function MapComponent(props: MapProps) {
     for (const position of positions) {
       const layerId = position.kind === "bus" ? "buses" : position.kind === "train" ? "trains" : "waste";
       const enabled = layers[layerId];
-      const minZoom = LAYER_MIN_ZOOM[layerId] ?? 8;
-      if (!enabled || zoom < minZoom || !(Date.parse(position.valid_until) > Date.now()) ||
+      if (!enabled || !(Date.parse(position.valid_until) > Date.now()) ||
           !Number.isFinite(Date.parse(position.timestamp)) || !Number.isFinite(position.latitude) || !Number.isFinite(position.longitude)) continue;
       const key = `${position.kind}:${position.id}`;
       retained.add(key);
@@ -323,12 +317,11 @@ export default function MapComponent(props: MapProps) {
     for (const [id, geometry] of Object.entries(publication.layers)) {
       const layerId = id as MapLayerId;
       if (!layers[layerId]) continue;
-      const minZoom = LAYER_MIN_ZOOM[layerId] ?? 8;
-      if (zoom < minZoom) continue;
+      const overview = zoom < LAYER_MIN_ZOOM[layerId];
       const pointGroup = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 45, disableClusteringAtZoom: 16, showCoverageOnHover: false,
         iconCreateFunction: cluster => L.divIcon({ html: placeMarker(id, String(cluster.getChildCount())), className: "map-place-icon", iconSize: [36, 36] }),
       }).addTo(group) : group;
-      L.geoJSON(geometry as GeoJsonObject, {
+      const vectorLayer = L.geoJSON(geometry as GeoJsonObject, {
         style: (feature) => {
           if (id === "traffic") {
             const status = feature?.properties?.status;
@@ -357,6 +350,7 @@ export default function MapComponent(props: MapProps) {
           });
         },
         onEachFeature: (feature, layer) => {
+          if (overview && layer instanceof L.Polyline) layer.options.smoothFactor = 3;
           const values = feature.properties ?? {};
           if (id === "stops" && typeof values.stop_id === "string" && typeof values.source_id === "string") {
             layer.bindPopup(textPopup([String(values.name ?? "Haltestelle"), "Abfahrten werden geladen …"]));
@@ -417,7 +411,9 @@ export default function MapComponent(props: MapProps) {
             }
           }
         },
-      }).addTo(pointGroup);
+      });
+      if (overview) vectorLayer.setStyle({ weight: 1.5, opacity: .65, fillOpacity: .06 });
+      vectorLayer.addTo(pointGroup);
     }
     const starkregenMinZoom = LAYER_MIN_ZOOM.starkregen ?? 12;
     if (layers.starkregen && zoom >= starkregenMinZoom) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
@@ -508,7 +504,8 @@ export default function MapComponent(props: MapProps) {
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
       {(layersFailed || missing.length > 0) && <p role="status">{missing.length || "Einige"} Ebenen ohne aktuelle Quelldaten – siehe Hinweise.</p>}
       {tilesMissing && <p role="status">Hintergrundkarten sind noch nicht verfügbar.</p>}
-      {layers.lora && zoom < LAYER_MIN_ZOOM.lora && <p role="status">LoRaWAN: Bitte auf Zoom {LAYER_MIN_ZOOM.lora} oder näher hineinzoomen.</p>}
+      {layers.starkregen && isLayerZoomRestricted("starkregen", zoom) && <p role="status">Starkregen: Details beim Hineinzoomen (ab Zoom {LAYER_MIN_ZOOM.starkregen}).</p>}
+      {layers.lora && isLayerZoomRestricted("lora", zoom) && <p role="status">LoRaWAN-Heatmap: Details beim Hineinzoomen (ab Zoom {LAYER_MIN_ZOOM.lora}).</p>}
       {layers.lora && missing.includes("lora") && <p role="status">Keine gespeicherten LoRaWAN-Gateways verfügbar.</p>}
       {layers.lora && loraTilesFailed && <p role="status">TTN-Mapper-Heatmap konnte nicht geladen werden. Gateway-Standorte bleiben sichtbar.</p>}
       <button className="mt-2 mr-3 underline" onClick={() => {
