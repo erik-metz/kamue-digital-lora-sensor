@@ -44,9 +44,9 @@ vm.runInNewContext(
 );
 const urlState = urlStateContext.exports;
 
-test("MAP_LAYER_IDS contains all 22 domain layers", () => {
+test("MAP_LAYER_IDS contains all 23 domain layers", () => {
   const ids = urlState.MAP_LAYER_IDS;
-  assert.equal(ids.length, 22);
+  assert.equal(ids.length, 23);
   assert.ok(ids.includes("nature"));
   assert.ok(ids.includes("crops"));
   assert.ok(ids.includes("floods"));
@@ -69,6 +69,7 @@ test("MAP_LAYER_IDS contains all 22 domain layers", () => {
   assert.ok(ids.includes("crossings"));
   assert.ok(ids.includes("places"));
   assert.ok(ids.includes("lora"));
+  assert.ok(ids.includes("emf"));
 });
 
 test("DEFAULT_MAP_LAYERS disables energy, places, companies, crops and nature by default to avoid cluttering standard view", () => {

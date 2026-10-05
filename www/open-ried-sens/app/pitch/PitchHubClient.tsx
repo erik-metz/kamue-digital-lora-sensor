@@ -4,16 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Presentation,
-  ScrollText,
   Copy,
   Check,
-  ExternalLink,
   Shield,
   GraduationCap,
   Users,
   Briefcase,
   Sprout,
-  BookOpen,
   Sparkles,
   Layers,
   ArrowRight,
@@ -21,9 +18,8 @@ import {
   Clock,
   Mic,
   MonitorPlay,
-  Share2,
 } from "lucide-react";
-import { PITCH_DECKS, MAP_EVIDENCE_ITEMS, type PitchDeck } from "@/lib/pitchData";
+import { PITCH_DECKS, MAP_EVIDENCE_ITEMS } from "@/lib/pitchData";
 import MapEvidenceViewer from "./MapEvidenceViewer";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -85,12 +81,11 @@ export default function PitchHubClient() {
             <span>Pitch-Decks & Präsentationen</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black text-slate-100 tracking-tight leading-tight">
-            Maßgeschneiderte Vorträge für jeden Stakeholder im Hessischen Ried
+            Vier Gespräche, eine gemeinsame Idee fürs Ried
           </h1>
           <p className="text-base sm:text-lg text-slate-300 font-light leading-relaxed">
-            Ob Bürgermeister, MINT-Lehrkräfte, Volkshochschulen, Maker-Community oder Stadtwerke: 
-            Jedes Deck fokussiert genau den Hebel des <strong>Ried-Hackathons</strong> und des <strong>Sensorbaus</strong>, 
-            unterstützt durch schlagkräftige Datenkarten und einen integrierten <strong>Tonspur-Leitfaden</strong> für den Referenten.
+            Drei Menschen aus dem Ried möchten einen Hackathon organisieren. Die Website bündelt dafür bereits regionale Daten.
+            Eigene Sensoren und Bildungsprojekte ergänzen die Initiative. Jedes Deck führt zu einer konkreten Bitte an seine Zielgruppe.
           </p>
         </div>
 
@@ -112,17 +107,17 @@ export default function PitchHubClient() {
               <span>Tonspur für Referenten</span>
             </div>
             <p className="text-xs text-slate-300">
-              Zuschaltbarer Spickzettel [N] mit Elevator Pitch, Kernargumenten, Fangfragen und lokalem Ried-Bezug auf jeder Folie.
+              Zuschaltbarer Spickzettel [N] mit Elevator Pitch, Kernargumenten, Gesprächsimpulsen und lokalem Ried-Bezug auf jeder Folie.
             </p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-amber-400">
               <Layers className="w-4 h-4" />
-              <span>Visuelle Beweisführung</span>
+              <span>Daten und Quellen</span>
             </div>
             <p className="text-xs text-slate-300">
-              Echte Karten von Sensor.Community, TTN Mapper und Raspberry Shake belegen schwarz auf weiß den Daten-Blindfleck im Ried.
+              Die Quellenprüfung zeigt tatsächlich verfügbare Datensätze und ihren Stand. Fehlende Daten bleiben als solche erkennbar.
             </p>
           </div>
         </div>
@@ -226,10 +221,10 @@ export default function PitchHubClient() {
         <div className="space-y-6 pt-6">
           <div className="border-b border-slate-800 pb-3">
             <h2 className="text-xl sm:text-2xl font-bold text-slate-100 flex items-center gap-2">
-              <span>Beweismaterial: Die 3 großen Daten-Blindflecken im Hessischen Ried</span>
+              <span>Hintergrund für Rückfragen: externe Netzwerke</span>
             </h2>
             <p className="text-xs text-slate-400 mt-1">
-              Diese drei Satelliten- und Netzwerkkarten sind in den Vorträgen integriert und zeigen die Unterversorgung im Ried.
+              Diese Karten bilden jeweils ein bestimmtes Netzwerk ab. Für Aussagen zur Abdeckung den aktuellen Stand direkt bei der Quelle prüfen.
             </p>
           </div>
 
@@ -263,14 +258,14 @@ export default function PitchHubClient() {
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
               <strong className="text-slate-100 block text-sm font-semibold">3. Hardware zum Anfassen mitbringen</strong>
               <p className="leading-relaxed">
-                Nimm wenn möglich einen fertig aufgebauten RAK3113-Sensor im 3D-Druck-Gehäuse mit zum Termin. Nichts überzeugt Entscheider mehr als echte, anfassbare Hardware!
+                Bring wenn möglich einen aufgebauten Sensor mit. Damit lässt sich das geplante Bauprojekt anschaulich erklären.
               </p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-1.5">
               <strong className="text-slate-100 block text-sm font-semibold">4. Konkreten Call to Action einfordern</strong>
               <p className="leading-relaxed">
-                Beende kein Gespräch ohne den nächsten konkreten Schritt: Einen Gateway-Standort zusagen, einen Workshop-Termin im Kalender festhalten oder eine Schirmherrschaft anbahnen.
+                Beende kein Gespräch ohne den nächsten konkreten Schritt: Einen Datenansprechpartner benennen, einen Planungstermin festhalten oder einen ersten Beitrag abstimmen.
               </p>
             </div>
           </div>

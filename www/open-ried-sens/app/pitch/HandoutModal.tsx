@@ -1,22 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import {
   Printer,
   X,
   Sun,
   Moon,
-  Sparkles,
-  CheckCircle2,
-  AlertTriangle,
-  QrCode,
   MapPin,
-  ExternalLink,
-  Shield,
-  Clock,
-  Radio,
-  Share2,
 } from "lucide-react";
 import type { PitchDeck } from "@/lib/pitchData";
 
@@ -35,11 +25,9 @@ export default function HandoutModal({ deck, onClose }: HandoutModalProps) {
     }
   }
 
-  // Find key data from slides
-  const problemSlide = deck.slides.find((s) => s.layout === "blindspot-evidence");
-  const askSlide = deck.slides.find((s) => s.layout === "the-ask-commitment");
-  const economicsSlide = deck.slides.find((s) => s.layout === "unit-economics");
-  const stemSlide = deck.slides.find((s) => s.layout === "stem-learning-matrix");
+  const asks = deck.slides.flatMap((slide) => slide.specificAsks ?? []);
+  const origin = deck.slides.find((slide) => slide.id.endsWith("-origin"));
+  const collected = deck.slides.find((slide) => slide.id.endsWith("-collected"));
 
   return (
     <div
@@ -174,141 +162,23 @@ export default function HandoutModal({ deck, onClose }: HandoutModalProps) {
           }`}
         >
           <h2 className="text-sm font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-1">
-            Kern-These & Nutzenversprechen
+            Die Initiative
           </h2>
           <p className="text-sm sm:text-base font-medium leading-relaxed">
             {deck.subtitle}
           </p>
         </div>
 
-        {/* 2-Column Grid: Problem & Lösung */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Problem */}
-          <div
-            className={`p-5 rounded-2xl border space-y-3 ${
-              inkSaverMode
-                ? "bg-slate-50/80 border-slate-200"
-                : "bg-slate-900/60 border-slate-800"
-            }`}
-          >
-            <div className="flex items-center gap-2 text-rose-600 dark:text-rose-400 font-bold text-xs uppercase tracking-wide">
-              <AlertTriangle className="w-4 h-4" />
-              <span>1. Das Problem: Der Ried-Blindfleck</span>
-            </div>
-            <h3 className="text-base font-bold">
-              Keine Sensordaten zwischen Worms & Lorsch
-            </h3>
-            <ul
-              className={`text-xs space-y-2 list-disc pl-4 ${
-                inkSaverMode ? "text-slate-700" : "text-slate-300"
-              }`}
-            >
-              <li>
-                <strong>Sensor.Community:</strong> Bürstadt, Biblis und Lampertheim haben 0 Feinstaubsensoren.
-              </li>
-              <li>
-                <strong>TTN Mapper:</strong> LoRaWAN-Funk nur lückenhaft entlang der A67/B47, Funklöcher im Ortskern.
-              </li>
-              <li>
-                <strong>Raspberry Shake:</strong> Nur 1 seismische Station im sensiblen Oberrheingraben.
-              </li>
-              <li>
-                <strong>Proprietäre Säulen:</strong> Kommerzielle Anbieter verlangen bis zu 3.500 € + monatliche Gebühren.
-              </li>
-            </ul>
-          </div>
-
-          {/* Lösung */}
-          <div
-            className={`p-5 rounded-2xl border space-y-3 ${
-              inkSaverMode
-                ? "bg-slate-50/80 border-slate-200"
-                : "bg-slate-900/60 border-slate-800"
-            }`}
-          >
-            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase tracking-wide">
-              <Sparkles className="w-4 h-4" />
-              <span>2. Die Lösung: Zwei starke Hebel</span>
-            </div>
-            <h3 className="text-base font-bold">
-              Hackathon & Bürger-Sensorbau
-            </h3>
-            <ul
-              className={`text-xs space-y-2 list-disc pl-4 ${
-                inkSaverMode ? "text-slate-700" : "text-slate-300"
-              }`}
-            >
-              <li>
-                <strong>Hebel A: 48h Ried-Hackathon:</strong> Entwickler, Schüler und Verwaltung lösen reale Probleme im KAMÜ.
-              </li>
-              <li>
-                <strong>Hebel B: DIY-Sensorbau:</strong> Bürger & Schüler bauen standardisierte Stationen (&lt; 100 €).
-              </li>
-              <li>
-                <strong>Offene Daten:</strong> 100% DSGVO-konform, kein Vendor Lock-in, Open Data Hessen konform.
-              </li>
-              <li>
-                <strong>0 € Funkkosten:</strong> Betrieb über freies The Things Network (TTN) 868 MHz.
-              </li>
-            </ul>
-          </div>
+        <div className="mb-6 space-y-5">
+          <section><h2 className="text-lg font-bold">Unsere gemeinsame Idee</h2><p className="mt-2">{deck.subtitle}</p><p className="mt-2">{origin?.lead}</p></section>
+          <section><h2 className="text-lg font-bold">{collected?.title}</h2><p className="mt-2">{collected?.lead}</p>
+            <ul className="mt-2 list-disc pl-5 space-y-2">{collected?.bullets?.map((bullet) => <li key={bullet.title}><strong>{bullet.title}:</strong> {bullet.description}</li>)}</ul>
+          </section>
+          <p className="text-sm">Eigene Sensoren ergänzen die Datenbasis. Schulprojekte und Kurse ermöglichen praktische digitale Bildung. Beim Hackathon können Teams Daten untersuchen und erste Prototypen entwickeln.</p>
         </div>
 
-        {/* Economics Table or STEM Skills */}
-        {economicsSlide?.costComparison && (
-          <div className="mb-6 space-y-2">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Wirtschaftlichkeit & Kostenvergleich
-            </h3>
-            <div
-              className={`rounded-2xl border overflow-hidden ${
-                inkSaverMode ? "border-slate-200" : "border-slate-800"
-              }`}
-            >
-              <table className="w-full text-xs text-left">
-                <thead
-                  className={
-                    inkSaverMode
-                      ? "bg-slate-100 text-slate-900"
-                      : "bg-slate-900 text-slate-200"
-                  }
-                >
-                  <tr>
-                    <th className="p-2.5">Kategorie</th>
-                    <th className="p-2.5 text-emerald-600 font-bold">
-                      Open Ried Sens (DIY)
-                    </th>
-                    <th className="p-2.5">Konzerne / Kommerziell</th>
-                    <th className="p-2.5">Vorteil</th>
-                  </tr>
-                </thead>
-                <tbody
-                  className={`divide-y ${
-                    inkSaverMode ? "divide-slate-200" : "divide-slate-800"
-                  }`}
-                >
-                  {economicsSlide.costComparison.map((row, idx) => (
-                    <tr key={idx}>
-                      <td className="p-2.5 font-medium">{row.feature}</td>
-                      <td className="p-2.5 text-emerald-600 font-bold">
-                        {row.openRiedSens}
-                      </td>
-                      <td className="p-2.5 text-slate-500">
-                        {row.commercialSolution}
-                      </td>
-                      <td className="p-2.5 font-semibold text-sky-600">
-                        {row.advantage}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
         {/* The Ask / Konkrete Commitments */}
-        {askSlide?.specificAsks && (
+        {asks.length > 0 && (
           <div
             className={`p-5 rounded-2xl border mb-6 space-y-3 ${
               inkSaverMode
@@ -318,15 +188,15 @@ export default function HandoutModal({ deck, onClose }: HandoutModalProps) {
           >
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                3. The Ask: Konkrete Bitten & Unterstützung
+                Unsere konkreten Bitten
               </h3>
               <span className="text-[11px] font-semibold text-slate-500">
-                Gemeinsame Vereinbarung
+                Für das Kooperationsgespräch
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              {askSlide.specificAsks.map((ask) => (
+              {asks.map((ask) => (
                 <div
                   key={ask.id}
                   className={`p-3 rounded-xl border flex items-start gap-2.5 ${
@@ -337,7 +207,7 @@ export default function HandoutModal({ deck, onClose }: HandoutModalProps) {
                 >
                   <div className="w-4 h-4 rounded border border-slate-400 mt-0.5 shrink-0 flex items-center justify-center">
                     <span className="text-[10px] text-slate-400 font-mono">
-                      ✓
+
                     </span>
                   </div>
                   <div className="space-y-0.5">

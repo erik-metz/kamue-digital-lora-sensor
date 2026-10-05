@@ -46,6 +46,7 @@ export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
   trains: 9,
   closures: 10,
   lora: 9,
+  emf: 10,
 
   // Municipal / City (Zoom 12-13)
   buses: 12,
@@ -226,6 +227,15 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     minZoom: LAYER_MIN_ZOOM.lora,
     highlightColor: "border-cyan-500 text-cyan-300",
   },
+  emf: {
+    id: "emf",
+    label: "Funkanlagen & Mobilfunk",
+    icon: "🗼",
+    category: "infrastructure",
+    description: "Standortbescheinigungen & Sendeantennen der Bundesnetzagentur (BNetzA)",
+    minZoom: LAYER_MIN_ZOOM.emf,
+    highlightColor: "border-sky-500 text-sky-300",
+  },
 
   // Planning & Municipal
   boris: {
@@ -324,6 +334,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crossings: false,
       places: false,
       lora: false,
+      emf: false,
     },
   },
   mobility: {
@@ -355,6 +366,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crossings: true,
       places: false,
       lora: false,
+      emf: false,
     },
   },
   environment: {
@@ -386,6 +398,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crossings: false,
       places: false,
       lora: false,
+      emf: false,
     },
   },
   planning: {
@@ -417,6 +430,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crossings: false,
       places: false,
       lora: true,
+      emf: true,
     },
   },
 };

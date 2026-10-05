@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowLeft,
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
   Maximize2,
@@ -14,7 +13,6 @@ import {
   ScrollText,
   Presentation,
   Share2,
-  Printer,
   Sparkles,
   ExternalLink,
   Check,
@@ -23,8 +21,6 @@ import {
   MapPin,
   TrendingUp,
   Cpu,
-  Layers,
-  Shield,
   FileText,
   Wrench,
   Activity,
@@ -40,15 +36,10 @@ import {
 import type {
   PitchDeck,
   PitchSlide,
-  SpecificAskItem,
 } from "@/lib/pitchData";
-import {
-  calculateLiveRegionalMetrics,
-  getLiveEventFeed,
-} from "@/lib/pitchLiveTicker";
 import MapEvidenceViewer from "../MapEvidenceViewer";
 import HandoutModal from "../HandoutModal";
-import LiveTelemetryBonusCard from "../LiveTelemetryBonusCard";
+import CollectedDataEvidence from "../CollectedDataEvidence";
 
 interface PitchDeckClientProps {
   deck: PitchDeck;
@@ -61,30 +52,6 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [showHandoutModal, setShowHandoutModal] = useState(false);
-
-  // Live stopwatch timer for real-time presentation telemetry
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [packetPulse, setPacketPulse] = useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const liveMetrics = calculateLiveRegionalMetrics(elapsedSeconds);
-  const liveEvents = getLiveEventFeed(elapsedSeconds);
-  const latestEvent = liveEvents[0] || null;
-
-  // Trigger pulse animation when LoRa packets increment
-  useEffect(() => {
-    if (elapsedSeconds > 0) {
-      setPacketPulse(true);
-      const pulseTimeout = setTimeout(() => setPacketPulse(false), 600);
-      return () => clearTimeout(pulseTimeout);
-    }
-  }, [liveMetrics.telemetryPackets, elapsedSeconds]);
 
   // Interactive meeting checklist for commitments
   const [agreedAsks, setAgreedAsks] = useState<Record<string, boolean>>({});
@@ -164,6 +131,23 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
   // Render Visual Slide Layouts
   function renderSlideBody(slide: PitchSlide) {
     switch (slide.layout) {
+      case "story":
+        return (
+          <div className={`grid gap-8 items-center ${slide.imageVisual ? "md:grid-cols-2" : "max-w-4xl"}`}>
+            {slide.imageVisual && <figure>
+              <div className="relative aspect-video overflow-hidden rounded-xl">
+                <Image src={slide.imageVisual.src} alt={slide.imageVisual.alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+              </div>
+              {slide.imageVisual.caption && <figcaption className="mt-3 text-base text-slate-400">{slide.imageVisual.caption}</figcaption>}
+            </figure>}
+            <div className="space-y-6">
+              {slide.bullets?.map((bullet) => <div key={bullet.title} className="border-l-2 border-emerald-500 pl-5">
+                <h3 className="text-xl md:text-2xl font-semibold text-slate-100">{bullet.title}</h3>
+                <p className="mt-2 text-lg md:text-xl leading-relaxed text-slate-300">{bullet.description}</p>
+              </div>)}
+            </div>
+          </div>
+        );
       case "one-pager-hero":
         return (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center pt-2">
@@ -865,18 +849,18 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-base font-bold text-slate-100">{m.name}</span>
+                        <span className="text-xl font-bold text-slate-100">{m.name}</span>
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
                           {m.location}
                         </span>
                       </div>
-                      <p className="text-xs font-semibold text-emerald-400 leading-snug">
+                      <p className="text-lg font-semibold text-emerald-400 leading-snug">
                         {m.role}
                       </p>
                     </div>
                   </div>
 
-                  <p className="text-xs text-slate-300 font-light leading-relaxed">
+                  <p className="text-lg text-slate-300 font-light leading-relaxed">
                     {m.bio}
                   </p>
 
@@ -901,11 +885,11 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
                 key={idx}
                 className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-3"
               >
-                <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                <span className="text-lg font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300">
                   {b.tag}
                 </span>
                 <h4 className="text-lg font-bold text-slate-100">{b.title}</h4>
-                <p className="text-xs text-slate-300 font-light leading-relaxed">
+                <p className="text-lg text-slate-300 font-light leading-relaxed">
                   {b.description}
                 </p>
               </div>
@@ -916,14 +900,16 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
       case "the-ask-commitment":
         return slide.specificAsks ? (
           <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-5">
               {slide.specificAsks.map((ask) => {
                 const isChecked = !!agreedAsks[ask.id];
                 return (
-                  <div
+                  <button
+                    type="button"
+                    aria-pressed={isChecked}
                     key={ask.id}
                     onClick={() => toggleAskCommitment(ask.id)}
-                    className={`p-5 rounded-3xl border transition-all cursor-pointer flex items-start gap-4 select-none ${
+                    className={`p-4 rounded-3xl border transition-all cursor-pointer text-left flex items-start gap-4 select-none ${
                       isChecked
                         ? "bg-emerald-950/40 border-emerald-500/50 shadow-lg shadow-emerald-500/10"
                         : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
@@ -946,39 +932,28 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
                         </span>
                         {isChecked && (
                           <span className="text-[10px] font-bold text-emerald-400">
-                            Commitment erteilt
+                            Für das Gespräch markiert
                           </span>
                         )}
                       </div>
-                      <h4 className="text-base font-bold text-slate-100">
+                      <h4 className="text-xl font-bold text-slate-100">
                         {ask.title}
                       </h4>
-                      <p className="text-xs text-slate-300 font-light leading-relaxed">
+                      <p className="text-lg text-slate-300 font-light leading-relaxed">
                         {ask.description}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-xs text-slate-400 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-slate-300 font-medium">
-                Ergebnisse festhalten & als Beschlussgrundlage mitnehmen:
-              </span>
-              <button
-                onClick={() => setShowHandoutModal(true)}
-                className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-all cursor-pointer"
-              >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Als 1-Pager Handout exportieren</span>
-              </button>
-            </div>
+
           </div>
         ) : null;
 
-      case "live-telemetry-bonus":
-        return <LiveTelemetryBonusCard elapsedSeconds={elapsedSeconds} />;
+      case "collected-evidence":
+        return <CollectedDataEvidence />;
 
       default:
         return null;
@@ -1022,7 +997,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
             </span>
             <span className="font-bold text-slate-300">Ried-Radar</span>
             <span className="font-mono text-emerald-400 font-bold bg-slate-950 px-1.5 py-0.5 rounded text-[11px] border border-slate-800 tabular-nums min-w-[48px] text-center inline-block">
-              {liveMetrics.formattedDuration}
+              ca. {deck.estimatedMinutes} Min.
             </span>
           </div>
 
@@ -1124,129 +1099,11 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
         )}
       </header>
 
-      {/* Dedicated High-Tech Live Telemetry Strip */}
-      <div className="w-full bg-slate-900/95 border-b border-slate-800 px-4 sm:px-6 py-2 flex items-center justify-between text-xs overflow-x-auto whitespace-nowrap scrollbar-none gap-6 print:hidden shadow-inner">
-        <div className="flex items-center gap-2.5 shrink-0">
-          <span className="relative flex h-2.5 w-2.5">
-            <span
-              className={`absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-80 ${
-                packetPulse ? "animate-ping scale-150" : "animate-ping"
-              }`}
-            />
-            <span
-              className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
-                packetPulse ? "bg-emerald-300 shadow-sm shadow-emerald-400" : "bg-emerald-500"
-              }`}
-            />
-          </span>
-          <span className="font-black text-emerald-400 uppercase tracking-widest text-[11px] font-mono">
-            Live-Telemetrie im Ried:
-          </span>
-          {latestEvent && (
-            <div
-              className={`hidden xl:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-950 border text-[10px] font-sans transition-all duration-300 ${
-                packetPulse
-                  ? "border-emerald-500/60 text-emerald-300 shadow-sm shadow-emerald-500/10"
-                  : "border-slate-800 text-slate-400"
-              }`}
-            >
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${
-                  packetPulse ? "bg-emerald-400 animate-pulse" : "bg-slate-500"
-                }`}
-              />
-              <span className="truncate max-w-[210px] font-medium">
-                {latestEvent.title}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-xs text-slate-300 font-mono">
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-            <span className="text-orange-400">🗑️</span>
-            <span className="text-slate-400 font-sans text-[11px]">ZAKB:</span>
-            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[2rem] text-right inline-block">
-              {liveMetrics.isDaytime ? liveMetrics.binsEmptied : "0"}
-            </span>
-            <span className="text-slate-400 font-sans text-[11px]">
-              {liveMetrics.isDaytime ? "Tonnen" : "(Nachtruhe)"}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-            <span className="text-rose-400">🚧</span>
-            <span className="text-slate-400 font-sans text-[11px]">Riedbahn:</span>
-            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[1.8rem] text-right inline-block">
-              {liveMetrics.levelCrossingEvents}
-            </span>
-            <span className="text-slate-400 font-sans text-[11px]">Schranken</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-            <span className="text-sky-400">🚆</span>
-            <span className="text-slate-400 font-sans text-[11px]">Züge:</span>
-            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[1.8rem] text-right inline-block">
-              {liveMetrics.trainsTraversed}
-            </span>
-          </div>
-
-          <div
-            className={`flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border transition-all duration-300 ${
-              packetPulse
-                ? "border-emerald-400/80 bg-emerald-950/40 shadow-sm shadow-emerald-500/20"
-                : "border-slate-800"
-            }`}
-          >
-            <span
-              className={`text-emerald-400 transition-transform duration-300 ${
-                packetPulse ? "scale-110" : ""
-              }`}
-            >
-              📡
-            </span>
-            <span className="text-slate-400 font-sans text-[11px]">LoRaWAN:</span>
-            <span className="font-mono font-bold text-emerald-300 tabular-nums min-w-[2.5rem] text-right inline-block">
-              {liveMetrics.telemetryPackets}
-            </span>
-            <span className="text-slate-400 font-sans text-[11px]">Pakete</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-            <span className="text-violet-400">🅿️</span>
-            <span className="text-slate-400 font-sans text-[11px]">Bürstadt:</span>
-            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[1.8rem] text-right inline-block">
-              {liveMetrics.parkingStateChanges}
-            </span>
-            <span className="text-slate-400 font-sans text-[11px]">Park-Events</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">
-            <span className="text-yellow-400">⚡</span>
-            <span className="font-mono font-bold text-slate-100 tabular-nums min-w-[2.8rem] text-right inline-block">
-              {liveMetrics.solarKwhGenerated}
-            </span>
-            <span className="text-slate-400 font-sans text-[11px]">
-              {liveMetrics.isDaytime ? "kWh" : "kWh (Nacht)"}
-            </span>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setCurrentSlideIndex(totalSlides - 1)}
-          className="text-[11px] font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 shrink-0 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1 rounded-xl border border-emerald-500/30 transition-all cursor-pointer"
-          title="Zur Live-Auswertungsfolie springen"
-        >
-          <span>Live-Folie ansehen</span>
-          <ArrowRight className="w-3 h-3" />
-        </button>
-      </div>
-
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col justify-between max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      <main className="flex-1 flex flex-col justify-between max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-5">
         {viewMode === "slides" ? (
           /* SLIDE MODE: Viewport Focused Single Slide */
-          <div className="flex-1 flex flex-col justify-center space-y-6 animate-in fade-in duration-300">
+          <div className="flex-1 flex flex-col justify-center space-y-5 animate-in fade-in duration-300">
             {/* Slide Header */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -1273,17 +1130,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
 
             {/* Slide Call to Action Buttons */}
             {currentSlide.callToAction && (
-              <div className="p-5 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 shadow-xl">
-                <div className="space-y-1 text-center sm:text-left">
-                  <h4 className="text-base font-bold text-slate-100 flex items-center gap-2 justify-center sm:justify-start">
-                    <Sparkles className="w-4 h-4 text-emerald-400" />
-                    Gemeinsam das Hessische Ried vernetzen
-                  </h4>
-                  <p className="text-xs text-slate-300">
-                    Konkrete Umsetzung im Kulturzentrum KAMÜ Bürstadt & Partnerorten
-                  </p>
-                </div>
-
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="flex items-center gap-3 shrink-0">
                   <a
                     href={currentSlide.callToAction.primaryHref}
@@ -1419,7 +1266,7 @@ export default function PitchDeckClient({ deck }: PitchDeckClientProps) {
             <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 space-y-1">
               <span className="font-bold text-sky-300 uppercase tracking-wide text-[10px] flex items-center gap-1">
                 <HelpCircle className="w-3 h-3" />
-                Publikums-Aktivierung / Fangfrage
+                Gesprächsimpuls
               </span>
               <p className="text-sky-200">
                 {currentSlide.speakerNotes.audienceEngagement}

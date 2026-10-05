@@ -58,7 +58,9 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
         }])
         closures = MagicMock()
         closures.fetchall = AsyncMock(return_value=[])
-        conn.execute.side_effect = [publications, traffic, closures]
+        gateways = MagicMock()
+        gateways.fetchall = AsyncMock(return_value=[])
+        conn.execute.side_effect = [publications, gateways, traffic, closures]
         response = await map_layers(request(), pool)
         data = json.loads(response.body)
         feature = data['layers']['traffic']['features'][0]
@@ -67,3 +69,24 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
         executed_queries = [call.args[0] for call in conn.execute.call_args_list]
         self.assertTrue(any("last_seen_at>NOW()-INTERVAL '2 hours'" in q for q in executed_queries))
         self.assertIn('crossings', data['unavailable'])
+
+    async def test_gateway_in_lorsch_is_published_independently_of_heatmap(self):
+        from endpoints.collected import map_layers
+        pool, conn = pool_for()
+        publications, gateways, traffic, closures = [MagicMock() for _ in range(4)]
+        for cursor in [publications, traffic, closures]:
+            cursor.fetchall = AsyncMock(return_value=[])
+        gateways.fetchall = AsyncMock(return_value=[
+            {'id': 'lora:gateway:lorsch', 'name': 'Gateway Lorsch',
+             'metadata': {'gateway_id': 'lorsch', 'antenna_placement': 'OUTDOOR'},
+             'latitude': 49.653, 'longitude': 8.568, 'online_status': 0},
+            {'id': 'lora:gateway:invalid', 'name': 'Invalid', 'metadata': {},
+             'latitude': float('nan'), 'longitude': 8.568, 'online_status': None},
+        ])
+        conn.execute.side_effect = [publications, gateways, traffic, closures]
+        body = json.loads((await map_layers(request(), pool)).body)
+        features = body['layers']['lora']['features']
+        self.assertEqual(len(features), 1)
+        self.assertEqual(features[0]['geometry']['coordinates'], [8.568, 49.653])
+        self.assertEqual(features[0]['properties']['online_status'], 'Offline')
+        self.assertNotIn('lora', body['unavailable'])

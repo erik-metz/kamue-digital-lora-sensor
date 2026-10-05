@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import math
 from datetime import UTC, datetime
 
 from dependencies import get_db_pool
@@ -283,6 +284,7 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         "closures",
         "traffic",
         "stops",
+        "lora",
     }
     async with pool.connection() as conn:
         cursor = await conn.execute(
@@ -291,6 +293,18 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
             + " WHERE (dataset LIKE 'map/layers/%%' OR dataset LIKE 'transport/stops/%%') AND expires_at > NOW()"
         )
         rows = await cursor.fetchall()
+        gateway_cursor = await conn.execute(
+            """SELECT e.id, e.name, e.metadata,
+                      MAX(lr.value) FILTER (WHERE md.metric='latitude') AS latitude,
+                      MAX(lr.value) FILTER (WHERE md.metric='longitude') AS longitude,
+                      MAX(lr.value) FILTER (WHERE md.metric='online_status') AS online_status
+               FROM entities e
+               JOIN measurement_definitions md ON md.entity_id=e.id
+               JOIN latest_readings lr ON lr.measurement_id=md.id
+               WHERE e.entity_type='lora_gateway' AND e.is_hidden=FALSE
+               GROUP BY e.id, e.name, e.metadata ORDER BY e.id"""
+        )
+        gateways = await gateway_cursor.fetchall()
         traffic_cursor = await conn.execute(
             """SELECT id,road_name,direction,location_from,location_to,description,cause_type,
                       delay_seconds,length_meters,severity,coordinates,last_seen_at FROM traffic_incidents
@@ -312,6 +326,27 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         for r in rows
         if r["dataset"].startswith("map/layers/")
     }
+    gateway_features = []
+    for gateway in gateways:
+        lat, lon = gateway["latitude"], gateway["longitude"]
+        if lat is None or lon is None:
+            continue
+        lat, lon = float(lat), float(lon)
+        if not (math.isfinite(lat) and math.isfinite(lon) and -90 <= lat <= 90 and -180 <= lon <= 180):
+            continue
+        metadata = gateway["metadata"] or {}
+        status = gateway["online_status"]
+        gateway_features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {
+                **metadata, "id": gateway["id"], "name": gateway["name"],
+                "kind": "lora_gateway",
+                "online_status": "Unbekannt" if status is None else "Online" if status == 1 else "Offline",
+            },
+        })
+    if gateway_features:
+        layers["lora"] = {"type": "FeatureCollection", "features": gateway_features}
     incident_features = []
     for incident in incidents:
         coordinates = incident["coordinates"]

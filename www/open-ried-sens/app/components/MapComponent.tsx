@@ -71,6 +71,7 @@ export default function MapComponent(props: MapProps) {
   const [movementFailed, setMovementFailed] = useState(false);
   const [layersFailed, setLayersFailed] = useState(false);
   const [tilesMissing, setTilesMissing] = useState(false);
+  const [loraTilesFailed, setLoraTilesFailed] = useState(false);
   const layers = props.layers ?? DEFAULT_MAP_LAYERS;
 
   useEffect(() => {
@@ -422,14 +423,16 @@ export default function MapComponent(props: MapProps) {
     if (layers.starkregen && zoom >= starkregenMinZoom) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
 
     const loraMinZoom = LAYER_MIN_ZOOM.lora ?? 9;
+    setLoraTilesFailed(false);
     if (layers.lora && zoom >= loraMinZoom) {
-      L.tileLayer("https://tms.ttnmapper.org/circles/network/NS_TTS_V3%3A%2F%2Fttn%40000013/{z}/{x}/{y}.png", {
+      const coverage = L.tileLayer("/api/map-tiles/lora/{z}/{x}/{y}.png", {
         opacity: 0.6,
         maxNativeZoom: 19,
         maxZoom: 20,
         zIndex: 12,
         attribution: '© <a href="https://ttnmapper.org" target="_blank" rel="noopener">TTN Mapper</a>',
       }).addTo(group);
+      coverage.on("tileerror", () => setLoraTilesFailed(true));
     }
 
     // Copernicus Sentinel-2 Satellite Raster Tile Layer (RGB or NDVI)
@@ -505,6 +508,9 @@ export default function MapComponent(props: MapProps) {
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
       {(layersFailed || missing.length > 0) && <p role="status">{missing.length || "Einige"} Ebenen ohne aktuelle Quelldaten – siehe Hinweise.</p>}
       {tilesMissing && <p role="status">Hintergrundkarten sind noch nicht verfügbar.</p>}
+      {layers.lora && zoom < LAYER_MIN_ZOOM.lora && <p role="status">LoRaWAN: Bitte auf Zoom {LAYER_MIN_ZOOM.lora} oder näher hineinzoomen.</p>}
+      {layers.lora && missing.includes("lora") && <p role="status">Keine gespeicherten LoRaWAN-Gateways verfügbar.</p>}
+      {layers.lora && loraTilesFailed && <p role="status">TTN-Mapper-Heatmap konnte nicht geladen werden. Gateway-Standorte bleiben sichtbar.</p>}
       <button className="mt-2 mr-3 underline" onClick={() => {
         if (props.nodes.length) map.current?.fitBounds(L.latLngBounds(props.nodes.map(node => L.latLng(node.lat, node.lng))), { padding: [40, 40], maxZoom: 16 });
       }}>Sensoren im Überblick</button>

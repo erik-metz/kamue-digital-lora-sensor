@@ -15,9 +15,9 @@ async def fetch_gateways(
 ) -> tuple[list[dict[str, Any]], bytes, str]:
     """Fetch gateways from Packet Broker Mapper API within the configured area."""
     params = {
-        "distanceWithin.latitude": settings.center_lat,
-        "distanceWithin.longitude": settings.center_lon,
-        "distanceWithin.distance": settings.radius_meters,
+        "distanceWithin[latitude]": str(settings.center_lat),
+        "distanceWithin[longitude]": str(settings.center_lon),
+        "distanceWithin[distance]": str(settings.radius_meters),
         "limit": 1000,
     }
     headers = {

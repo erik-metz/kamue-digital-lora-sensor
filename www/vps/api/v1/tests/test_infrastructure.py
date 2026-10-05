@@ -10,6 +10,7 @@ if "psycopg" not in sys.modules:
 
 from endpoints.infrastructure import (
     get_broadband_coverage,
+    get_emf_sites,
     get_energy_summary,
     get_ev_charging_stations,
     get_road_conditions,
@@ -171,6 +172,43 @@ class InfrastructureTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result[0].ssid, "Hessen-WLAN")
         self.assertEqual(result[0].municipality, "Bürstadt")
 
+    async def test_get_emf_sites(self):
+        meta = {
+            "fid": 8812,
+            "stob_nr": "200528",
+            "stob_date": "1.12.2025",
+            "method_stob": "feldtheoretisch",
+            "providers": ["Telekom", "Vodafone"],
+            "antenna_count": 6,
+        }
+        self.cursor.fetchall.return_value = [
+            (
+                "bnetza:emf:8812",
+                "Funkanlage STOB 200528",
+                meta,
+                49.5947,
+                8.4683,
+                24.5,
+                5.2,
+                6,
+            )
+        ]
+
+        result = await get_emf_sites(self.pool)
+        self.assertEqual(result.total_sites, 1)
+        self.assertEqual(result.providers, {"Telekom": 1, "Vodafone": 1})
+        self.assertEqual(len(result.sites), 1)
+        site = result.sites[0]
+        self.assertEqual(site.id, "bnetza:emf:8812")
+        self.assertEqual(site.name, "Funkanlage STOB 200528")
+        self.assertEqual(site.fid, 8812)
+        self.assertEqual(site.latitude, 49.5947)
+        self.assertEqual(site.longitude, 8.4683)
+        self.assertEqual(site.max_height_m, 24.5)
+        self.assertEqual(site.max_safety_distance_h_m, 5.2)
+        self.assertEqual(site.antenna_count, 6)
+
 
 if __name__ == "__main__":
     unittest.main()
+

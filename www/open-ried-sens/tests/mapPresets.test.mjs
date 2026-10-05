@@ -69,8 +69,8 @@ vm.runInNewContext(
 );
 const mapPresets = mapPresetsContext.exports;
 
-test("mapPresets covers all 22 MAP_LAYER_IDS with definitions and categories", () => {
-  assert.equal(urlState.MAP_LAYER_IDS.length, 22);
+test("mapPresets covers all 23 MAP_LAYER_IDS with definitions and categories", () => {
+  assert.equal(urlState.MAP_LAYER_IDS.length, 23);
   for (const layerId of urlState.MAP_LAYER_IDS) {
     const def = mapPresets.LAYER_DEFINITIONS[layerId];
     assert.ok(def, `Layer definition missing for ${layerId}`);
@@ -90,9 +90,9 @@ test("mapPresets covers 4 categories with valid items", () => {
 
   assert.equal(mobility.length, 7);
   assert.equal(environment.length, 4);
-  assert.equal(infrastructure.length, 5);
+  assert.equal(infrastructure.length, 6);
   assert.equal(planning.length, 6);
-  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 22);
+  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 23);
 });
 
 test("mapPresets defines all presets with full layer dictionaries", () => {
@@ -122,7 +122,7 @@ test("detectActivePreset identifies default and custom states", () => {
 
 test("countActiveLayers and countCategoryActiveLayers compute accurate numbers", () => {
   const allActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, true]));
-  assert.equal(mapPresets.countActiveLayers(allActive), 22);
+  assert.equal(mapPresets.countActiveLayers(allActive), 23);
 
   const noneActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, false]));
   assert.equal(mapPresets.countActiveLayers(noneActive), 0);
@@ -132,7 +132,7 @@ test("countActiveLayers and countCategoryActiveLayers compute accurate numbers",
   assert.equal(mobilityCounts.active, 7);
 });
 
-test("LAYER_MIN_ZOOM and LAYER_DEFINITIONS minZoom correctly configure all 22 layers", () => {
+test("LAYER_MIN_ZOOM and LAYER_DEFINITIONS minZoom correctly configure all 23 layers", () => {
   assert.ok(mapPresets.LAYER_MIN_ZOOM);
   for (const layerId of urlState.MAP_LAYER_IDS) {
     const minZoom = mapPresets.LAYER_MIN_ZOOM[layerId];

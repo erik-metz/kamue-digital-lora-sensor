@@ -26,6 +26,10 @@ export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color:
   boris: { label: "Bodenrichtwert", symbol: "€", color: "#fbbf24" },
   devplans: { label: "Bebauungsplan", symbol: "▤", color: "#a78bfa" },
   elections: { label: "Wahlbezirk", symbol: "✓", color: "#c084fc" },
+  lora: { label: "LoRaWAN Gateway", symbol: "📡", color: "#06b6d4" },
+  lora_gateway: { label: "LoRaWAN Gateway", symbol: "📡", color: "#06b6d4" },
+  emf: { label: "Funkanlage / Mobilfunk", symbol: "🗼", color: "#0284c7" },
+  radio_tower: { label: "Funkanlage / Mobilfunk", symbol: "🗼", color: "#0284c7" },
 };
 
 export function mapSymbol(kind: string) {
@@ -85,6 +89,12 @@ const FIELD_LABELS: Record<string, string> = {
   delay_minutes: "Verzögerung (Min.)", length_km: "Länge (km)", name: "Name",
   reason: "Grund", detour: "Umleitung", closure_type: "Sperrungsart", status: "Verkehrsstatus",
   active_incidents_count: "Aktive Meldungen",
+  gateway_eui: "Gateway EUI", eui: "Gateway EUI", online_status: "Status",
+  placement: "Montage", antenna_placement: "Montage", cluster_id: "TTN Cluster",
+  antenna_count: "Antennenanzahl", frequency_plan: "Frequenzplan",
+  stob_nr: "STOB-Nummer", stob_date: "Erteilt am", method_stob: "Bewertungsverfahren",
+  providers: "Mobilfunkbetreiber", max_height_m: "Max. Antennenhöhe (m)",
+  max_safety_distance_h_m: "Horiz. Sicherheitsabstand (m)",
 };
 
 export function featureKind(kind: string, values: Record<string, unknown>): string {

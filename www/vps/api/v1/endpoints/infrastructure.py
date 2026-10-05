@@ -438,3 +438,87 @@ async def get_wifi_hotspots(pool: DbPool):
             )
         )
     return hotspots
+
+
+# --- 6. BNetzA EMF Funkanlagen & Mobilfunk ---
+class EmfSiteResponse(BaseModel):
+    id: str
+    name: str
+    fid: int
+    stob_nr: str | None = None
+    stob_date: str | None = None
+    method_stob: str | None = None
+    providers: list[str] = []
+    antenna_count: int = 0
+    latitude: float | None = None
+    longitude: float | None = None
+    max_height_m: float | None = None
+    max_safety_distance_h_m: float | None = None
+
+
+class EmfSitesSummary(BaseModel):
+    total_sites: int
+    providers: dict[str, int]
+    sites: list[EmfSiteResponse]
+
+
+@router.get("/emf", response_model=EmfSitesSummary)
+async def get_emf_sites(pool: DbPool):
+    """Retrieve certified radio transmission sites (BNetzA EMF) from the entities & measurement core."""
+    async with pool.connection() as conn, conn.cursor() as cur:
+        await cur.execute(
+            """
+            SELECT e.id, e.name, e.metadata,
+                   MAX(CASE WHEN md.metric = 'latitude' THEN lr.value END) AS latitude,
+                   MAX(CASE WHEN md.metric = 'longitude' THEN lr.value END) AS longitude,
+                   MAX(CASE WHEN md.metric = 'max_antenna_height' THEN lr.value END) AS max_height_m,
+                   MAX(CASE WHEN md.metric = 'safety_distance_horizontal' THEN lr.value END) AS max_sa_h_m,
+                   MAX(CASE WHEN md.metric = 'antenna_count' THEN lr.value END) AS antenna_count
+            FROM entities e
+            LEFT JOIN measurement_definitions md ON md.entity_id = e.id
+            LEFT JOIN latest_readings lr ON lr.measurement_id = md.id
+            WHERE e.entity_type = 'radio_tower' AND e.is_hidden = FALSE
+            GROUP BY e.id, e.name, e.metadata
+            ORDER BY e.name
+            """
+        )
+        rows = await cur.fetchall()
+
+    sites: list[EmfSiteResponse] = []
+    provider_counts: dict[str, int] = {}
+
+    for r in rows:
+        meta = r[2] if isinstance(r[2], dict) else json.loads(r[2] or "{}")
+        provs = meta.get("providers", [])
+        for p in provs:
+            provider_counts[p] = provider_counts.get(p, 0) + 1
+
+        lat = float(r[3]) if r[3] is not None else None
+        lon = float(r[4]) if r[4] is not None else None
+        max_h = float(r[5]) if r[5] is not None else None
+        max_sa_h = float(r[6]) if r[6] is not None else None
+        ant_cnt = int(r[7]) if r[7] is not None else int(meta.get("antenna_count", 0))
+
+        sites.append(
+            EmfSiteResponse(
+                id=r[0],
+                name=r[1],
+                fid=int(meta.get("fid", 0)),
+                stob_nr=meta.get("stob_nr"),
+                stob_date=meta.get("stob_date"),
+                method_stob=meta.get("method_stob"),
+                providers=provs,
+                antenna_count=ant_cnt,
+                latitude=lat,
+                longitude=lon,
+                max_height_m=max_h,
+                max_safety_distance_h_m=max_sa_h,
+            )
+        )
+
+    return EmfSitesSummary(
+        total_sites=len(sites),
+        providers=provider_counts,
+        sites=sites,
+    )
+

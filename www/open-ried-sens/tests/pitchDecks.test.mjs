@@ -17,7 +17,7 @@ test("Pitch data defines all required stakeholder decks and structure", () => {
 
   for (const slug of expectedSlugs) {
     assert.ok(
-      pitchDataSource.includes(`slug: "${slug}"`),
+      new RegExp(`slug["\\s]*: "${slug}"`).test(pitchDataSource),
       `pitchData.ts must define pitch deck with slug '${slug}'`
     );
   }
@@ -162,114 +162,41 @@ test("Pitch visual photo and diagram assets physically exist in public/pitch", (
   }
 });
 
-test("Politik pitch deck includes specific asks, dual-pillars, and follows content constraints", () => {
-  const pitchDataSource = fs.readFileSync(
-    path.join(__dirname, "../lib/pitchData.ts"),
-    "utf8"
-  );
-
-  assert.ok(
-    pitchDataSource.includes("smartcity-system.de/buerstadt"),
-    "Politik pitch must reference smartcity-system.de/buerstadt raw parking sensor data"
-  );
-  assert.ok(
-    pitchDataSource.includes("Bürstadt & Lampertheim") ||
-    pitchDataSource.includes("Bürstadt und Lampertheim"),
-    "Politik pitch must mention joint investment of Bürstadt and Lampertheim"
-  );
-  assert.ok(
-    pitchDataSource.includes("0 € Belastung für den städtischen Haushalt") ||
-    pitchDataSource.includes("0 € Kommunalkosten"),
-    "Politik pitch must emphasize 0 € municipal cost"
-  );
-  assert.ok(
-    pitchDataSource.includes("Schirmherrschaft"),
-    "Politik pitch must ask for patronage (Schirmherrschaft) at KAMÜ Hackathon"
-  );
-  assert.ok(
-    pitchDataSource.includes("dual-pillars"),
-    "Politik pitch must use dual-pillars layout for sensor building and hackathon"
-  );
-  assert.ok(
-    pitchDataSource.includes("open-innovation"),
-    "Politik pitch must use open-innovation layout for curiosity examples"
-  );
-
-  // Isolate POLITIK_DECK from pitchData source to verify forbidden phrases
-  const politikMatch = pitchDataSource.match(/export const POLITIK_DECK[\s\S]*?export const SCHULEN_DECK/);
-  assert.ok(politikMatch, "POLITIK_DECK block must be extractable");
-  const politikContent = politikMatch[0];
-
-  assert.ok(
-    !politikContent.includes("2,4 Millionen") && !politikContent.includes("2.4 Millionen"),
-    "POLITIK_DECK must NOT mention 2,4 Millionen Euro"
-  );
-  assert.ok(
-    !politikContent.includes("Wasserturm"),
-    "POLITIK_DECK must NOT mention Wasserturm"
-  );
-  assert.ok(
-    !politikContent.includes("Bürger-Cockpit"),
-    "POLITIK_DECK must NOT use the term Bürger-Cockpit"
-  );
+test("All decks tell the origin story, include collected data, and end with an ask", async () => {
+  const { PITCH_DECKS } = await import("../lib/pitchData.ts");
+  for (const deck of PITCH_DECKS) {
+    assert.deepEqual(deck.slides.slice(0, 4).map(slide => slide.id), ["team", "hackathon", "origin", "collected"].map(id => `${deck.slug}-${id}`));
+    assert.equal(deck.slides.at(-1).layout, "the-ask-commitment");
+    assert.equal(deck.slides.filter(slide => slide.layout === "collected-evidence").length, 1);
+    assert.equal(new Set(deck.slides.map(slide => slide.id)).size, deck.slides.length);
+    assert.deepEqual(deck.slides.map(slide => slide.stepNumber), deck.slides.map((_, index) => index + 1));
+    assert.ok(deck.slides.every(slide => slide.speakerNotes.elevatorPitch));
+    assert.doesNotMatch(JSON.stringify(deck), /0 € Kommunalkosten|Absolut ungefährlich|2,4 Millionen|garantiertes Erfolgserlebnis/);
+  }
 });
 
-test("Schulen pitch deck does NOT ask schools for money and focuses on STEM & project days", () => {
-  const pitchDataSource = fs.readFileSync(
-    path.join(__dirname, "../lib/pitchData.ts"),
-    "utf8"
-  );
-
-  assert.ok(
-    pitchDataSource.includes("Wir fordern kein Schulbudget"),
-    "Schulen deck must explicitly state that no school money is demanded"
-  );
-  assert.ok(
-    pitchDataSource.includes("stem-learning-matrix"),
-    "Schulen deck must use stem-learning-matrix layout"
-  );
-  assert.ok(
-    pitchDataSource.includes("Praktisches Handwerk"),
-    "STEM matrix must include practical craftmanship (soldering, pliers)"
-  );
+test("Political asks prioritize raw data and conditionally usable infrastructure", async () => {
+  const { POLITIK_DECK } = await import("../lib/pitchData.ts");
+  const asks = POLITIK_DECK.slides.flatMap(slide => slide.specificAsks ?? []);
+  assert.deepEqual(asks.map(ask => ask.id), ["ask-rohdaten", "ask-infrastruktur", "ask-live-daten", "ask-praesenz"]);
+  assert.match(asks[1].description, /Falls ein geeignetes LoRaWAN-Netz/);
+  assert.match(asks[3].description, /Hauptpreises/);
 });
 
-test("Wirtschaft pitch deck spells out CSR and provides flexible sponsorship and LoRa explanation", () => {
-  const pitchDataSource = fs.readFileSync(
-    path.join(__dirname, "../lib/pitchData.ts"),
-    "utf8"
-  );
-
-  assert.ok(
-    pitchDataSource.includes("CSR (Corporate Social Responsibility"),
-    "Wirtschaft deck must spell out CSR"
-  );
-  assert.ok(
-    pitchDataSource.includes("100 € pro Schüler"),
-    "Wirtschaft deck must offer 100 € student sponsorship"
-  );
-  assert.ok(
-    pitchDataSource.includes("LoRaWAN einfach erklärt"),
-    "Wirtschaft deck must explain LoRaWAN simply for non-techs"
-  );
-});
-
-test("Live regional metrics logic is time-of-day aware (nighttime = 0 bins emptied, 0.0 solar kWh)", async () => {
-  const { calculateLiveRegionalMetrics } = await import("../lib/pitchLiveTicker.ts");
-
-  // Test at midnight (00:21)
-  const nightMetrics = calculateLiveRegionalMetrics(300, 0);
-  assert.equal(nightMetrics.isDaytime, false, "00:00 must be nighttime");
-  assert.equal(nightMetrics.binsEmptied, 0, "No bins emptied at night (ZAKB depot sleep)");
-  assert.equal(nightMetrics.solarKwhGenerated, "0.0", "Solar generation must be 0.0 at night");
-  assert.ok(nightMetrics.telemetryPackets > 0, "LoRaWAN telemetry packets must be > 0 at night (24/7)");
-  assert.ok(nightMetrics.trainsTraversed > 0, "Riedbahn freight trains must run at night");
-
-  // Test at noon (12:00)
-  const dayMetrics = calculateLiveRegionalMetrics(300, 12);
-  assert.equal(dayMetrics.isDaytime, true, "12:00 must be daytime");
-  assert.ok(dayMetrics.binsEmptied > 0, "Bins must be emptied during daytime");
-  assert.ok(parseFloat(dayMetrics.solarKwhGenerated) > 0, "Solar generation must be > 0 during daytime");
+test("Collected evidence rejects empty and error payloads and preserves actual values", async () => {
+  const { previewCollectedData, evidenceExpired } = await import("../lib/pitchEvidence.ts");
+  for (const payload of [null, [], {}, {error: "offline"}, {items: []}, "not JSON data"]) assert.equal(previewCollectedData(payload), null);
+  const preview = previewCollectedData([{station: "Teststation", value: 0, unit: "cm"}]);
+  assert.equal(preview.entries, 1);
+  assert.deepEqual(preview.fields.map(field => field.value), ["Teststation", "0", "cm"]);
+  assert.equal(evidenceExpired("2026-10-05T12:00:00Z", Date.parse("2026-10-05T12:00:00Z")), true);
+  const gauge = previewCollectedData([{name: "WORMS", current_level_m: -0.24, updated_at: "2026-10-05T07:30:00Z"}]);
+  assert.deepEqual(gauge.fields.map(field => field.value), ["WORMS", "-0.24", "2026-10-05T07:30:00Z"]);
+  const inventory = previewCollectedData({stations: [{operator: "Betreiber", address: "Straße 1", municipality: "Bürstadt", availablePoints: null}]});
+  assert.deepEqual(inventory.fields.map(field => field.value), ["Betreiber", "Straße 1", "Bürstadt"]);
+  assert.equal(evidenceExpired("invalid"), true);
+  assert.equal(evidenceExpired(null), false);
+  assert.equal(evidenceExpired("2026-10-05T12:01:00Z", Date.parse("2026-10-05T12:00:00Z")), false);
 });
 
 test("HandoutModal component exists and provides Ink-Saver white print mode", () => {
