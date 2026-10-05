@@ -1,4 +1,4 @@
-"""Server-side AISstream ingestion for the Worms–Gernsheim corridor."""
+"""Server-side AISstream ingestion for the Frankenthal–Gernsheim corridor."""
 import argparse
 import asyncio
 import hashlib
@@ -20,7 +20,7 @@ SOURCE = 'aisstream-rhein'
 URL = 'wss://stream.aisstream.io/v0/stream'
 POSITION_TYPES = {'PositionReport', 'StandardClassBPositionReport', 'ExtendedClassBPositionReport'}
 TYPES = sorted(POSITION_TYPES | {'ShipStaticData', 'StaticDataReport'})
-BBOX = (49.60, 8.30, 49.79, 8.55)
+BBOX = (49.50, 8.30, 49.79, 8.55)
 LOG = logging.getLogger('ais-collector')
 
 
@@ -180,7 +180,7 @@ async def run(seconds=None):
                             if event.get('MessageType') == 'SubscriptionConfirmation':
                                 confirmed = True
                                 backoff = 2
-                                LOG.info('AIS subscription confirmed for Worms–Gernsheim')
+                                LOG.info('AIS subscription confirmed for Frankenthal–Gernsheim')
                             elif confirmed:
                                 try:
                                     accepted += int(await persist(conn, event))

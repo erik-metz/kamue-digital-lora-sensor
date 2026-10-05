@@ -1,7 +1,7 @@
 # Rhein AIS collector
 
-AISstream WebSocket reception for Worms–Gernsheim, with a small geographic buffer:
-49.60–49.79 latitude, 8.30–8.55 longitude. This rectangle is a reception filter,
+AISstream WebSocket reception for Frankenthal–Gernsheim, with a small geographic buffer:
+49.50–49.79 latitude, 8.30–8.55 longitude. This rectangle is a reception filter,
 not a guarantee that all vessels on the river are represented. Inland-AIS/Class A
 and Class B positions are accepted; static messages enrich vessel metadata but
 never refresh a position's validity. VesselFinder is not scraped or required.
