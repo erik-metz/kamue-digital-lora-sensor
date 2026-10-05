@@ -134,10 +134,10 @@ def extract_addresses(path, source):
                 kind = map_kind(raw)
                 if kind:
                     add_feature(kind, f"osm-node-{obj.id}", raw, {"type": "Point", "coordinates": [lon, lat]})
-                if raw.get('railway') in ('level_crossing', 'crossing'):
+                if raw.get('railway') in ('level_crossing', 'crossing') and raw.get('crossing:barrier') in ('yes', 'full', 'half', 'double_half'):
                     crossings.append({'type': 'Feature', 'geometry': {'type': 'Point', 'coordinates': [lon, lat]},
                         'properties': {'id': f'osm-node-{obj.id}', 'name': raw.get('name') or raw.get('ref') or 'Bahnübergang',
-                                       'barrier': raw.get('crossing:barrier', 'nicht erfasst'),
+                                       'barrier': raw['crossing:barrier'], 'railway': raw['railway'],
                                        'source': 'OpenStreetMap / Geofabrik', 'status': 'unknown'}})
                 tags = tags_for(obj)
                 if tags:
@@ -177,7 +177,7 @@ def extract_addresses(path, source):
             elements.append({'type': 'way', 'id': identity, 'center': {'lat': lat, 'lon': lon}, 'tags': tags})
     if not elements:
         raise ValueError('OSM extract contains no matching regional addresses')
-    return {'elements': elements, 'map_layers': map_layers, 'crossings': {'type': 'FeatureCollection', 'features': crossings}, 'coverage': 'OSM address nodes and ways; not a complete address register'}
+    return {'elements': elements, 'map_layers': map_layers, 'crossings': {'type': 'FeatureCollection', 'inventory_version': 2, 'features': crossings}, 'coverage': 'OSM address nodes and ways; not a complete address register'}
 
 
 async def import_addresses(conn, client, source):
@@ -186,7 +186,8 @@ async def import_addresses(conn, client, source):
         AND source_id=%s AND source_url=%s AND expires_at>NOW()
         AND fetched_at>NOW()-make_interval(secs => %s)
         AND EXISTS (SELECT 1 FROM collected_datasets c WHERE c.dataset='map/layers/crossings'
-                    AND c.source_id=collected_datasets.source_id AND c.expires_at>NOW())""",
+                    AND c.source_id=collected_datasets.source_id AND c.expires_at>NOW()
+                    AND c.data->>'inventory_version'='2')""",
         (source['id'], source['url'], source.get('interval_seconds', 604800)))
     fresh = await cursor.fetchone()
     await conn.commit()

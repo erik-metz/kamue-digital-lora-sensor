@@ -4,22 +4,25 @@ import L from "leaflet";
 import { metricLabel } from "@/lib/telemetryData";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
-import { createMarkerContent, createTempPinContent } from "@/lib/mapMarker";
+import { createMarkerContent, createTempPinContent, createLevelCrossingMarkerContent } from "@/lib/mapMarker";
 import "./map.css";
 import { motionPoint, nextMotion, MOVEMENT_POLL_MS, type MarkerMotion } from "@/lib/mapMotion";
 import { detailCard, featureCard, featureKind, mapSymbol, placeMarker } from "@/lib/mapPresentation";
 import { useEffect, useRef, useState } from "react";
 import type { GeoJsonObject } from "geojson";
-import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, type Category, type MapMode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, type Category, type MapMode, type SensorNode, type StationNode } from "@/lib/mapData";
 import { TemperatureHeatmapLayer } from "@/lib/temperatureHeatmap";
 import { DEFAULT_MAP_CENTER, DEFAULT_MAP_ZOOM, DEFAULT_MAP_LAYERS, type MapLayerId } from "@/lib/urlState";
 import { LAYER_MIN_ZOOM, isLayerZoomRestricted } from "@/lib/mapPresets";
+
+import { crossingSites, crossingLabel, mobilityNodes, type Position, type Crossing } from "@/lib/mobilityData";
 
 export type { SensorNode } from "@/lib/mapData";
 interface MapProps {
   nodes: SensorNode[];
   selectedNodeId: string | undefined;
   onSelectNode: (id: string) => void;
+  onMobilityNodesChange?: (nodes: StationNode[]) => void;
   categories: Category[];
   mode: MapMode;
   now: number;
@@ -33,11 +36,6 @@ interface MapProps {
   satelliteMode?: "none" | "rgb" | "ndvi";
   satelliteSceneId?: string;
 }
-interface Position {
-  id: string; kind: "bus" | "train" | "waste"; latitude: number; longitude: number;
-  timestamp: string; valid_until: string; basis: "observed" | "schedule_prediction";
-  line?: string; destination?: string; speed_kmh?: number; geometry_basis?: string; delay_basis?: string; delay_seconds?: number;
-}
 interface LayerPublication {
   layers: Partial<Record<MapLayerId, GeoJsonObject>>;
   unavailable: string[];
@@ -50,6 +48,10 @@ function textPopup(lines: string[]) {
 export default function MapComponent(props: MapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  const crossingGroup = useRef<L.LayerGroup | null>(null);
+  const crossingStates = useRef(new WeakMap<L.Marker, Crossing["status"]>());
+  const crossingClustered = useRef(false);
+  const crossingMarkers = useRef(new Map<string, L.Marker>());
   const vehicleGroup = useRef<L.LayerGroup | null>(null);
   const vehicleMotions = useRef(new Map<string, MarkerMotion>());
   const vehicleIcons = useRef(new Map<string, string>());
@@ -66,6 +68,7 @@ export default function MapComponent(props: MapProps) {
     void import("leaflet.markercluster").then(() => { if (active) setClusteringReady(true); });
     return () => { active = false; };
   }, []);
+  const [crossings, setCrossings] = useState<Crossing[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [publication, setPublication] = useState<LayerPublication>({ layers: {}, unavailable: [] });
   const [movementFailed, setMovementFailed] = useState(false);
@@ -104,22 +107,33 @@ export default function MapComponent(props: MapProps) {
   useEffect(() => {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
+    let streaming = false;
+    let lastEvent = 0;
+    const stream = new EventSource("/api/mobility/stream");
+    const accept = (body: { positions: Position[]; crossings?: Crossing[] }) => {
+      if (!Array.isArray(body.positions)) throw new Error("Invalid response");
+      setPositions(body.positions); setCrossings(body.crossings ?? []); setMovementFailed(false);
+    };
+    stream.onmessage = event => {
+      try { accept(JSON.parse(event.data)); streaming = true; lastEvent = Date.now(); } catch { streaming = false; }
+    };
+    stream.onerror = () => { streaming = false; };
     async function poll() {
-      if (!document.hidden) {
+      if (!document.hidden && (!streaming || Date.now() - lastEvent > 25000)) {
         try {
           const response = await fetch("/api/mobility", { signal: controller.signal });
           if (!response.ok) throw new Error("Unavailable");
           const body = await response.json();
           if (!Array.isArray(body.positions)) throw new Error("Invalid response");
-          if (!controller.signal.aborted) { setPositions(body.positions); setMovementFailed(false); }
+          if (!controller.signal.aborted) accept(body);
         } catch {
-          if (!controller.signal.aborted) { setPositions([]); setMovementFailed(true); }
+          if (!controller.signal.aborted) { setPositions([]); setCrossings([]); setMovementFailed(true); }
         }
       }
       if (!controller.signal.aborted) timer = setTimeout(poll, MOVEMENT_POLL_MS);
     }
     void poll();
-    return () => { controller.abort(); clearTimeout(timer); };
+    return () => { stream.close(); controller.abort(); clearTimeout(timer); };
   }, []);
 
   useEffect(() => {
@@ -237,6 +251,8 @@ export default function MapComponent(props: MapProps) {
         className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22] });
       if (!marker) {
         marker = L.marker(target, { icon: icon(), title, alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
+        marker.on("click", () => callbacks.current.onSelectNode(`movement:${position.id}`));
+        marker.on("keypress", (event: L.LeafletKeyboardEvent) => { if (event.originalEvent.key === "Enter") callbacks.current.onSelectNode(`movement:${position.id}`); });
         vehicleMarkers.current.set(key, marker);
       } else {
         if (icons.get(key) !== iconKey) marker.setIcon(icon());
@@ -308,6 +324,63 @@ export default function MapComponent(props: MapProps) {
     }
   }, [positions, props.now]);
 
+  const mobilityTick = Math.floor(props.now / 10000);
+  useEffect(() => {
+    const now = Date.now();
+    const sites = crossingSites(publication.layers.crossings, crossings, now);
+    callbacks.current.onMobilityNodesChange?.(mobilityNodes(positions, sites, now));
+    const instance = map.current;
+    if (!instance || !ready) return;
+    if (crossingGroup.current && crossingClustered.current !== clusteringReady) {
+      instance.removeLayer(crossingGroup.current); crossingGroup.current = null; crossingMarkers.current.clear();
+    }
+    if (!crossingGroup.current) {
+      crossingClustered.current = clusteringReady;
+      crossingGroup.current = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 65, disableClusteringAtZoom: 18, showCoverageOnHover: false,
+        iconCreateFunction: cluster => {
+          const states = cluster.getAllChildMarkers().map(marker => crossingStates.current.get(marker) ?? "unknown");
+          const status = states.includes("closed") ? "closed" : states.includes("closing_soon") ? "closing_soon" : states.every(s => s === "open") ? "open" : "unknown";
+          const content = createLevelCrossingMarkerContent({ name: `${states.length} Schranken`, street: "", status });
+          const badge = content.querySelector(".crossing-marker-badge");
+          if (badge) badge.textContent = `${states.length} Schranken · ${states.filter(s => s === status).length} ${crossingLabel(status).toLowerCase()}`;
+          return L.divIcon({ html: content, className: "map-place-icon", iconSize: [34, 34] });
+        },
+      }).addTo(instance) : L.layerGroup().addTo(instance);
+    }
+    const retained = new Set<string>();
+    if (layers.crossings) for (const site of sites) {
+      retained.add(site.id);
+      const title = `${site.name} · ${crossingLabel(site.status)} · Prognose`;
+      const icon = L.divIcon({ html: createLevelCrossingMarkerContent({ name: site.name, street: "", status: site.status }),
+        className: "map-place-icon", iconSize: [34, 34], iconAnchor: [17, 17], popupAnchor: [0, -20] });
+      let marker = crossingMarkers.current.get(site.id);
+      if (!marker) {
+        marker = L.marker([site.latitude, site.longitude], { icon, title, alt: title, keyboard: true }).addTo(crossingGroup.current);
+        marker.on("click", () => callbacks.current.onSelectNode(site.entity_id));
+        marker.on("keypress", (event: L.LeafletKeyboardEvent) => { if (event.originalEvent.key === "Enter") callbacks.current.onSelectNode(site.entity_id); });
+        crossingMarkers.current.set(site.id, marker);
+      } else {
+        if (crossingStates.current.get(marker) !== site.status || marker.options.title !== title) {
+          const focused = marker.getElement() === document.activeElement;
+          marker.options.title = title; marker.options.alt = title; marker.setIcon(icon);
+          if (focused) marker.getElement()?.focus();
+        }
+        marker.setLatLng([site.latitude, site.longitude]);
+      }
+      crossingStates.current.set(marker, site.status);
+      const popup = detailCard(site.name, `${crossingLabel(site.status)} · berechneter Zustand`, [
+        "Fahrplanprognose aus Zugpositionen; keine gemessene Schrankenstellung.",
+        ...(site.timestamp ? [`Stand: ${new Date(site.timestamp).toLocaleString("de-DE")}`] : []),
+        "Anklicken zeigt den gespeicherten Zeitverlauf unter der Karte.",
+      ]);
+      if (marker.getPopup()) marker.setPopupContent(popup); else marker.bindPopup(popup);
+    }
+    for (const [id, marker] of crossingMarkers.current) if (!retained.has(id)) {
+      crossingGroup.current.removeLayer(marker); crossingMarkers.current.delete(id);
+    }
+    if (clusteringReady && crossingGroup.current instanceof L.MarkerClusterGroup) crossingGroup.current.refreshClusters();
+  }, [positions, crossings, publication, mobilityTick, layers.crossings, ready, clusteringReady]);
+
   useEffect(() => {
     const instance = map.current;
     if (!instance || !ready) return;
@@ -316,7 +389,7 @@ export default function MapComponent(props: MapProps) {
     const requests = new Set<AbortController>();
     for (const [id, geometry] of Object.entries(publication.layers)) {
       const layerId = id as MapLayerId;
-      if (!layers[layerId]) continue;
+      if (!layers[layerId] || id === "crossings") continue;
       const overview = zoom < LAYER_MIN_ZOOM[layerId];
       const pointGroup = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 45, disableClusteringAtZoom: 16, showCoverageOnHover: false,
         iconCreateFunction: cluster => L.divIcon({ html: placeMarker(id, String(cluster.getChildCount())), className: "map-place-icon", iconSize: [36, 36] }),

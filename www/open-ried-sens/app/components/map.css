@@ -876,3 +876,7 @@
   filter: contrast(145%) saturate(220%) hue-rotate(80deg);
 }
 
+
+@media (prefers-reduced-motion: reduce) {
+  .crossing-marker { animation: none; transition: none; }
+}

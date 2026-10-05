@@ -1,15 +1,17 @@
 """Read-only publications: no provider requests, generated values or seed fallback."""
 
+import asyncio
 import hashlib
 import json
 import math
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from dependencies import get_db_pool
 from endpoints.infrastructure import get_emf_sites
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.encoders import jsonable_encoder
 from measurement_reads import core_reads, read_sql
+from starlette.responses import StreamingResponse
 
 router = APIRouter(tags=["Collected data"])
 
@@ -151,8 +153,7 @@ async def dataset_publication(
     )
 
 
-@router.get("/movements/latest")
-async def movements(request: Request, pool=Depends(get_db_pool)):
+async def mobility_snapshot(pool):
     async with pool.connection() as conn:
         cursor = await conn.execute(read_sql("""SELECT DISTINCT ON (entity_id) data FROM movement_latest
             WHERE valid_until > NOW() AND NOT EXISTS (
@@ -160,8 +161,94 @@ async def movements(request: Request, pool=Depends(get_db_pool)):
                 AND movement_latest.entity_id=u.source_id||':'||u.service_date::text||':'||u.trip_id)
             ORDER BY entity_id,
             CASE WHEN basis='observed' THEN 0 ELSE 1 END, timestamp DESC"""))
-        rows = await cursor.fetchall()
-    return cached_response({"positions": [r["data"] for r in rows]}, request, 5)
+        positions = [r["data"] for r in await cursor.fetchall()]
+        ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
+        crossings = []
+        if ready and ready['ready']:
+            cursor = await conn.execute("""SELECT e.id AS entity_id,e.metadata,d.basis,r.observed_at,r.value,r.quality,r.provenance
+                FROM entities e JOIN measurement_definitions d ON d.entity_id=e.id
+                JOIN latest_readings r ON r.measurement_id=d.id
+                WHERE e.entity_type='rail_crossing' AND d.metric='crossing_state'
+                    AND d.source_id='rail-barrier-model' AND d.basis='model' AND d.unit='state'
+                    AND (r.provenance->>'valid_until')::timestamptz > NOW()""")
+            for row in await cursor.fetchall():
+                state = row['value'] if row['quality'] == 'valid' else None
+                crossings.append({**row['metadata'], 'entity_id': row['entity_id'],
+                    'status': {0: 'open', 1: 'closing_soon', 2: 'closed'}.get(state, 'unknown'),
+                    'timestamp': row['observed_at'], 'valid_until': row['provenance']['valid_until'],
+                    'basis': row['basis'], 'model_version': row['provenance']['model_version']})
+    return {'positions': positions, 'crossings': crossings, 'crossings_available': bool(ready and ready['ready'])}
+
+
+@router.get("/movements/latest")
+async def movements(request: Request, pool=Depends(get_db_pool)):
+    return cached_response(await mobility_snapshot(pool), request, 5)
+
+
+@router.get("/movements/stream")
+async def movement_stream(request: Request, pool=Depends(get_db_pool)):
+    async def events():
+        while not await request.is_disconnected():
+            snapshot = await mobility_snapshot(pool)
+            yield 'data: ' + json.dumps(jsonable_encoder(snapshot), separators=(',', ':')) + '\n\n'
+            # No connection is retained while waiting; cancellation closes the generator.
+            await asyncio.sleep(10)
+    return StreamingResponse(events(), media_type='text/event-stream',
+        headers={'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no'})
+
+
+@router.get("/movements/telemetry")
+async def movement_telemetry(entity_id: str, request: Request, pool=Depends(get_db_pool)):
+    if not entity_id.startswith(('movement:', 'crossing:')) or len(entity_id) > 256:
+        raise HTTPException(400, 'Invalid mobility entity')
+    end = datetime.now(UTC)
+    start = end - timedelta(hours=24)
+    async with pool.connection() as conn:
+        ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
+        if not ready or not ready['ready']:
+            raise HTTPException(503, 'Canonical measurement storage is not installed')
+        # Filter definitions before reading history. Prefer observations at the same
+        # timestamp, while keeping schedule estimates when no observation exists.
+        cursor = await conn.execute("""SELECT DISTINCT ON (d.metric,d.unit) d.metric,d.unit,
+            r.value,r.observed_at AS timestamp,d.basis,r.quality
+            FROM measurement_definitions d JOIN latest_readings r ON r.measurement_id=d.id
+            WHERE d.entity_id=%s AND d.metric IN ('crossing_state','speed','delay','latitude','longitude')
+            ORDER BY d.metric,d.unit,CASE WHEN r.observed_at+INTERVAL '30 seconds'>NOW() THEN 0 ELSE 1 END,
+                CASE WHEN d.basis='observed' THEN 0 ELSE 1 END,r.observed_at DESC""", (entity_id,))
+        latest = await cursor.fetchall()
+        if entity_id.startswith('crossing:'):
+            # Keep both sides of every state change, missing sample and collection gap.
+            cursor = await conn.execute("""WITH samples AS (
+                SELECT r.observed_at AS bucket,r.value,d.metric,d.unit,
+                    LAG(r.value) OVER w AS previous,LEAD(r.value) OVER w AS following,
+                    LAG(r.observed_at) OVER w AS previous_time,LEAD(r.observed_at) OVER w AS following_time
+                FROM measurement_definitions d JOIN readings r ON r.measurement_id=d.id
+                WHERE d.entity_id=%s AND d.metric='crossing_state' AND d.source_id='rail-barrier-model'
+                    AND r.observed_at BETWEEN %s AND %s
+                WINDOW w AS (ORDER BY r.observed_at)
+            ) SELECT metric,unit,bucket,value AS avg_value FROM samples
+                WHERE value IS DISTINCT FROM previous OR value IS DISTINCT FROM following
+                    OR previous_time IS NULL OR following_time IS NULL
+                    OR bucket-previous_time>INTERVAL '30 seconds' OR following_time-bucket>INTERVAL '30 seconds'
+                UNION ALL SELECT 'crossing_state','state',following_time-INTERVAL '1 microsecond',NULL FROM samples
+                WHERE following_time-bucket>INTERVAL '30 seconds'
+                ORDER BY bucket DESC LIMIT 10000""", (entity_id,start,end))
+        else:
+            cursor = await conn.execute("""WITH samples AS (
+                SELECT DISTINCT ON (d.metric,d.unit,r.observed_at) d.metric,d.unit,r.observed_at,r.value
+                FROM measurement_definitions d JOIN readings r ON r.measurement_id=d.id
+                WHERE d.entity_id=%s AND d.metric IN ('speed','delay','latitude','longitude')
+                    AND r.quality='valid' AND r.observed_at BETWEEN %s AND %s
+                ORDER BY d.metric,d.unit,r.observed_at,CASE WHEN d.basis='observed' THEN 0 ELSE 1 END
+            ) SELECT metric,unit,date_bin(INTERVAL '5 minutes',observed_at,TIMESTAMPTZ '2000-01-01') AS bucket,
+                AVG(value) AS avg_value FROM samples GROUP BY metric,unit,bucket ORDER BY bucket DESC LIMIT 5000""", (entity_id,start,end))
+        history = await cursor.fetchall()
+    # Current values have the same thirty-second lifetime as the streamed batch.
+    readings = [r for r in latest if r['quality']=='valid' and r['timestamp']+timedelta(seconds=30)>end]
+    return cached_response({'readings': readings, 'history': history, 'start': start, 'end': end,
+        'historyMode': 'states' if entity_id.startswith('crossing:') else 'averages',
+        'historyUnavailable': False, 'historyTruncated': len(history)>=10000,
+        'basis': 'model' if entity_id.startswith('crossing:') else (latest[0]['basis'] if latest else 'unknown')}, request, 5)
 
 
 @router.get("/map-tiles/{layer}/{z}/{x}/{y}.png")

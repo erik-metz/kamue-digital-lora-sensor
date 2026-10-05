@@ -7,7 +7,10 @@ def test_regional_nodes_and_way_centers_without_external_queries(tmp_path):
     path = tmp_path / 'fixture.osm'
     path.write_text('''<osm version="0.6">
     <node id="1" lat="49.6" lon="8.4"><tag k="addr:city" v="Biblis"/><tag k="addr:street" v="One"/><tag k="addr:housenumber" v="2"/></node>
-    <node id="10" lat="49.64" lon="8.45"><tag k="railway" v="level_crossing"/><tag k="name" v="Test crossing"/></node>
+    <node id="10" lat="49.64" lon="8.45"><tag k="railway" v="level_crossing"/><tag k="name" v="Test crossing"/><tag k="crossing:barrier" v="half"/></node>
+    <node id="14" lat="49.64" lon="8.45"><tag k="railway" v="crossing"/><tag k="crossing:barrier" v="no"/></node>
+    <node id="15" lat="49.64" lon="8.45"><tag k="railway" v="level_crossing"/></node>
+    <node id="16" lat="49.64" lon="8.45"><tag k="highway" v="crossing"/><tag k="crossing:barrier" v="yes"/></node>
     <node id="11" lat="52" lon="10"><tag k="railway" v="level_crossing"/></node>
     <node id="2" lat="49.62" lon="8.42"/>
     <node id="3" lat="52" lon="10"><tag k="addr:city" v="Biblis"/><tag k="addr:street" v="Outside"/><tag k="addr:housenumber" v="1"/></node>

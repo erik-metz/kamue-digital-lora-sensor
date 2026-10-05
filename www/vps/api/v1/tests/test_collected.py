@@ -30,7 +30,7 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_emf_sites_reach_map_and_infrastructure(self):
         from endpoints.collected import map_layers
-        from endpoints.infrastructure import EmfSitesSummary, EmfSiteResponse
+        from endpoints.infrastructure import EmfSiteResponse, EmfSitesSummary
         self.emf.return_value = EmfSitesSummary(total_sites=1, providers={}, sites=[
             EmfSiteResponse(id="bnetza:emf:123", name="Funkanlage", fid=123,
                             latitude=49.65, longitude=8.45, antenna_count=3)])
@@ -63,8 +63,8 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
     async def test_position_read_prefers_observations_and_excludes_expired(self):
         pool,conn=pool_for(rows=[])
         response=await movements(request(),pool)
-        self.assertEqual(json.loads(response.body),{'positions':[]})
-        sql=conn.execute.call_args.args[0]
+        self.assertEqual(json.loads(response.body),{'positions':[], 'crossings':[], 'crossings_available':False})
+        sql=conn.execute.call_args_list[0].args[0]
         self.assertIn('valid_until > NOW()',sql)
         self.assertIn("basis='observed'",sql)
 
@@ -136,3 +136,28 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
         body = json.loads((await map_layers(request(), pool)).body)
         self.assertNotIn('lora', body['layers'])
         self.assertIn('lora', body['unavailable'])
+
+    async def test_stream_delivers_vehicle_and_barrier_snapshots_from_shared_reader(self):
+        from endpoints.collected import movement_stream
+        stream_request = MagicMock()
+        stream_request.is_disconnected = AsyncMock(side_effect=[False, False, True])
+        batches = [{'positions':[{'id':'train'}], 'crossings':[{'status':'closed'}]},
+                   {'positions':[{'id':'train'}], 'crossings':[{'status':'open'}]}]
+        with patch('endpoints.collected.mobility_snapshot', new_callable=AsyncMock) as reader, \
+             patch('endpoints.collected.asyncio.sleep', new_callable=AsyncMock):
+            reader.side_effect = batches
+            response = await movement_stream(stream_request, MagicMock())
+            events = [event async for event in response.body_iterator]
+        self.assertEqual([json.loads(event[6:]) for event in events], batches)
+        self.assertEqual(response.headers['x-accel-buffering'],'no')
+        self.assertEqual(response.headers['cache-control'],'no-store')
+
+    async def test_mobility_telemetry_never_generates_data_for_missing_core(self):
+        from endpoints.collected import movement_telemetry
+        pool,_ = pool_for({'ready':False})
+        with self.assertRaises(HTTPException) as context:
+            await movement_telemetry('crossing:gate',request(),pool)
+        self.assertEqual(context.exception.status_code,503)
+        with self.assertRaises(HTTPException) as context:
+            await movement_telemetry('other:gate',request(),pool)
+        self.assertEqual(context.exception.status_code,400)

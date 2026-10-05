@@ -5,7 +5,7 @@ export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color:
   healthcare: { label: "Gesundheit", symbol: "✚", color: "#34d399" },
   culture: { label: "Kultur & Freizeit", symbol: "🎭", color: "#f472b6" },
   places: { label: "Öffentlicher Ort", symbol: "🏫", color: "#38bdf8" },
-  crossings: { label: "Bahnübergang", symbol: "⛩", color: "#fbbf24" },
+  crossings: { label: "Bahnübergang", symbol: "🚧", color: "#fbbf24" },
   bus: { label: "Bus", symbol: "🚌", color: "#38bdf8" },
   train: { label: "Zug", symbol: "🚆", color: "#c084fc" },
   waste: { label: "Abfallsammlung", symbol: "🚛", color: "#fb923c" },

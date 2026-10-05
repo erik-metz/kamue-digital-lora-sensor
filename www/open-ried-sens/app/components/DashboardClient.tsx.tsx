@@ -44,6 +44,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
   const [updateFailed, setUpdateFailed] = useState(loadFailed);
   const [now, setNow] = useState(() => Date.now());
   const [mode, setMode] = useState<MapMode>("category");
+  const [mobility, setMobility] = useState<StationNode[]>([]);
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
   const [layers, setLayers] = useState<Record<MapLayerId, boolean>>(DEFAULT_MAP_LAYERS);
   const [viewport, setViewport] = useState<{ lat: number; lng: number; z: number }>({
@@ -74,7 +75,8 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
       ),
     [filtered]
   );
-  const selected = nodes.find(n => n.id === selectedNodeId);
+  const chartNodes = [...nodes, ...mobility];
+  const selected = chartNodes.find(n => n.id === selectedNodeId);
   const chartNode = selected ?? filtered[0] ?? nodes[0];
   const counts = useMemo(() => Object.fromEntries(CATEGORY_IDS.map(c => [c, nodes.filter(n => n.categories.includes(c)).length])) as Record<Category, number>, [nodes]);
 
@@ -258,6 +260,10 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         now={now}
         selectedNodeId={selected?.id}
         onSelectNode={setSelectedNodeId}
+        onMobilityNodesChange={incoming => setMobility(previous => {
+          const selected = previous.find(n => n.id === selectedNodeId);
+          return selected && !incoming.some(n => n.id === selected.id) ? [...incoming, { ...selected, readings: [] }] : incoming;
+        })}
         initialCenter={[viewport.lat, viewport.lng]}
         initialZoom={viewport.z}
         layers={layers}
@@ -312,7 +318,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
       <TelemetryCharts
         key={chartNode.id}
         node={chartNode}
-        nodes={nodes}
+        nodes={chartNodes}
         onSelectNode={setSelectedNodeId}
         selectedMetric={selectedMetric}
         onSelectMetric={setSelectedMetric}

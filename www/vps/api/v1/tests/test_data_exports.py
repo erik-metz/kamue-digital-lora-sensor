@@ -10,10 +10,10 @@ from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 
-from fastapi import HTTPException
-from psycopg.rows import dict_row
 from endpoints.data_exports import csv_bytes, download_data, export_range
+from fastapi import HTTPException
 from measurement_migration import install
+from psycopg.rows import dict_row
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tests'))
 from db_support import DatabaseCase

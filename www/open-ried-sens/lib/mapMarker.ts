@@ -201,40 +201,23 @@ export function createLevelCrossingMarkerContent(props: LevelCrossingMarkerProps
   icon.setAttribute("stroke-linejoin", "round");
   icon.setAttribute("aria-hidden", "true");
 
-  // Cross lines (X)
-  const line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line1.setAttribute("x1", "5");
-  line1.setAttribute("y1", "5");
-  line1.setAttribute("x2", "19");
-  line1.setAttribute("y2", "19");
-
-  const line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line2.setAttribute("x1", "19");
-  line2.setAttribute("y1", "5");
-  line2.setAttribute("x2", "5");
-  line2.setAttribute("y2", "19");
-
-  // Barrier arm line
+  const post = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  post.setAttribute("d", "M4 20V12 M2 20H7 M12 20V16 M18 20V16");
   const barrier = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  barrier.setAttribute("x1", "3");
-  barrier.setAttribute("y1", props.status === "closed" ? "12" : "7");
-  barrier.setAttribute("x2", "21");
-  barrier.setAttribute("y2", props.status === "closed" ? "12" : "17");
+  barrier.setAttribute("x1", "4");
+  barrier.setAttribute("y1", "12");
+  barrier.setAttribute("x2", props.status === "open" ? "7" : "22");
+  barrier.setAttribute("y2", props.status === "open" ? "2" : props.status === "closing_soon" ? "5" : "12");
   barrier.setAttribute("stroke-dasharray", "3, 2");
-
-  icon.append(line1, line2, barrier);
+  if (props.status === "unknown") barrier.setAttribute("opacity", "0.4");
+  icon.append(post, barrier);
   content.append(icon);
-
-  // Status badge
   const badge = document.createElement("span");
   badge.className = "crossing-marker-badge";
-  if (props.status === "closed") {
-    badge.textContent = `Geschlossen (${props.secondsUntilClearance ? `${props.secondsUntilClearance}s` : "Zug"})`;
-  } else if (props.status === "closing_soon") {
-    badge.textContent = `Schließt in ${props.secondsUntilClosure ?? 60}s`;
-  } else {
-    badge.textContent = "BÜ Frei";
-  }
+  badge.textContent = { open: "Offen · Prognose", closed: "Geschlossen · Prognose",
+    closing_soon: "Schließt bald · Prognose", unknown: "Status unbekannt" }[props.status];
+  content.title = `${props.name} · ${badge.textContent}`;
+  content.setAttribute("aria-label", content.title);
   content.append(badge);
 
   return content;

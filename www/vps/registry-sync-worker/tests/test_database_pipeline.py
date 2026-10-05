@@ -75,3 +75,61 @@ class PipelineDatabaseTests(DatabaseCase):
         await self.conn.execute(schema)
         await self.conn.execute(schema)
         self.assertEqual(await self.scalar('SELECT COUNT(*) FROM movement_stop_times'),count)
+
+    async def test_barrier_history_and_positions_are_canonical_without_shadow_triggers(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'api/v1'))
+        from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
+
+        from endpoints.collected import mobility_snapshot, movement_telemetry
+        from measurement_migration import install
+        from psycopg.rows import dict_row
+        from starlette.requests import Request
+
+        await install(self.conn, shadow=False)
+        now = datetime.fromtimestamp(int(datetime.now(UTC).timestamp()) // 10 * 10, UTC)
+        digest = hashlib.sha256(b'barrier-test').hexdigest()
+        await self.conn.execute("INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,'application/json')", (digest,b'barrier-test'))
+        feature = {'type':'Feature','geometry':{'type':'Point','coordinates':[8.45,49.64]},
+                   'properties':{'id':'osm-node-test','name':'Test gate','barrier':'half'}}
+        await publish(self.conn, {'id':'test-osm','url':'https://example.org/osm','max_age_seconds':3600},
+                      'map/layers/crossings', {'features':[feature]}, digest, now)
+        # A provider route reaches the barrier at now+50: the first tick is closed.
+        points = [[now.timestamp()-150,49.63,8.45],[now.timestamp()+250,49.65,8.45]]
+        await self.conn.execute('''INSERT INTO movement_schedules(source_id,trip_id,service_date,kind,starts_at,ends_at,payload_sha256,fetched_at,trajectory,metadata)
+            VALUES ('fixture','rail-trip',%s,'train',%s,%s,%s,%s,%s,%s)''',
+            (now.date(),now-timedelta(seconds=150),now+timedelta(seconds=250),digest,now,Jsonb(points),Jsonb({'geometry_basis':'provider_shape'})))
+        await predict_tick(self.conn,now)
+        await predict_tick(self.conn,now)
+        self.assertEqual(await self.scalar("SELECT count(*) FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='crossing_state'"),1)
+        self.assertEqual(await self.scalar("SELECT r.value FROM latest_readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='crossing_state'"),2)
+        self.assertEqual(await self.scalar("SELECT count(*) FROM core_movement_latest"),1)
+        self.assertEqual(await self.scalar("SELECT count(*) FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.entity_id LIKE 'movement:%'"),4)
+        # Read the exact stored state and trajectory metrics through both API paths.
+        self.conn.row_factory = dict_row
+        @asynccontextmanager
+        async def connection():
+            yield self.conn
+        pool = MagicMock()
+        pool.connection = connection
+        snapshot = await mobility_snapshot(pool)
+        self.assertEqual(snapshot['crossings'][0]['status'],'closed')
+        self.assertEqual(snapshot['crossings'][0]['basis'],'model')
+        request = Request({'type':'http','method':'GET','path':'/','headers':[],'query_string':b''})
+        import json
+        response = await movement_telemetry('crossing:osm-node-test',request,pool)
+        data = json.loads(response.body)
+        self.assertEqual(data['readings'][0]['value'],2)
+        self.assertEqual(data['history'][0]['avg_value'],2)
+        response = await movement_telemetry('movement:fixture:'+str(now.date())+':rail-trip',request,pool)
+        self.assertIn('speed',{r['metric'] for r in json.loads(response.body)['history']})
+        from psycopg.rows import tuple_row
+        self.conn.row_factory = tuple_row
+        # Clearing and missing inputs create real history, never fabricated cycles.
+        await predict_tick(self.conn,now+timedelta(seconds=90))
+        self.assertEqual(await self.scalar("SELECT r.value FROM latest_readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='crossing_state'"),0)
+        await self.conn.execute("DELETE FROM movement_schedules")
+        await predict_tick(self.conn,now+timedelta(seconds=100))
+        self.assertIsNone(await self.scalar("SELECT r.value FROM latest_readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='crossing_state'"))
+        self.assertEqual(await self.scalar("SELECT r.quality FROM latest_readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='crossing_state'"),'missing')
+        self.assertEqual(await self.scalar("SELECT count(*) FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='crossing_state'"),3)

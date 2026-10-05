@@ -4,9 +4,18 @@ import bisect
 import math
 from datetime import UTC, datetime, timedelta
 
+from crossings import persist_crossings
 from psycopg.types.json import Jsonb
 
 MODEL_VERSION = "schedule-polyline-v1"
+
+
+async def core_writer_enabled(conn):
+    cursor = await conn.execute("""SELECT
+        to_regprocedure('write_movement_position(jsonb,boolean)') IS NOT NULL
+        AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgrelid='movement_positions'::regclass
+            AND tgname='measurement_shadow_movement' AND tgenabled <> 'D')""")
+    return (await cursor.fetchone())[0]
 
 
 def position_at(points, timestamp):
@@ -41,6 +50,7 @@ async def store_position(
     digest,
     metadata,
     valid_until,
+    core_writes=None,
 ):
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         raise ValueError("Invalid position")
@@ -94,6 +104,13 @@ async def store_position(
         (entity_id, basis, timestamp, valid_until, Jsonb(data)),
     )
 
+    if core_writes is None:
+        core_writes = await core_writer_enabled(conn)
+    if core_writes:
+        await conn.execute("SELECT write_movement_position(%s)", (Jsonb({
+            **data, 'entity_id': entity_id, 'payload_sha256': digest, 'metadata': metadata,
+        }),))
+
 
 async def predict_tick(conn, now=None):
     now = now or datetime.now(UTC)
@@ -115,6 +132,7 @@ async def predict_tick(conn, now=None):
             (now, now, now, now),
         )
         rows = await cursor.fetchall()
+        core_writes = await core_writer_enabled(conn)
         for (
             source,
             trip,
@@ -154,10 +172,12 @@ async def predict_tick(conn, now=None):
                     "delay_basis": delay_basis or "schedule_only",
                     "realtime_input_sha256": update_digest,
                 },
+                core_writes=core_writes,
                 valid_until=min(
                     end + timedelta(seconds=delay), now + timedelta(seconds=30)
                 ),
             )
+        await persist_crossings(conn, now)
         # Remove expired entries only from the small latest table; history is retained.
         await conn.execute("DELETE FROM movement_latest WHERE valid_until < %s", (now,))
     await conn.commit()

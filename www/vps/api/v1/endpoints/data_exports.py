@@ -179,40 +179,39 @@ async def stream_export(pool, topic, start, end):
     must be retried. Cleanup releases the snapshot on disconnect or failure.
     """
     sink = ZipBuffer()
-    async with pool.connection() as conn:
-        async with conn.transaction():
-            await conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
-            await conn.execute("SET LOCAL statement_timeout = '25s'")
-            generated_at = (await (await conn.execute('SELECT transaction_timestamp() AS time')).fetchone())['time']
-            counts = {}
-            archive = zipfile.ZipFile(sink, 'w', compression=zipfile.ZIP_DEFLATED)
-            try:
-                for index, (name, columns, statement, params) in enumerate(export_queries(topic, start, end)):
-                    counts[name] = 0
-                    with archive.open(f'{name}.csv', 'w', force_zip64=True) as output:
-                        output.write(csv_bytes([], columns))
-                        yield sink.take()
-                        async with conn.cursor(name=f'public_export_{index}') as cursor:
-                            await cursor.execute(statement, params)
-                            while batch := await cursor.fetchmany(1000):
-                                output.write(csv_bytes(batch, columns).split(b'\r\n', 1)[1])
-                                counts[name] += len(batch)
-                                if chunk := sink.take():
-                                    yield chunk
-                    if chunk := sink.take():
-                        yield chunk
-                # Reuse the same documentation and manifest format as the sample.
-                documentation = package({}, sample=False, topic=topic, start=start, end=end, generated_at=generated_at)
-                with zipfile.ZipFile(io.BytesIO(documentation)) as reference:
-                    archive.writestr('README.txt', reference.read('README.txt'))
-                    manifest = json.loads(reference.read('manifest.json'))
-                manifest['tables'] = counts
-                manifest['complete'] = True
-                archive.writestr('manifest.json', json.dumps(manifest, ensure_ascii=False, indent=2))
-            finally:
-                archive.close()
-            if chunk := sink.take():
-                yield chunk
+    async with pool.connection() as conn, conn.transaction():
+        await conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+        await conn.execute("SET LOCAL statement_timeout = '25s'")
+        generated_at = (await (await conn.execute('SELECT transaction_timestamp() AS time')).fetchone())['time']
+        counts = {}
+        archive = zipfile.ZipFile(sink, 'w', compression=zipfile.ZIP_DEFLATED)
+        try:
+            for index, (name, columns, statement, params) in enumerate(export_queries(topic, start, end)):
+                counts[name] = 0
+                with archive.open(f'{name}.csv', 'w', force_zip64=True) as output:
+                    output.write(csv_bytes([], columns))
+                    yield sink.take()
+                    async with conn.cursor(name=f'public_export_{index}') as cursor:
+                        await cursor.execute(statement, params)
+                        while batch := await cursor.fetchmany(1000):
+                            output.write(csv_bytes(batch, columns).split(b'\r\n', 1)[1])
+                            counts[name] += len(batch)
+                            if chunk := sink.take():
+                                yield chunk
+                if chunk := sink.take():
+                    yield chunk
+            # Reuse the same documentation and manifest format as the sample.
+            documentation = package({}, sample=False, topic=topic, start=start, end=end, generated_at=generated_at)
+            with zipfile.ZipFile(io.BytesIO(documentation)) as reference:
+                archive.writestr('README.txt', reference.read('README.txt'))
+                manifest = json.loads(reference.read('manifest.json'))
+            manifest['tables'] = counts
+            manifest['complete'] = True
+            archive.writestr('manifest.json', json.dumps(manifest, ensure_ascii=False, indent=2))
+        finally:
+            archive.close()
+        if chunk := sink.take():
+            yield chunk
 
 
 @router.get('/downloads', summary='Download related public CSV tables as ZIP')
@@ -225,43 +224,42 @@ async def download_data(
     if sample:
         topic = 'all'
     try:
-        async with pool.connection() as conn:
-            async with conn.transaction():
-                await conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
-                await conn.execute("SET LOCAL statement_timeout = '25s'")
-                if not sample:
-                    queries = export_queries(topic, start_time, end_time)
-                    # Validate that there is data before the browser starts a download.
-                    # Only check the reading/meldung queries, not repeated metadata joins.
-                    exists = False
-                    for _, _, statement, params in queries[2:]:
-                        if await (await conn.execute(statement.rsplit(' ORDER BY', 1)[0] + ' LIMIT 1', params)).fetchone():
-                            exists = True
-                            break
-                    if not exists:
-                        raise HTTPException(404, 'Für diese Auswahl sind keine öffentlichen Daten im Exportbestand vorhanden.')
-                    if check:
-                        return Response('{"available":true}', media_type='application/json', headers={'Cache-Control': 'no-store'})
-                else:
-                    generated_at = (await (await conn.execute('SELECT transaction_timestamp() AS time')).fetchone())['time']
-                    readings = await (await conn.execute(f"""SELECT r.* FROM measurement_definitions d
-                        JOIN entities e ON e.id=d.entity_id
-                        JOIN latest_readings l ON l.measurement_id=d.id
-                        JOIN readings r ON r.measurement_id=l.measurement_id AND r.observed_at=l.observed_at
-                        WHERE {PUBLIC} ORDER BY md5(d.id::text) LIMIT %s""", (SAMPLE_SIZE,))).fetchall()
-                    if not readings:
-                        raise HTTPException(404, 'Für diese Auswahl sind keine öffentlichen Daten im Exportbestand vorhanden.')
-                    if check:
-                        return Response('{"available":true}', media_type='application/json', headers={'Cache-Control': 'no-store'})
-                    ids = sorted({r['measurement_id'] for r in readings})
-                    definitions = await (await conn.execute(
-                        'SELECT * FROM measurement_definitions WHERE id=ANY(%s::bigint[]) ORDER BY id', (ids,))).fetchall()
-                    entities = await (await conn.execute(
-                        'SELECT id,name,entity_type,metadata FROM entities WHERE id=ANY(%s::text[]) ORDER BY id',
-                        (sorted({d['entity_id'] for d in definitions}),))).fetchall()
-                    tables = dict(entities=(entities, ENTITY_COLUMNS),
-                                  measurement_definitions=(definitions, DEFINITION_COLUMNS),
-                                  readings=(readings, READING_COLUMNS))
+        async with pool.connection() as conn, conn.transaction():
+            await conn.execute('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY')
+            await conn.execute("SET LOCAL statement_timeout = '25s'")
+            if not sample:
+                queries = export_queries(topic, start_time, end_time)
+                # Validate that there is data before the browser starts a download.
+                # Only check the reading/meldung queries, not repeated metadata joins.
+                exists = False
+                for _, _, statement, params in queries[2:]:
+                    if await (await conn.execute(statement.rsplit(' ORDER BY', 1)[0] + ' LIMIT 1', params)).fetchone():
+                        exists = True
+                        break
+                if not exists:
+                    raise HTTPException(404, 'Für diese Auswahl sind keine öffentlichen Daten im Exportbestand vorhanden.')
+                if check:
+                    return Response('{"available":true}', media_type='application/json', headers={'Cache-Control': 'no-store'})
+            else:
+                generated_at = (await (await conn.execute('SELECT transaction_timestamp() AS time')).fetchone())['time']
+                readings = await (await conn.execute(f"""SELECT r.* FROM measurement_definitions d
+                    JOIN entities e ON e.id=d.entity_id
+                    JOIN latest_readings l ON l.measurement_id=d.id
+                    JOIN readings r ON r.measurement_id=l.measurement_id AND r.observed_at=l.observed_at
+                    WHERE {PUBLIC} ORDER BY md5(d.id::text) LIMIT %s""", (SAMPLE_SIZE,))).fetchall()
+                if not readings:
+                    raise HTTPException(404, 'Für diese Auswahl sind keine öffentlichen Daten im Exportbestand vorhanden.')
+                if check:
+                    return Response('{"available":true}', media_type='application/json', headers={'Cache-Control': 'no-store'})
+                ids = sorted({r['measurement_id'] for r in readings})
+                definitions = await (await conn.execute(
+                    'SELECT * FROM measurement_definitions WHERE id=ANY(%s::bigint[]) ORDER BY id', (ids,))).fetchall()
+                entities = await (await conn.execute(
+                    'SELECT id,name,entity_type,metadata FROM entities WHERE id=ANY(%s::text[]) ORDER BY id',
+                    (sorted({d['entity_id'] for d in definitions}),))).fetchall()
+                tables = {"entities": (entities, ENTITY_COLUMNS),
+                              "measurement_definitions": (definitions, DEFINITION_COLUMNS),
+                              "readings": (readings, READING_COLUMNS)}
     except UndefinedTable:
         raise HTTPException(503, 'Der Drei-Tabellen-Export ist auf dem Backend noch nicht eingerichtet.') from None
     except QueryCanceled:
