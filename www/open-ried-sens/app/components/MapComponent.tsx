@@ -239,7 +239,7 @@ export default function MapComponent(props: MapProps) {
   }, [ready, clusteringReady]);
 
   // Retain marker instances and open dialogs across backend snapshots.
-  // Animate only between received coordinates; never extrapolate a route in the browser.
+  // Animate received coordinates or explicitly labelled backend display estimates.
   useEffect(() => {
     const instance = map.current;
     if (!instance || !ready) return;
@@ -257,7 +257,8 @@ export default function MapComponent(props: MapProps) {
       const predicted = position.basis === "schedule_prediction";
       const style = mapSymbol(position.kind);
       const title = `${position.ogn_category === 1 ? "Segelflugzeug" : style.label} ${position.name ?? position.registration ?? position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
-      const target = L.latLng(position.latitude, position.longitude);
+      const estimated = position.display_basis === "course_speed_estimate";
+      const target = L.latLng(position.display_latitude ?? position.latitude, position.display_longitude ?? position.longitude);
       let marker = vehicleMarkers.current.get(key);
       const iconKey = `${position.kind}:${position.name ?? position.line ?? ""}:${predicted}:${position.heading_deg ?? position.course_deg ?? ""}`;
       const icon = () => L.divIcon({ html: placeMarker(position.kind, position.name || position.line || style.label, predicted, position.heading_deg ?? position.course_deg),
@@ -271,7 +272,7 @@ export default function MapComponent(props: MapProps) {
         if (icons.get(key) !== iconKey) marker.setIcon(icon());
       }
       icons.set(key, iconKey);
-      motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.timestamp), receivedAt, position.kind === "aircraft" ? "aircraft" : position.kind === "ship"));
+      motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.display_timestamp ?? position.timestamp), receivedAt, estimated ? "ship_estimate" : position.kind === "aircraft" ? "aircraft" : position.kind === "ship"));
       if (position.kind === "aircraft") {
         const bounded = updateAircraftTrail(aircraftTrails.current.get(key) ?? [],
           { stamp: Date.parse(position.timestamp), lat: position.latitude, lng: position.longitude }, Date.now());
@@ -283,7 +284,7 @@ export default function MapComponent(props: MapProps) {
         }
         line.setLatLngs(bounded.map(p => L.latLng(p.lat, p.lng)));
       }
-      const popup = detailCard(`${style.symbol} ${title}`, predicted ? "Fahrplanprognose · keine GPS-Messung" : "Beobachtete Position", [
+      const popup = detailCard(`${style.symbol} ${title}`, estimated ? "Geschätzte Position aus Kurs und Geschwindigkeit" : predicted ? "Fahrplanprognose · keine GPS-Messung" : "Beobachtete Position", [
         ...(position.kind === "waste" && predicted ? ["Modell aus Abfuhrtagen: Straßenstichprobe, angenommene Reihenfolge und Zeiten (07–17 Uhr). Kein identifiziertes Müllfahrzeug."] : []),
         ...(typeof position.speed_kmh === "number" ? [`${predicted ? "Modellierte Geschwindigkeit" : "Geschwindigkeit"}: ${Math.round(position.speed_kmh)} km/h`] : []),
         ...(position.delay_basis === "next_reported_stop_approximation" ? [`Gemeldete Haltestellenverspätung: ${Math.round((position.delay_seconds ?? 0) / 60)} Min. (auf die Fahrt angenähert)`] : []),
@@ -304,13 +305,13 @@ export default function MapComponent(props: MapProps) {
           ...(position.length_m && position.beam_m ? [`Abmessungen: ${position.length_m} × ${position.beam_m} m`] : []),
           position.source_id === "rhein-map" ? "Gemeldete AIS-Kartenposition · Empfang kann lückenhaft sein." : "Quelle: AISstream · gemeldete AIS-Position · Empfang kann lückenhaft sein.",
         ] : []),
-        "Darstellung geglättet zwischen empfangenen Positionen (leicht zeitversetzt).",
+        estimated ? "Geradlinige Schätzung ab letzter GPS-Meldung; maximal 5 Minuten / 1 km. Rheinbiegungen und Manöver werden nicht vorhergesagt." : "Darstellung geglättet zwischen empfangenen Positionen (leicht zeitversetzt).",
         `Stand: ${new Date(position.timestamp).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
         ...(position.geometry_basis === "stop_to_stop" ? ["Geradlinige Näherung zwischen Haltestellen; keine Streckengeometrie verfügbar."] : []),
       ]);
       if (marker.getPopup()) marker.setPopupContent(popup);
       else marker.bindPopup(popup, { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
-      const tooltip = detailCard(title, predicted ? "Prognose" : "Beobachtet", []);
+      const tooltip = detailCard(title, estimated ? "Geschätzt · Kurs/Geschwindigkeit" : predicted ? "Prognose" : "Beobachtet", []);
       if (marker.getTooltip()) marker.setTooltipContent(tooltip);
       else marker.bindTooltip(tooltip, { direction: "top", offset: [0, -22] });
     }

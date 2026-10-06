@@ -51,3 +51,14 @@ test('aircraft interpolate normal fast motion but snap after a reception gap', (
   assert.equal(nextMotion(initial,flight,80000,70000,'aircraft').duration,0);
   assert.equal(nextMotion(initial,{lat:50,lng:9},25000,15000,'aircraft').duration,0);
 });
+
+test('backend ship estimates animate across one second and cached estimates do not restart', () => {
+  const initial = nextMotion(undefined, a, 10000, 0, 'ship_estimate');
+  const target = { lat: a.lat + 5 / 111000, lng: a.lng };
+  const motion = nextMotion(initial, target, 11000, 1000, 'ship_estimate');
+  assert.equal(motion.duration, 1000);
+  assert.ok(Math.abs(motionPoint(motion, 1500).lat - (a.lat + 2.5 / 111000)) < 1e-9);
+  assert.equal(motionPoint(motion, 2000).lat, target.lat);
+  assert.equal(nextMotion(motion, target, 11000, 1500, 'ship_estimate'), motion);
+  assert.equal(nextMotion(motion, a, 10000, 1500, 'ship_estimate'), motion);
+});

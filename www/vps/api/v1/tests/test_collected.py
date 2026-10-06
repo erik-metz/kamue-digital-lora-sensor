@@ -140,15 +140,19 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
     async def test_stream_delivers_vehicle_and_barrier_snapshots_from_shared_reader(self):
         from endpoints.collected import movement_stream
         stream_request = MagicMock()
-        stream_request.is_disconnected = AsyncMock(side_effect=[False, False, True])
-        batches = [{'positions':[{'id':'train'}], 'crossings':[{'status':'closed'}]},
-                   {'positions':[{'id':'train'}], 'crossings':[{'status':'open'}]}]
+        stream_request.is_disconnected = AsyncMock(side_effect=[False, False, False, True])
+        batches = [{'positions':[{'id':'train', 'valid_until':'2099-01-01T00:00:00+00:00'}], 'crossings':[{'status':'closed'}]},
+                   {'positions':[{'id':'train', 'valid_until':'2099-01-01T00:00:00+00:00'}], 'crossings':[{'status':'open'}]}]
         with patch('endpoints.collected.mobility_snapshot', new_callable=AsyncMock) as reader, \
-             patch('endpoints.collected.asyncio.sleep', new_callable=AsyncMock):
+             patch('endpoints.collected.asyncio.sleep', new_callable=AsyncMock) as sleep, \
+             patch('endpoints.collected.monotonic', side_effect=[0,0,1,10,10]):
             reader.side_effect = batches
             response = await movement_stream(stream_request, MagicMock())
             events = [event async for event in response.body_iterator]
-        self.assertEqual([json.loads(event[6:]) for event in events], batches)
+        self.assertEqual([json.loads(event[6:]) for event in events], [batches[0], batches[0], batches[1]])
+        self.assertEqual(reader.await_count, 2)
+        self.assertEqual(sleep.await_count, 3)
+        sleep.assert_awaited_with(1)
         self.assertEqual(response.headers['x-accel-buffering'],'no')
         self.assertEqual(response.headers['cache-control'],'no-store')
 

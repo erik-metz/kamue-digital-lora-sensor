@@ -2,6 +2,7 @@ import type { StationNode } from "./mapData";
 
 export interface Position {
   id: string; kind: "bus" | "train" | "waste" | "ship" | "aircraft"; latitude: number; longitude: number;
+  display_latitude?: number; display_longitude?: number; display_timestamp?: string; display_basis?: "course_speed_estimate";
   timestamp: string; valid_until: string; basis: "observed" | "schedule_prediction";
   icao24?: string; registration?: string; aircraft_type?: string; altitude_baro_m?: number; altitude_geom_m?: number; vertical_rate_mps?: number; reception?: string; attribution?: string;
   ogn_category?: number; altitude_ogn_m?: number; vertical_rate_ogn_mps?: number;

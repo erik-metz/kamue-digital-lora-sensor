@@ -1,16 +1,18 @@
-"""Read-only publications: no provider requests, generated values or seed fallback."""
+"""Stored publications and explicitly labelled mobility display estimates."""
 
 import asyncio
 import hashlib
 import json
 import math
 from datetime import UTC, datetime, timedelta
+from time import monotonic
 
 from dependencies import get_db_pool
 from endpoints.infrastructure import get_emf_sites
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.encoders import jsonable_encoder
 from measurement_reads import core_reads, read_sql
+from ship_motion import display_position
 from starlette.responses import StreamingResponse
 
 router = APIRouter(tags=["Collected data"])
@@ -161,7 +163,7 @@ async def mobility_snapshot(pool):
                 AND movement_latest.entity_id=u.source_id||':'||u.service_date::text||':'||u.trip_id)
             ORDER BY entity_id,
             CASE WHEN basis='observed' THEN 0 ELSE 1 END, timestamp DESC"""))
-        positions = [r["data"] for r in await cursor.fetchall()]
+        positions = [display_position(r["data"], datetime.now(UTC)) for r in await cursor.fetchall()]
         ogn_ready = await (await conn.execute("SELECT to_regclass('ogn_public_positions') IS NOT NULL AS ready")).fetchone()
         ogn = None
         if ogn_ready and ogn_ready['ready']:
@@ -226,11 +228,18 @@ async def movements(request: Request, pool=Depends(get_db_pool)):
 @router.get("/movements/stream")
 async def movement_stream(request: Request, pool=Depends(get_db_pool)):
     async def events():
+        snapshot = None
+        next_refresh = 0.0
         while not await request.is_disconnected():
-            snapshot = await mobility_snapshot(pool)
+            if monotonic() >= next_refresh:
+                snapshot = await mobility_snapshot(pool)
+                next_refresh = monotonic() + 10
+            now = datetime.now(UTC)
+            snapshot = {**snapshot, "positions": [display_position(p, now) for p in snapshot["positions"]
+                                                   if datetime.fromisoformat(p["valid_until"]) > now]}
             yield 'data: ' + json.dumps(jsonable_encoder(snapshot), separators=(',', ':')) + '\n\n'
             # No connection is retained while waiting; cancellation closes the generator.
-            await asyncio.sleep(10)
+            await asyncio.sleep(1)
     return StreamingResponse(events(), media_type='text/event-stream',
         headers={'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no'})
 
