@@ -99,3 +99,57 @@ test("Next proxies preserve the publication boundary and distinct cache lifetime
     assert.equal(await route.GET(), expected);
   }
 });
+
+const sensorData = load("../lib/bahnSensors.ts", {}, { "./bahnData": data });
+const place = { ...object, id: "place", provider_id: "place:1", type: "EquipmentPlace", coordinates: { latitude: 49.68, longitude: 8.44 }, equipment_refs: ["diid:lift"] };
+
+test("explicit equipment-place locations use the lift's state and retain provenance", () => {
+  const joined = { ...station, components: [object, place] };
+  const locations = data.objectLocations(joined, object);
+  assert.equal(locations.length, 1);
+  assert.equal(locations[0].basis, "equipment_place");
+  assert.equal(locations[0].objectId, "place");
+  assert.equal(object.coordinates, null);
+  const markers = data.infrastructureMarkers([joined], { data: [facility], expiresAt: expiry }, now);
+  assert.equal(markers.length, 1);
+  assert.equal(markers[0].id, "lift");
+  assert.equal(markers[0].statusLabel, "Verfügbar");
+  assert.match(markers[0].positionLabel, /referenzierten/);
+  assert.equal(data.objectLocations({ ...station, components: [{ ...place, equipment_refs: ["different"] }] }, object).length, 0);
+  assert.equal(data.objectLocations(joined, { ...object, coordinates: { latitude: 50, longitude: 9 } })[0].basis, "own");
+});
+
+test("sensor radius compares unrounded distances, excludes unlocated stations and exposes ambiguity", () => {
+  const a = { ...station, components: [place] };
+  const b = { ...a, id: "other-station" };
+  const sensor = { id: "sensor", name: "Messstelle", latitude: 49.68, longitude: 8.44, readings: [] };
+  const candidates = sensorData.sensorCandidates([a, b, { ...station, id: "unlocated" }], a.id, [sensor], 100);
+  assert.equal(candidates.length, 1);
+  assert.equal(candidates[0].distanceMeters, 0);
+  assert.equal(candidates[0].referenceObjectId, "place");
+  assert.equal(candidates[0].stationIds.length, 2);
+  assert.equal(sensorData.sensorCandidates([station], station.id, [sensor], 100).length, 0);
+  const offset = { ...sensor, latitude: 49.6809 };
+  const distance = sensorData.distanceMeters(sensor.latitude, sensor.longitude, offset.latitude, offset.longitude);
+  assert.ok(distance > 100 && distance < 101);
+  assert.equal(sensorData.sensorCandidates([a], a.id, [offset], 100).length, 0);
+  assert.equal(sensorData.sensorCandidates([a], a.id, [offset], 500).length, 1);
+  assert.equal(sensorData.sensorCandidates([a], a.id, [{ ...sensor, latitude: NaN }], 500).length, 0);
+  assert.equal(sensorData.sensorCandidates([a], a.id, [sensor], Infinity).length, 0);
+});
+
+test("sensor inventory validates freshness, excludes invalid positions and preserves reading timestamps", async () => {
+  const body = { generated_at: new Date().toISOString(), sensors: [
+    { id: "s", friendly_name: "Messstelle", latitude: 49.68, longitude: 8.44, readings: [{ metric: "temperature", value: 23, unit: "°C", timestamp: "2025-01-01T00:00:00Z" }] },
+    { id: "missing", friendly_name: "Unverortet", latitude: null, longitude: null, readings: [] },
+  ] };
+  const sensors = load("../lib/bahnSensors.ts", { fetch: async () => Response.json(body) }, { "./bahnData": data });
+  const result = await sensors.fetchSensorInventory();
+  assert.equal(result.sensors.length, 1);
+  assert.equal(result.unlocated, 1);
+  assert.equal(result.sensors[0].readings[0].timestamp, "2025-01-01T00:00:00Z");
+  body.generated_at = "2020-01-01T00:00:00Z";
+  await assert.rejects(() => sensors.fetchSensorInventory(), /Aktualität/);
+  body.generated_at = new Date().toISOString(); body.sensors.push(body.sensors[0]);
+  await assert.rejects(() => sensors.fetchSensorInventory(), /unvollständig/);
+});

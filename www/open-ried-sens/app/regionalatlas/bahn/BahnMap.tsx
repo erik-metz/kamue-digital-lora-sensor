@@ -34,7 +34,7 @@ export default function BahnMap({ markers, onSelect }: { markers: BahnMarker[]; 
     for (const marker of markers) {
       // DOM text protects provider names and descriptions from HTML interpretation.
       const popup = document.createElement("div");
-      for (const text of [marker.stationName, marker.name, marker.typeLabel, marker.statusLabel]) {
+      for (const text of [marker.stationName, marker.name, marker.typeLabel, marker.statusLabel, marker.positionLabel]) {
         const line = document.createElement("p"); line.textContent = text; popup.append(line);
       }
       const location = document.createElement("a");

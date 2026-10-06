@@ -8,6 +8,7 @@ export interface BahnObject {
   quay_type?: string | null;
   parent_ref?: string | null;
   equipment_refs?: string[];
+  container_ref?: string | null;
 }
 
 export interface BahnStation extends BahnObject {
@@ -42,6 +43,22 @@ export interface BahnMarker {
   latitude: number;
   longitude: number;
   statusLabel: string;
+  positionLabel: string;
+}
+
+export interface BahnLocation {
+  objectId: string;
+  coordinates: { latitude: number; longitude: number };
+  basis: "own" | "equipment_place";
+}
+
+/** Resolve only explicit, station-local equipment references, including during rolling deploys. */
+export function objectLocations(station: BahnStation, object: BahnObject): BahnLocation[] {
+  if (validCoordinates(object.coordinates)) return [{ objectId: object.id, coordinates: object.coordinates, basis: "own" }];
+  if (!object.type.endsWith("Equipment")) return [];
+  return station.components.filter(place => place.type === "EquipmentPlace"
+    && place.equipment_refs?.includes(object.provider_id) && validCoordinates(place.coordinates))
+    .map(place => ({ objectId: place.id, coordinates: place.coordinates!, basis: "equipment_place" }));
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -143,12 +160,16 @@ export function filterStations(stations: BahnStation[], query: string): BahnStat
 export function infrastructureMarkers(stations: BahnStation[], facilities: BahnSnapshot<BahnFacility[]> | null, now: number): BahnMarker[] {
   const states = new Map(facilities?.data.map(facility => [facility.id, facility]) ?? []);
   return stations.flatMap(station => [station, ...station.components]
-    .filter(object => validCoordinates(object.coordinates)).map(object => ({
+    .filter(object => object.type !== "EquipmentPlace" || !station.components.some(equipment =>
+      equipment.type.endsWith("Equipment") && object.equipment_refs?.includes(equipment.provider_id)
+      && !validCoordinates(equipment.coordinates)))
+    .flatMap(object => objectLocations(station, object).map(location => ({
       id: object.id, stationId: station.id, stationName: station.name ?? "Bahnhof",
       name: object.name ?? objectTypeLabel(object), typeLabel: objectTypeLabel(object),
-      latitude: object.coordinates!.latitude, longitude: object.coordinates!.longitude,
+      latitude: location.coordinates.latitude, longitude: location.coordinates.longitude,
       statusLabel: facilityStatus(states.get(object.id), facilities?.expiresAt, now).label,
-    })));
+      positionLabel: location.basis === "own" ? "Eigene gemeldete Position" : "Position des referenzierten Anlagenstandorts",
+    }))));
 }
 
 export function osmLocation(latitude: number, longitude: number): string {

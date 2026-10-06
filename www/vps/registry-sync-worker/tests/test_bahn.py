@@ -1,7 +1,7 @@
 import io
 import unittest
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 from bahn import (
@@ -10,6 +10,7 @@ from bahn import (
     import_siri,
     parse_netex,
     parse_siri,
+    ris_station_identity,
 )
 from defusedxml.common import EntitiesForbidden
 from publications import acquire
@@ -154,3 +155,134 @@ class BahnImportTests(unittest.IsolatedAsyncioTestCase):
                 },
             )
         client.get.assert_not_called()
+
+
+class BahnLocationTests(unittest.TestCase):
+    def test_explicit_place_reference_and_containment_preserve_original_coordinates(
+        self,
+    ):
+        data = (
+            netex()
+            .decode()
+            .replace(
+                "</Quay></quays>",
+                """<equipmentPlaces>
+        <EquipmentPlace id="place"><keyList><KeyValue><Key>NORMALIZED_ID_URI</Key><Value>https://place/1</Value></KeyValue></keyList>
+        <Centroid><Location><Latitude>49.681</Latitude><Longitude>8.441</Longitude></Location></Centroid>
+        <placeEquipments><LiftEquipmentRef ref="diid:lift"/><LiftEquipmentRef ref="diid:lift"/></placeEquipments>
+        </EquipmentPlace></equipmentPlaces></Quay></quays>""",
+            )
+        )
+        _, stations = parse_netex(
+            io.BytesIO(data.encode()), {"station_names": ["Biblis"]}
+        )
+        objects = {o["provider_id"]: o for o in stations[0]["components"]}
+        self.assertEqual(objects["place"]["container_ref"], "https://quay/1")
+        self.assertIsNone(objects["diid:lift"]["coordinates"])
+        self.assertEqual(
+            objects["diid:lift"]["locations"],
+            [
+                {
+                    "object_id": "https://place/1",
+                    "basis": "equipment_place",
+                    "coordinates": {"latitude": 49.681, "longitude": 8.441},
+                }
+            ],
+        )
+        facilities = facility_records(stations, {})
+        self.assertEqual(facilities[0]["locations"], objects["diid:lift"]["locations"])
+        self.assertEqual(facilities[0]["status"], "unknown")
+
+    def test_no_parent_centroid_fallback_or_cross_station_reference(self):
+        _, stations = parse_netex(io.BytesIO(netex()), {"station_names": ["Biblis"]})
+        lift = next(
+            o for o in stations[0]["components"] if o["type"] == "LiftEquipment"
+        )
+        self.assertEqual(lift["locations"], [])
+
+    def test_two_reported_places_preserve_both_positions(self):
+        place = """<EquipmentPlace id="{id}"><keyList><KeyValue><Key>NORMALIZED_ID_URI</Key><Value>https://place/{id}</Value></KeyValue></keyList>
+        <Centroid><Location><Latitude>{lat}</Latitude><Longitude>8.44</Longitude></Location></Centroid>
+        <placeEquipments><LiftEquipmentRef ref="diid:lift"/></placeEquipments></EquipmentPlace>"""
+        data = (
+            netex()
+            .decode()
+            .replace(
+                "</Quay></quays>",
+                "<equipmentPlaces>"
+                + place.format(id="a", lat=49.68)
+                + place.format(id="b", lat=49.69)
+                + "</equipmentPlaces></Quay></quays>",
+            )
+        )
+        _, stations = parse_netex(
+            io.BytesIO(data.encode()), {"station_names": ["Biblis"]}
+        )
+        lift = next(
+            o for o in stations[0]["components"] if o["type"] == "LiftEquipment"
+        )
+        self.assertEqual(len(lift["locations"]), 2)
+
+
+class RisIdentityTests(unittest.TestCase):
+    def test_join_uses_all_evas_and_reports_ambiguity_without_name_matching(self):
+        station = {
+            "id": "one",
+            "name": "Same name",
+            "eva_numbers": ["8000503", "8099999"],
+            "ds100_codes": ["FBL"],
+        }
+        other = {**station, "id": "two"}
+        result = ris_station_identity("8099999", [station])
+        self.assertEqual(result["openstation_ids"], ["one"])
+        self.assertEqual(result["ds100_codes"], ["FBL"])
+        self.assertEqual(result["match_basis"], "eva")
+        self.assertFalse(result["ambiguous"])
+        self.assertTrue(ris_station_identity("8000503", [station, other])["ambiguous"])
+        self.assertEqual(
+            ris_station_identity("0000000", [station])["match_basis"], "unmatched"
+        )
+
+
+class RisPublicationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_successful_ris_publication_keeps_response_and_exact_inventory_identity(
+        self,
+    ):
+        conn = MagicMock()
+        cursor = AsyncMock()
+        cursor.fetchone.return_value = {
+            "data": {
+                "stations": [
+                    {
+                        "id": "station",
+                        "eva_numbers": ["8000503"],
+                        "ds100_codes": ["FBL"],
+                    }
+                ]
+            }
+        }
+        conn.execute = AsyncMock(return_value=cursor)
+        conn.commit = AsyncMock()
+        conn.transaction.return_value = AsyncMock()
+        body = {
+            "stopPlaces": [{"evaNumber": "8000503", "name": "Unmodified provider data"}]
+        }
+        with (
+            patch(
+                "bahn.acquire",
+                AsyncMock(return_value=(httpx.Response(200, json=body), "hash", 1)),
+            ),
+            patch("bahn.publish", AsyncMock()) as publish,
+        ):
+            await import_ris_stations(
+                conn,
+                AsyncMock(),
+                {
+                    "url": "https://apis.deutschebahn.com/stop-places",
+                    "eva_numbers": ["8000503"],
+                },
+            )
+        record = publish.call_args.args[3]
+        self.assertEqual(record["response"], body)
+        self.assertEqual(record["station_identity"]["openstation_ids"], ["station"])
+        self.assertEqual(record["station_identity"]["match_basis"], "eva")

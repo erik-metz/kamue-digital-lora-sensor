@@ -5,9 +5,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowUpDown, MapPin, RefreshCw, Search, TrainFront } from "lucide-react";
 import {
   facilityStatus, fetchBahn, filterStations, infrastructureMarkers, isFresh,
-  objectTypeLabel, osmLocation, validCoordinates,
+  objectLocations, objectTypeLabel, osmLocation,
   type BahnFacility, type BahnSnapshot, type BahnStation,
 } from "@/lib/bahnData";
+import BahnSensors from "./BahnSensors";
 
 const BahnMap = dynamic(() => import("./BahnMap"), {
   ssr: false,
@@ -119,10 +120,11 @@ export default function BahnClient() {
     ? infrastructureMarkers([selected], facilities.snapshot, statusTime) : [], [selected, inventoryFresh, facilities.snapshot, statusTime]);
 
   const chooseObject = (id: string) => {
-    setObjectId(id);
+    const providerId = selected?.components.find(object => object.id === id)?.provider_id ?? id;
+    setObjectId(providerId);
     setType("");
     window.requestAnimationFrame(() => {
-      const row = document.getElementById(`bahn-object-${id}`);
+      const row = document.getElementById(id === selected?.id ? `bahn-station-${id}` : `bahn-object-${providerId}`);
       row?.scrollIntoView({ block: "center" });
       row?.focus({ preventScroll: true });
     });
@@ -160,17 +162,17 @@ export default function BahnClient() {
         </nav>
         {inventory.snapshot && !visible.length && <p className="text-sm text-slate-400">Keine Bahnhöfe für diese Suche gefunden.</p>}
         {!inventory.loading && !inventory.snapshot && <p className="text-sm text-amber-300">Die Bahnhofsliste ist nicht verfügbar. Bitte erneut aktualisieren.</p>}
-        <p className="text-xs text-slate-500">Die Liste umfasst ausgewählte Stationen im Ried sowie Frankfurt und Mannheim Hbf.</p>
+        <p className="text-xs text-slate-500">Erfasste Stationen entlang des Korridors Frankfurt–Mannheim und Hofheim (Ried). Die Anzahl entspricht dem zuletzt importierten Export.</p>
       </aside>
 
       {selected && <div className="min-w-0 space-y-5">
         <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-3">
-          <h2 className="flex items-center gap-2 text-2xl font-semibold"><TrainFront className="size-6 text-emerald-400" aria-hidden="true" />{selected.name}</h2>
+          <h2 id={`bahn-station-${selected.id}`} tabIndex={-1} className="flex items-center gap-2 text-2xl font-semibold"><TrainFront className="size-6 text-emerald-400" aria-hidden="true" />{selected.name}</h2>
           <dl className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-400">
             <div><dt className="inline">EVA: </dt><dd className="inline text-slate-200">{selected.eva_numbers.join(", ") || "Nicht gemeldet"}</dd></div>
             <div><dt className="inline">DS100: </dt><dd className="inline text-slate-200">{selected.ds100_codes.join(", ") || "Nicht gemeldet"}</dd></div>
           </dl>
-          <p className="text-sm text-slate-400">{selected.components.length} Infrastruktur-Objekte · {markers.length} mit gültiger Kartenposition</p>
+          <p className="text-sm text-slate-400">{selected.components.length} Infrastruktur-Objekte · {markers.length} Kartenpositionen einschließlich referenzierter Anlagenstandorte</p>
           {!selected.coordinates && <p className="text-xs text-slate-400">Für den Bahnhof selbst wurde keine Koordinate geliefert. Vorhandene Objektpositionen stehen unten in der Karte und Liste.</p>}
           {!isFresh(inventory.snapshot, now) && <p className="text-amber-300" role="status">Diese Bahnhofsinfrastruktur ist veraltet. Sie bleibt als letzte gespeicherte Auskunft sichtbar.</p>}
         </section>
@@ -201,6 +203,8 @@ export default function BahnClient() {
           {showMap && markers.length > 0 && <div id="bahn-karte"><BahnMap markers={markers} onSelect={chooseObject} /></div>}
         </section>
 
+        <BahnSensors station={selected} stations={stations} fresh={inventoryFresh} now={now} onSelect={chooseObject} />
+
         <section id="bahn-infrastruktur" aria-labelledby="bahn-objects-title" className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4 scroll-mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 id="bahn-objects-title" className="text-lg font-semibold">Infrastruktur im Detail</h3>
@@ -215,10 +219,14 @@ export default function BahnClient() {
             <table className="w-full text-left text-sm">
               <caption className="sr-only">Infrastruktur-Objekte von {selected.name}, einschließlich Objekten ohne Koordinaten</caption>
               <thead className="sticky top-0 bg-slate-900 text-xs text-slate-400"><tr><th scope="col" className="p-3">Objekt</th><th scope="col" className="p-3">Typ</th><th scope="col" className="p-3">Position</th></tr></thead>
-              <tbody>{components.map(component => <tr key={component.id} id={`bahn-object-${component.id}`} tabIndex={objectId === component.id ? 0 : undefined} className={`border-t border-slate-800 ${objectId === component.id ? "bg-emerald-500/10" : ""}`}>
+              <tbody>{components.map(component => <tr key={component.provider_id} id={`bahn-object-${component.provider_id}`} tabIndex={objectId === component.provider_id ? 0 : undefined} className={`border-t border-slate-800 ${objectId === component.provider_id ? "bg-emerald-500/10" : ""}`}>
                 <td className="p-3 align-top"><span className="font-medium">{component.name ?? objectTypeLabel(component)}</span><details className="mt-1 text-xs text-slate-500"><summary className="cursor-pointer">Kennung</summary><p className="mt-1 break-all max-w-xs">{component.provider_id}</p></details></td>
                 <td className="p-3 align-top text-slate-400">{objectTypeLabel(component)}</td>
-                <td className="p-3 align-top text-xs">{validCoordinates(component.coordinates) ? <a href={osmLocation(component.coordinates.latitude, component.coordinates.longitude)} target="_blank" rel="noopener noreferrer" className="text-emerald-300 underline whitespace-nowrap">{component.coordinates.latitude.toFixed(6)}, {component.coordinates.longitude.toFixed(6)}<span className="sr-only"> auf OpenStreetMap öffnen</span></a> : <span className="text-slate-500">Keine Koordinate</span>}</td>
+                <td className="p-3 align-top text-xs">{objectLocations(selected, component).length ? objectLocations(selected, component).map(location => <div key={location.objectId} className="mb-2">
+                  <a href={osmLocation(location.coordinates.latitude, location.coordinates.longitude)} target="_blank" rel="noopener noreferrer" className="text-emerald-300 underline whitespace-nowrap">{location.coordinates.latitude.toFixed(6)}, {location.coordinates.longitude.toFixed(6)}<span className="sr-only"> auf OpenStreetMap öffnen</span></a>
+                  <span className="block mt-1 text-slate-400">{location.basis === "own" ? "Eigene Position" : "Referenzierter Anlagenstandort"}</span>
+                  {location.basis === "equipment_place" && <button type="button" onClick={() => chooseObject(location.objectId)} className="text-emerald-300 underline">Standortdetails</button>}
+                </div>) : <span className="text-slate-500">Keine Koordinate</span>}</td>
               </tr>)}</tbody>
             </table>
           </div>

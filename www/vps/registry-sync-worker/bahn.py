@@ -123,12 +123,7 @@ def parse_netex(file, source):
                     ds100_codes=ds100_codes,
                     station_number=text(node, "PrivateCode"),
                 )
-                station["components"] = [
-                    object_record(child)
-                    for child in node.iter()
-                    if child.tag in {f"{{{NETEX}}}{t}" for t in COMPONENTS}
-                    and child.get("id")
-                ]
+                station["components"] = station_components(node)
                 stations.append(station)
             inside_station = False
         if not inside_station:
@@ -146,6 +141,56 @@ def parse_netex(file, source):
     if len(ids) != len(set(ids)):
         raise ValueError("Duplicate station identifiers")
     return timestamp, stations
+
+
+def station_components(node):
+    """Resolve explicit containment and equipment-place references within a station."""
+    records = []
+
+    def visit(element, container=None):
+        if element.tag in {f"{{{NETEX}}}{t}" for t in COMPONENTS} and element.get("id"):
+            item = object_record(element)
+            item["container_ref"] = container
+            records.append(item)
+            container = item["id"]
+        for child in element:
+            visit(child, container)
+
+    visit(node, keys(node).get("NORMALIZED_ID_URI"))
+    # DB currently reuses normalized DHIDs for some platform/sector objects.
+    # XML refs address provider IDs; do not collapse those distinct objects.
+    ids = [r["provider_id"] for r in records]
+    if len(ids) != len(set(ids)):
+        raise ValueError("Duplicate infrastructure provider identifiers")
+    by_provider = {r["provider_id"]: r for r in records}
+    for item in records:
+        item["locations"] = []
+        if item["coordinates"]:
+            item["locations"].append(
+                {
+                    "object_id": item["id"],
+                    "basis": "own",
+                    "coordinates": item["coordinates"],
+                }
+            )
+    for place in records:
+        if place["type"] != "EquipmentPlace" or not place["coordinates"]:
+            continue
+        for ref in set(place["equipment_refs"]):
+            equipment = by_provider.get(ref)
+            if (
+                equipment
+                and equipment["type"].endswith("Equipment")
+                and not equipment["coordinates"]
+            ):
+                equipment["locations"].append(
+                    {
+                        "object_id": place["id"],
+                        "basis": "equipment_place",
+                        "coordinates": place["coordinates"],
+                    }
+                )
+    return records
 
 
 def parse_siri(file, now=None):
@@ -349,6 +394,11 @@ async def import_ris_stations(conn, client, source):
         ):
             raise ValueError("RIS station response does not match requested EVA")
         responses.append((eva, body, digest, attempt))
+    cursor = await conn.execute("""SELECT data FROM collected_datasets
+        WHERE dataset='transport/bahn/stations' AND expires_at > NOW()""")
+    inventory = await cursor.fetchone()
+    await conn.commit()
+    stations = inventory["data"]["stations"] if inventory else []
     now = datetime.now(UTC)
     async with conn.transaction():
         for eva, body, digest, attempt in responses:
@@ -359,6 +409,7 @@ async def import_ris_stations(conn, client, source):
                 {
                     "eva_number": str(eva),
                     "response": body,
+                    "station_identity": ris_station_identity(eva, stations),
                     "timestamp_basis": "fetched",
                     "attribution": "Deutsche Bahn",
                 },
@@ -370,3 +421,15 @@ async def import_ris_stations(conn, client, source):
                 (attempt,),
             )
     await conn.commit()
+
+
+def ris_station_identity(eva, stations):
+    """Normalize a RIS EVA association without selecting a version or guessing geography."""
+    matches = [s for s in stations if str(eva) in s["eva_numbers"]]
+    return {
+        "eva_number": str(eva),
+        "openstation_ids": [s["id"] for s in matches],
+        "ds100_codes": sorted({code for s in matches for code in s["ds100_codes"]}),
+        "match_basis": "eva" if matches else "unmatched",
+        "ambiguous": len(matches) > 1,
+    }

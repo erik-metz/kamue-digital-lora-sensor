@@ -19,10 +19,17 @@ publication endpoint; browsers never receive DB credentials.
 DB recommends these redirect URLs rather than hard-coding Mobilithek IDs:
 https://github.com/dbinfrago/openstation-docs
 
-The explicit subset is Frankfurt (Main) Hbf, Groß Rohrheim, Biblis, Bobstadt,
-Bürstadt, Lampertheim, Hofheim (Ried), and Mannheim Hbf. This is an initial station
-inventory, not complete coverage of every stop between Frankfurt and Mannheim.
-Edit `station_names` or supply `eva_numbers` in `sources.json` to change coverage.
+The explicit corridor inventory now covers 24 stations: Frankfurt Hbf,
+Niederrad, Stadion, Zeppelinheim, Walldorf (Hess), Mörfelden, Groß Gerau-Dornberg,
+Groß Gerau-Dornheim, Riedstadt-Wolfskehlen, Riedstadt-Goddelau, Stockstadt (Rhein),
+Biebesheim, Gernsheim, Groß Rohrheim, Biblis, Bobstadt, Bürstadt, Lampertheim,
+Mannheim-Waldhof, Luzenberg, Neckarstadt, Handelshafen/Jungbusch and Mannheim Hbf,
+plus Hofheim (Ried) on the neighbouring branch. This is a configured station
+inventory, not a claim of complete track or operational-site coverage.
+Names and EVA codes were checked against the public NeTEx export. Edit
+`station_names` or supply `eva_numbers` in `sources.json` to change coverage.
+The expanded inventory appears after the deployed worker's next NeTEx import;
+an older publication still correctly displays its own station count.
 Missing configured station names reject the refresh, preserving the last valid
 publication. A stopped or failing collector does not extend its expiry.
 
@@ -37,7 +44,14 @@ Publications:
 
 Coordinates are retained only when explicitly supplied for that object. Missing
 coordinates remain null; a platform centroid is never assigned to its station or
-lift. EquipmentPlace references are retained for later location joins. Provider
+lift. EquipmentPlace references are resolved station-locally using exact XML provider
+IDs. Each component retains its own `coordinates` unchanged and gets a separate
+`locations` list with `basis=own` or `basis=equipment_place` and the source object's
+normalized ID. Multiple reported equipment places remain multiple locations;
+parent centroids and unresolved/cross-station references are never used as a
+fallback. Structural `container_ref` records containment independently of
+provider-supplied `parent_ref`. Some platform/sector objects share normalized
+DHIDs in DB's export; unique provider IDs preserve those distinct objects. Provider
 IDs and normalized URIs are both preserved. No join uses station name or guessed
 EVA numbers. Missing SIRI records are `unknown` with `status_basis=not_reported`;
 unknown states and absence never mean operational. A reported unavailable state
@@ -55,7 +69,12 @@ are resolved into request headers at runtime and never stored in the manifest.
 RIS queries the configured EVA numbers sequentially, once per day, and publishes
 `transport/bahn/ris-stations/{eva}` only when the whole configured request set
 succeeds. DB's `stopPlaces` objects are preserved without guessing coordinates or
-remapping the subscribed API schema. FaSta publishes
+remapping the subscribed API schema. Each response additionally includes
+`station_identity`: requested EVA, exactly matched OpenStation IDs, DS100 codes,
+match basis and an ambiguity flag. All EVA aliases participate; unmatched or
+ambiguous records remain explicit. This identity join does not pick a historical
+RIS version or invent coordinates. The optional RIS request set now mirrors all
+EVAs in the 24-station inventory, within the adapter's 32-request bound. FaSta publishes
 `transport/bahn/facilities-fasta`; configure **station_numbers**, not EVA numbers,
 using the station inventory's `station_number`. It preserves ACTIVE/INACTIVE/
 UNKNOWN and uses its own dataset, so it cannot overwrite SIRI. FaSta attribution
@@ -109,11 +128,31 @@ request runs in the browser.
 
 Search accepts station names, EVA numbers and DS100 codes. Each station has an
 infrastructure list with object-type filtering, identifiers and explicit missing
-coordinates. Optional Leaflet markers use only each object's own reported
-coordinates. Stored background tiles cover the Ried; Frankfurt/Mannheim object
+coordinates. Optional Leaflet markers use own reported coordinates or explicit equipment-place
+references, labelling that provenance in the popup and table. Linked facilities
+replace generic equipment-place markers at the same location, so facility status
+is visible without overlapping generic markers. Stored background tiles cover the Ried; Frankfurt/Mannheim object
 positions may be shown without a complete background. Coordinate links open
-OpenStreetMap. Resolving equipment-place relationships into facility positions
-and expanding geographical coverage remain separate follow-up work.
+OpenStreetMap. The frontend also resolves references from older publications during rolling
+deployments; it does not depend on a fresh import to improve existing locations.
+
+The `Sensor- und Datenstandorte im Bahnhofsumfeld` section reads the public raw
+sensor inventory through `/api/bahn/sensors` (VPS `/api/v1/map/sensors`). It does
+not use aggregated map coordinates. Sensor and infrastructure requests fail
+independently. The inventory is refreshed every minute and candidates disappear
+after five minutes without a fresh inventory, or when infrastructure expires.
+A 100/500/1000 m radius compares unrounded great-circle distances to the nearest
+reported infrastructure position; stations without positions get no spatial
+matches. The UI reports the source object, distance and ambiguity when more than
+one station qualifies. These are reversible spatial suggestions, not persisted
+ownership assignments or causal sensor/train correlations. Public inventory also
+contains data sites without readings; those are labelled as such. Stored readings
+keep their individual timestamps; inventory freshness does not imply reading
+freshness. Hidden records remain excluded by the existing public API.
+
+RIS geography remains unavailable until subscription credentials and the exact
+subscribed response schema have been verified. The public NeTEx reference joins
+and sensor proximity flow do not require that optional service.
 
 Frontend verification: `npm run test:security` includes the Bahn publication,
 freshness, status and coordinate tests; `npm run build` checks the new routes and
