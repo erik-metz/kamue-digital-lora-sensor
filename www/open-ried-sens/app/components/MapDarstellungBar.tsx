@@ -114,9 +114,8 @@ export default function MapDarstellungBar({
       className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3.5 sm:p-4 shadow-lg transition-all duration-200"
       aria-label="Darstellung und Kartenfilter"
     >
-      {actions && <div className="mb-3">{actions}</div>}
       {/* Top Primary Bar */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+      <div className="flex flex-col gap-3">
         {/* Left: View Mode Segmented Controls */}
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-300 uppercase tracking-wider mr-1">
@@ -165,7 +164,7 @@ export default function MapDarstellungBar({
           </div>
 
           {/* Copernicus Sentinel-2 Satellite Switcher */}
-          <div className="flex items-center gap-1.5 border-t sm:border-t-0 sm:border-l border-slate-800 pt-2 sm:pt-0 sm:pl-3">
+          <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto border-t sm:border-t-0 sm:border-l border-slate-800 pt-2 sm:pt-0 sm:pl-3">
             <span className="text-[11px] font-semibold text-slate-300 inline-flex items-center gap-1">
               <Satellite className="size-3 text-cyan-400" />
               <span>Satellit:</span>
@@ -246,9 +245,11 @@ export default function MapDarstellungBar({
 
         </div>
 
-        {/* Right: Layer Drawer Trigger & Summary */}
-        <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3 border-t sm:border-t-0 pt-2.5 sm:pt-0 border-slate-800/80">
-          <div className="text-xs text-slate-400">
+        {/* Actions and filter summary share the full panel width. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t pt-3 border-slate-800/80">
+          {actions}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <div className="text-xs text-slate-400 whitespace-nowrap">
             <span className="text-slate-200 font-medium">{filteredCount}</span> von {totalCount} Stationen
           </div>
 
@@ -257,7 +258,7 @@ export default function MapDarstellungBar({
             onClick={onToggleOpen}
             aria-expanded={isOpen}
             aria-controls="map-filter-groups"
-            className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border ${
+            className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border ${
               isOpen
                 ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-300 shadow-sm"
                 : "bg-slate-950/70 border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white"
@@ -265,13 +266,15 @@ export default function MapDarstellungBar({
             title="Sensorstationen und Kartenebenen gemeinsam filtern"
           >
             <Layers className="size-3.5 text-emerald-400" />
-            <span>Filter &amp; Ebenen ({totalActive} aktiv)</span>
+            <span>Filter &amp; Ebenen</span>
+            <span className="rounded-md bg-slate-800 px-1.5 py-0.5 text-[11px]">{totalActive} aktiv</span>
             {isOpen ? (
               <ChevronUp className="size-3.5 text-slate-400" />
             ) : (
               <ChevronDown className="size-3.5 text-slate-400" />
             )}
           </button>
+          </div>
         </div>
       </div>
 
