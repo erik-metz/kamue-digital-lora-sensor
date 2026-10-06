@@ -27,6 +27,7 @@ from osm_addresses import import_addresses
 from prediction import predict_tick
 from publications import acquisition_error, import_json, public_url
 from realtime import import_realtime
+from ris_boards import import_ris_boards
 from satellite import import_satellite
 from zakb import import_zakb
 
@@ -36,6 +37,7 @@ ADAPTERS = {
     "db-siri-fm": import_siri,
     "db-fasta": import_fasta,
     "db-ris-stations": import_ris_stations,
+    "db-ris-boards": import_ris_boards,
     "osm-addresses": import_addresses,
     "biblis-budget": import_biblis_budget,
     "json": import_json,
@@ -238,6 +240,6 @@ async def main():
     await asyncio.gather(
         prediction_loop(settings, stop),
         *(source_loop(s, settings, stop,
-                      realtime_slot if s["adapter"] in {"gtfs-rt", "db-siri-fm", "db-fasta"} else slots,
+                      realtime_slot if s["adapter"] in {"gtfs-rt", "db-siri-fm", "db-fasta", "db-ris-boards"} else slots,
                       gtfs_slot) for s in manifest),
     )

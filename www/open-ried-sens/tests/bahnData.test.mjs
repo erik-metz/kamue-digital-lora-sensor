@@ -153,3 +153,45 @@ test("sensor inventory validates freshness, excludes invalid positions and prese
   body.generated_at = new Date().toISOString(); body.sensors.push(body.sensors[0]);
   await assert.rejects(() => sensors.fetchSensorInventory(), /unvollständig/);
 });
+
+const boards = load("../lib/bahnBoards.ts", {}, { "./bahnData": data });
+const boardEvent = { journey_id: "opaque-journey", event_id: "event-1", event_type: "departure", eva_number: "8000503",
+  scheduled_at: "2026-10-06T12:00:00Z", time: "2026-10-06T12:04:00Z", time_basis: "PREVIEW", cancelled: false,
+  delay_seconds: 240, platform: "2", description: "RE 70", direction: "Mannheim Hbf", gtfs_link: { status: "unmapped" } };
+function risResponse(events, overrides = {}) {
+  const headers = { "x-source-updated-at": new Date().toISOString(), "x-collected-at": new Date().toISOString(), "x-data-expires-at": expiry, ...overrides };
+  return Response.json({ contract: "ris-boards-netz-1.8.2", timestamp_basis: "fetched", window_start: "2026-10-06T11:55:00Z", window_end: "2026-10-06T13:00:00Z", eva_numbers: ["8000503"], events }, { headers });
+}
+
+test("RIS time bases distinguish schedule, forecast and actual reports; station joins use EVA", () => {
+  assert.equal(boards.boardTimeBasis(boardEvent), "Prognose");
+  assert.equal(boards.boardTimeBasis({ ...boardEvent, time_basis: "SCHEDULE" }), "Nur Fahrplan");
+  assert.equal(boards.boardTimeBasis({ ...boardEvent, time_basis: "REAL" }), "Gemeldete Ist-Zeit");
+  const board = { events: [boardEvent, { ...boardEvent, eva_number: "other" }] };
+  assert.equal(boards.eventsForStation(board, ["8000503"]).length, 1);
+  assert.equal(boards.eventsForStation(board, ["8000360"]).length, 0);
+});
+
+test("RIS client preserves exact instance links and handles unconfigured or expired publications", async () => {
+  let events = [{ ...boardEvent, gtfs_link: { status: "matched", schedule_source: "gtfs", trip_id: "opaque-trip", service_date: "2026-10-05", basis: "explicit_crosswalk_and_exact_schedule" } }];
+  let mode = "ok";
+  const client = load("../lib/bahnBoards.ts", { fetch: async url => {
+    assert.equal(url, "/api/bahn/boards");
+    if (mode === "missing") return new Response(null, { status: 404 });
+    if (mode === "expired") return risResponse(events, { "x-data-expires-at": "2020-01-01T00:00:00Z" });
+    return risResponse(events);
+  } }, { "./bahnData": data });
+  const result = await client.fetchBahnBoard();
+  assert.equal(result.data.events[0].gtfs_link.service_date, "2026-10-05");
+  mode = "missing"; assert.equal(await client.fetchBahnBoard(), null);
+  mode = "expired"; await assert.rejects(() => client.fetchBahnBoard(), /Aktualität/);
+  mode = "ok"; events = [{ ...boardEvent, gtfs_link: { status: "matched" } }];
+  await assert.rejects(() => client.fetchBahnBoard(), /Fahrtzuordnung/);
+});
+
+test("RIS client rejects invented zero-delay live status, wrong stations and duplicate events", async () => {
+  for (const events of [[{ ...boardEvent, time_basis: "SCHEDULE" }], [{ ...boardEvent, eva_number: "wrong" }], [boardEvent, boardEvent], [{ ...boardEvent, time: "2026-10-06T12:00:00" }]]) {
+    const client = load("../lib/bahnBoards.ts", { fetch: async () => risResponse(events) }, { "./bahnData": data });
+    await assert.rejects(() => client.fetchBahnBoard());
+  }
+});

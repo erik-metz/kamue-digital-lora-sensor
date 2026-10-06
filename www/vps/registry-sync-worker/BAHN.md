@@ -92,8 +92,9 @@ https://developer-docs.deutschebahn.com/doku/apis/ris-boards-10686900
 
 A production RIS realtime join requires an activated subscription, sampled
 responses and an explicit trip-instance crosswalk (including service date), not
-just a station EVA. No RIS::Journeys/Boards realtime import or causal sensor-event
-assignment is claimed by this change. A nearby scheduled or predicted train is a
+just a station EVA. The optional Boards collector below now provides the
+acquisition and validated identity-link path. No activated RIS feed, automatic
+provider crosswalk or causal sensor-event assignment is claimed. A nearby scheduled or predicted train is a
 correlation candidate, not proof that it caused a noise/vibration peak.
 
 Parking occupancy, DB route GeoJSON/DS100 kilometrage and noise-protection layers
@@ -157,3 +158,111 @@ and sensor proximity flow do not require that optional service.
 Frontend verification: `npm run test:security` includes the Bahn publication,
 freshness, status and coordinate tests; `npm run build` checks the new routes and
 page. The view can be tested against the collected VPS data via `BACKEND_API_URL`.
+
+
+## Optional RIS realtime boards and exact trip instances
+
+Implementation stages:
+
+- Stages 1–3: public infrastructure feeds, Bahn frontend, corridor geography and
+  sensor proximity are implemented. Public data freshness remains visible.
+- Stage 4: Boards collection, frontend arrival/departure display and explicit
+  trip-instance validation are implemented. Release checks cover parsing and
+  matching; they do not prove access to a subscribed RIS feed.
+- Activation gate: obtain DB approval and applicable display/storage rights,
+  verify actual responses against the subscribed contract, then enable that
+  source. Credentials on the VPS alone do not satisfy this gate.
+- Stage 5, pending: sensor-event/train correlation candidates, with explicit
+  uncertainty and verified identities where available. No causal claims.
+- Stage 6, pending: parking data and additional railway reference layers after
+  concrete source contracts and rights are verified.
+
+RIS::Stations and RIS::Journeys also require their own verified product contracts
+before activation. Stage 4 does not implement automatic RIS-to-GTFS identity
+discovery; the optional crosswalk needs independently verified mapping evidence.
+
+`db-ris-boards` is registered, disabled and unconfirmed by default. Its contract
+is based on the official RIS::Boards (DB InfraGO Fahrwege) OpenAPI **1.8.2**:
+https://developers.deutschebahn.com/db-api-marketplace/apis/product/ris-boards-netz/api/ris-boards-netz
+The endpoint is `https://apis.deutschebahn.com/db-api-marketplace/apis/ris-boards-netz/v1`.
+This is a subscription product requiring DB approval; API credentials alone do not
+establish access. A different subscribed product/version must be reviewed rather
+than silently reusing this contract. Getting credentials:
+https://developers.deutschebahn.com/db-api-marketplace/apis/start
+
+After subscription, server credentials and sample response verification, set
+`enabled=true` and `contract_confirmed=true` in the worker's deployed source
+manifest. Confirm that the product's terms allow the intended public display.
+The default 180-second cadence requests both arrivals and departures, batches at
+most ten EVA numbers and disables station-group expansion. For 25 configured
+EVAs this is six requests per cycle (approximately 2,880/day before retries).
+The explicit query window is five minutes back and sixty minutes ahead. It does
+not request a truncated result limit. A partial batch failure leaves the last
+complete publication unchanged. Raw provider responses and an aggregate receipt
+manifest are archived before atomic publication at `transport/bahn/boards`.
+No database migration is needed.
+
+Normalized events retain RIS `journeyID`, departure/arrival ID, exact EVA, public
+`journeyDescription`, platform, scheduled/best time, `timeType` and stop
+cancellation. Only documented rail transport types enter the train dataset.
+Internal `categoryInternal` is never exposed. `SCHEDULE` is explicitly schedule
+only with `delay_seconds=null`; `PREVIEW` is forecast and `REAL` a reported actual
+event time. Stop cancellation does not imply cancellation of the entire journey.
+Boards describe arrivals/departures, not arbitrary train passages, rolling stock
+classes, or observed vehicle coordinates. Since this contract has no board
+observation timestamp, publication uses `timestamp_basis=fetched`, expires three
+minutes after acquisition begins, and labels that retrieval basis in the UI.
+
+RIS journey IDs are opaque and do not equal GTFS trip IDs. No join uses line,
+train number, station name, similar times or a date extracted from the journey ID.
+Without a verified crosswalk, every event remains `gtfs_link.status=unmapped`.
+An optional server-only JSON file can be supplied with
+`RIS_TRIP_CROSSWALK_FILE=/data/ris-trip-crosswalk.json`; the existing persistent
+`sync_state:/data` volume holds it. The environment variable is passed through
+Compose. Never put API secrets in this file. File contract:
+
+```json
+{
+  "version": 1,
+  "links": []
+}
+```
+
+Each verified link requires `journey_id`, `event_id`, `event_type` (`arrival` or
+`departure`), `eva_number`, `schedule_source`, `trip_id`, `service_date`
+(`YYYY-MM-DD`), `stop_id`, integer `stop_sequence`, timezone-qualified
+`scheduled_at`, and nonempty `evidence` describing the provider mapping source.
+An empty example deliberately contains no made-up mapping. Do not populate this
+file from proximity or matching public train descriptions. Duplicate event keys,
+multiple GTFS instances for one RIS journey, or multiple RIS journeys for one GTFS
+instance reject the configuration. Keep historical service dates explicit:
+trips past midnight may belong to the preceding operating day.
+
+For each supplied link the collector loads the exact `(schedule_source, trip_id,
+service_date)` with a fresh GTFS import, requires `kind=train`, the exact stop ID
+and sequence, and identical scheduled UTC event times in all three records.
+Missing or inconsistent schedules stay `schedule_missing` / `schedule_mismatch`;
+only full agreement is `matched`. The crosswalk hash is published, and the
+mapping evidence is archived in the receipt manifest. No RIS board event writes
+whole-trip delay/cancellation into `movement_trip_updates` or creates a vehicle
+position. The existing GTFS-RT predictor remains independent; later sensor-event
+correlation can consume explicit links with their provenance.
+
+The Bahn page shows a separate `Zugfahrten · RIS` section, fetched through
+`/api/bahn/boards` with no extra cache, independently of station/facility/sensor
+requests. It filters on all selected station EVA aliases. Plan, forecast, actual,
+stop cancellation and GTFS link status remain distinct; expired tables are marked
+as historical. A missing publication displays setup information and no invented
+train entries. Without live credentials/verified links the tests establish only
+the prepared contract and matching logic, not a working subscribed feed.
+
+Verification:
+
+```
+PYTHONPATH=www/vps/registry-sync-worker python -m pytest -q www/vps/registry-sync-worker/tests/test_ris_boards.py
+python www/vps/registry-sync-worker/main.py --job db-ris-boards
+```
+
+Only run the latter against the configured deployment after activation. RIS::Journeys
+can later enrich a known journey, but requires a separately verified subscription
+and response contract; no extra unverified Journeys calls are made here.

@@ -9,6 +9,7 @@ import {
   type BahnFacility, type BahnSnapshot, type BahnStation,
 } from "@/lib/bahnData";
 import BahnSensors from "./BahnSensors";
+import BahnBoards from "./BahnBoards";
 
 const BahnMap = dynamic(() => import("./BahnMap"), {
   ssr: false,
@@ -203,6 +204,7 @@ export default function BahnClient() {
           {showMap && markers.length > 0 && <div id="bahn-karte"><BahnMap markers={markers} onSelect={chooseObject} /></div>}
         </section>
 
+        <BahnBoards station={selected} now={now} />
         <BahnSensors station={selected} stations={stations} fresh={inventoryFresh} now={now} onSelect={chooseObject} />
 
         <section id="bahn-infrastruktur" aria-labelledby="bahn-objects-title" className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 space-y-4 scroll-mt-8">

@@ -105,6 +105,53 @@
       "reason": "Requires subscribed RIS::Stations product and DB_CLIENT_ID/DB_API_KEY; REST response contract must be confirmed for the subscription before enabling."
     },
     {
+      "id": "db-ris-boards",
+      "group": "transport",
+      "adapter": "db-ris-boards",
+      "enabled": false,
+      "url": "https://apis.deutschebahn.com/db-api-marketplace/apis/ris-boards-netz/v1",
+      "contract": "ris-boards-netz-1.8.2",
+      "contract_confirmed": false,
+      "interval_seconds": 180,
+      "max_age_seconds": 180,
+      "eva_numbers": [
+        "8000105",
+        "8098105",
+        "8002050",
+        "8002040",
+        "8006648",
+        "8006175",
+        "8004065",
+        "8002386",
+        "8001511",
+        "8003605",
+        "8000126",
+        "8005740",
+        "8000951",
+        "8002249",
+        "8002391",
+        "8000503",
+        "8001034",
+        "8000360",
+        "8003503",
+        "8003848",
+        "8006509",
+        "8006511",
+        "8006508",
+        "8000244",
+        "8002934"
+      ],
+      "headers": {
+        "Accept": "application/vnd.de.db.ris+json"
+      },
+      "header_env": {
+        "DB-Client-ID": "DB_CLIENT_ID",
+        "DB-Api-Key": "DB_API_KEY"
+      },
+      "http_retries": 1,
+      "reason": "Requires activated RIS::Boards subscription, matching 1.8.2 contract and server credentials. GTFS joins additionally require a verified trip-instance crosswalk."
+    },
+    {
       "id": "osm-regional-addresses",
       "group": "waste",
       "adapter": "osm-addresses",
