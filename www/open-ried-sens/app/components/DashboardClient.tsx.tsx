@@ -3,7 +3,7 @@
 import { Check, MapPin, RefreshCw, Share2, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { CATEGORIES, CATEGORY_IDS, parseStoredCategories, visibleNodes, hasCoordinates, type Category, type MapMode, type StationNode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, CATEGORY_IDS, parseStoredCategories, visibleNodes, categoriesForMode, hasCoordinates, type Category, type MapMode, type StationNode, type SensorNode } from "@/lib/mapData";
 import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_LAYERS,
@@ -235,7 +235,11 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
 
       <MapDarstellungBar
         mode={mode}
-        onModeChange={setMode}
+        onModeChange={nextMode => {
+          const nextCategories = categoriesForMode(nodes.filter(n => hasCoordinates(n) && n.lat >= 49.55 && n.lat <= 49.80 && n.lng >= 8.30 && n.lng <= 8.65), categories, nextMode);
+          if (nextCategories !== categories) saveCategories(nextCategories);
+          setMode(nextMode);
+        }}
         satelliteMode={satelliteMode}
         onSatelliteModeChange={setSatelliteMode}
         layers={layers}

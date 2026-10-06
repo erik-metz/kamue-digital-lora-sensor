@@ -431,3 +431,20 @@ test("aircraft marker rotates north-facing silhouettes and treats provider label
  assert.equal(aircraftPresentation.aircraftMarker({ogn_category:11,course_deg:90},'').children[0].style.transform,undefined);
  assert.equal(aircraftPresentation.aircraftMarker({ogn_category:1,course_deg:NaN},'').children[0].style.transform,undefined);
 });
+
+
+test("switching to temperature recovers a filter without temperature stations", () => {
+  const nodes = model.toMapNodes([
+    sensor([reading("temperature")]),
+    sensor([reading("soil_temperature")], { id: "soil" }),
+    sensor([reading("traffic_total_hourly", 20, "count")], { id: "traffic" }),
+  ]);
+  const categories = model.categoriesForMode(nodes, ["traffic"], "temperature");
+  assert.ok(categories.includes("weather"));
+  assert.ok(categories.includes("soil"));
+  assert.equal(model.visibleNodes(nodes, categories, "temperature").length, 2);
+  const selected = ["soil"];
+  assert.equal(model.categoriesForMode(nodes, selected, "temperature"), selected);
+  assert.equal(model.categoriesForMode(nodes, selected, "category"), selected);
+  assert.equal(model.categoriesForMode([], selected, "temperature"), selected);
+});

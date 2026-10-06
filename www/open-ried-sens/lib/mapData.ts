@@ -863,6 +863,13 @@ export function primaryReading(node: StationNode, category: Category, mode: MapM
 export function visibleNodes(nodes: StationNode[], categories: Category[], mode: MapMode) {
   return nodes.filter(n => n.categories.some(c => categories.includes(c)) && (mode !== "temperature" || temperatureReading(n)));
 }
+export function categoriesForMode(nodes: StationNode[], categories: Category[], mode: MapMode): Category[] {
+  if (mode !== "temperature" || visibleNodes(nodes, categories, mode).length > 0) return categories;
+  const temperatureNodes = visibleNodes(nodes, CATEGORY_IDS, mode);
+  if (!temperatureNodes.length) return categories;
+  return CATEGORY_IDS.filter(category => temperatureNodes.some(node => node.categories.includes(category)));
+}
+
 export function markerCategory(node: StationNode, selected: Category[]) {
   return node.categories.find(c => selected.includes(c)) ?? node.categories[0];
 }

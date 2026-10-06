@@ -68,6 +68,7 @@ export default function MapComponent(props: MapProps) {
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [clusteringReady, setClusteringReady] = useState(false);
   const freshnessMinute = Math.floor(props.now / 60000);
+  const hasFreshTemperature = props.nodes.some(node => readingFreshness(primaryReading(node, markerCategory(node, props.categories), "temperature"), freshnessMinute * 60000) === "fresh");
   useEffect(() => {
     let active = true;
     (window as typeof window & { L: typeof L }).L = L;
@@ -640,6 +641,9 @@ export default function MapComponent(props: MapProps) {
       {layers.ships && <p role="status">{shipSource?.status === "connected" && shipSource.last_contact && Date.parse(shipSource.last_contact) + 120000 > props.now
         ? "Schiffsempfang verfügbar · Empfang kann lückenhaft sein."
         : "AIS-Empfang derzeit nicht verfügbar; letzte Positionen verfallen nach 10 Minuten."}</p>}
+      {props.mode === "temperature" && !hasFreshTemperature && <p role="status">{props.nodes.length
+        ? "Keine aktuellen Temperaturwerte für die Farbfläche verfügbar. Ältere Messwerte bleiben als blasse Stationspunkte sichtbar."
+        : "Keine Temperaturstationen im gewählten Themenfilter und Kartenbereich. Wähle Wetter & Klima, Boden & Bewässerung oder Alle."}</p>}
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
       {(layersFailed || missing.length > 0) && <p role="status">{missing.length || "Einige"} Ebenen ohne aktuelle Quelldaten – siehe Hinweise.</p>}
       {tilesMissing && <p role="status">Hintergrundkarten sind noch nicht verfügbar.</p>}
