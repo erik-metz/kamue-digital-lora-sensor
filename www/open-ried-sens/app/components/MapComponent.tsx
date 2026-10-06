@@ -1,6 +1,7 @@
 "use client";
 
 import L from "leaflet";
+import { updateMarkerDialogs } from "@/lib/mapDialogs";
 import MapSatelliteLayer from "./MapSatelliteLayer";
 import { metricLabel } from "@/lib/telemetryData";
 import "leaflet/dist/leaflet.css";
@@ -270,7 +271,7 @@ export default function MapComponent(props: MapProps) {
       const icon = () => L.divIcon({ html: position.kind === "aircraft" ? aircraftMarker(position, label) : placeMarker(position.kind, label, predicted, position.heading_deg ?? position.course_deg),
         className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22] });
       if (!marker) {
-        marker = L.marker(target, { icon: icon(), title, alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
+        marker = L.marker(target, { icon: icon(), alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
         marker.on("click", () => callbacks.current.onSelectNode(`movement:${position.id}`));
         marker.on("keypress", (event: L.LeafletKeyboardEvent) => { if (event.originalEvent.key === "Enter") callbacks.current.onSelectNode(`movement:${position.id}`); });
         vehicleMarkers.current.set(key, marker);
@@ -278,9 +279,7 @@ export default function MapComponent(props: MapProps) {
         if (icons.get(key) !== iconKey) marker.setIcon(icon());
       }
       icons.set(key, iconKey);
-      marker.options.title = title;
       marker.options.alt = title;
-      marker.getElement()?.setAttribute("title", title);
       marker.getElement()?.setAttribute("aria-label", title);
       motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.display_timestamp ?? position.timestamp), receivedAt, estimated ? "ship_estimate" : position.kind === "aircraft" ? "aircraft" : position.kind === "ship"));
       if (position.kind === "aircraft") {
@@ -320,11 +319,8 @@ export default function MapComponent(props: MapProps) {
         `Stand: ${new Date(position.timestamp).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
         ...(position.geometry_basis === "stop_to_stop" ? ["Geradlinige Näherung zwischen Haltestellen; keine Streckengeometrie verfügbar."] : []),
       ]);
-      if (marker.getPopup()) marker.setPopupContent(popup);
-      else marker.bindPopup(popup, { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
       const tooltip = detailCard(title, estimated ? "Geschätzt · Kurs/Geschwindigkeit" : predicted ? "Prognose" : "Beobachtet", []);
-      if (marker.getTooltip()) marker.setTooltipContent(tooltip);
-      else marker.bindTooltip(tooltip, { direction: "top", offset: [0, -22] });
+      updateMarkerDialogs(marker, popup, tooltip, { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
     }
     for (const [key, marker] of vehicleMarkers.current) {
       if (!retained.has(key)) { vehicleGroup.current?.removeLayer(marker); vehicleMarkers.current.delete(key); motions.delete(key); icons.delete(key); }

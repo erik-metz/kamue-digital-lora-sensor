@@ -1,5 +1,6 @@
 "use client";
 import L from "leaflet";
+import { updateMarkerDialogs } from "@/lib/mapDialogs";
 import { useEffect, useRef, useState } from "react";
 import { detailCard, placeMarker } from "@/lib/mapPresentation";
 import { decodeSatellites, satelliteDetails, satelliteFresh, SATELLITE_FRESH_MS, type SatelliteSnapshot } from "@/lib/satelliteData";
@@ -52,7 +53,7 @@ export default function MapSatelliteLayer({ map }: { map: L.Map }) {
     for (const p of positions) {
       let marker = markers.current.get(p.id);
       if (!marker) {
-        marker = L.marker([p.latitude, p.longitude], { title: p.name, alt: `Satellit ${p.name} · berechnet`, keyboard: true,
+        marker = L.marker([p.latitude, p.longitude], { alt: `Satellit ${p.name} · berechnet`, keyboard: true,
           icon: L.divIcon({ html: placeMarker("satellites", p.name, true), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18] }),
         }).addTo(layer);
         markers.current.set(p.id, marker);
@@ -61,9 +62,8 @@ export default function MapSatelliteLayer({ map }: { map: L.Map }) {
       if (Math.abs(from.lng-to.lng) < 180 && from.distanceTo(to) < 100000) motions.push({ marker, from, to });
       else marker.setLatLng(to);
       const popup = detailCard(`🛰 ${p.name}`, "Berechnete Satellitenposition", satelliteDetails(p));
-      if (marker.getPopup()) marker.setPopupContent(popup); else marker.bindPopup(popup, { maxWidth: 280 });
       const tooltip = detailCard(p.name, `${p.altitude_km.toFixed(0)} km · berechnet`, []);
-      if (marker.getTooltip()) marker.setTooltipContent(tooltip); else marker.bindTooltip(tooltip);
+      updateMarkerDialogs(marker, popup, tooltip);
     }
     const updateVisible = () => setVisible(positions.filter(p => map.getBounds().contains([p.latitude, p.longitude])).length);
     updateVisible(); map.on("moveend", updateVisible);
