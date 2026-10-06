@@ -90,7 +90,7 @@ neues Jahr werden erst nach Veröffentlichung übernommen.
 ## Ablauf und Abnahme
 
 - [x] 1. Quellen, Filter und Anzeige untersuchen; Gebiet und Lücken festhalten.
-- [ ] 2. Kommunale Kalender vollständig und mit belastbaren Orts-/Datumsangaben erfassen.
+- [x] 2. Kommunale Kalender vollständig und mit belastbaren Orts-/Datumsangaben erfassen.
 - [ ] 3. Bürgerstiftung Biblis anbinden.
 - [ ] 4. Vereins- und Ortsteilkalender ergänzen.
 - [ ] 5. PDF-Jahreskalender ergänzen.
@@ -102,3 +102,48 @@ committen und pushen sowie nur die für diese Pfade vorgesehenen CI-Läufe des
 gepushten Commits verfolgen. Danach den Nutzer fragen, ob der nächste Schritt
 beginnen soll. Schritt 1 ändert nur diese Dokumentation und aktiviert noch
 keine neue Quelle oder Filterlogik.
+
+## Ergebnis Schritt 2 (6. Oktober 2026)
+
+- Lampertheim: HTML-Baum statt verschachtelter Regex; vollständige Weiterblätterung
+  mit erhaltenem Datumsfilter vom 1. Januar des aktuellen Jahres bis zum
+  31. Dezember des Folgejahres. Ältere Archive bleiben erhalten. Grenzen:
+  höchstens 100 Seiten pro Durchlauf; zyklische Navigation und unbekanntes
+  Markup verhindern die Veröffentlichung eines unvollständigen Imports.
+- Live-Simulation ohne Datenbankänderung: 26 Seiten und 489 eindeutig lokal
+  zugeordnete Lampertheimer Vorkommen. Sieben widersprüchliche Datumsbereiche
+  wurden protokolliert und zurückgestellt, beispielsweise 7. März bis 8. Februar.
+- Detailseiten des kommunalen Anbieters ergänzen Beschreibung, Ort und Preis.
+  Externe Ticketportale werden verlinkt, aber nicht zusätzlich gecrawlt.
+- Cross7: Bürstadt 16 Seiten/766 Einträge, Groß-Rohrheim 4 Seiten/163 Einträge.
+  Vollständige Weiterblätterung bleibt erhalten; wiederholte Seiten werden
+  erkannt. Strukturierte Veranstaltungsadressen haben Vorrang vor Ortsnamen
+  in Bezeichnungen; Veranstalteradressen sind kein Ortsnachweis.
+- Die Groß-Rohrheimer Quellenkonfiguration enthält einzeln belegte lokale
+  Ortsnamen. Mit diesen Aliasen lassen sich 110 von 163 Quelleneinträgen
+  örtlich zuordnen. Fehlende Orte und mehrdeutiges „Vereinsheim“ bleiben
+  ausgeschlossen. Bürstadt: 479 örtlich bestätigte Einträge; die Schreibweise
+  „Bürstadt Riedrode“ wird unterstützt.
+- Grundlage der Ortsaliase: Gemeinde-Jahreskalender
+  https://gross-rohrheim.orts.app/file/aa29fbe9-f0dc-443c-b739-454603b44121,
+  Gemeinde-Familienmappe
+  https://www.gross-rohrheim.de/fileadmin/Dateien/Dateien/Leben___Wohnen/Familienmappe_Stand_01.07.2023.pdf,
+  https://dekanat-bergstrasse.ekhn.de/kirchengemeinden/gross-rohrheim und
+  https://vogelpark-grossrohrheim.de/ . Aliase gelten ausschließlich für diesen
+  Kalender und überschreiben keine ausdrücklich auswärtige Adresse.
+- Enddaten, Mitternacht und Zeitzonen werden berücksichtigt. Fehlende Zeiten
+  werden als Tagesgrenzen dargestellt; es wird keine Öffnungszeit erfunden.
+- `is_free` wird nur bei ausdrücklichem Nachweis gesetzt. Das bestehende
+  Bool-Schema kann „Preis unbekannt“ nicht eigenständig darstellen; unbekannte
+  Preise sind daher nicht als kostenlos markiert, in Lampertheim zusätzlich
+  in der Beschreibung gekennzeichnet. Eine gesonderte Darstellung bleibt für
+  Schritt 7 zu prüfen.
+- Nach vollständig erfolgreichem Abruf werden nur die eigenen Quelleneinträge
+  abgeglichen: Cross7 vollständig, Lampertheim innerhalb des angefragten
+  Zeitraums. Nicht mehr bestätigte Einträge werden entfernt. Abgleich, Upserts
+  und Veröffentlichung laufen in einer Transaktion; Datenbankfehler werden
+  nicht mehr als erfolgreicher Teilimport verschluckt.
+- 24 neue Regressionstests mit gekürzten echten Quellenausschnitten prüfen
+  Datumsfelder, Preise, Ortsgrenzen, Aliase, Weiterblätterung und Fehlerfälle.
+  Die produktive Datenbank und VPS-Ausführung wurden nicht geprüft; ein
+  veröffentlichter Container allein bestätigt noch keinen erfolgten Live-Import.

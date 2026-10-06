@@ -1,0 +1,250 @@
+{
+  "items": [
+    {
+      "fromDate": "2023-12-21",
+      "fromTime": "08:30:00",
+      "untilDate": "2023-12-21",
+      "untilTime": "18:00:00",
+      "addresses": [
+        {
+          "name": "VR Bank Ried Überwald eG",
+          "houseNumber": "57",
+          "street": "Nibelungenstraße",
+          "zipCode": "68642",
+          "city": "Bürstadt",
+          "socials": [],
+          "private": false
+        }
+      ],
+      "link": {
+        "targetId": 13774483,
+        "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender"
+      },
+      "name": "Geldgeschenke verpacken- VR Bank Ried-Überwald eG",
+      "created": "2023-11-23T13:50:07.59067Z",
+      "teaserPictureUrl": "https://api.cross-7.de/public/files/5713a3d8-6ef8-4524-9e29-abc96edefe1f",
+      "categoryColor": "#607d8b",
+      "teaserText": "Nibelungenstraße 57\n8:30 - 12:30 Uhr + 14:00 - 18:00 Uhr\nWährend der Öffnungszeiten werden mitgebrachte Geldbeträge liebevoll weihnachtlich verpackt. Angebot von Plätzchen, Glühwein und alkoholfreiem Punsch für alle Besucher. Ab 16:30 Uhr erklingen Weihnachtslieder mit dem Bläserquintett Presto.",
+      "hasContent": true,
+      "categoryNames": [
+        {
+          "id": 173392,
+          "name": "Bürstadt im Advent",
+          "color": "#607d8b",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8161111,
+          "name": "Sonstiges",
+          "color": "#ff5722",
+          "discriminator": "CategoryNameDto"
+        }
+      ],
+      "additionalFields": [],
+      "discriminator": "CalendarEventTeaserDto"
+    },
+    {
+      "fromDate": "2020-10-29",
+      "fromTime": "20:00:00",
+      "untilDate": "2020-10-29",
+      "untilTime": "23:45:00",
+      "addresses": [
+        {
+          "type": "Veranstalter",
+          "name": "Kulturbeirat",
+          "private": false
+        },
+        {
+          "type": "Veranstaltungsort",
+          "name": "Bürgerhaus Bürstadt",
+          "private": false
+        }
+      ],
+      "link": {
+        "targetId": 3393037,
+        "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender"
+      },
+      "name": "Gerd Dudenhöffer - VERLEGT AUF 28. APRIL 2021",
+      "created": "2021-04-14T17:03:31Z",
+      "teaserPictureUrl": "https://api.cross-7.de/public/files/fa26c486-da2e-d4bb-8b89-48123b2eca31",
+      "categoryColor": "#4caf50",
+      "teaserText": "",
+      "hasContent": false,
+      "categoryNames": [
+        {
+          "id": 8154111,
+          "name": "Kunst & Kultur",
+          "color": "#4caf50",
+          "discriminator": "CategoryNameDto"
+        }
+      ],
+      "additionalFields": [],
+      "discriminator": "CalendarEventTeaserDto"
+    },
+    {
+      "fromDate": "2021-01-08",
+      "fromTime": "07:00:00",
+      "untilDate": "2021-01-08",
+      "untilTime": "13:00:00",
+      "addresses": [
+        {
+          "type": "Veranstalter",
+          "name": "Stadt Bürstadt",
+          "private": false
+        },
+        {
+          "type": "Veranstaltungsort",
+          "name": "Marktplatz",
+          "private": false
+        }
+      ],
+      "link": {
+        "targetId": 3393158,
+        "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender"
+      },
+      "name": "Wochenmarkt",
+      "created": "2022-02-15T15:59:44Z",
+      "teaserPictureUrl": "https://api.cross-7.de/public/files/acb205ce-ae51-e209-ddad-690ccab6025b",
+      "categoryColor": "#827717",
+      "teaserText": "Der wöchentliche Markt im Herzen der Stadt bietet eine Vielzahl von heimischen Produkten an. Abwechselnd bereichern Vereine, Institutionen und Kindergarteneinrichtungen den Wochenmarkt mit einem Kuchenverkauf.\nStrauß Gemüsebau\n\nFrisch-Ei Loos\nFrischgeflügel Götzinger\nFamilie Eberle",
+      "hasContent": true,
+      "categoryNames": [
+        {
+          "id": 8156111,
+          "name": "Märkte & Börsen",
+          "color": "#827717",
+          "discriminator": "CategoryNameDto"
+        }
+      ],
+      "additionalFields": [],
+      "discriminator": "CalendarEventTeaserDto"
+    },
+    {
+      "fromDate": "2022-12-06",
+      "fromTime": "18:00:00",
+      "untilDate": "2022-12-06",
+      "untilTime": "20:00:00",
+      "addresses": [
+        {
+          "type": "Veranstalter",
+          "name": "Stadt Bürstadt",
+          "private": false
+        },
+        {
+          "type": "Veranstaltungsort",
+          "name": "Brunnen Riedrode",
+          "private": false
+        }
+      ],
+      "link": {
+        "targetId": 3393314,
+        "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender"
+      },
+      "name": "Bürstadt im Advent",
+      "created": "2022-11-04T09:39:11Z",
+      "teaserPictureUrl": "https://api.cross-7.de/public/files/6445ae3e-a5f3-17b1-25f1-699283d51e4d",
+      "categoryColor": "#ef6c00",
+      "teaserText": "Nikolaus beim Dorfbrunnen - Freiw. Feuerwehr Riedrode & 1.RFC2010 Die Brunnebutzer\noder am 6.12. ab 16:00 Uhr am Dorfbrunnen Riedrode.",
+      "hasContent": true,
+      "categoryNames": [
+        {
+          "id": 8146111,
+          "name": "Feiern & Geselligkeit",
+          "color": "#ff5722",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8147111,
+          "name": "Freizeit & Ausflüge",
+          "color": "#e91e63",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8149111,
+          "name": "Gemeinschaft",
+          "color": "#ff5722",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8153111,
+          "name": "Jugendliche & Kinder",
+          "color": "#f9b233",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8156111,
+          "name": "Märkte & Börsen",
+          "color": "#827717",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8157111,
+          "name": "Musik, Gesang & Tanz",
+          "color": "#ef6c00",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8161111,
+          "name": "Sonstiges",
+          "color": "#ff5722",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8164111,
+          "name": "Tourismus & Gäste",
+          "color": "#ef6c00",
+          "discriminator": "CategoryNameDto"
+        }
+      ],
+      "additionalFields": [],
+      "discriminator": "CalendarEventTeaserDto"
+    },
+    {
+      "fromDate": "2026-07-08",
+      "untilDate": "2026-07-11",
+      "addresses": [
+        {
+          "name": "Halle der TSG Bürstadt",
+          "houseNumber": "20",
+          "street": "Gartenstraße",
+          "zipCode": "68642",
+          "city": "Bürstadt",
+          "socials": [],
+          "private": false
+        }
+      ],
+      "link": {
+        "targetId": 44558337,
+        "slug": "/de/kultur-freizeit/veranstaltungen/veranstaltungskalender"
+      },
+      "name": "Gymnastika Bürstadt",
+      "created": "2026-06-19T06:21:58.93376Z",
+      "teaserPictureUrl": "https://api.cross-7.de/public/files/2b7ffa51-534a-7bf4-3bac-0c838e10a7ab",
+      "categoryColor": "#827717",
+      "teaserText": "",
+      "hasContent": true,
+      "categoryNames": [
+        {
+          "id": 8151111,
+          "name": "Highlights",
+          "color": "#4caf50",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8161111,
+          "name": "Sonstiges",
+          "color": "#ff5722",
+          "discriminator": "CategoryNameDto"
+        },
+        {
+          "id": 8163111,
+          "name": "Sport & Aktivität",
+          "color": "#827717",
+          "discriminator": "CategoryNameDto"
+        }
+      ],
+      "additionalFields": [],
+      "discriminator": "CalendarEventTeaserDto"
+    }
+  ]
+}

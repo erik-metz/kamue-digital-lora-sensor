@@ -1,10 +1,17 @@
-import hashlib
 import logging
 import re
 from datetime import UTC, datetime
-from urllib.parse import urlencode
-from zoneinfo import ZoneInfo
+from urllib.parse import urlencode, urlsplit
 
+from municipal_events import (
+    BERLIN,
+    calendar_page,
+    calendar_url,
+    cross7_venue,
+    detail_fields,
+    event_period,
+    municipality_for_venue,
+)
 from publications import acquire, publish
 
 logger = logging.getLogger(__name__)
@@ -35,79 +42,73 @@ def classify_category(text: str) -> str:
 async def sync_cultural_events_to_db_and_publish(conn, source, new_events, digest, now):
     """Upserts extracted events into cultural_events table and publishes aggregate to social/events."""
     for ev in new_events:
-        try:
-            await conn.execute(
-                """INSERT INTO cultural_events (
-                    id, title, organizer, venue_name, municipality,
-                    start_time, end_time, category, description,
-                    ticket_url, event_url, image_url, street_address,
-                    postal_code, status, is_free, is_archived, source, updated_at
-                ) VALUES (
-                    %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s,
-                    %s, %s, %s, %s,
-                    %s, %s, %s, FALSE, %s, NOW()
-                )
-                ON CONFLICT (id) DO UPDATE SET
-                    title = EXCLUDED.title,
-                    organizer = EXCLUDED.organizer,
-                    venue_name = EXCLUDED.venue_name,
-                    municipality = EXCLUDED.municipality,
-                    start_time = EXCLUDED.start_time,
-                    end_time = EXCLUDED.end_time,
-                    category = EXCLUDED.category,
-                    description = EXCLUDED.description,
-                    ticket_url = EXCLUDED.ticket_url,
-                    event_url = EXCLUDED.event_url,
-                    image_url = EXCLUDED.image_url,
-                    street_address = EXCLUDED.street_address,
-                    postal_code = EXCLUDED.postal_code,
-                    status = EXCLUDED.status,
-                    updated_at = NOW()""",
-                (
-                    ev["id"],
-                    ev["title"],
-                    ev.get("organizer", ""),
-                    ev.get("venue_name", ""),
-                    ev["municipality"],
-                    ev["start_time"],
-                    ev.get("end_time"),
-                    ev["category"],
-                    ev.get("description"),
-                    ev.get("ticket_url"),
-                    ev.get("event_url"),
-                    ev.get("image_url"),
-                    ev.get("street_address"),
-                    ev.get("postal_code"),
-                    ev.get("status", "scheduled"),
-                    ev.get("is_free", True),
-                    ev.get("source", source["id"]),
-                ),
+        await conn.execute(
+            """INSERT INTO cultural_events (
+                id, title, organizer, venue_name, municipality,
+                start_time, end_time, category, description,
+                ticket_url, event_url, image_url, street_address,
+                postal_code, status, is_free, is_archived, source, updated_at
+            ) VALUES (
+                %s, %s, %s, %s, %s,
+                %s, %s, %s, %s,
+                %s, %s, %s, %s,
+                %s, %s, %s, FALSE, %s, NOW()
             )
-        except Exception as err:  # noqa: BLE001
-            # Tolerant if cultural_events table is in transaction lock or schema variant
-            logger.debug("Tolerant skip inserting cultural_event %s: %s", ev.get("id"), err)
+            ON CONFLICT (id) DO UPDATE SET
+                title = EXCLUDED.title,
+                organizer = EXCLUDED.organizer,
+                venue_name = EXCLUDED.venue_name,
+                municipality = EXCLUDED.municipality,
+                start_time = EXCLUDED.start_time,
+                end_time = EXCLUDED.end_time,
+                category = EXCLUDED.category,
+                description = EXCLUDED.description,
+                ticket_url = EXCLUDED.ticket_url,
+                event_url = EXCLUDED.event_url,
+                image_url = EXCLUDED.image_url,
+                street_address = EXCLUDED.street_address,
+                postal_code = EXCLUDED.postal_code,
+                status = EXCLUDED.status,
+                is_free = EXCLUDED.is_free,
+                updated_at = NOW()""",
+            (
+                ev["id"],
+                ev["title"],
+                ev.get("organizer", ""),
+                ev.get("venue_name", ""),
+                ev["municipality"],
+                ev["start_time"],
+                ev.get("end_time"),
+                ev["category"],
+                ev.get("description"),
+                ev.get("ticket_url"),
+                ev.get("event_url"),
+                ev.get("image_url"),
+                ev.get("street_address"),
+                ev.get("postal_code"),
+                ev.get("status", "scheduled"),
+                ev.get("is_free", True),
+                ev.get("source", source["id"]),
+            ),
+        )
 
     # Read all aggregated events from cultural_events table if possible
     all_events = []
-    try:
-        cur = await conn.execute(
-            """SELECT to_jsonb(t) FROM (
-                SELECT id, title, organizer, venue_name, municipality,
-                       start_time, end_time, category, description,
-                       ticket_url, event_url, image_url, street_address,
-                       postal_code, status, is_free, is_archived, source
-                FROM cultural_events
-                ORDER BY start_time ASC
-            ) t;"""
-        )
-        rows = await cur.fetchall()
-        for r in rows:
-            if r and r[0]:
-                item = r[0]
-                all_events.append(item)
-    except Exception as err:  # noqa: BLE001
-        logger.debug("Could not read aggregated cultural_events: %s", err)
+    cur = await conn.execute(
+        """SELECT to_jsonb(t) FROM (
+            SELECT id, title, organizer, venue_name, municipality,
+                   start_time, end_time, category, description,
+                   ticket_url, event_url, image_url, street_address,
+                   postal_code, status, is_free, is_archived, source
+            FROM cultural_events
+            ORDER BY start_time ASC
+        ) t;"""
+    )
+    rows = await cur.fetchall()
+    for r in rows:
+        if r and r[0]:
+            item = r[0]
+            all_events.append(item)
 
     if not all_events:
         all_events = new_events
@@ -123,6 +124,7 @@ async def import_cross7(conn, client, source):
     muni = source.get("municipality", "Bürstadt")
     slug_domain = "https://www.gross-rohrheim.de/freizeit-kultur/veranstaltungen/veranstaltungskalender?c7-item=" if "gross-rohrheim" in source["url"] or muni == "Groß-Rohrheim" else "https://www.buerstadt.de/de/kultur-freizeit/veranstaltungen/veranstaltungskalender?c7-item="
 
+    page_digests = set()
     for page in range(1, 101):
         url = (
             source["url"]
@@ -133,6 +135,9 @@ async def import_cross7(conn, client, source):
         )
         response, digest, attempt = await acquire(conn, client, source, url)
         receipts.append(attempt)
+        if digest in page_digests:
+            raise ValueError("Cross7 repeated page; incomplete import rejected")
+        page_digests.add(digest)
         body = response.json()
         if not isinstance(body.get("items"), list):
             raise TypeError("Cross7 items missing")
@@ -140,25 +145,17 @@ async def import_cross7(conn, client, source):
             target = item.get("link", {}).get("targetId")
             if not target or not item.get("fromDate") or not item.get("name"):
                 raise ValueError("Incomplete Cross7 event")
-            from_time = item.get("fromTime") or "00:00:00"
-            until_time = item.get("untilTime") or from_time
-            until_date = item.get("untilDate") or item["fromDate"]
-
-            start = datetime.fromisoformat(
-                item["fromDate"].split("T")[0]
-                + "T"
-                + from_time
-            ).replace(tzinfo=ZoneInfo("Europe/Berlin"))
-
-            end = datetime.fromisoformat(
-                until_date.split("T")[0]
-                + "T"
-                + until_time
-            ).replace(tzinfo=ZoneInfo("Europe/Berlin")) if until_date else None
+            start, end = event_period(item["fromDate"], item.get("fromTime"),
+                                      item.get("untilDate"), item.get("untilTime"))
 
             detail_url = f"{slug_domain}{target}"
-            addresses = item.get("addresses") or [{}]
-            venue_addr = next((a for a in addresses if a.get("type") == "Veranstaltungsort"), addresses[0])
+            addresses = item.get("addresses") or []
+            venue_addr = next((a for a in addresses if a.get("type") == "Veranstaltungsort"),
+                              next((a for a in addresses if a.get("type") != "Veranstalter"), {}))
+            venue_text, venue_muni = cross7_venue(venue_addr, source)
+            if not venue_muni:
+                logger.info("Event excluded: unknown or external venue, source=%s id=%s", source["id"], target)
+                continue
             organizer_addr = next((a for a in addresses if a.get("type") == "Veranstalter"), None)
             organizer = (organizer_addr.get("name") if organizer_addr else item.get("organizer")) or f"Stadt {muni}"
 
@@ -167,15 +164,15 @@ async def import_cross7(conn, client, source):
             cat = classify_category(f"{item['name']} {cat_names} {item.get('teaserText') or ''}")
 
             street = f"{venue_addr.get('street', '')} {venue_addr.get('houseNumber', '')}".strip() or None
-            zip_code = venue_addr.get("zipCode") or ("68649" if muni == "Groß-Rohrheim" else "68642")
+            zip_code = venue_addr.get("zipCode")
 
             events.append(
                 {
                     "id": f"c7-{target}",
                     "title": item["name"],
                     "organizer": organizer,
-                    "venue_name": venue_addr.get("name") or muni,
-                    "municipality": muni,
+                    "venue_name": venue_text,
+                    "municipality": venue_muni,
                     "start_time": start.isoformat(),
                     "end_time": end.isoformat() if end else None,
                     "category": cat,
@@ -185,7 +182,7 @@ async def import_cross7(conn, client, source):
                     "image_url": item.get("teaserPictureUrl"),
                     "street_address": street,
                     "postal_code": zip_code,
-                    "is_free": True,
+                    "is_free": bool(re.search(r"eintritt\s+frei|kostenlos", item.get("teaserText") or "", re.IGNORECASE)),
                     "source": source["id"],
                     "status": "past" if (end or start) < now else "scheduled",
                 }
@@ -196,6 +193,12 @@ async def import_cross7(conn, client, source):
         raise ValueError("Cross7 pagination limit reached; incomplete import rejected")
 
     async with conn.transaction():
+        # A fully traversed source replaces only its own imported records.
+        # This removes previously misassigned external/unknown venues as well.
+        await conn.execute(
+            "DELETE FROM cultural_events WHERE source=%s AND NOT (id = ANY(%s))",
+            (source["id"], [event["id"] for event in events]),
+        )
         await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         for attempt in receipts:
             await conn.execute(
@@ -210,74 +213,63 @@ async def import_lampertheim_events(conn, client, source):
     receipts = []
     now = datetime.now(UTC)
     events = []
-    response, digest, attempt = await acquire(conn, client, source, source["url"])
-    receipts.append(attempt)
-    html = response.text
-
-    # Match each listEntryObject-eventMulti
-    blocks = re.findall(r'<li[^>]*class=\"[^\"]*listEntryObject-eventMulti[^\"]*\"[^>]*>(.*?)</li>', html, re.DOTALL)
-    for block in blocks:
-        title_m = re.search(r'<h3 class=\"listEntryTitle\"><a[^>]*>(.*?)</a></h3>', block)
-        if not title_m:
-            continue
-        title = re.sub(r'<[^>]+>', '', title_m.group(1)).strip()
-        date_m = re.search(r'<span class=\"daydate [^\"]*\">(.*?)</span>', block)
-        if not date_m:
-            continue
-        date_str = date_m.group(1).strip() # DD.MM.YYYY
-
-        # Extract time
-        time_m = re.search(r'<span class=\"time\">(.*?)</span>\s*</span>', block, re.DOTALL)
-        times = re.findall(r'\b(\d{1,2}:\d{2})\b', time_m.group(1)) if time_m else []
-        from_time = times[0] if len(times) >= 1 else "10:00"
-        until_time = times[1] if len(times) >= 2 else None
-
-        # Parse dates to ISO
-        try:
-            parts = date_str.split(".")
-            day, month, year = int(parts[0]), int(parts[1]), int(parts[2])
-            f_parts = from_time.split(":")
-            start = datetime(year, month, day, int(f_parts[0]), int(f_parts[1]), tzinfo=ZoneInfo("Europe/Berlin"))
-            end = None
-            if until_time:
-                u_parts = until_time.split(":")
-                end = datetime(year, month, day, int(u_parts[0]), int(u_parts[1]), tzinfo=ZoneInfo("Europe/Berlin"))
-        except (ValueError, IndexError):
-            continue
-
-        loc_m = re.search(r'<span class=\"listEntryLocation\">(.*?)</span>', block)
-        venue_text = loc_m.group(1).strip() if loc_m else "Lampertheim"
-        org_m = re.search(r'<span class=\"listEntryOrganizer\">(.*?)</span>', block)
-        org_text = re.sub(r'^Veranstalter:\s*', '', org_m.group(1).strip()) if org_m else "Stadt Lampertheim"
-        link_m = re.search(r'<a class=\"listEntryMoreOnly\" href=\"([^\"]+)\"', block)
-        detail_link = f"https://www.lampertheim.de{link_m.group(1)}" if link_m else "https://www.lampertheim.de/de/veranstaltungen/"
-        img_m = re.search(r'<img[^>]*src=\"([^\"]+)\"', block)
-        image_url = f"https://www.lampertheim.de{img_m.group(1)}" if img_m else None
-
-        slug_hash = hashlib.md5(f"{title}_{date_str}_{venue_text}".encode()).hexdigest()[:10]
-        cat = classify_category(f"{title} {venue_text} {org_text}")
-
-        events.append({
-            "id": f"la-{slug_hash}",
-            "title": title,
-            "organizer": org_text,
-            "venue_name": venue_text,
-            "municipality": "Lampertheim",
-            "start_time": start.isoformat(),
-            "end_time": end.isoformat() if end else None,
-            "category": cat,
-            "description": f"Veranstaltung in Lampertheim: {title} ({venue_text}). Veranstalter: {org_text}.",
-            "event_url": detail_link,
-            "ticket_url": detail_link,
-            "image_url": image_url,
-            "street_address": venue_text,
-            "postal_code": "68623",
-            "is_free": True,
-            "source": source["id"],
-            "status": "past" if (end or start) < now else "scheduled",
-        })
+    url = calendar_url(source["url"], now)
+    visited = set()
+    details = {}
+    seen_events = set()
+    for _ in range(100):
+        if url in visited:
+            raise ValueError("Municipal pagination cycle; incomplete import rejected")
+        visited.add(url)
+        response, digest, attempt = await acquire(conn, client, source, url)
+        receipts.append(attempt)
+        page_events, next_url = calendar_page(response.text, url, source["id"], now)
+        for event in page_events:
+            if event["id"] in seen_events:
+                continue
+            seen_events.add(event["id"])
+            detail_url = event["event_url"]
+            if detail_url not in details:
+                if (urlsplit(detail_url).netloc == urlsplit(source["url"]).netloc
+                        and urlsplit(detail_url).path.startswith("/de/veranstaltungen/termine/")):
+                    detail, _, detail_attempt = await acquire(conn, client, source, detail_url)
+                    receipts.append(detail_attempt)
+                    details[detail_url] = detail_fields(detail.text)
+                else:
+                    # Some municipal entries point at external ticket portals.
+                    # Keep the event but do not crawl an unrelated provider.
+                    details[detail_url] = ({}, "", False)
+            fields, description, free = details[detail_url]
+            if fields.get("Ort"):
+                postcode = re.search(r"\b\d{5}\b", fields["Ort"])
+                location = fields["Ort"]
+                if location.startswith("Kernstadt"):
+                    location = "Lampertheim " + location
+                municipality = municipality_for_venue(location, postcode=postcode[0] if postcode else None)
+                if not municipality:
+                    continue
+                event["municipality"] = municipality
+            event["is_free"] = free
+            event["description"] = " ".join(filter(None, [description, event["description"],
+                "Preis: " + fields["Preis"] if fields.get("Preis") else "Preis nicht angegeben."]))
+            event["category"] = classify_category(event["title"] + " " + description)
+            events.append(event)
+        if not next_url:
+            break
+        url = next_url
+    else:
+        raise ValueError("Municipal pagination limit reached; incomplete import rejected")
 
     async with conn.transaction():
+        # Reconcile only the explicitly requested two-year window. Older
+        # archived occurrences are retained even though absent from this crawl.
+        await conn.execute(
+            """DELETE FROM cultural_events WHERE source=%s AND NOT (id = ANY(%s))
+               AND COALESCE(end_time, start_time) >= %s AND start_time < %s""",
+            (source["id"], [event["id"] for event in events],
+             datetime(now.astimezone(BERLIN).year, 1, 1, tzinfo=BERLIN),
+             datetime(now.astimezone(BERLIN).year + 2, 1, 1, tzinfo=BERLIN)),
+        )
         await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         for attempt in receipts:
             await conn.execute(

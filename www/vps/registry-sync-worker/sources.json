@@ -279,6 +279,19 @@
     },
     {
       "id": "cross7-gross-rohrheim",
+      "venue_aliases": {
+        "Bürgerhalle": "Groß-Rohrheim",
+        "Bürgerhalle + Hallenanbau": "Groß-Rohrheim",
+        "Hallenanbau": "Groß-Rohrheim",
+        "Rathausscheune": "Groß-Rohrheim",
+        "Gemeindehaus": "Groß-Rohrheim",
+        "Jugendhaus": "Groß-Rohrheim",
+        "Ev. Kirche, Jugendhaus": "Groß-Rohrheim",
+        "Allee": "Groß-Rohrheim",
+        "Sängerheim": "Groß-Rohrheim",
+        "Treff 21": "Groß-Rohrheim",
+        "Vogelpark": "Groß-Rohrheim"
+      },
       "group": "social",
       "adapter": "cross7",
       "enabled": true,
