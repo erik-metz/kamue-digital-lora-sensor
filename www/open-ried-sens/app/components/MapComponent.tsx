@@ -614,7 +614,7 @@ export default function MapComponent(props: MapProps) {
       </div>
     )}
     <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
-      <a href="/satellites" className="mb-2 block underline">Satelliten live & historisch ↗</a>
+      <a href="/satellites" className="mb-2 block underline">Satelliten live ↗</a>
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
       <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr</p>
       <p>Ⓗ Haltestelle · ⚡ Ladestation</p>

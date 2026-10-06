@@ -16,15 +16,10 @@ export default function SatelliteTracker() {
   const [group, setGroup] = useState("all");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
-  const [historyDate, setHistoryDate] = useState("");
-  const [history, setHistory] = useState<SatellitePosition[]>([]);
   const [trail, setTrail] = useState<SatellitePosition[]>([]);
-  const [cursor, setCursor] = useState(0);
-  const [playing, setPlaying] = useState(false);
   const [detailError, setDetailError] = useState("");
-  function resetDetail() { setTrail([]); setHistory([]); setCursor(0); setPlaying(false); setDetailError(""); }
+  function resetDetail() { setTrail([]); setDetailError(""); }
   function chooseSatellite(id: number | null) { if (id === selected) return; resetDetail(); setSelected(id); }
-  function chooseDate(value: string) { if (value === historyDate) return; resetDetail(); setHistoryDate(value); }
   useEffect(() => {
     const stream = new EventSource("/api/satellites/stream");
     const controller = new AbortController();
@@ -52,24 +47,18 @@ export default function SatelliteTracker() {
     if (!selected) return () => controller.abort();
     async function load() {
       try {
-        const path = historyDate ? `history?start=${encodeURIComponent(historyDate+"T00:00:00Z")}&end=${encodeURIComponent(new Date(Date.parse(historyDate+"T00:00:00Z")+86400000).toISOString())}&limit=10000` : "orbit";
-        const res = await fetch(`/api/satellites/${selected}/${path}`, { signal: controller.signal });
-        if (!res.ok) throw new Error("Keine Bahndaten für diesen Zeitraum verfügbar.");
+        const res = await fetch(`/api/satellites/${selected}/orbit`, { signal: controller.signal });
+        if (!res.ok) throw new Error("Keine aktuellen Bahndaten verfügbar.");
         const body = await res.json();
         if (!controller.signal.aborted) {
           const points = body.positions.map((p: SatellitePosition) => ({ ...p, norad_id: selected }));
-          setTrail(points); if (historyDate) setHistory(points);
-          if (!points.length) setDetailError("Keine gespeicherten Positionen für diesen Tag.");
+          setTrail(points);
+          if (!points.length) setDetailError("Keine aktuelle Bahnspur verfügbar.");
         }
       } catch (error) { if (!controller.signal.aborted) setDetailError(error instanceof Error ? error.message : "Daten nicht verfügbar."); }
     }
     void load(); return () => controller.abort();
-  }, [selected, historyDate]);
-  useEffect(() => {
-    if (!playing || !history.length) return;
-    const timer = setInterval(() => setCursor(value => (value+1)%history.length), 250);
-    return () => clearInterval(timer);
-  }, [playing, history.length]);
+  }, [selected]);
   const matches = (p: { name?: string; norad_id: number }) => {
     const name = p.name ?? "";
     const category = /STARLINK/i.test(name) ? "starlink" : /GPS|NAVSTAR/i.test(name) ? "gps" : p.norad_id === 25544 ? "iss" : "other";
@@ -77,9 +66,8 @@ export default function SatelliteTracker() {
   };
   const filtered = snapshot.positions.filter(matches);
   const catalog = snapshot.satellites.filter(matches);
-  const historical = historyDate ? history[cursor] : undefined;
-  const positions = historyDate ? (historical ? [historical] : []) : filtered;
-  const current = historyDate ? historical : snapshot.positions.find(p => p.norad_id === selected);
+  const positions = filtered;
+  const current = snapshot.positions.find(p => p.norad_id === selected);
   return <div className="space-y-4">
     <p role="status">{failed ? "Verbindung unterbrochen; erneuter Verbindungsaufbau …" : snapshot.positions.length ? `${snapshot.positions.length} Satelliten im Stream` : "Noch keine aktuellen Bahndaten vorhanden."}
       {snapshot.last_import ? ` · Letzter Import: ${new Date(snapshot.last_import).toLocaleString("de-DE")}` : ""}</p>
@@ -89,16 +77,9 @@ export default function SatelliteTracker() {
       <label>Satellit <select className="rounded border p-2" value={selected ?? ""} onChange={e => chooseSatellite(Number(e.target.value) || null)}>
         <option value="">Bitte auswählen</option>{catalog.map(p => <option key={p.norad_id} value={p.norad_id}>{p.name ?? p.norad_id} ({p.norad_id})</option>)}
       </select></label>
-      <label>Historie (UTC) <input type="date" disabled={!selected} className="rounded border p-2" value={historyDate} onInput={e => chooseDate(e.currentTarget.value)} /></label>
-      <button className="rounded border px-3" onClick={() => chooseDate("")}>Live</button>
     </div>
     <SatelliteMap positions={positions} trail={trail} selected={selected} onSelect={chooseSatellite} />
     {detailError ? <p role="status">{detailError}</p> : null}
-    {history.length ? <div className="flex items-center gap-3">
-      <button className="rounded border p-2" onClick={() => setPlaying(!playing)}>{playing ? "Pause" : "Abspielen"}</button>
-      <input className="flex-1" aria-label="Historischer Zeitpunkt" type="range" min={0} max={history.length-1} value={cursor} onChange={e => setCursor(Number(e.target.value))} />
-      <time>{new Date(history[cursor].timestamp).toLocaleString("de-DE")}</time>
-    </div> : null}
     {current ? <p>{current.name ?? `NORAD ${current.norad_id}`} · Höhe {current.altitude_km.toFixed(1)} km · Geschwindigkeit {current.speed_km_s.toFixed(2)} km/s
       {current.element_age_seconds != null ? ` · Bahnelemente ${(current.element_age_seconds/3600).toFixed(1)} Stunden alt` : ""} · berechnet</p> : null}
     <details><summary>Positionsstream</summary><div className="max-h-64 overflow-auto"><table className="w-full text-left"><thead><tr><th>Satellit</th><th>Zeit</th><th>Breite</th><th>Länge</th><th>Höhe</th></tr></thead>

@@ -135,7 +135,7 @@ def test_api_history_pagination_historical_elements_and_stream_disconnect(databa
                 assert absent.status_code == 404
                 invalid = await client.get('/satellites/25544/history', params={'start': '2019-12-09T21:00:00', 'end': '2019-12-10T21:00:00'})
                 assert invalid.status_code == 422
-            # No live positions from stale fixtures; catalog remains available for replay.
+            # No live positions from stale fixtures; catalog retains satellite metadata.
             snapshot = await satellite_tracking.snapshot(pool)
             assert snapshot['positions'] == [] and snapshot['satellites'][0]['norad_id'] == 25544
             request = AsyncMock()

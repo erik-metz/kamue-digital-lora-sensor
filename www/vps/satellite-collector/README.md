@@ -20,6 +20,8 @@ in `reading_revisions`; different publications of the same epoch remain separate
    and `SPACE_TRACK_PASSWORD_FILE` pointing to mounted secret files.
 3. `docker compose --profile satellites up -d satellite-collector backend-api`
 4. Open `/satellites` in the frontend, also linked from the map legend.
+   The browser displays only live positions and a predicted orbit. History is
+   persisted in the database, with no date picker or playback in the UI.
 
 The opt-in profile leaves installations without credentials operational.
 Missing credentials cause a clear startup error. Only this collector contacts
