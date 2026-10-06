@@ -4,3 +4,7 @@ pydantic>=2.6.0
 psycopg[binary]>=3.2.1
 psycopg-pool>=3.2.1
 sgp4==2.25
+
+rasterio>=1.4,<2
+numpy>=2,<3
+Pillow>=11,<13

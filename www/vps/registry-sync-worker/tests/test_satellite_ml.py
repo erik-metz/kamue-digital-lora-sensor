@@ -100,7 +100,7 @@ class DatabaseExtractionTests(unittest.IsolatedAsyncioTestCase):
                 {
                     "id": "satellite-scene-sentinel2-20260615",
                     "name": "Sentinel-2 Szene 2026-06-15",
-                    "metadata": {"date": "2026-06-15"},
+                    "metadata": {"date": "2026-06-15", "raster": {"method":"sentinel-c1-scl20-v1", "archive_sha256":"test-sha", "indices":{"ndvi":{"mean":.52}}}},
                     "ndvi_mean": 0.52,
                     "cloud_cover": 2.1,
                     "gw_level": 87.5,
@@ -113,6 +113,9 @@ class DatabaseExtractionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(samples), 1)
         self.assertEqual(samples[0]["scene_id"], "satellite-scene-sentinel2-20260615")
         self.assertAlmostEqual(samples[0]["ndvi"], 0.52, places=1)
+        self.assertIsNone(samples[0]["ndmi"])
+        self.assertIsNone(samples[0]["rain_30d"])
+        self.assertIsNone(samples[0]["target_class"])
 
 
 if __name__ == "__main__":

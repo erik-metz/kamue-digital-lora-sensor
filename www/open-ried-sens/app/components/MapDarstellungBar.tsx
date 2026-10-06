@@ -184,7 +184,7 @@ export default function MapDarstellungBar({
                     ? "bg-blue-950/90 text-blue-300 shadow-sm border border-blue-500/50 font-medium"
                     : "text-slate-400 hover:text-blue-300"
                 }`}
-                title="Copernicus Sentinel-2 Echtfarben-Satellitenbild (10m True Color RGB)"
+                title="Copernicus Sentinel-2 Echtfarben-Satellitenbild (20m RGB-Ausschnitt)"
               >
                 <span>🌍</span>
                 <span>Echtfarben (RGB)</span>
@@ -198,10 +198,10 @@ export default function MapDarstellungBar({
                     ? "bg-emerald-950/90 text-emerald-300 shadow-sm border border-emerald-500/50 font-medium"
                     : "text-slate-400 hover:text-emerald-300"
                 }`}
-                title="Copernicus Sentinel-2 Vegetationsgesundheit & NDVI (Rot=Trockenstress/Brache, Grün=vitale Vegetation)"
+                title="Copernicus Sentinel-2 NDVI: Vegetationskontrast aus wolkenmaskierten Rasterdaten"
               >
                 <span>🌱</span>
-                <span>NDVI Vitalität</span>
+                <span>NDVI</span>
               </button>
             </div>
           </div>

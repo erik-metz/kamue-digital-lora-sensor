@@ -873,7 +873,7 @@
   filter: contrast(105%) brightness(102%);
 }
 .satellite-ndvi-tile-layer {
-  filter: contrast(145%) saturate(220%) hue-rotate(80deg);
+  /* Colors come from the computed NDVI raster; no CSS pseudo-index. */
 }
 
 

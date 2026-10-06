@@ -1,57 +1,10 @@
+"""Satellite responses must never invent scenes, indices, NDVI images or basemaps."""
+
+import io
 import json
-import sys
 import unittest
-from datetime import UTC, datetime
-from importlib.util import find_spec
+import zipfile
 from unittest.mock import AsyncMock, MagicMock
-
-if "psycopg_pool" not in sys.modules:
-    sys.modules["psycopg_pool"] = MagicMock()
-if "psycopg" not in sys.modules:
-    sys.modules["psycopg"] = MagicMock()
-
-class MockResponse:
-    def __init__(self, content=b"", status_code=200, headers=None, media_type=None):
-        self.body = content
-        self.content = content
-        self.status_code = status_code
-        self.headers = dict(headers or {})
-        if media_type:
-            self.headers.setdefault("Content-Type", media_type)
-            self.headers.setdefault("content-type", media_type)
-        self.media_type = media_type
-
-if "fastapi" not in sys.modules and find_spec("fastapi") is None:
-    class MockRouter:
-        def get(self, *args, **kwargs):
-            return lambda fn: fn
-        def post(self, *args, **kwargs):
-            return lambda fn: fn
-    mock_fastapi = MagicMock()
-    mock_fastapi.APIRouter = lambda *args, **kwargs: MockRouter()
-    mock_fastapi.Response = MockResponse
-    mock_fastapi.Depends = lambda x: x
-    mock_fastapi.Query = lambda default=None, **kwargs: default
-    mock_fastapi.HTTPException = Exception
-    mock_fastapi.status = MagicMock()
-    sys.modules["fastapi"] = mock_fastapi
-elif "fastapi" in sys.modules and isinstance(sys.modules["fastapi"], MagicMock):
-    sys.modules["fastapi"].Response = MockResponse
-
-if "pydantic" not in sys.modules and find_spec("pydantic") is None:
-    class MockBaseModel:
-        def __init__(self, **kwargs):
-            for k, v in kwargs.items():
-                setattr(self, k, v)
-    mock_pydantic = MagicMock()
-    mock_pydantic.BaseModel = MockBaseModel
-    mock_pydantic.Field = lambda *args, **kwargs: kwargs.get("default", None)
-    sys.modules["pydantic"] = mock_pydantic
-
-if "dependencies" not in sys.modules:
-    mock_dep = MagicMock()
-    mock_dep.get_db_pool = MagicMock()
-    sys.modules["dependencies"] = mock_dep
 
 from endpoints.satellite import (
     download_satellite_data,
@@ -59,6 +12,7 @@ from endpoints.satellite import (
     get_satellite_scenes,
     get_satellite_tile,
 )
+from fastapi import HTTPException
 
 
 class SatelliteEndpointTests(unittest.IsolatedAsyncioTestCase):
@@ -66,150 +20,79 @@ class SatelliteEndpointTests(unittest.IsolatedAsyncioTestCase):
         self.cursor = MagicMock()
         self.cursor.fetchone = AsyncMock(return_value=None)
         self.cursor.fetchall = AsyncMock(return_value=[])
-        self.cursor.execute = AsyncMock()
         self.conn = MagicMock()
         self.conn.execute = AsyncMock(return_value=self.cursor)
         self.pool = MagicMock()
         self.pool.connection.return_value.__aenter__.return_value = self.conn
 
-    async def test_get_satellite_scenes_from_dataset(self):
-        self.cursor.fetchone.return_value = {
-            "data": {
-                "summary": {"total_scenes": 1},
-                "scenes": [
-                    {
-                        "id": "satellite-scene-s2c-t32uma-20260930t103323-l2a",
-                        "date": "2026-09-30",
-                        "cloudCoverPercent": 16.2,
-                        "ndviMean": 0.462,
-                    }
-                ],
-            },
-            "fetched_at": datetime(2026, 9, 30, 12, 0, 0, tzinfo=UTC),
-        }
-        res = await get_satellite_scenes(self.pool, limit=10)
-        self.assertEqual(res["count"], 1)
-        self.assertEqual(res["scenes"][0]["id"], "satellite-scene-s2c-t32uma-20260930t103323-l2a")
-        self.assertEqual(res["scenes"][0]["ndviMean"], 0.462)
-
-    async def test_get_latest_satellite_scene(self):
-        self.cursor.fetchone.return_value = {
-            "data": {
-                "summary": {"latest_scene_date": "2026-09-30"},
-                "scenes": [
-                    {
-                        "id": "satellite-scene-s2c-t32uma-20260930t103323-l2a",
-                        "date": "2026-09-30",
-                        "cloudCoverPercent": 16.2,
-                        "ndviMean": 0.462,
-                    }
-                ],
-            },
-            "fetched_at": datetime(2026, 9, 30, 12, 0, 0, tzinfo=UTC),
-        }
-        res = await get_latest_satellite_scene(self.pool)
-        self.assertIn("latest", res)
-        self.assertEqual(res["latest"]["date"], "2026-09-30")
-
-    async def test_get_satellite_tile_redirect(self):
-        self.cursor.fetchone.return_value = {
-            "metadata": {
-                "assets": {"thumbnailUrl": "https://example.org/thumb.jpg"}
-            }
-        }
-        resp = await get_satellite_tile("test-scene", 12, 2150, 1400, self.pool)
-        self.assertEqual(resp.status_code, 307)
-        self.assertEqual(resp.headers.get("Location"), "https://example.org/thumb.jpg")
-
-    async def test_get_satellite_tile_latest_and_ndvi(self):
-        self.cursor.fetchone.return_value = {
-            "metadata": {
-                "assets": {"ndviUrl": "https://example.org/ndvi.jpg"}
-            }
-        }
-        resp = await get_satellite_tile("latest", 12, 2150, 1400, self.pool, layer="ndvi")
-        self.assertEqual(resp.status_code, 307)
-        self.assertEqual(resp.headers.get("Location"), "https://example.org/ndvi.jpg")
-
-    async def test_download_satellite_data_json(self):
+    async def test_legacy_proxy_is_missing_even_when_saved_as_ndvi(self):
         self.cursor.fetchall.return_value = [
             {
-                "id": "satellite-scene-s2-20260615",
-                "name": "Sentinel-2 2026-06-15",
+                "id": "scene",
+                "name": "Sentinel",
                 "metadata": {
-                    "scene_id": "s2-20260615",
-                    "date": "2026-06-15",
-                    "cloud_cover": 2.5,
-                    "ndvi_mean": 0.54,
-                    "assets": {"thumbnailUrl": "https://example.org/thumb.png"},
+                    "date": "2026-10-05",
+                    "ndvi_mean": 0.6,
+                    "drought_stressed_area_ha": 200,
                 },
             }
         ]
-        resp = await download_satellite_data(
-            self.pool, start="2026-06-01", end="2026-06-30", layer="rgb", format="json"
+        result = await get_satellite_scenes(self.pool, limit=20)
+        self.assertIsNone(result["scenes"][0]["ndviMean"])
+        self.assertIsNone(result["scenes"][0]["droughtStressedAreaHa"])
+        self.assertIn("NOT is_hidden", self.conn.execute.call_args.args[0])
+
+    async def test_empty_archive_has_no_synthesized_scenes(self):
+        self.assertEqual(
+            (await get_satellite_scenes(self.pool, limit=20))["scenes"], []
         )
-        self.assertEqual(resp.status_code, 200)
-        disp = resp.headers.get("Content-Disposition") or resp.headers.get("content-disposition") or ""
-        self.assertIn("open-ried-sentinel2-2026-06-01-to-2026-06-30.json", disp)
-        body = getattr(resp, "body", None) or getattr(resp, "content", None) or b""
-        data = json.loads(body.decode("utf-8"))
-        self.assertEqual(data.get("scene_count"), 1)
-
-    async def test_download_satellite_data_zip(self):
-        import io
-        import zipfile
-        from unittest.mock import patch
-
-        self.cursor.fetchall.return_value = [
-            {
-                "id": "satellite-scene-s2-20260615",
-                "name": "Sentinel-2 2026-06-15",
-                "metadata": {
-                    "scene_id": "s2-20260615",
-                    "date": "2026-06-15",
-                    "cloud_cover": 2.5,
-                    "ndvi_mean": 0.54,
-                    "assets": {"thumbnailUrl": "https://example.org/thumb.png"},
-                },
-            }
-        ]
-        with patch("urllib.request.urlopen") as mock_url:
-            mock_url.return_value.__enter__.return_value.read.return_value = b"fake-png-bytes"
-            resp = await download_satellite_data(
-                self.pool, start="2026-06-01", end="2026-06-30", layer="all", format="zip"
+        with self.assertRaises(HTTPException) as ctx:
+            await get_latest_satellite_scene(self.pool)
+        self.assertEqual(ctx.exception.status_code, 404)
+        with self.assertRaises(HTTPException) as ctx:
+            await download_satellite_data(
+                self.pool,
+                start="2026-06-01",
+                end="2026-06-30",
+                layer="all",
+                format="json",
             )
-        self.assertEqual(resp.status_code, 200)
-        ctype = resp.headers.get("Content-Type") or resp.headers.get("content-type") or getattr(resp, "media_type", None)
-        self.assertEqual(ctype, "application/zip")
-        disp = resp.headers.get("Content-Disposition") or resp.headers.get("content-disposition") or ""
-        self.assertIn(".zip", disp)
+        self.assertEqual(ctx.exception.status_code, 404)
 
-        # Verify ZIP structure
-        body = getattr(resp, "body", None) or getattr(resp, "content", None) or b""
-        with zipfile.ZipFile(io.BytesIO(body)) as zf:
-            namelist = zf.namelist()
-            self.assertIn("manifest.json", namelist)
-            self.assertIn("README.txt", namelist)
-            self.assertTrue(any(name.startswith("scenes/") for name in namelist))
+    async def test_tile_requires_archived_crop_no_thumbnail_or_world_imagery(self):
+        self.cursor.fetchone.return_value = {
+            "metadata": {"assets": {"thumbnailUrl": "https://example.org/thumb.png"}}
+        }
+        with self.assertRaises(HTTPException) as ctx:
+            await get_satellite_tile("scene", 12, 2150, 1400, self.pool, layer="ndvi")
+        self.assertEqual(ctx.exception.status_code, 404)
+        with self.assertRaises(HTTPException) as ctx:
+            await get_satellite_tile("latest", 12, 99999, 1400, self.pool, layer="rgb")
+        self.assertEqual(ctx.exception.status_code, 400)
 
-    async def test_download_satellite_data_fallback_when_empty_db(self):
-        # Empty DB results
-        self.cursor.fetchall.return_value = []
-        self.cursor.fetchone.return_value = None
-        resp = await download_satellite_data(
-            self.pool, start="2026-06-01", end="2026-06-30", layer="rgb", format="json"
+    async def test_missing_rasters_export_manifest_without_fake_pngs(self):
+        self.cursor.fetchall.return_value = [
+            {
+                "id": "scene",
+                "name": "Sentinel",
+                "metadata": {"date": "2026-10-05", "scene_id": "S2_REAL"},
+            }
+        ]
+        response = await download_satellite_data(
+            self.pool, start="2026-10-05", end="2026-10-05", layer="all", format="zip"
         )
-        self.assertEqual(resp.status_code, 200)
-        body = getattr(resp, "body", None) or getattr(resp, "content", None) or b""
-        data = json.loads(body.decode("utf-8"))
-        self.assertGreater(data.get("scene_count", 0), 0)
-
-    async def test_get_satellite_scenes_fallback_when_empty_db(self):
-        self.cursor.fetchall.return_value = []
-        self.cursor.fetchone.return_value = None
-        data = await get_satellite_scenes(self.pool, limit=5)
-        self.assertGreater(len(data.get("scenes", [])), 0)
-
-
-if __name__ == "__main__":
-    unittest.main()
+        with zipfile.ZipFile(io.BytesIO(response.body)) as archive:
+            self.assertEqual(set(archive.namelist()), {"manifest.json", "README.txt"})
+            self.assertEqual(
+                json.loads(archive.read("manifest.json"))["missing_rasters"],
+                ["S2_REAL"],
+            )
+        with self.assertRaises(HTTPException) as ctx:
+            await download_satellite_data(
+                self.pool,
+                start="2026-02-31",
+                end="2026-10-05",
+                layer="rgb",
+                format="json",
+            )
+        self.assertEqual(ctx.exception.status_code, 400)

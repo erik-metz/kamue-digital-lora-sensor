@@ -253,15 +253,15 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         {satelliteMode === "ndvi" && (
           <div className="inline-flex items-center gap-2 rounded-lg bg-emerald-950/60 border border-emerald-800/60 px-3 py-1 text-slate-200">
             <span className="font-semibold text-emerald-400">Copernicus Sentinel-2 NDVI:</span>
-            <span className="text-amber-400">0.0 (Dürrestress / Brache)</span>
-            <span className="h-2 w-20 sm:w-28 rounded-full inline-block" style={{ background: "linear-gradient(to right, #b45309, #eab308, #22c55e, #15803d)" }} />
-            <span className="text-emerald-300">1.0 (Dichte Vegetation)</span>
+            <span className="text-amber-400">−1.0 (Wasser / geringer Kontrast)</span>
+            <span className="h-2 w-20 sm:w-28 rounded-full inline-block" style={{ background: "linear-gradient(to right, #2166ac, #bf812d, #f6e8c3, #80cdc1, #01665e)" }} />
+            <span className="text-emerald-300">1.0 (hoher Vegetationskontrast)</span>
           </div>
         )}
         {satelliteMode === "rgb" && (
           <div className="inline-flex items-center gap-1.5 rounded-lg bg-blue-950/60 border border-blue-800/60 px-2.5 py-1 text-blue-200">
             <span>🌍</span>
-            <span>Sentinel-2 L2A 10m Echtfarben-Satellitenbild (ESA/Copernicus)</span>
+            <span>Sentinel-2 L2A 20m RGB-Ausschnitt, wolkenmaskiert (ESA/Copernicus)</span>
           </div>
         )}
         {mode === "temperature" ? <>

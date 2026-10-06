@@ -18,7 +18,7 @@ def compute_spectral_indices(
     b04_red: float,
     b08_nir: float,
     b11_swir: float | None = None,
-) -> dict[str, float]:
+) -> dict[str, float | None]:
     """Compute standard Earth Observation vegetative and moisture indices.
 
     Reflectance inputs are expected in range [0.0 .. 1.0] (or Sentinel L2A BOA / 10000.0).
@@ -29,7 +29,7 @@ def compute_spectral_indices(
     ndvi = (b08_nir - b04_red) / (b08_nir + b04_red + eps)
     ndvi = max(-1.0, min(1.0, ndvi))
 
-    # Normalized Difference Water Index (NDWI - Gao 1996 / McFeeters 1996)
+    # Normalized Difference Water Index (NDWI - McFeeters 1996; green/NIR)
     ndwi = (b03_green - b08_nir) / (b03_green + b08_nir + eps)
     ndwi = max(-1.0, min(1.0, ndwi))
 
@@ -42,7 +42,7 @@ def compute_spectral_indices(
     savi = 1.5 * (b08_nir - b04_red) / (b08_nir + b04_red + 0.5 + eps)
     savi = max(-1.0, min(1.5, savi))
 
-    indices: dict[str, float] = {
+    indices: dict[str, float | None] = {
         "ndvi": round(ndvi, 4),
         "ndwi": round(ndwi, 4),
         "evi": round(evi, 4),
@@ -54,7 +54,7 @@ def compute_spectral_indices(
         ndmi = (b08_nir - b11_swir) / (b08_nir + b11_swir + eps)
         indices["ndmi"] = round(max(-1.0, min(1.0, ndmi)), 4)
     else:
-        indices["ndmi"] = 0.0
+        indices["ndmi"] = None
 
     return indices
 
@@ -113,7 +113,7 @@ class RiedEarthObservationDataset:
 
     def __getitem__(self, idx: int) -> dict[str, Any]:
         item = self.samples[idx]
-        features = [float(item.get(name, 0.0)) for name in FEATURE_NAMES]
+        features = [float(item[name]) if item.get(name) is not None else float("nan") for name in FEATURE_NAMES]
         target = int(item.get("target_class", 0))
         regression_target = float(item.get("target_moisture", item.get("ndvi", 0.0)))
         return {
@@ -129,7 +129,7 @@ class RiedEarthObservationDataset:
         X: list[list[float]] = []
         y: list[int] = []
         for sample in self.samples:
-            row = [float(sample.get(name, 0.0)) for name in FEATURE_NAMES]
+            row = [float(sample[name]) if sample.get(name) is not None else float("nan") for name in FEATURE_NAMES]
             X.append(row)
             y.append(int(sample.get("target_class", 0)))
         return X, y, list(FEATURE_NAMES)
@@ -204,57 +204,22 @@ def build_ml_sample(
 
 
 async def extract_samples_from_three_table_db(conn: Any, limit: int = 500) -> list[dict[str, Any]]:
-    """Extract training samples from Three-Table database (entities and readings)."""
+    """Actual archived spatial means, with missing ancillary features and no invented labels."""
     cursor = await conn.execute(
-        """SELECT e.id, e.name, e.metadata,
-                  COALESCE((SELECT r.value FROM readings r 
-                            JOIN measurement_definitions m ON r.definition_id = m.id 
-                            WHERE r.entity_id = e.id AND m.metric = 'ndvi_mean' 
-                            ORDER BY r.observed_at DESC LIMIT 1), 0.45) as ndvi_mean,
-                  COALESCE((SELECT r.value FROM readings r 
-                            JOIN measurement_definitions m ON r.definition_id = m.id 
-                            WHERE r.entity_id = e.id AND m.metric = 'cloud_cover' 
-                            ORDER BY r.observed_at DESC LIMIT 1), 5.0) as cloud_cover,
-                  COALESCE((SELECT r.value FROM readings r 
-                            JOIN measurement_definitions m ON r.definition_id = m.id 
-                            WHERE m.metric = 'groundwater_level' 
-                            ORDER BY r.observed_at DESC LIMIT 1), 87.2) as gw_level
-           FROM entities e
-           WHERE e.entity_type = 'satellite_scene'
-           ORDER BY e.created_at DESC
-           LIMIT %s""",
-        (limit,),
-    )
-    rows = await cursor.fetchall()
-
-    samples: list[dict[str, Any]] = []
-    for r in rows:
-        meta = r.get("metadata", {})
-        date_str = meta.get("date", "2026-06-15")
-        ndvi = float(r.get("ndvi_mean") or 0.45)
-        cloud = float(r.get("cloud_cover") or 5.0)
-        gw = float(r.get("gw_level") or 87.2)
-
-        # Reconstruct approximate BOA bands around the mean NDVI
-        b04_red = 0.08
-        b08_nir = (b04_red * (1.0 + ndvi)) / max(0.01, (1.0 - ndvi))
-        b02_blue = 0.05
-        b03_green = 0.07
-        b11_swir = 0.12
-
-        sample = build_ml_sample(
-            scene_id=r["id"],
-            date=date_str,
-            b02_blue=b02_blue,
-            b03_green=b03_green,
-            b04_red=b04_red,
-            b08_nir=b08_nir,
-            b11_swir=b11_swir,
-            cloud_cover=cloud,
-            groundwater_level=gw,
-            rain_30d=45.0,
-            solar_radiation=220.0,
-        )
+        """SELECT id,metadata FROM entities
+           WHERE entity_type='satellite_scene' AND NOT is_hidden
+             AND metadata->'raster'->>'method'='sentinel-c1-scl20-v1'
+           ORDER BY metadata->>'date' DESC LIMIT %s""", (limit,))
+    samples = []
+    for row in await cursor.fetchall():
+        meta = row['metadata']
+        raster = meta.get('raster', {})
+        if raster.get('method') != 'sentinel-c1-scl20-v1':
+            continue
+        sample = {name: None for name in FEATURE_NAMES}
+        sample.update({key: stats['mean'] for key,stats in raster['indices'].items()})
+        sample.update(scene_id=row['id'], date=meta['date'], cloud_cover=meta.get('cloud_cover'),
+                      raster_sha256=raster['archive_sha256'], target_class=None, target_label=None,
+                      is_stressed=None, target_moisture=None)
         samples.append(sample)
-
     return samples

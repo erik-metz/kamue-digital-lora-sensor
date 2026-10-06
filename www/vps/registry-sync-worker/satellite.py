@@ -1,183 +1,196 @@
-"""Copernicus Sentinel-2 Satellite Earth Observation Adapter (Hessisches Ried).
+"""Real Sentinel-2 metadata and archived AOI raster indices; no cover-derived proxies."""
 
-Queries Copernicus Sentinel-2 Level-2A bottom-of-atmosphere scenes (Tile 32UMA / 32UMV)
-covering Bürstadt, Lampertheim, Biblis, and Groß-Rohrheim.
-Extracts cloud coverage, vegetation coverage, Cloud-Optimized GeoTIFF (COG) asset links
-for visual (TCI RGB), red (B04), and near-infrared (B08) bands.
-Persists scenes into entities and readings (Three-Table Core Schema) without ad-hoc SQL tables.
-"""
-
+import asyncio
+import hashlib
 import json
+import logging
+import math
 from datetime import UTC, datetime
-from typing import Any
+
+from psycopg.types.json import Jsonb
+from rasterio.errors import RasterioError
+from satellite_raster import BBOX, METHOD, asset_manifest, read_scene
+
+LOG = logging.getLogger(__name__)
 
 
-def parse_satellite_scenes(
-    body: bytes,
-    max_cloud_cover: float = 30.0,
-    bbox: list[float] | None = None,
-) -> tuple[datetime, list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
-    """Parse STAC GeoJSON into structured Sentinel-2 scenes."""
-    data = json.loads(body.decode("utf-8"))
-    features = data.get("features", [])
-
+def parse_satellite_scenes(body, max_cloud_cover=30.0, bbox=None):
+    data = json.loads(body)
     now = datetime.now(UTC)
-    scenes: list[dict[str, Any]] = []
-    geojson_features: list[dict[str, Any]] = []
-
-    for feat in features:
+    scenes = []
+    features = []
+    for feat in data.get("features", []):
         props = feat.get("properties", {})
+        try:
+            cloud = float(props["eo:cloud_cover"])
+            stamp = datetime.fromisoformat(props["datetime"])
+            if (
+                not math.isfinite(cloud)
+                or not 0 <= cloud <= max_cloud_cover
+                or stamp.tzinfo is None
+                or stamp > now
+            ):
+                continue
+            sid = feat["id"]
+        except (KeyError, TypeError, ValueError):
+            continue
         assets = feat.get("assets", {})
-        geom = feat.get("geometry", {})
-        scene_id = feat.get("id") or props.get("s2:product_uri")
-        if not scene_id:
-            continue
 
-        cloud_cover = float(props.get("eo:cloud_cover") or props.get("cloudCover") or 0.0)
-        if cloud_cover > max_cloud_cover:
-            continue
+        def percentage(key, properties=props):
+            value = properties.get(key)
+            return (
+                float(value)
+                if value is not None
+                and math.isfinite(float(value))
+                and 0 <= float(value) <= 100
+                else None
+            )
 
-        raw_dt = props.get("datetime") or props.get("created")
-        if raw_dt:
-            try:
-                scene_time = datetime.fromisoformat(raw_dt)
-            except ValueError:
-                scene_time = now
-        else:
-            scene_time = now
-
-        date_str = scene_time.strftime("%Y-%m-%d")
-        platform = props.get("platform") or "Sentinel-2"
-        grid_square = props.get("mgrs:grid_square") or "Ried"
-        veg_cover = float(props.get("s2:vegetation_percentage") or 0.0)
-        water_cover = float(props.get("s2:water_percentage") or 0.0)
-
-        # Asset links (Cloud-Optimized GeoTIFFs & Web Preview)
-        visual_cog = assets.get("visual", {}).get("href")
-        red_cog = assets.get("red", {}).get("href")
-        green_cog = assets.get("green", {}).get("href")
-        blue_cog = assets.get("blue", {}).get("href")
-        nir_cog = assets.get("nir", {}).get("href")
-        thumbnail_url = assets.get("thumbnail", {}).get("href") or assets.get("preview", {}).get("href")
-
-        # Centroid coordinates
-        centroid = props.get("proj:centroid")
-        if centroid and isinstance(centroid, dict):
-            lat = float(centroid.get("lat") or 49.6425)
-            lon = float(centroid.get("lon") or 8.4552)
-        else:
-            lat, lon = 49.6425, 8.4552
-
-        entity_id = f"satellite-scene-{scene_id.lower().replace('_', '-')}"
-        friendly_name = f"Sentinel-2 Szene {date_str} (Tile {grid_square})"
-
-        # Estimated mean NDVI and drought-stressed area
-        bare_cover = max(0.0, 100.0 - veg_cover - water_cover)
-        calc_ndvi = (veg_cover * 0.72 + bare_cover * 0.18 + water_cover * (-0.15)) / 100.0
-        ndvi_mean = round(max(-0.2, min(1.0, calc_ndvi)), 3)
-
-        drought_factor = max(0.0, min(1.0, (50.0 - veg_cover) / 50.0))
-        drought_stressed_ha = round(18500.0 * drought_factor, 1)
-
-        scene_dict = {
-            "id": entity_id,
-            "sceneId": scene_id,
-            "name": friendly_name,
-            "date": date_str,
-            "datetime": scene_time.isoformat(),
-            "platform": platform,
-            "gridSquare": grid_square,
-            "cloudCoverPercent": round(cloud_cover, 2),
-            "vegetationPercent": round(veg_cover, 2),
-            "waterPercent": round(water_cover, 2),
-            "ndviMean": ndvi_mean,
-            "droughtStressedAreaHa": drought_stressed_ha,
-            "lat": round(lat, 6),
-            "lng": round(lon, 6),
+        scene = {
+            "id": "satellite-scene-" + sid.lower().replace("_", "-"),
+            "sceneId": sid,
+            "name": "Sentinel-2 Szene " + stamp.date().isoformat(),
+            "date": stamp.date().isoformat(),
+            "datetime": stamp.isoformat(),
+            "platform": props.get("platform"),
+            "gridSquare": props.get("mgrs:grid_square"),
+            "cloudCoverPercent": cloud,
+            "vegetationPercent": percentage("s2:vegetation_percentage"),
+            "waterPercent": percentage("s2:water_percentage"),
+            "ndviMean": None,
+            "droughtStressedAreaHa": None,
+            "raster": None,
             "assets": {
-                "visualCog": visual_cog,
-                "redCog": red_cog,
-                "greenCog": green_cog,
-                "blueCog": blue_cog,
-                "nirCog": nir_cog,
-                "thumbnailUrl": thumbnail_url,
+                name + "Cog": assets.get(key, {}).get("href")
+                for name, key in [
+                    ("visual", "visual"),
+                    ("red", "red"),
+                    ("green", "green"),
+                    ("blue", "blue"),
+                    ("nir", "nir"),
+                    ("swir", "swir16"),
+                ]
             },
             "source": "Copernicus Sentinel-2",
             "sourceUpdatedAt": now.isoformat(),
         }
-        scenes.append(scene_dict)
-
-        geojson_features.append(
+        scene["assets"]["thumbnailUrl"] = assets.get(
+            "thumbnail", assets.get("preview", {})
+        ).get("href")
+        scene["assets"]["sclCog"] = assets.get("scl", {}).get("href")
+        scenes.append(scene)
+        features.append(
             {
                 "type": "Feature",
-                "geometry": geom if geom else {"type": "Point", "coordinates": [lon, lat]},
-                "properties": {
-                    "id": entity_id,
-                    "sceneId": scene_id,
-                    "name": friendly_name,
-                    "date": date_str,
-                    "cloudCover": round(cloud_cover, 1),
-                    "vegetationCover": round(veg_cover, 1),
-                    "ndviMean": ndvi_mean,
-                    "droughtStressedAreaHa": drought_stressed_ha,
-                    "thumbnailUrl": thumbnail_url,
-                    "visualCog": visual_cog,
-                },
+                "geometry": feat.get("geometry"),
+                "properties": {"id": scene["id"], "sceneId": sid},
             }
         )
-
-    geojson_collection = {
-        "type": "FeatureCollection",
-        "features": geojson_features,
-    }
-
-    summary_stats = {
+    scenes.sort(key=lambda s: s["datetime"], reverse=True)
+    summary = {
         "total_scenes": len(scenes),
         "latest_scene_date": scenes[0]["date"] if scenes else None,
         "latest_scene_cloud_cover": scenes[0]["cloudCoverPercent"] if scenes else None,
         "latest_scene_vegetation": scenes[0]["vegetationPercent"] if scenes else None,
-        "latest_scene_ndvi_mean": scenes[0]["ndviMean"] if scenes else None,
-        "latest_scene_drought_area_ha": scenes[0]["droughtStressedAreaHa"] if scenes else None,
-        "latest_scene_thumbnail": scenes[0]["assets"]["thumbnailUrl"] if scenes else None,
+        "latest_scene_ndvi_mean": None,
+        "latest_scene_drought_area_ha": None,
     }
+    return now, scenes, {"type": "FeatureCollection", "features": features}, summary
 
-    return now, scenes, geojson_collection, summary_stats
+
+async def enrich_rasters(conn, source, body, scenes, stac_digest):
+    features = {f["id"]: f for f in json.loads(body).get("features", [])}
+    budget = min(2, max(0, int(source.get("raster_max_scenes", 2))))
+    used = 0
+    for scene in scenes:
+        feat = features[scene["sceneId"]]
+        try:
+            manifest = asset_manifest(feat)
+            fingerprint = hashlib.sha256(
+                json.dumps(
+                    {"method": METHOD, "bbox": BBOX, "assets": manifest}, sort_keys=True
+                ).encode()
+            ).hexdigest()
+            previous = await (
+                await conn.execute(
+                    "SELECT metadata FROM entities WHERE id=%s", (scene["id"],)
+                )
+            ).fetchone()
+            old = previous[0].get("raster") if previous else None
+            if old and old.get("fingerprint") == fingerprint:
+                scene["raster"] = old
+                scene["ndviMean"] = old["indices"]["ndvi"]["mean"]
+                continue
+            if used >= budget:
+                continue
+            used += 1
+            stats, raw, sha, metadata = await asyncio.to_thread(read_scene, feat)
+            async with conn.transaction():
+                await conn.execute(
+                    "INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,'application/x-npz') ON CONFLICT DO NOTHING",
+                    (sha, raw),
+                )
+                attempt = await (
+                    await conn.execute(
+                        "INSERT INTO collection_attempts(source_id,http_status,payload_sha256,status) VALUES (%s,200,%s,'received') RETURNING id",
+                        (source["id"] + ":raster", sha),
+                    )
+                ).fetchone()
+            await conn.commit()
+            scene["raster"] = {
+                **stats,
+                "fingerprint": fingerprint,
+                "archive_sha256": sha,
+                "stac_sha256": stac_digest,
+                "attempt_id": attempt[0],
+                "grid": {
+                    k: metadata[k] for k in ("crs", "transform", "shape", "resampling")
+                },
+                "assets": manifest,
+                "computed_at": datetime.now(UTC).isoformat(),
+            }
+            scene["ndviMean"] = stats["indices"]["ndvi"]["mean"]
+        except (OSError, ValueError, KeyError, RasterioError) as exc:
+            LOG.warning(
+                "Sentinel raster unavailable for %s (%s)",
+                scene["sceneId"],
+                type(exc).__name__,
+            )
+            await conn.execute(
+                "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'failed',%s)",
+                (source["id"] + ":raster", type(exc).__name__),
+            )
+            await conn.commit()
 
 
 async def import_satellite(conn, client, source):
-    """Acquire Copernicus Sentinel-2 STAC scenes, persist entities/measurements and publish."""
     from publications import acquire, publish
 
     response, digest, attempt_id = await acquire(conn, client, source)
-    max_cloud = float(source.get("max_cloud_cover", 30.0))
     source_time, scenes, geojson, summary = parse_satellite_scenes(
-        response.content,
-        max_cloud_cover=max_cloud,
-        bbox=source.get("bbox"),
+        response.content, max_cloud_cover=float(source.get("max_cloud_cover", 30))
     )
-
+    await enrich_rasters(conn, source, response.content, scenes, digest)
+    summary["latest_scene_ndvi_mean"] = scenes[0]["ndviMean"] if scenes else None
+    summary["computed_raster_scenes"] = sum(s["raster"] is not None for s in scenes)
     async with conn.transaction():
-        # 1. Publish datasets
         await publish(
             conn,
             source,
             "environment/satellite/scenes",
-            {"summary": summary, "scenes": scenes, "count": len(scenes)},
+            {
+                "summary": summary,
+                "scenes": scenes,
+                "count": len(scenes),
+                "raster_contract": METHOD,
+            },
             digest,
             source_time,
         )
         await publish(
-            conn,
-            source,
-            "map/layers/satellite_latest",
-            geojson,
-            digest,
-            source_time,
+            conn, source, "map/layers/satellite_latest", geojson, digest, source_time
         )
-
-        # 2. Persist to entities and readings (Core Three-Table Schema)
         for s in scenes:
-            entity_key = s["id"]
             metadata = {
                 "scene_id": s["sceneId"],
                 "platform": s["platform"],
@@ -187,124 +200,63 @@ async def import_satellite(conn, client, source):
                 "vegetation_cover": s["vegetationPercent"],
                 "water_cover": s["waterPercent"],
                 "assets": s["assets"],
+                "raster": s["raster"],
+                "ndvi_mean": s["ndviMean"],
+                "drought_stressed_area_ha": None,
                 "source": "Copernicus Sentinel-2",
             }
             await conn.execute(
-                """INSERT INTO entities (id, name, entity_type, metadata)
-                VALUES (%s, %s, 'satellite_scene', %s)
-                ON CONFLICT (id) DO UPDATE SET
-                    name = EXCLUDED.name,
-                    metadata = entities.metadata || EXCLUDED.metadata,
-                    updated_at = NOW()""",
-                (
-                    entity_key,
-                    s["name"],
-                    json.dumps(metadata),
-                ),
+                "INSERT INTO entities(id,name,entity_type,metadata) VALUES (%s,%s,'satellite_scene',%s) ON CONFLICT(id) DO UPDATE SET name=EXCLUDED.name,metadata=entities.metadata || EXCLUDED.metadata,updated_at=NOW()",
+                (s["id"], s["name"], Jsonb(metadata)),
             )
-
-            try:
-                obs_time = datetime.fromisoformat(s["datetime"])
-            except ValueError:
-                obs_time = source_time
-
-            # Cloud cover measurement
-            await conn.execute(
-                """SELECT write_measurement(
-                    %s, 'cloud_cover', '%%', %s, 'observed',
-                    '{"satellite": "Sentinel-2"}'::jsonb,
-                    %s, %s, %s,
-                    %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
-                )""",
-                (
-                    entity_key,
-                    source["id"],
-                    obs_time,
-                    s["cloudCoverPercent"],
-                    source_time,
-                    json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
-                ),
-            )
-
-            # Vegetation coverage percentage measurement
-            if s["vegetationPercent"] > 0:
+            stamp = datetime.fromisoformat(s["datetime"])
+            for metric, value in [
+                ("cloud_cover", s["cloudCoverPercent"]),
+                ("vegetation_coverage", s["vegetationPercent"]),
+            ]:
+                if value is not None:
+                    await conn.execute(
+                        "SELECT write_measurement(%s,%s,'%%',%s,'observed','{}'::jsonb,%s,%s::numeric,%s,%s::jsonb,'valid',NULL,NULL,'instantaneous')",
+                        (
+                            s["id"],
+                            metric,
+                            source["id"],
+                            stamp,
+                            value,
+                            source_time,
+                            Jsonb({"payload_sha256": digest, "scene_id": s["sceneId"]}),
+                        ),
+                    )
+            if s["raster"]:
+                raster = s["raster"]
+                # Every correction has its own immutable crop hash; legacy proxies are never selected.
+                for metric, stats in raster["indices"].items():
+                    if stats["mean"] is None:
+                        continue
+                    await conn.execute(
+                        "SELECT write_measurement(%s,%s,'index',%s,'model',%s,%s,%s::numeric,%s,%s,'valid',NULL,NULL,'instantaneous')",
+                        (
+                            s["id"],
+                            metric + "_mean",
+                            source["id"],
+                            Jsonb(
+                                {
+                                    "method": METHOD,
+                                    "raster_sha256": raster["archive_sha256"],
+                                    "aoi_bbox": list(BBOX),
+                                }
+                            ),
+                            stamp,
+                            stats["mean"],
+                            source_time,
+                            Jsonb(raster),
+                        ),
+                    )
                 await conn.execute(
-                    """SELECT write_measurement(
-                        %s, 'vegetation_coverage', '%%', %s, 'observed',
-                        '{"satellite": "Sentinel-2"}'::jsonb,
-                        %s, %s, %s,
-                        %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
-                    )""",
-                    (
-                        entity_key,
-                        source["id"],
-                        obs_time,
-                        s["vegetationPercent"],
-                        source_time,
-                        json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
-                    ),
+                    "UPDATE collection_attempts SET status='success' WHERE id=%s",
+                    (raster["attempt_id"],),
                 )
-
-            # Mean NDVI measurement
-            if s.get("ndviMean") is not None:
-                await conn.execute(
-                    """SELECT write_measurement(
-                        %s, 'ndvi_mean', 'index', %s, 'observed',
-                        '{"satellite": "Sentinel-2"}'::jsonb,
-                        %s, %s, %s,
-                        %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
-                    )""",
-                    (
-                        entity_key,
-                        source["id"],
-                        obs_time,
-                        s["ndviMean"],
-                        source_time,
-                        json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
-                    ),
-                )
-
-            # Drought stressed area measurement
-            if s.get("droughtStressedAreaHa") is not None:
-                await conn.execute(
-                    """SELECT write_measurement(
-                        %s, 'drought_stressed_area', 'ha', %s, 'model',
-                        '{"satellite": "Sentinel-2", "threshold_ndvi": 0.25}'::jsonb,
-                        %s, %s, %s,
-                        %s::jsonb, 'valid', NULL, NULL, 'instantaneous'
-                    )""",
-                    (
-                        entity_key,
-                        source["id"],
-                        obs_time,
-                        s["droughtStressedAreaHa"],
-                        source_time,
-                        json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
-                    ),
-                )
-
-            # Coordinates via write_measurement
-            for metric, val in (("latitude", s["lat"]), ("longitude", s["lng"])):
-                await conn.execute(
-                    """SELECT write_measurement(
-                        %s, %s, 'degrees', %s, 'reported',
-                        '{"crs": "EPSG:4326"}'::jsonb,
-                        %s, %s, %s,
-                        %s::jsonb, 'valid', NULL, NULL, 'reference'
-                    )""",
-                    (
-                        entity_key,
-                        metric,
-                        source["id"],
-                        source_time,
-                        val,
-                        source_time,
-                        json.dumps({"payload_sha256": digest, "scene_id": s["sceneId"]}),
-                    ),
-                )
-
         await conn.execute(
-            "UPDATE collection_attempts SET status='success' WHERE id=%s",
-            (attempt_id,),
+            "UPDATE collection_attempts SET status='success' WHERE id=%s", (attempt_id,)
         )
     await conn.commit()
