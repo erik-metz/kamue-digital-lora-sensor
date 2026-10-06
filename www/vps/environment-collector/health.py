@@ -29,7 +29,7 @@ def read_status(path):
 def record_status(path, previous, *, error=None, details=None):
     now = datetime.now(UTC).isoformat()
     status = {**previous, "last_attempt": now}
-    for source in ("soil", "pollen", "gbif", "discharge"):
+    for source in ("soil", "pollen", "gbif", "discharge", "entsoe"):
         if details and details.get(source, {}).get("status") == "failed":
             details = {**details, source: {**previous.get(source, {}), **details[source]}}
     if error is None:
@@ -58,7 +58,7 @@ def check_health(path, poll_seconds, source_max_age=None):
     try:
         success = datetime.fromisoformat(data["last_success"])
         age = (datetime.now(UTC) - success).total_seconds()
-        for name, interval in (("soil", 3600), ("pollen", 10800), ("gbif", 86400), ("discharge", 86400)):
+        for name, interval in (("soil", 3600), ("pollen", 10800), ("gbif", 86400), ("discharge", 86400), ("entsoe", 3600)):
             source = data.get(name, {})
             if source.get("status") in ("failed", "success", "not_due"):
                 if not source.get("last_success"):

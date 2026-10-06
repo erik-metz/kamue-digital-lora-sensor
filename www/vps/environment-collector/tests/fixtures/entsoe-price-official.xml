@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Publication_MarketDocument xmlns="urn:iec62325.351:tc57wg16:451-3:publicationdocument:7:3">
+	<mRID>Example_Energy_Prices</mRID>
+	<revisionNumber>1</revisionNumber>
+	<type>A44</type>
+	<!-- A44 = Price document -->
+	<sender_MarketParticipant.mRID codingScheme="A01">10XCZ-CESP-GRIDE</sender_MarketParticipant.mRID>
+	<sender_MarketParticipant.marketRole.type>A32</sender_MarketParticipant.marketRole.type>
+	<receiver_MarketParticipant.mRID codingScheme="A01">10X1001A1001A450</receiver_MarketParticipant.mRID>
+	<receiver_MarketParticipant.marketRole.type>A33</receiver_MarketParticipant.marketRole.type>
+	<createdDateTime>2023-11-23T12:09:11Z</createdDateTime>
+	<period.timeInterval>
+		<start>2023-11-22T23:00Z</start>
+		<end>2023-11-23T23:00Z</end>
+	</period.timeInterval>
+      <!--    <docStatus><value>A13</value></docStatus>	A13: Withdrawn - optional -->
+	<TimeSeries>
+		<mRID>1</mRID>
+		<auction.type>A01</auction.type>
+		<!-- Optional; A01 = Implicit; Note: in case of missing Auction Type, the Auction Type is filled as A01 = Implicit. An information about resolving the missing element(s) is issued in DFPM during processing. -->
+		<businessType>A62</businessType>
+		<!-- Mandatory; A62 = Spot price -->
+		<in_Domain.mRID codingScheme="A01">10YES-REE------0</in_Domain.mRID>
+		<!-- EIC of BZN area; in_Domain and out_Domain must be the same -->
+		<out_Domain.mRID codingScheme="A01">10YES-REE------0</out_Domain.mRID>
+		<!-- EIC of BZN area; in_Domain and out_Domain must be the same -->
+		<contract_MarketAgreement.type>A07</contract_MarketAgreement.type>
+		<!-- Optinal; A01 = Daily, A07 = Intraday; Note: in case of missing Contract Type, the Contract Type is filled as A01 = Daily. An information about resolving the missing element(s) is issued in DFPM during processing. -->
+		<currency_Unit.name>EUR</currency_Unit.name>
+		<!-- Mandatory; Currency code -->
+		<price_Measure_Unit.name>MWH</price_Measure_Unit.name>
+		<!-- Mandatory; MWH -->
+		<classificationSequence_AttributeInstanceComponent.position>1</classificationSequence_AttributeInstanceComponent.position>
+		<!-- Optional;-->
+		<curveType>A01</curveType>
+		<!-- To cancel the publication resubmit higher verion with curveType A03 and remove <price.amount>34.39</price.amount> from Point-->>
+		<!-- A01 = Sequential Fixed Block; A03 = Variable Sized Block -->
+			<Period>
+				<timeInterval>
+					<start>2023-11-22T23:00Z</start>
+					<end>2023-11-23T23:00Z</end>
+				</timeInterval>
+				<resolution>PT60M</resolution>
+				<!-- PT15M, PT30M, PT60M -->
+					<Point>
+						<position>1</position>
+						<price.amount>34.39</price.amount>
+					</Point>
+			</Period>
+	</TimeSeries>
+</Publication_MarketDocument>

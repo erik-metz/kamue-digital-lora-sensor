@@ -1,11 +1,13 @@
 """Collect environmental river gauge and weather data and persist atomically."""
 
+import asyncio
 import logging
 from dataclasses import asdict
 from datetime import UTC, datetime
 from time import monotonic
 
 import discharge
+import entsoe
 import gbif
 import pollen
 import psycopg
@@ -67,6 +69,7 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             "pollen": pollen.normalize(payload["pollen"]) if payload.get("pollen") else [],
             "gbif": gbif.normalize(payload["gbif"]) if payload.get("gbif") else None,
             "discharge": discharge.normalize(payload["discharge"]) if payload.get("discharge") else None,
+            "entsoe": {key: entsoe.normalize(value) for key, value in payload.get("entsoe", {}).items()},
             "gauges": [asdict(g) for g in gauges],
             "weather": [asdict(w) for w in weather_list],
             "radar": [asdict(r) for r in radar_list],
@@ -176,6 +179,35 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             summary["complete"] = False
             summary["discharge"] = {"status": "failed", "error_category": type(exc).__name__}
         summary["discharge"]["poll_seconds"] = settings.discharge_poll_seconds
+    summary["entsoe"] = {"status": "disabled"}
+    if settings.enable_entsoe:
+        async def collect_product(product):
+            try:
+                async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+                    bundle = payload.get("entsoe", {}).get(product) if raw is not None else await entsoe.acquire(client, settings, conn, product)
+                    if bundle is not None:
+                        rows = entsoe.normalize(bundle)
+                        count = await entsoe.persist(conn, bundle, rows)
+                        return {"status": "success", "accepted": count, "last_success": datetime.now(UTC).isoformat()}
+                    last = await (await conn.execute("SELECT MAX(received_at) FROM collection_attempts WHERE source_id=%s AND status='success'", (entsoe.source(product),))).fetchone()
+                    return {"status": "not_due", "accepted": 0, "last_success": last[0].isoformat() if last[0] else None}
+            except Exception as exc:  # noqa: BLE001 -- independent provider failure boundary
+                # Credential-bearing HTTP exceptions never escape the adapter.
+                logging.getLogger(__name__).warning("ENTSO-E %s import failed (%s); other writes retained", product, type(exc).__name__)
+                return {"status": "failed", "accepted": 0, "error_category": type(exc).__name__}
+        outcomes = await asyncio.gather(*(collect_product(p) for p in entsoe.PRODUCTS))
+        products = dict(zip(entsoe.PRODUCTS, outcomes, strict=True))
+        successes = [v["last_success"] for v in outcomes if v.get("last_success")]
+        complete = all(v["status"] != "failed" and v.get("last_success") for v in outcomes)
+        summary["entsoe"] = {"status": "success" if complete else "failed", "products": products,
+            "poll_seconds": settings.entsoe_poll_seconds}
+        if len(successes) == len(outcomes):
+            summary["entsoe"]["last_success"] = min(successes)
+        for product, outcome in products.items():
+            summary["ingestion"]["entsoe_"+product] = outcome["accepted"]
+            summary["accepted"] += outcome["accepted"]
+            if outcome["status"] == "success": summary["source_coverage"].append(entsoe.source(product))
+        if not complete: summary["complete"] = False
     summary["durations_seconds"] = {
         "fetch": fetched - started,
         "normalize": normalized - fetched,

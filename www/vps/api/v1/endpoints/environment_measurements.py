@@ -161,3 +161,32 @@ async def discharge_forecasts(pool=Depends(get_db_pool)):
     return jsonable_encoder({'items': rows[:10000], 'truncated': len(rows)>10000,
         'as_of': datetime.now(UTC), 'last_checked_at': snapshot['received_at'] if snapshot else None,
         'provider_issue_time': None, 'forecast_identity': 'response_snapshot'})
+
+
+@router.get('/energy')
+async def energy_market_intervals(
+    product: str = Query(default='price', pattern='^(price|load|generation)$'),
+    limit: int = Query(default=100, ge=1, le=300),
+    offset: int = Query(default=0, ge=0, le=20000),
+    pool=Depends(get_db_pool),
+):
+    """One product snapshot, with exact source intervals and explicit area scope."""
+    sid = 'environment-entsoe-' + product
+    async with pool.connection() as conn:
+        ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
+        if not ready or not ready['ready']:
+            raise HTTPException(503, 'Canonical measurement storage is not installed')
+        snapshot = await (await conn.execute("SELECT payload_sha256,received_at FROM collection_attempts WHERE source_id=%s AND status='success' ORDER BY received_at DESC,id DESC LIMIT 1",(sid,))).fetchone()
+        rows = []
+        count = 0
+        if snapshot:
+            filters = """FROM measurement_definitions d JOIN entities e ON e.id=d.entity_id
+                JOIN readings r ON r.measurement_id=d.id
+                WHERE NOT e.is_hidden AND d.source_id=%s AND d.dimensions->>'contract'='environment-v1'
+                    AND d.dimensions->>'snapshot_sha256'=%s"""
+            args = (sid,snapshot['payload_sha256'])
+            count = (await (await conn.execute('SELECT COUNT(*) AS count '+filters,args)).fetchone())['count']
+            rows = await (await conn.execute("SELECT d.entity_id,e.metadata,d.metric,d.unit,d.dimensions,r.value,r.quality,r.period_start,r.period_end,r.provenance " + filters + " ORDER BY r.observed_at DESC,d.id LIMIT %s OFFSET %s",(*args,limit+1,offset))).fetchall()
+    return jsonable_encoder({'product':product,'items':rows[:limit],'stored_intervals':count,'has_more':len(rows)>limit,
+        'offset':offset,'snapshot_sha256':snapshot['payload_sha256'] if snapshot else None,
+        'last_checked_at':snapshot['received_at'] if snapshot else None,'as_of':datetime.now(UTC)})

@@ -1,7 +1,7 @@
 """Configuration for the Environment Collector."""
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -30,6 +30,9 @@ class Settings:
     gbif_poll_seconds: int = 86400
     enable_discharge: bool = False
     discharge_poll_seconds: int = 86400
+    enable_entsoe: bool = False
+    entsoe_poll_seconds: int = 3600
+    entsoe_token: str = field(default="", repr=False)
     request_timeout: float = 30.0
 
     @classmethod
@@ -59,10 +62,16 @@ class Settings:
         discharge_poll_seconds = int(os.getenv("DISCHARGE_POLL_SECONDS", "86400"))
         if discharge_poll_seconds < 86400:
             raise ValueError("DISCHARGE_POLL_SECONDS must be at least 86400")
+        entsoe_poll_seconds = int(os.getenv("ENTSOE_POLL_SECONDS", "3600"))
+        if entsoe_poll_seconds < 3600:
+            raise ValueError("ENTSOE_POLL_SECONDS must be at least 3600")
         if poll_seconds <= 0:
             raise ValueError("ENVIRONMENT_POLL_SECONDS must be positive")
         return cls(
             db=db,
+            enable_entsoe=os.getenv("ENABLE_ENTSOE", "false").lower() in ("1", "true", "yes"),
+            entsoe_poll_seconds=entsoe_poll_seconds,
+            entsoe_token=os.getenv("ENTSOE_API_TOKEN", "").strip(),
             enable_discharge=os.getenv("ENABLE_DISCHARGE_FORECAST", "false").lower() in ("1", "true", "yes"),
             discharge_poll_seconds=discharge_poll_seconds,
             enable_gbif=os.getenv("ENABLE_GBIF", "false").lower() in ("1", "true", "yes"),
