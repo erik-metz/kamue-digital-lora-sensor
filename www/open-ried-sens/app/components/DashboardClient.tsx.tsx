@@ -247,33 +247,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
 
       <div id="ried-map">
       <MapComponent
-        nodes={mapNodes}
-        categories={categories}
-        mode={mode}
-        now={now}
-        selectedNodeId={selected?.id}
-        onSelectNode={setSelectedNodeId}
-        onMobilityNodesChange={incoming => setMobility(previous => {
-          const selected = previous.find(n => n.id === selectedNodeId);
-          return selected && !incoming.some(n => n.id === selected.id) ? [...incoming, { ...selected, readings: [] }] : incoming;
-        })}
-        initialCenter={[viewport.lat, viewport.lng]}
-        initialZoom={viewport.z}
-        layers={layers}
-        satelliteMode={satelliteMode}
-        onViewportChange={(center, zoom) =>
-          setViewport({ lat: center[0], lng: center[1], z: zoom })
-        }
-        onLayerToggle={(layerId, enabled) =>
-          setLayers((prev) => ({ ...prev, [layerId]: enabled }))
-        }
-        onOpenLayersDrawer={() => {
-          setIsLayersDrawerOpen(true);
-          document.getElementById("darstellung-control-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }}
-        onActiveClosuresCountChange={setActiveClosuresCount}
-      />
-      </div>
+        legend={<>
       {filtered.length > mapNodes.length && <p className="text-xs text-slate-400">{filtered.length - mapNodes.length} Stationen außerhalb des Ried-Kartenbereichs oder ohne Position sind unter „Messwerte & Zeitverlauf“ auswählbar.</p>}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-400" aria-label="Kartenlegende">
         {satelliteMode === "ndvi" && (
@@ -302,10 +276,39 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
           <span>Symbol & Farbe = Thema · Gruppen zeigen dasselbe Sensorthema</span>
           <span>Zahl am Symbol = Standorte</span>
         </>}
-        <span>Gestrichelt / blass = älterer Messwert oder keine Daten</span>
+        <span>Blasse Stationspunkte = älterer Messwert oder keine Daten</span>
       </div>
 
       <p className="text-xs text-slate-500">Messwerte erscheinen beim Hineinzoomen. Parkplatzwerte zeigen den zuletzt gemeldeten Zustand, keinen Online-Status.</p>
+        </>}
+        nodes={mapNodes}
+        categories={categories}
+        mode={mode}
+        now={now}
+        selectedNodeId={selected?.id}
+        onSelectNode={setSelectedNodeId}
+        onMobilityNodesChange={incoming => setMobility(previous => {
+          const selected = previous.find(n => n.id === selectedNodeId);
+          return selected && !incoming.some(n => n.id === selected.id) ? [...incoming, { ...selected, readings: [] }] : incoming;
+        })}
+        initialCenter={[viewport.lat, viewport.lng]}
+        initialZoom={viewport.z}
+        layers={layers}
+        satelliteMode={satelliteMode}
+        onViewportChange={(center, zoom) =>
+          setViewport({ lat: center[0], lng: center[1], z: zoom })
+        }
+        onLayerToggle={(layerId, enabled) =>
+          setLayers((prev) => ({ ...prev, [layerId]: enabled }))
+        }
+        onOpenLayersDrawer={() => {
+          setIsLayersDrawerOpen(true);
+          document.getElementById("darstellung-control-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }}
+        onActiveClosuresCountChange={setActiveClosuresCount}
+      />
+      </div>
+
     </div>
     {chartNode ? (
       <TelemetryCharts

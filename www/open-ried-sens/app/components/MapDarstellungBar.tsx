@@ -60,11 +60,9 @@ export default function MapDarstellungBar({
   isOpen,
   onToggleOpen,
   filteredCount,
-  totalCount,
   zoom = 12,
 }: MapDarstellungBarProps) {
   const totalActive = countActiveLayers(layers) + sensorCategories.length;
-  const totalFilters = MAP_LAYER_IDS.length + CATEGORY_IDS.length;
 
   const toggleCategoryAll = (category: LayerCategory) => {
     const items = getLayersByCategory(category);
@@ -217,7 +215,7 @@ export default function MapDarstellungBar({
           {actions}
           <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <div className="text-xs text-slate-400 whitespace-nowrap">
-            <span className="text-slate-200 font-medium">{filteredCount}</span> von {totalCount} Stationen
+            <span className="text-slate-200 font-medium">{filteredCount}</span> Stationen im Themenfilter
           </div>
 
           <button
@@ -253,9 +251,6 @@ export default function MapDarstellungBar({
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="size-3.5 text-slate-400" />
               <span className="text-xs font-semibold text-slate-300">Sensoren & Kartenebenen</span>
-              <span className="text-[11px] text-slate-400">
-                ({totalActive} von {totalFilters} aktiv)
-              </span>
             </div>
 
             <div className="flex items-center gap-2">

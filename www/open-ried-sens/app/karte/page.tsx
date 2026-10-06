@@ -47,10 +47,7 @@ export default async function KartePage() {
               Satellitenbilder (RGB &amp; NDVI) als Rasterebene dazu.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-400 shrink-0">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping inline-block" />
-            <span>{nodes.length} Stationen im Ried</span>
-          </div>
+
         </div>
 
         <div className="w-full">

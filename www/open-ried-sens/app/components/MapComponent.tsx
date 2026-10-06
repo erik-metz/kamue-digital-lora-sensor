@@ -24,6 +24,7 @@ import { crossingSites, crossingLabel, mobilityNodes, type Position, type Crossi
 
 export type { SensorNode } from "@/lib/mapData";
 interface MapProps {
+  legend?: import("react").ReactNode;
   nodes: SensorNode[];
   selectedNodeId: string | undefined;
   onSelectNode: (id: string) => void;
@@ -611,10 +612,10 @@ export default function MapComponent(props: MapProps) {
     .map(f => f.properties as { id: string; road_name: string; name: string; status: string; delay_minutes: number; description: string });
 
   const missing = publication.unavailable.filter(id => layers[id as MapLayerId]);
-  return <div className="relative h-full min-h-[500px] w-full">
-    <div ref={container} className="sensor-map h-full min-h-[500px] w-full" aria-label="Karte mit gespeicherten Quelldaten" />
+  return <div className="w-full space-y-3">
+    <div ref={container} className="sensor-map h-[500px] w-full" aria-label="Karte mit gespeicherten Quelldaten" />
     {layers.traffic && trafficCorridors.length > 0 && (
-      <div className="absolute top-3 left-14 z-[400] hidden sm:flex items-center gap-1 pointer-events-auto">
+      <div className="flex flex-wrap items-center gap-2" aria-label="Verkehrsauslastung">
         <div className="commuter-corridor-bar">
           <span className="text-[11px] font-bold text-slate-300 flex items-center gap-1.5 mr-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -649,7 +650,8 @@ export default function MapComponent(props: MapProps) {
         </div>
       </div>
     )}
-    <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
+    <div className="space-y-2 text-xs text-slate-400" aria-label="Kartenlegende und Hinweise">
+      {props.legend}
       {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} clustered={clusterVehicles} /> : null}
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
       <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr · 🛰 Satelliten</p>
@@ -657,8 +659,9 @@ export default function MapComponent(props: MapProps) {
       <p>⛔ Sperrung · 🚧 Baustelle · 🚗 Verkehrsachse</p>
       <p className="mt-1">Symbol anklicken für Details und Abfahrten.</p>
       <p className="mt-1 text-slate-400">Gestrichelter Rand: Prognose · Durchgehend: beobachtet (Fahrzeuge)</p>
-      {(missing.length > 0) && <p>Ohne aktuelle Quelle: {missing.map(id => mapSymbol(id).label).join(", ")}.</p>}
       </details>
+      {(layers.aircraft || layers.ships) && <details><summary className="cursor-pointer font-semibold">Empfang &amp; Datenquellen</summary>
+      <div className="mt-2 space-y-1">
       {layers.aircraft && <AircraftLegend />}
       {layers.aircraft && <p role="status">{aircraftSource?.status === "connected" && aircraftSource.last_contact && Date.parse(aircraftSource.last_contact) + 60000 > props.now
         ? "Empfangener Flugverkehr · adsb.lol · keine vollständige Erfassung."
@@ -669,11 +672,12 @@ export default function MapComponent(props: MapProps) {
       {layers.ships && <p role="status">{shipSource?.status === "connected" && shipSource.last_contact && Date.parse(shipSource.last_contact) + 120000 > props.now
         ? "Schiffsempfang verfügbar · Empfang kann lückenhaft sein."
         : "AIS-Empfang derzeit nicht verfügbar; letzte Positionen verfallen nach 10 Minuten."}</p>}
+      </div></details>}
       {props.mode === "temperature" && !hasFreshTemperature && <p role="status">{props.nodes.length
         ? "Keine aktuellen Temperaturwerte für die Farbfläche verfügbar. Ältere Messwerte bleiben als blasse Stationspunkte sichtbar."
         : "Keine Temperaturstationen im gewählten Themenfilter und Kartenbereich. Wähle Wetter & Klima, Boden & Bewässerung oder Alle."}</p>}
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
-      {(layersFailed || missing.length > 0) && <p role="status">{missing.length || "Einige"} Ebenen ohne aktuelle Quelldaten – siehe Hinweise.</p>}
+      {(layersFailed || missing.length > 0) && <p role="status">Ohne aktuelle Quelldaten: {missing.length ? missing.map(id => mapSymbol(id).label).join(", ") : "einige Kartenebenen"}.</p>}
       {tilesMissing && <p role="status">Hintergrundkarten sind noch nicht verfügbar.</p>}
       {layers.starkregen && isLayerZoomRestricted("starkregen", zoom) && <p role="status">Starkregen: Details beim Hineinzoomen (ab Zoom {LAYER_MIN_ZOOM.starkregen}).</p>}
       {layers.lora && isLayerZoomRestricted("lora", zoom) && <p role="status">LoRaWAN-Heatmap: Details beim Hineinzoomen (ab Zoom {LAYER_MIN_ZOOM.lora}).</p>}
@@ -682,7 +686,6 @@ export default function MapComponent(props: MapProps) {
       <button className="mt-2 mr-3 underline" onClick={() => {
         if (props.nodes.length) map.current?.fitBounds(L.latLngBounds(props.nodes.map(node => L.latLng(node.lat, node.lng))), { padding: [40, 40], maxZoom: 16 });
       }}>Sensoren im Überblick</button>
-      <button className="mt-2 underline" onClick={() => callbacks.current.onOpenLayersDrawer?.()}>Kartenebenen</button>
     </div>
   </div>;
 }
