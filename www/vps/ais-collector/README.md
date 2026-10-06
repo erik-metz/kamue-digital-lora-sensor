@@ -84,11 +84,11 @@ remove an isolated schema, check repeated installation, duplicate/late reports,
 canonical/legacy API reads, expiry and paired coordinate history. Never point the
 test DSN at production. CI runs these tests against PostgreSQL 16/TimescaleDB.
 
-Source protocol: https://aisstream.io/documentation/
+Source protocol: <https://aisstream.io/documentation/>
 
 ## Authorized browser map collector
 
-The project owner confirmed permission for this project's VesselFinder map acquisition
+The project owner confirmed permission for this project's ship map acquisition
 on 2026-10-05, with no additional interval/storage/attribution conditions communicated.
 `map_collector.py` uses the official map in ordinary headed Chromium under Xvfb.
 A fresh viewport is centered on Frankenthal–Gernsheim each cycle. There are no stealth
