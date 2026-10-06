@@ -94,12 +94,6 @@ const MAIN_NAV_ITEMS: NavItem[] = [
     icon: Radio,
   },
   {
-    href: "/termine",
-    label: "Termine",
-    shortLabel: "Termine",
-    icon: CalendarDays,
-  },
-  {
     href: "/regionalatlas",
     label: "Regionalatlas",
     shortLabel: "Atlas",
@@ -156,6 +150,7 @@ export default function SiteHeader({
 
   const isRegionalatlasActive =
     pathname === "/regionalatlas" ||
+    pathname?.startsWith("/termine") ||
     pathname?.startsWith("/bauen-wohnen") ||
     pathname?.startsWith("/demografie") ||
     pathname?.startsWith("/haushalt") ||
@@ -454,20 +449,6 @@ export default function SiteHeader({
                   )}
                 />
                 <span>Karte</span>
-              </Link>
-
-              <Link
-                href="/termine"
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                  pathname?.startsWith("/termine")
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 font-semibold"
-                    : "text-slate-300 hover:bg-slate-800/70 hover:text-emerald-300"
-                )}
-              >
-                <CalendarDays className="w-4 h-4 shrink-0" />
-                <span>Termine</span>
               </Link>
 
               {/* Regionalatlas with expandable sub-links */}
