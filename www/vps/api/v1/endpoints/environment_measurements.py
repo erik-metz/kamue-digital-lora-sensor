@@ -106,3 +106,30 @@ async def pollen_forecasts(pool=Depends(get_db_pool)):
     return jsonable_encoder({'items': rows[:10000], 'truncated': len(rows)>10000,
         'as_of': datetime.now(UTC), 'last_checked_at': snapshot['received_at'] if snapshot else None,
         'provider_issue_time': None, 'forecast_identity': 'response_snapshot'})
+
+
+@router.get('/biodiversity')
+async def biodiversity_occurrences(
+    limit: int = Query(default=100, ge=1, le=300),
+    offset: int = Query(default=0, ge=0, le=3000),
+    pool=Depends(get_db_pool),
+):
+    """Paged records from one bounded GBIF snapshot; counts describe stored data."""
+    async with pool.connection() as conn:
+        ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
+        if not ready or not ready['ready']:
+            raise HTTPException(503, 'Canonical measurement storage is not installed')
+        snapshot = await (await conn.execute("SELECT metadata FROM entities WHERE id='environment:gbif:ried' AND NOT is_hidden")).fetchone()
+        if not snapshot:
+            return {'items': [], 'snapshot': None, 'stored_records': 0, 'stored_species': 0, 'has_more': False}
+        sha = snapshot['metadata']['snapshot_sha256']
+        filters = """FROM measurement_definitions d JOIN entities e ON e.id=d.entity_id
+            JOIN readings r ON r.measurement_id=d.id
+            WHERE NOT e.is_hidden AND d.source_id='environment-gbif'
+                AND d.metric='occurrence_presence' AND d.dimensions->>'contract'='environment-v1'
+                AND d.dimensions->>'snapshot_sha256'=%s"""
+        counts = await (await conn.execute("SELECT COUNT(*) AS records,COUNT(DISTINCT r.provenance->>'speciesKey') AS species " + filters, (sha,))).fetchone()
+        rows = await (await conn.execute("SELECT d.entity_id,r.observed_at AS event_day,r.value,r.provenance " + filters + " ORDER BY r.observed_at DESC,d.entity_id LIMIT %s OFFSET %s", (sha,limit+1,offset))).fetchall()
+    return jsonable_encoder({'items': rows[:limit], 'snapshot': snapshot['metadata'],
+        'stored_records': counts['records'], 'stored_species': counts['species'],
+        'has_more': len(rows)>limit, 'offset': offset, 'as_of': datetime.now(UTC)})

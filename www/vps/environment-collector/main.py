@@ -5,6 +5,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from time import monotonic
 
+import gbif
 import pollen
 import psycopg
 import soil
@@ -63,6 +64,7 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             **summary,
             "soil": soil_points,
             "pollen": pollen.normalize(payload["pollen"]) if payload.get("pollen") else [],
+            "gbif": gbif.normalize(payload["gbif"]) if payload.get("gbif") else None,
             "gauges": [asdict(g) for g in gauges],
             "weather": [asdict(w) for w in weather_list],
             "radar": [asdict(r) for r in radar_list],
@@ -127,6 +129,29 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             summary["complete"] = False
             summary["pollen"] = {"status": "failed", "error_category": type(exc).__name__}
         summary["pollen"]["poll_seconds"] = settings.pollen_poll_seconds
+    summary["gbif"] = {"status": "disabled"}
+    if settings.enable_gbif:
+        try:
+            async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+                bundle = payload.get("gbif") if raw is not None else await gbif.acquire(client, settings, conn)
+                if bundle is not None:
+                    normalized_gbif = gbif.normalize(bundle)
+                    count = await gbif.persist(conn, bundle, normalized_gbif)
+                    summary["ingestion"]["gbif"] = count
+                    summary["accepted"] += count
+                    summary["source_coverage"].append(gbif.SOURCE)
+                    summary["gbif"] = {"status": "success", "accepted": count,
+                        "last_success": datetime.now(UTC).isoformat(),
+                        "matched": normalized_gbif["matched"], "scanned": normalized_gbif["scanned"],
+                        "source_truncated": normalized_gbif["source_truncated"], "skipped": normalized_gbif["skipped"]}
+                else:
+                    last = await (await conn.execute("SELECT MAX(received_at) FROM collection_attempts WHERE source_id=%s AND status='success'", (gbif.SOURCE,))).fetchone()
+                    summary["gbif"] = {"status": "not_due", "last_success": last[0].isoformat() if last[0] else None}
+        except Exception as exc:
+            logging.getLogger(__name__).exception("GBIF import failed; other environment writes retained")
+            summary["complete"] = False
+            summary["gbif"] = {"status": "failed", "error_category": type(exc).__name__}
+        summary["gbif"]["poll_seconds"] = settings.gbif_poll_seconds
     summary["durations_seconds"] = {
         "fetch": fetched - started,
         "normalize": normalized - fetched,
