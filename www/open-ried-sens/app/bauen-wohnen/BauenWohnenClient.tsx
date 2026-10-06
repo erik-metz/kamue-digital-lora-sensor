@@ -13,37 +13,30 @@ import {
   type RealEstateSummary,
 } from "@/lib/realestateData";
 import {
-  AlertCircle,
-  Building,
-  Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
-  ExternalLink,
-  Factory,
-  FileSpreadsheet,
-  Flame,
-  Fuel,
-  Hammer,
-  Home,
-  Layers,
-  MapPin,
-  Maximize2,
-  Percent,
-  Search,
-  Sparkles,
-  Sun,
-  TreePine,
-  TrendingUp,
-  Zap,
-} from "lucide-react";
-import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import {
   parseSubpageParams,
   serializeSubpageParams,
   updateUrlDebounced,
 } from "@/lib/urlState";
+import {
+  AlertCircle,
+  Building,
+  Building2,
+  CheckCircle2,
+  ChevronRight,
+  ExternalLink,
+  FileSpreadsheet,
+  Flame,
+  Hammer,
+  Home,
+  Layers,
+  MapPin,
+  Percent,
+  Search,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 interface Props {
   summaries: RealEstateSummary[];
@@ -63,7 +56,9 @@ export default function BauenWohnenClient({
   developmentPlans,
 }: Props) {
   const [selectedMuni, setSelectedMuni] = useState<string>("all");
-  const [activeTab, setActiveTab] = useState<"stock" | "energy" | "prices" | "construction">("stock");
+  const [activeTab, setActiveTab] = useState<
+    "stock" | "energy" | "prices" | "construction"
+  >("stock");
   const [borisSearch, setBorisSearch] = useState<string>("");
   const [borisTypeFilter, setBorisTypeFilter] = useState<string>("all");
   const [mounted, setMounted] = useState(false);
@@ -122,27 +117,49 @@ export default function BauenWohnenClient({
   }, [mounted, activeTab, selectedMuni, borisSearch, borisTypeFilter]);
 
   const municipalities = useMemo(() => {
-    return summaries.map(s => s.municipality);
+    return summaries.map((s) => s.municipality);
   }, [summaries]);
 
   const activeSummary = useMemo(() => {
     if (selectedMuni === "all") {
-      const totalDwellings = summaries.reduce((acc, s) => acc + s.total_dwellings, 0);
+      const totalDwellings = summaries.reduce(
+        (acc, s) => acc + s.total_dwellings,
+        0
+      );
       const avgVacancy = Number(
-        (summaries.reduce((acc, s) => acc + s.vacancy_rate_pct, 0) / (summaries.length || 1)).toFixed(1)
+        (
+          summaries.reduce((acc, s) => acc + s.vacancy_rate_pct, 0) /
+          (summaries.length || 1)
+        ).toFixed(1)
       );
       const avgLiving = Number(
-        (summaries.reduce((acc, s) => acc + s.avg_living_space_sqm, 0) / (summaries.length || 1)).toFixed(1)
+        (
+          summaries.reduce((acc, s) => acc + s.avg_living_space_sqm, 0) /
+          (summaries.length || 1)
+        ).toFixed(1)
       );
       const avgLandVal = Math.round(
-        summaries.reduce((acc, s) => acc + s.avg_land_value_residential, 0) / (summaries.length || 1)
+        summaries.reduce((acc, s) => acc + s.avg_land_value_residential, 0) /
+          (summaries.length || 1)
       );
       const avgRent = Number(
-        (summaries.reduce((acc, s) => acc + s.avg_rent_cold_sqm, 0) / (summaries.length || 1)).toFixed(2)
+        (
+          summaries.reduce((acc, s) => acc + s.avg_rent_cold_sqm, 0) /
+          (summaries.length || 1)
+        ).toFixed(2)
       );
-      const totalPermits = summaries.reduce((acc, s) => acc + s.recent_permits_dwellings, 0);
-      const totalCompletions = summaries.reduce((acc, s) => acc + s.recent_completions_dwellings, 0);
-      const totalPlans = summaries.reduce((acc, s) => acc + s.active_bplaene_count, 0);
+      const totalPermits = summaries.reduce(
+        (acc, s) => acc + s.recent_permits_dwellings,
+        0
+      );
+      const totalCompletions = summaries.reduce(
+        (acc, s) => acc + s.recent_completions_dwellings,
+        0
+      );
+      const totalPlans = summaries.reduce(
+        (acc, s) => acc + s.active_bplaene_count,
+        0
+      );
 
       return {
         municipality: "Hessisches Ried (Gesamtraum)",
@@ -157,12 +174,18 @@ export default function BauenWohnenClient({
         active_bplaene_count: totalPlans,
       };
     }
-    return summaries.find(s => s.municipality.toLowerCase() === selectedMuni.toLowerCase()) ?? summaries[0];
+    return (
+      summaries.find(
+        (s) => s.municipality.toLowerCase() === selectedMuni.toLowerCase()
+      ) ?? summaries[0]
+    );
   }, [selectedMuni, summaries]);
 
   const activeStock = useMemo(() => {
     if (selectedMuni !== "all") {
-      const found = housingStock.find(h => h.municipality.toLowerCase() === selectedMuni.toLowerCase());
+      const found = housingStock.find(
+        (h) => h.municipality.toLowerCase() === selectedMuni.toLowerCase()
+      );
       if (found) return found;
     }
     // Aggregate across all stock
@@ -196,7 +219,11 @@ export default function BauenWohnenClient({
     const heatingKeys = Object.keys(HEATING_LABELS);
     const aggHeating: Record<string, number> = {};
     for (const h of heatingKeys) {
-      const sumWeighted = housingStock.reduce((acc, curr) => acc + (curr.heating_energy[h] || 0) * curr.total_dwellings, 0);
+      const sumWeighted = housingStock.reduce(
+        (acc, curr) =>
+          acc + (curr.heating_energy[h] || 0) * curr.total_dwellings,
+        0
+      );
       aggHeating[h] = Number((sumWeighted / (totalD || 1)).toFixed(1));
     }
 
@@ -219,33 +246,45 @@ export default function BauenWohnenClient({
   }, [selectedMuni, housingStock]);
 
   const filteredBoris = useMemo(() => {
-    return borisZones.filter(b => {
-      const matchesMuni = selectedMuni === "all" || b.municipality.toLowerCase() === selectedMuni.toLowerCase();
+    return borisZones.filter((b) => {
+      const matchesMuni =
+        selectedMuni === "all" ||
+        b.municipality.toLowerCase() === selectedMuni.toLowerCase();
       const matchesSearch =
         !borisSearch ||
         b.district?.toLowerCase().includes(borisSearch.toLowerCase()) ||
         b.zone_type.toLowerCase().includes(borisSearch.toLowerCase()) ||
         b.zone_code.includes(borisSearch);
-      const matchesType = borisTypeFilter === "all" || b.zone_type === borisTypeFilter;
+      const matchesType =
+        borisTypeFilter === "all" || b.zone_type === borisTypeFilter;
       return matchesMuni && matchesSearch && matchesType;
     });
   }, [borisZones, selectedMuni, borisSearch, borisTypeFilter]);
 
   const filteredPermits = useMemo(() => {
-    return permits.filter(p => {
-      return selectedMuni === "all" || p.municipality.toLowerCase() === selectedMuni.toLowerCase();
+    return permits.filter((p) => {
+      return (
+        selectedMuni === "all" ||
+        p.municipality.toLowerCase() === selectedMuni.toLowerCase()
+      );
     });
   }, [permits, selectedMuni]);
 
   const filteredPlans = useMemo(() => {
-    return developmentPlans.filter(d => {
-      return selectedMuni === "all" || d.municipality.toLowerCase() === selectedMuni.toLowerCase();
+    return developmentPlans.filter((d) => {
+      return (
+        selectedMuni === "all" ||
+        d.municipality.toLowerCase() === selectedMuni.toLowerCase()
+      );
     });
   }, [developmentPlans, selectedMuni]);
 
   const filteredBenchmarks = useMemo(() => {
-    return benchmarks.filter(m => {
-      return selectedMuni === "all" || m.municipality.toLowerCase() === selectedMuni.toLowerCase();
+    return benchmarks.filter((m) => {
+      return (
+        selectedMuni === "all" ||
+        m.municipality.toLowerCase() === selectedMuni.toLowerCase()
+      );
     });
   }, [benchmarks, selectedMuni]);
 
@@ -270,7 +309,7 @@ export default function BauenWohnenClient({
           >
             Gesamtes Ried (Alle)
           </button>
-          {municipalities.map(m => (
+          {municipalities.map((m) => (
             <button
               key={m}
               type="button"
@@ -292,7 +331,9 @@ export default function BauenWohnenClient({
         {/* Card 1: Wohnungsbestand */}
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Wohnungsbestand</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Wohnungsbestand
+            </span>
             <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
               <Home className="w-4 h-4" />
             </div>
@@ -302,19 +343,25 @@ export default function BauenWohnenClient({
               {activeSummary.total_dwellings.toLocaleString("de-DE")}
             </div>
             <p className="text-xs text-slate-400">
-              Wohnungen in {activeStock.residential_buildings.toLocaleString("de-DE")} Wohngebäuden
+              Wohnungen in{" "}
+              {activeStock.residential_buildings.toLocaleString("de-DE")}{" "}
+              Wohngebäuden
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
             <span>Ø Wohnfläche</span>
-            <span className="font-mono text-slate-300 font-medium">{activeSummary.avg_living_space_sqm} m² / Wg.</span>
+            <span className="font-mono text-slate-300 font-medium">
+              {activeSummary.avg_living_space_sqm} m² / Wg.
+            </span>
           </div>
         </div>
 
         {/* Card 2: Leerstandsquote */}
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Leerstandsquote</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Leerstandsquote
+            </span>
             <div className="p-2 rounded-xl bg-teal-500/10 text-teal-400">
               <Percent className="w-4 h-4" />
             </div>
@@ -325,11 +372,14 @@ export default function BauenWohnenClient({
                 {activeSummary.vacancy_rate_pct} %
               </span>
               <span className="text-xs text-slate-400">
-                ({activeStock.vacant_dwellings.toLocaleString("de-DE")} Einheiten)
+                ({activeStock.vacant_dwellings.toLocaleString("de-DE")}{" "}
+                Einheiten)
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Hessen-Vergleich: <strong className="text-slate-300">3,4 %</strong> (Angespannter Wohnungsmarkt)
+              Hessen-Vergleich:{" "}
+              <strong className="text-slate-300">3,4 %</strong> (Angespannter
+              Wohnungsmarkt)
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
@@ -343,7 +393,9 @@ export default function BauenWohnenClient({
         {/* Card 3: Bodenrichtwert Wohnen */}
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Ø Bodenrichtwert</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Ø Bodenrichtwert
+            </span>
             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
               <Layers className="w-4 h-4" />
             </div>
@@ -358,14 +410,18 @@ export default function BauenWohnenClient({
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
             <span>Kaltmiete Ø</span>
-            <span className="font-mono text-slate-300 font-medium">{formatEuro(activeSummary.avg_rent_cold_sqm, true)}</span>
+            <span className="font-mono text-slate-300 font-medium">
+              {formatEuro(activeSummary.avg_rent_cold_sqm, true)}
+            </span>
           </div>
         </div>
 
-        {/* Card 4: Bautätigkeit & B-Pläne */}
+        {/* Card 4: Bautätigkeit & Bau-Pläne */}
         <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Bautätigkeit</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+              Bautätigkeit
+            </span>
             <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400">
               <Hammer className="w-4 h-4" />
             </div>
@@ -375,12 +431,15 @@ export default function BauenWohnenClient({
               +{activeSummary.recent_permits_dwellings}
             </div>
             <p className="text-xs text-slate-400">
-              Neu genehmigte Wohnungen (zuletzt) · {activeSummary.recent_completions_dwellings} fertiggestellt
+              Neu genehmigte Wohnungen (zuletzt) ·{" "}
+              {activeSummary.recent_completions_dwellings} fertiggestellt
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-            <span>Aktive B-Pläne</span>
-            <span className="text-blue-400 font-medium font-mono">{activeSummary.active_bplaene_count} Neubaugebiete</span>
+            <span>Aktive Bau-Pläne</span>
+            <span className="text-blue-400 font-medium font-mono">
+              {activeSummary.active_bplaene_count} Neubaugebiete
+            </span>
           </div>
         </div>
       </div>
@@ -453,11 +512,14 @@ export default function BauenWohnenClient({
                     Gebäudealter-Struktur ({activeStock.municipality})
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
-                    Baujahresklassen aller Wohngebäude nach Zensus 2022 (Statistik Hessen)
+                    Baujahresklassen aller Wohngebäude nach Zensus 2022
+                    (Statistik Hessen)
                   </p>
                 </div>
                 <span className="px-2.5 py-1 rounded-full text-xs font-mono bg-slate-950 border border-slate-800 text-slate-400">
-                  Basis: {activeStock.residential_buildings.toLocaleString("de-DE")} Gebäude
+                  Basis:{" "}
+                  {activeStock.residential_buildings.toLocaleString("de-DE")}{" "}
+                  Gebäude
                 </span>
               </div>
 
@@ -465,23 +527,39 @@ export default function BauenWohnenClient({
               <div className="space-y-4">
                 {Object.entries(AGE_BRACKET_LABELS).map(([key, meta]) => {
                   const count = activeStock.age_distribution[key] || 0;
-                  const pct = Number(((count / (activeStock.residential_buildings || 1)) * 100).toFixed(1));
+                  const pct = Number(
+                    (
+                      (count / (activeStock.residential_buildings || 1)) *
+                      100
+                    ).toFixed(1)
+                  );
                   return (
                     <div key={key} className="space-y-1.5">
                       <div className="flex justify-between text-xs">
                         <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-200">{meta.label}</span>
-                          <span className="text-slate-500 text-[11px] hidden sm:inline">({meta.period})</span>
+                          <span className="font-bold text-slate-200">
+                            {meta.label}
+                          </span>
+                          <span className="text-slate-500 text-[11px] hidden sm:inline">
+                            ({meta.period})
+                          </span>
                         </div>
                         <div className="flex items-center gap-3 font-mono text-xs">
-                          <span className="text-slate-400">{count.toLocaleString("de-DE")} Gebäude</span>
-                          <span className="font-bold text-emerald-400 w-12 text-right">{pct} %</span>
+                          <span className="text-slate-400">
+                            {count.toLocaleString("de-DE")} Gebäude
+                          </span>
+                          <span className="font-bold text-emerald-400 w-12 text-right">
+                            {pct} %
+                          </span>
                         </div>
                       </div>
                       <div className="h-3 rounded-full bg-slate-950 overflow-hidden border border-slate-800/80">
                         <div
                           className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: meta.color }}
+                          style={{
+                            width: `${Math.max(pct, 2)}%`,
+                            backgroundColor: meta.color,
+                          }}
                         />
                       </div>
                     </div>
@@ -492,12 +570,15 @@ export default function BauenWohnenClient({
               {/* Age Insights Box */}
               <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 text-xs text-slate-300 leading-relaxed space-y-1">
                 <span className="font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Sanierungs- & Modernisierungsfokus im Ried:
+                  <Sparkles className="w-3.5 h-3.5" /> Sanierungs- &
+                  Modernisierungsfokus im Ried:
                 </span>
                 <p>
-                  Rund <strong>42–44 %</strong> der Wohngebäude im Ried stammen aus den Baujahren 1949–1978.
-                  Dieser Nachkriegsbestand bildet den zentralen Hebel für energetische Gebäudesanierung, Dämmung und den
-                  Umstieg von fossilen Heizkesseln auf moderne Wärmepumpen.
+                  Rund <strong>42–44 %</strong> der Wohngebäude im Ried stammen
+                  aus den Baujahren 1949–1978. Dieser Nachkriegsbestand bildet
+                  den zentralen Hebel für energetische Gebäudesanierung, Dämmung
+                  und den Umstieg von fossilen Heizkesseln auf moderne
+                  Wärmepumpen.
                 </p>
               </div>
             </div>
@@ -514,9 +595,13 @@ export default function BauenWohnenClient({
                 <div className="space-y-4">
                   <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-300 font-medium">Freistehende Einfamilienhäuser</span>
+                      <span className="text-slate-300 font-medium">
+                        Freistehende Einfamilienhäuser
+                      </span>
                       <span className="font-mono text-emerald-400 font-bold">
-                        {activeStock.building_types.single_family?.toLocaleString("de-DE")}
+                        {activeStock.building_types.single_family?.toLocaleString(
+                          "de-DE"
+                        )}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500">
@@ -526,9 +611,13 @@ export default function BauenWohnenClient({
 
                   <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-300 font-medium">Doppel- & Reihenhäuser</span>
+                      <span className="text-slate-300 font-medium">
+                        Doppel- & Reihenhäuser
+                      </span>
                       <span className="font-mono text-teal-400 font-bold">
-                        {activeStock.building_types.semi_detached_duplex?.toLocaleString("de-DE")}
+                        {activeStock.building_types.semi_detached_duplex?.toLocaleString(
+                          "de-DE"
+                        )}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500">
@@ -538,9 +627,13 @@ export default function BauenWohnenClient({
 
                   <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
                     <div className="flex justify-between text-xs">
-                      <span className="text-slate-300 font-medium">Mehrfamilienhäuser (3+ Wg.)</span>
+                      <span className="text-slate-300 font-medium">
+                        Mehrfamilienhäuser (3+ Wg.)
+                      </span>
                       <span className="font-mono text-blue-400 font-bold">
-                        {activeStock.building_types.multi_family?.toLocaleString("de-DE")}
+                        {activeStock.building_types.multi_family?.toLocaleString(
+                          "de-DE"
+                        )}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500">
@@ -557,13 +650,16 @@ export default function BauenWohnenClient({
                   Leerstand & Datenschutz
                 </h4>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  In ganz Deutschland und Hessen unterliegen Leerstandsdaten strengen Datenschutzvorgaben (DSGVO).
-                  Es werden daher <strong>keine Einzeladressen</strong> veröffentlicht, sondern aggregierte Quoten auf
-                  Gemeinde- und 100m-Rasterebene.
+                  In ganz Deutschland und Hessen unterliegen Leerstandsdaten
+                  strengen Datenschutzvorgaben (DSGVO). Es werden daher{" "}
+                  <strong>keine Einzeladressen</strong> veröffentlicht, sondern
+                  aggregierte Quoten auf Gemeinde- und 100m-Rasterebene.
                 </p>
                 <div className="pt-2 text-xs text-slate-300 font-mono flex items-center justify-between border-t border-slate-800">
                   <span>Leerstandsquote {activeStock.municipality}:</span>
-                  <span className="text-teal-400 font-bold">{activeStock.vacancy_rate_pct} %</span>
+                  <span className="text-teal-400 font-bold">
+                    {activeStock.vacancy_rate_pct} %
+                  </span>
                 </div>
               </div>
             </div>
@@ -582,7 +678,8 @@ export default function BauenWohnenClient({
                   Energieträger & Heizungsstruktur ({activeStock.municipality})
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Verteilung der vorwiegend verwendeten Heizenergie nach Zensus 2022
+                  Verteilung der vorwiegend verwendeten Heizenergie nach Zensus
+                  2022
                 </p>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-mono bg-orange-500/10 text-orange-300 border border-orange-500/20">
@@ -600,24 +697,37 @@ export default function BauenWohnenClient({
                     className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3 hover:border-slate-700 transition-colors"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-200">{meta.label}</span>
-                      <span className="font-mono text-sm font-extrabold text-slate-100">{val} %</span>
+                      <span className="text-xs font-bold text-slate-200">
+                        {meta.label}
+                      </span>
+                      <span className="font-mono text-sm font-extrabold text-slate-100">
+                        {val} %
+                      </span>
                     </div>
 
                     <div className="h-2 rounded-full bg-slate-900 overflow-hidden border border-slate-800">
                       <div
                         className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(val, 3)}%`, backgroundColor: meta.color }}
+                        style={{
+                          width: `${Math.max(val, 3)}%`,
+                          backgroundColor: meta.color,
+                        }}
                       />
                     </div>
 
                     <p className="text-[11px] text-slate-500">
-                      {key === "gas" && "Überwiegend Niedertemperatur- und Brennwertkessel"}
-                      {key === "oil" && "Häufig in Altbauten und ländlicheren Ortslagen"}
-                      {key === "heat_pump" && "Starker Zuwachs in Neubaugebieten (Luft/Wasser & Erdwärme)"}
-                      {key === "district_heating" && "Nahwärmenetze & kommunale Liegenschaften"}
-                      {key === "wood_pellets" && "Biomasseheizungen und Pelletanlagen"}
-                      {key === "solar_thermal" && "Solarthermische Heizungsunterstützung"}
+                      {key === "gas" &&
+                        "Überwiegend Niedertemperatur- und Brennwertkessel"}
+                      {key === "oil" &&
+                        "Häufig in Altbauten und ländlicheren Ortslagen"}
+                      {key === "heat_pump" &&
+                        "Starker Zuwachs in Neubaugebieten (Luft/Wasser & Erdwärme)"}
+                      {key === "district_heating" &&
+                        "Nahwärmenetze & kommunale Liegenschaften"}
+                      {key === "wood_pellets" &&
+                        "Biomasseheizungen und Pelletanlagen"}
+                      {key === "solar_thermal" &&
+                        "Solarthermische Heizungsunterstützung"}
                     </p>
                   </div>
                 );
@@ -630,9 +740,14 @@ export default function BauenWohnenClient({
                 Vergleich: Wärmepumpen-Anteil im Ried
               </h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                {housingStock.map(h => (
-                  <div key={h.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-1">
-                    <div className="text-xs text-slate-400 truncate">{h.municipality}</div>
+                {housingStock.map((h) => (
+                  <div
+                    key={h.id}
+                    className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-center space-y-1"
+                  >
+                    <div className="text-xs text-slate-400 truncate">
+                      {h.municipality}
+                    </div>
                     <div className="text-base font-extrabold text-emerald-400 font-mono">
                       {h.heating_energy.heat_pump}%
                     </div>
@@ -657,7 +772,8 @@ export default function BauenWohnenClient({
                   Immobilien- & Mietpreisniveau im Ried (2025/2026)
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Transaktionsdaten des Gutachterausschusses Kreis Bergstraße & Zensus-Mietwertübersichten
+                  Transaktionsdaten des Gutachterausschusses Kreis Bergstraße &
+                  Zensus-Mietwertübersichten
                 </p>
               </div>
             </div>
@@ -666,13 +782,16 @@ export default function BauenWohnenClient({
               <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs text-slate-400">
                   <span>Eigentumswohnungen</span>
-                  <span className="text-emerald-400 font-mono">Ø Kaufpreis</span>
+                  <span className="text-emerald-400 font-mono">
+                    Ø Kaufpreis
+                  </span>
                 </div>
                 <div className="text-2xl font-extrabold text-slate-100 font-mono">
                   {formatEuro(activeSummary.avg_apartment_buy_sqm ?? NaN, true)}
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Bestand: ca. 2.450 – 3.350 €/m² · Neubau Erstbezug bis 4.450 €/m²
+                  Bestand: ca. 2.450 – 3.350 €/m² · Neubau Erstbezug bis 4.450
+                  €/m²
                 </p>
               </div>
 
@@ -683,11 +802,14 @@ export default function BauenWohnenClient({
                 </div>
                 <div className="text-2xl font-extrabold text-slate-100 font-mono">
                   {formatEuro(
-                    filteredBenchmarks.find(b => b.metric_type === "house_buy_avg")?.avg_val ?? NaN
+                    filteredBenchmarks.find(
+                      (b) => b.metric_type === "house_buy_avg"
+                    )?.avg_val ?? NaN
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Freistehend & Doppelhäuser im Ried (Spanne: 310.000 – 740.000 €)
+                  Freistehend & Doppelhäuser im Ried (Spanne: 310.000 – 740.000
+                  €)
                 </p>
               </div>
 
@@ -700,7 +822,8 @@ export default function BauenWohnenClient({
                   {formatEuro(activeSummary.avg_rent_cold_sqm, true)}
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Bestandsmieten Ø 8,50 – 9,80 €/m² · Wiedervermietung 11,50 – 13,50 €/m²
+                  Bestandsmieten Ø 8,50 – 9,80 €/m² · Wiedervermietung 11,50 –
+                  13,50 €/m²
                 </p>
               </div>
             </div>
@@ -715,7 +838,8 @@ export default function BauenWohnenClient({
                   Amtliche Bodenrichtwerte (BORIS Hessen)
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Stichtag 01.01.2024 (dl-zero-de/2.0) · Auf der Karte als interaktive Polygone sichtbar
+                  Stichtag 01.01.2024 (dl-zero-de/2.0) · Auf der Karte als
+                  interaktive Polygone sichtbar
                 </p>
               </div>
 
@@ -725,7 +849,7 @@ export default function BauenWohnenClient({
                   <input
                     type="text"
                     value={borisSearch}
-                    onChange={e => setBorisSearch(e.target.value)}
+                    onChange={(e) => setBorisSearch(e.target.value)}
                     placeholder="Zone oder Ort suchen…"
                     className="pl-9 pr-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                   />
@@ -733,7 +857,7 @@ export default function BauenWohnenClient({
 
                 <select
                   value={borisTypeFilter}
-                  onChange={e => setBorisTypeFilter(e.target.value)}
+                  onChange={(e) => setBorisTypeFilter(e.target.value)}
                   className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="all">Alle Zonennutzungen</option>
@@ -756,19 +880,32 @@ export default function BauenWohnenClient({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {filteredBoris.map(zone => (
-                    <tr key={zone.id} className="hover:bg-slate-950/40 transition-colors">
+                  {filteredBoris.map((zone) => (
+                    <tr
+                      key={zone.id}
+                      className="hover:bg-slate-950/40 transition-colors"
+                    >
                       <td className="py-3 px-3 font-medium text-slate-200">
                         <div>{zone.district ?? zone.zone_code}</div>
-                        <span className="text-[10px] font-mono text-slate-500">{zone.zone_code}</span>
+                        <span className="text-[10px] font-mono text-slate-500">
+                          {zone.zone_code}
+                        </span>
                       </td>
-                      <td className="py-3 px-3 text-slate-400">{zone.municipality}</td>
+                      <td className="py-3 px-3 text-slate-400">
+                        {zone.municipality}
+                      </td>
                       <td className="py-3 px-3">
                         <span
                           className="px-2 py-0.5 rounded-md text-[11px] font-medium"
                           style={{
-                            backgroundColor: `${getBorisZoneColor(zone.land_value_eur_sqm, zone.zone_type)}20`,
-                            color: getBorisZoneColor(zone.land_value_eur_sqm, zone.zone_type),
+                            backgroundColor: `${getBorisZoneColor(
+                              zone.land_value_eur_sqm,
+                              zone.zone_type
+                            )}20`,
+                            color: getBorisZoneColor(
+                              zone.land_value_eur_sqm,
+                              zone.zone_type
+                            ),
                           }}
                         >
                           {zone.zone_type}
@@ -776,7 +913,9 @@ export default function BauenWohnenClient({
                       </td>
                       <td className="py-3 px-3 text-slate-400">
                         {zone.development_status}
-                        {zone.floor_space_index ? ` · WGFZ ${zone.floor_space_index}` : ""}
+                        {zone.floor_space_index
+                          ? ` · WGFZ ${zone.floor_space_index}`
+                          : ""}
                       </td>
                       <td className="py-3 px-3 text-right font-mono font-bold text-sm text-slate-100">
                         {formatEuro(zone.land_value_eur_sqm, true)}
@@ -802,23 +941,39 @@ export default function BauenWohnenClient({
                   Bautätigkeits-Entwicklung ({activeSummary.municipality})
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Baugenehmigungen vs. Baufertigstellungen (Wohnungen) 2020 – 2025 (Statistik Hessen F II 1)
+                  Baugenehmigungen vs. Baufertigstellungen (Wohnungen) 2020 –
+                  2025 (Statistik Hessen F II 1)
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              {filteredPermits.slice(-6).map(p => {
+              {filteredPermits.slice(-6).map((p) => {
                 const maxVal = 160;
-                const permitWidth = Math.min(100, Math.round((p.residential_dwellings_count / maxVal) * 100));
-                const compWidth = Math.min(100, Math.round((p.completions_dwellings_count / maxVal) * 100));
+                const permitWidth = Math.min(
+                  100,
+                  Math.round((p.residential_dwellings_count / maxVal) * 100)
+                );
+                const compWidth = Math.min(
+                  100,
+                  Math.round((p.completions_dwellings_count / maxVal) * 100)
+                );
                 return (
-                  <div key={p.id} className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+                  <div
+                    key={p.id}
+                    className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2"
+                  >
                     <div className="flex justify-between text-xs font-semibold">
-                      <span className="text-slate-200 font-mono">{p.year} · {p.municipality}</span>
+                      <span className="text-slate-200 font-mono">
+                        {p.year} · {p.municipality}
+                      </span>
                       <div className="flex gap-4 font-mono">
-                        <span className="text-blue-400">{p.residential_dwellings_count} genehmigt</span>
-                        <span className="text-emerald-400">{p.completions_dwellings_count} fertiggestellt</span>
+                        <span className="text-blue-400">
+                          {p.residential_dwellings_count} genehmigt
+                        </span>
+                        <span className="text-emerald-400">
+                          {p.completions_dwellings_count} fertiggestellt
+                        </span>
                       </div>
                     </div>
 
@@ -842,20 +997,21 @@ export default function BauenWohnenClient({
             </div>
           </div>
 
-          {/* Active Development Plans (B-Pläne) */}
+          {/* Active Development Plans (Bau-Pläne) */}
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-5">
             <div>
               <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                 <Layers className="w-5 h-5 text-emerald-400" />
-                Aktive Bebauungspläne & Neubaugebiete (B-Pläne)
+                Aktive Bebauungspläne & Neubaugebiete (Bau-Pläne)
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Bauleitplanung der Kommunen im Ried · Wohn- und Gewerbebauflächen
+                Bauleitplanung der Kommunen im Ried · Wohn- und
+                Gewerbebauflächen
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredPlans.map(plan => (
+              {filteredPlans.map((plan) => (
                 <div
                   key={plan.id}
                   className="p-5 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between space-y-4 hover:border-slate-700 transition-colors"
@@ -882,15 +1038,24 @@ export default function BauenWohnenClient({
                       </span>
                     </div>
 
-                    <h4 className="text-base font-bold text-slate-100">{plan.plan_name}</h4>
+                    <h4 className="text-base font-bold text-slate-100">
+                      {plan.plan_name}
+                    </h4>
                     <p className="text-xs text-slate-400">
-                      Nutzungsziel: <strong className="text-slate-200">{plan.target_use}</strong> · Plan-Nr.: {plan.plan_number}
+                      Nutzungsziel:{" "}
+                      <strong className="text-slate-200">
+                        {plan.target_use}
+                      </strong>{" "}
+                      · Plan-Nr.: {plan.plan_number}
                     </p>
                   </div>
 
                   <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
                     <span className="text-slate-500 font-mono">
-                      Fläche: <strong className="text-slate-300">{plan.area_hectares} ha</strong>
+                      Fläche:{" "}
+                      <strong className="text-slate-300">
+                        {plan.area_hectares} ha
+                      </strong>
                     </span>
                     {plan.document_url && (
                       <a
@@ -919,8 +1084,10 @@ export default function BauenWohnenClient({
             Offene Geodaten für Hackathons & Analysen
           </h4>
           <p className="text-xs text-slate-400 max-w-2xl">
-            Alle Bodenrichtwert-Polygone (BORIS), Zensus-2022-Wohnungsstatistiken und Bautätigkeits-Zeitreihen stehen als
-            maschinenlesbare GeoJSON- und CSV-Dateien für die Community zur Verfügung.
+            Alle Bodenrichtwert-Polygone (BORIS),
+            Zensus-2022-Wohnungsstatistiken und Bautätigkeits-Zeitreihen stehen
+            als maschinenlesbare GeoJSON- und CSV-Dateien für die Community zur
+            Verfügung.
           </p>
         </div>
 

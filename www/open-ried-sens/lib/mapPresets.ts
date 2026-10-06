@@ -1,6 +1,10 @@
-import { MAP_LAYER_IDS, type MapLayerId, DEFAULT_MAP_LAYERS } from "./urlState";
+import { DEFAULT_MAP_LAYERS, MAP_LAYER_IDS, type MapLayerId } from "./urlState";
 
-export type LayerCategory = "mobility" | "environment" | "infrastructure" | "planning";
+export type LayerCategory =
+  | "mobility"
+  | "environment"
+  | "infrastructure"
+  | "planning";
 
 export interface LayerMetadata {
   id: MapLayerId;
@@ -12,30 +16,37 @@ export interface LayerMetadata {
   highlightColor?: string;
 }
 
-export const LAYER_CATEGORIES: Record<LayerCategory, {
-  label: string;
-  icon: string;
-  description: string;
-}> = {
+export const LAYER_CATEGORIES: Record<
+  LayerCategory,
+  {
+    label: string;
+    icon: string;
+    description: string;
+  }
+> = {
   mobility: {
     label: "Mobilität & Verkehr",
     icon: "🚗",
-    description: "Straßenverkehr, Sperrungen, ÖPNV, Bahnübergänge & Ladeinfrastruktur",
+    description:
+      "Straßenverkehr, Sperrungen, ÖPNV, Bahnübergänge & Ladeinfrastruktur",
   },
   environment: {
     label: "Umwelt & Gewässer",
     icon: "🌿",
-    description: "Naturschutzgebiete, Hochwasser- & Flusspegel, Starkregen und Agrarflächen",
+    description:
+      "Naturschutzgebiete, Hochwasser- & Flusspegel, Starkregen und Agrarflächen",
   },
   infrastructure: {
     label: "Infrastruktur & Digitales",
     icon: "⚡",
-    description: "Erneuerbare Energien, KI-Straßenzustand, WLAN-Hotspots & Breitband",
+    description:
+      "Erneuerbare Energien, KI-Straßenzustand, WLAN-Hotspots & Breitband",
   },
   planning: {
     label: "Planung & Kommunales",
     icon: "🏛️",
-    description: "Bodenrichtwerte, Bebauungspläne, Kommunalpolitik, Betriebe & Müllabfuhr",
+    description:
+      "Bodenrichtwerte, Bebauungspläne, Kommunalpolitik, Betriebe & Müllabfuhr",
   },
 };
 
@@ -85,7 +96,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Öffentliche Orte",
     icon: "🏫",
     category: "planning",
-    description: "Kartierte Schulen, Gesundheit, Kultur und Freizeit – ohne Live-Öffnungs- oder Notdienststatus",
+    description:
+      "Kartierte Schulen, Gesundheit, Kultur und Freizeit – ohne Live-Öffnungs- oder Notdienststatus",
     minZoom: LAYER_MIN_ZOOM.places,
   },
   crossings: {
@@ -93,7 +105,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Bahnübergänge",
     icon: "⛩",
     category: "mobility",
-    description: "Gesammelte Bahnübergänge; Schrankenstatus nur bei verfügbarer Messung",
+    description:
+      "Gesammelte Bahnübergänge; Schrankenstatus nur bei verfügbarer Messung",
     minZoom: LAYER_MIN_ZOOM.crossings,
   },
   // Mobility & Traffic
@@ -111,7 +124,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Verkehrslage",
     icon: "🚗",
     category: "mobility",
-    description: "Echtzeit-Verkehrslage, Staus und Verzögerungen auf Ried-Hauptachsen",
+    description:
+      "Echtzeit-Verkehrslage, Staus und Verzögerungen auf Ried-Hauptachsen",
     minZoom: LAYER_MIN_ZOOM.traffic,
     highlightColor: "border-amber-500 text-amber-300",
   },
@@ -134,26 +148,42 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     highlightColor: "border-amber-500 text-amber-300",
   },
   satellites: {
-    id: "satellites", label: "Satelliten", icon: "🛰", category: "mobility",
-    description: "Berechnete Bodenprojektionen aus Space-Track-Bahnelementen · SGP4 · keine Live-Messungen",
-    minZoom: LAYER_MIN_ZOOM.satellites, highlightColor: "border-violet-500 text-violet-300",
+    id: "satellites",
+    label: "Satelliten",
+    icon: "🛰",
+    category: "mobility",
+    description:
+      "Berechnete Bodenprojektionen aus Space-Track-Bahnelementen · SGP4 · keine Live-Messungen",
+    minZoom: LAYER_MIN_ZOOM.satellites,
+    highlightColor: "border-violet-500 text-violet-300",
   },
   aircraft: {
-    id: "aircraft", label: "Flugverkehr", icon: "✈", category: "mobility",
-    description: "Empfangene Flugpositionen über dem Ried · adsb.lol und Open Glider Network (auch Segelflug) · keine vollständige Erfassung",
-    minZoom: LAYER_MIN_ZOOM.aircraft, highlightColor: "border-yellow-500 text-yellow-300",
+    id: "aircraft",
+    label: "Flugverkehr",
+    icon: "✈",
+    category: "mobility",
+    description:
+      "Empfangene Flugpositionen über dem Ried · adsb.lol und Open Glider Network (auch Segelflug) · keine vollständige Erfassung",
+    minZoom: LAYER_MIN_ZOOM.aircraft,
+    highlightColor: "border-yellow-500 text-yellow-300",
   },
   ships: {
-    id: "ships", label: "Schiffe", icon: "🚢", category: "mobility",
-    description: "Gemeldete AIS-Positionen auf dem Rhein zwischen Worms und Gernsheim; Empfang kann lückenhaft sein",
-    minZoom: LAYER_MIN_ZOOM.ships, highlightColor: "border-cyan-500 text-cyan-300",
+    id: "ships",
+    label: "Schiffe",
+    icon: "🚢",
+    category: "mobility",
+    description:
+      "Gemeldete AIS-Positionen auf dem Rhein zwischen Worms und Gernsheim; Empfang kann lückenhaft sein",
+    minZoom: LAYER_MIN_ZOOM.ships,
+    highlightColor: "border-cyan-500 text-cyan-300",
   },
   trains: {
     id: "trains",
     label: "Züge & BÜ",
     icon: "🚅",
     category: "mobility",
-    description: "Riedbahn & Nibelungenbahn Zugpositionen aus gespeicherten Meldungen und Fahrplänen",
+    description:
+      "Riedbahn & Nibelungenbahn Zugpositionen aus gespeicherten Meldungen und Fahrplänen",
     minZoom: LAYER_MIN_ZOOM.trains,
     highlightColor: "border-sky-500 text-sky-300",
   },
@@ -173,7 +203,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Naturschutz",
     icon: "🌿",
     category: "environment",
-    description: "Naturschutzgebiete (Biedensand, Lampertheimer Altrhein, Weschnitzinsel)",
+    description:
+      "Naturschutzgebiete (Biedensand, Lampertheimer Altrhein, Weschnitzinsel)",
     minZoom: LAYER_MIN_ZOOM.nature,
     highlightColor: "border-emerald-500 text-emerald-300",
   },
@@ -182,7 +213,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Flusspegel",
     icon: "🌊",
     category: "environment",
-    description: "Offizielle Rhein-Pegel (Worms) & Weschnitz-Pegel mit Alarmstufen",
+    description:
+      "Offizielle Rhein-Pegel (Worms) & Weschnitz-Pegel mit Alarmstufen",
     minZoom: LAYER_MIN_ZOOM.floods,
     highlightColor: "border-sky-400 text-sky-300",
   },
@@ -191,7 +223,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Starkregen-WMS",
     icon: "🌧️",
     category: "environment",
-    description: "Offizielle HLNUG Starkregengefahrenkarte Hessen (Fließwege & Überflutung)",
+    description:
+      "Offizielle HLNUG Starkregengefahrenkarte Hessen (Fließwege & Überflutung)",
     minZoom: LAYER_MIN_ZOOM.starkregen,
     highlightColor: "border-blue-500 text-blue-300",
   },
@@ -211,7 +244,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Ökostrom",
     icon: "☀️",
     category: "infrastructure",
-    description: "Kartierte private Solaranlagen, PV-Dächer, Energieparks & Biomasse (Geodaten ohne Live-Messwerte)",
+    description:
+      "Kartierte private Solaranlagen, PV-Dächer, Energieparks & Biomasse (Geodaten ohne Live-Messwerte)",
     minZoom: LAYER_MIN_ZOOM.energy,
     highlightColor: "border-amber-400 text-amber-300",
   },
@@ -256,7 +290,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Funkanlagen & Mobilfunk",
     icon: "🗼",
     category: "infrastructure",
-    description: "Standortbescheinigungen & Sendeantennen der Bundesnetzagentur (BNetzA)",
+    description:
+      "Standortbescheinigungen & Sendeantennen der Bundesnetzagentur (BNetzA)",
     minZoom: LAYER_MIN_ZOOM.emf,
     highlightColor: "border-sky-500 text-sky-300",
   },
@@ -267,16 +302,18 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Bodenrichtwerte",
     icon: "🏡",
     category: "planning",
-    description: "Offizielle BORIS Hessen Bodenrichtwertzonen (€/m² Wohnbauland)",
+    description:
+      "Offizielle BORIS Hessen Bodenrichtwertzonen (€/m² Wohnbauland)",
     minZoom: LAYER_MIN_ZOOM.boris,
     highlightColor: "border-teal-400 text-teal-300",
   },
   devplans: {
     id: "devplans",
-    label: "B-Pläne",
+    label: "Bau-Pläne",
     icon: "🏗️",
     category: "planning",
-    description: "Bebauungspläne und Neubaugebiete in Bürstadt, Lampertheim & Biblis",
+    description:
+      "Bebauungspläne und Neubaugebiete in Bürstadt, Lampertheim & Biblis",
     minZoom: LAYER_MIN_ZOOM.devplans,
     highlightColor: "border-amber-400 text-amber-300",
   },
@@ -285,7 +322,8 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     label: "Wahlbezirke",
     icon: "🗳️",
     category: "planning",
-    description: "Stimmbezirke und historische Wahlbeteiligung der Kommunalwahlen",
+    description:
+      "Stimmbezirke und historische Wahlbeteiligung der Kommunalwahlen",
     minZoom: LAYER_MIN_ZOOM.elections,
     highlightColor: "border-purple-400 text-purple-300",
   },
@@ -309,7 +347,12 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
   },
 };
 
-export type LayerPresetId = "default" | "sensors_only" | "mobility" | "environment" | "planning";
+export type LayerPresetId =
+  | "default"
+  | "sensors_only"
+  | "mobility"
+  | "environment"
+  | "planning";
 
 export interface LayerPreset {
   id: LayerPresetId;
@@ -369,7 +412,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     label: "Mobilität & Verkehr",
     shortLabel: "Mobilität",
     icon: "🚗",
-    description: "Sperrungen, Staus, Live-Busse, Haltestellen, Züge & Ladesäulen",
+    description:
+      "Sperrungen, Staus, Live-Busse, Haltestellen, Züge & Ladesäulen",
     layers: {
       nature: false,
       crops: false,
@@ -404,7 +448,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     label: "Umwelt & Gewässer",
     shortLabel: "Umwelt",
     icon: "🌿",
-    description: "Naturschutzgebiete, Flusspegel, Starkregen-WMS & Agrarkulturen",
+    description:
+      "Naturschutzgebiete, Flusspegel, Starkregen-WMS & Agrarkulturen",
     layers: {
       nature: true,
       crops: true,
@@ -439,7 +484,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     label: "Planung & Bauen",
     shortLabel: "Planung",
     icon: "🏛️",
-    description: "Bodenrichtwerte (BORIS), B-Pläne, Glasfaser, Gewerbe & ZAKB",
+    description:
+      "Bodenrichtwerte (BORIS), Bau-Pläne, Glasfaser, Gewerbe & ZAKB",
     layers: {
       nature: false,
       crops: false,
@@ -471,12 +517,18 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
   },
 };
 
-export const PRESET_IDS: LayerPresetId[] = ["default", "sensors_only", "mobility", "environment", "planning"];
+export const PRESET_IDS: LayerPresetId[] = [
+  "default",
+  "sensors_only",
+  "mobility",
+  "environment",
+  "planning",
+];
 
 export function getLayersByCategory(category: LayerCategory): LayerMetadata[] {
-  return MAP_LAYER_IDS
-    .map((id) => LAYER_DEFINITIONS[id])
-    .filter((meta) => meta.category === category);
+  return MAP_LAYER_IDS.map((id) => LAYER_DEFINITIONS[id]).filter(
+    (meta) => meta.category === category
+  );
 }
 
 export function countActiveLayers(layers: Record<MapLayerId, boolean>): number {
@@ -488,14 +540,21 @@ export function countCategoryActiveLayers(
   layers: Record<MapLayerId, boolean>
 ): { active: number; total: number } {
   const items = getLayersByCategory(category);
-  const active = items.reduce((acc, item) => (layers[item.id] ? acc + 1 : acc), 0);
+  const active = items.reduce(
+    (acc, item) => (layers[item.id] ? acc + 1 : acc),
+    0
+  );
   return { active, total: items.length };
 }
 
-export function detectActivePreset(layers: Record<MapLayerId, boolean>): LayerPresetId | "custom" {
+export function detectActivePreset(
+  layers: Record<MapLayerId, boolean>
+): LayerPresetId | "custom" {
   for (const presetId of PRESET_IDS) {
     const presetLayers = LAYER_PRESETS[presetId].layers;
-    const isMatch = MAP_LAYER_IDS.every((id) => Boolean(layers[id]) === Boolean(presetLayers[id]));
+    const isMatch = MAP_LAYER_IDS.every(
+      (id) => Boolean(layers[id]) === Boolean(presetLayers[id])
+    );
     if (isMatch) return presetId;
   }
   return "custom";

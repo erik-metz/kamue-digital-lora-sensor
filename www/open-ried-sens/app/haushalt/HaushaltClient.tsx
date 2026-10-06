@@ -1,34 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import {
-  Landmark,
-  Coins,
-  School,
-  Construction,
-  Trees,
-  ShieldAlert,
-  Users,
-  Vote,
-  TrendingUp,
-  FileText,
-  MapPin,
-  ExternalLink,
-  ChevronRight,
-  PieChart,
-  BarChart3,
-  Award,
-  ArrowRight,
-} from "lucide-react";
-import { FinanceBudget, FinanceExpenditure, MunicipalFinanceComparison } from "@/lib/financeData";
 import { ElectionEvent } from "@/lib/electionsData";
-import { DevelopmentPlan, ConstructionPermit } from "@/lib/realestateData";
+import {
+  FinanceBudget,
+  FinanceExpenditure,
+  MunicipalFinanceComparison,
+} from "@/lib/financeData";
+import { ConstructionPermit, DevelopmentPlan } from "@/lib/realestateData";
 import {
   parseSubpageParams,
   serializeSubpageParams,
   updateUrlDebounced,
 } from "@/lib/urlState";
+import {
+  ArrowRight,
+  Award,
+  Coins,
+  Construction,
+  ExternalLink,
+  FileText,
+  Landmark,
+  MapPin,
+  School,
+  ShieldAlert,
+  Trees,
+  TrendingUp,
+  Users,
+  Vote,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 interface Props {
   budgets: FinanceBudget[];
@@ -47,9 +48,12 @@ export default function HaushaltClient({
   devPlans,
   permits,
 }: Props) {
-  const [selectedMunicipality, setSelectedMunicipality] = useState<string>("Bürstadt");
+  const [selectedMunicipality, setSelectedMunicipality] =
+    useState<string>("Bürstadt");
   const [selectedYear, setSelectedYear] = useState<number>(2024);
-  const [activeTab, setActiveTab] = useState<"haushalt" | "ausgaben" | "wahlen" | "bauen">("haushalt");
+  const [activeTab, setActiveTab] = useState<
+    "haushalt" | "ausgaben" | "wahlen" | "bauen"
+  >("haushalt");
   const [mounted, setMounted] = useState(false);
 
   const municipalities = ["Bürstadt", "Lampertheim", "Biblis", "Groß-Rohrheim"];
@@ -120,7 +124,8 @@ export default function HaushaltClient({
           b.record_type === "plan"
       ) ||
       budgets.find(
-        (b) => b.municipality.toLowerCase() === selectedMunicipality.toLowerCase()
+        (b) =>
+          b.municipality.toLowerCase() === selectedMunicipality.toLowerCase()
       ) ||
       budgets[0]
     );
@@ -137,7 +142,10 @@ export default function HaushaltClient({
 
   // Total Spending calculated
   const totalBudgetedExpenses = useMemo(() => {
-    return currentSpending.reduce((acc, curr) => acc + curr.expense_budgeted_eur, 0);
+    return currentSpending.reduce(
+      (acc, curr) => acc + curr.expense_budgeted_eur,
+      0
+    );
   }, [currentSpending]);
 
   // Filtered Elections
@@ -259,13 +267,18 @@ export default function HaushaltClient({
           <div className="mt-2 text-xs text-slate-400 flex items-center gap-1.5">
             <span
               className={`font-semibold ${
-                currentBudget.net_result_eur >= 0 ? "text-emerald-400" : "text-amber-400"
+                currentBudget.net_result_eur >= 0
+                  ? "text-emerald-400"
+                  : "text-amber-400"
               }`}
             >
               {currentBudget.net_result_eur >= 0 ? "+ " : ""}
               {formatEuro(currentBudget.net_result_eur)}
             </span>
-            <span>Jahresergebnis ({currentBudget.record_type === "plan" ? "Plan" : "Ist"})</span>
+            <span>
+              Jahresergebnis (
+              {currentBudget.record_type === "plan" ? "Plan" : "Ist"})
+            </span>
           </div>
         </div>
 
@@ -279,7 +292,14 @@ export default function HaushaltClient({
             {formatEuro(currentBudget.tax_gewerbesteuer_eur)}
           </div>
           <div className="mt-2 text-xs text-slate-400">
-            Hebesatz: <strong className="text-slate-200">{currentBudget.hebesatz_gewerbesteuer}%</strong> · Grundsteuer B: <strong className="text-slate-200">{currentBudget.hebesatz_grundsteuer_b}%</strong>
+            Hebesatz:{" "}
+            <strong className="text-slate-200">
+              {currentBudget.hebesatz_gewerbesteuer}%
+            </strong>{" "}
+            · Grundsteuer B:{" "}
+            <strong className="text-slate-200">
+              {currentBudget.hebesatz_grundsteuer_b}%
+            </strong>
           </div>
         </div>
 
@@ -293,7 +313,10 @@ export default function HaushaltClient({
             {formatEuro(currentBudget.debt_per_capita_eur)}
           </div>
           <div className="mt-2 text-xs text-slate-400">
-            Gesamtschulden: <strong className="text-slate-200">{formatEuro(currentBudget.total_debt_eur)}</strong>
+            Gesamtschulden:{" "}
+            <strong className="text-slate-200">
+              {formatEuro(currentBudget.total_debt_eur)}
+            </strong>
           </div>
         </div>
 
@@ -304,10 +327,21 @@ export default function HaushaltClient({
             <Vote className="w-4 h-4 text-teal-400" />
           </div>
           <div className="mt-3 text-2xl sm:text-3xl font-extrabold text-slate-100">
-            {activeElection ? `${activeElection.turnout_percent.toFixed(1)}%` : "51.6%"}
+            {activeElection
+              ? `${activeElection.turnout_percent.toFixed(1)}%`
+              : "51.6%"}
           </div>
           <div className="mt-2 text-xs text-slate-400">
-            Wähler: <strong className="text-slate-200">{activeElection ? activeElection.total_voters.toLocaleString("de-DE") : "6.420"}</strong> von {activeElection ? activeElection.eligible_voters.toLocaleString("de-DE") : "12.450"}
+            Wähler:{" "}
+            <strong className="text-slate-200">
+              {activeElection
+                ? activeElection.total_voters.toLocaleString("de-DE")
+                : "6.420"}
+            </strong>{" "}
+            von{" "}
+            {activeElection
+              ? activeElection.eligible_voters.toLocaleString("de-DE")
+              : "12.450"}
           </div>
         </div>
       </div>
@@ -334,7 +368,8 @@ export default function HaushaltClient({
               : "border-transparent text-slate-400 hover:text-slate-200"
           }`}
         >
-          <School className="w-4 h-4" /> Produkthaushalt (Schulen, Straßen, Kitas)
+          <School className="w-4 h-4" /> Produkthaushalt (Schulen, Straßen,
+          Kitas)
         </button>
         <button
           type="button"
@@ -368,10 +403,12 @@ export default function HaushaltClient({
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-lg font-bold text-slate-100">
-                  Steuereinnahmen & Ertragsstruktur ({selectedMunicipality} {selectedYear})
+                  Steuereinnahmen & Ertragsstruktur ({selectedMunicipality}{" "}
+                  {selectedYear})
                 </h3>
                 <p className="text-sm text-slate-400 mt-1">
-                  Zusammensetzung der städtischen Einnahmen aus Gewerbesteuer, Einkommensteueranteil, Grundsteuern und Zuweisungen.
+                  Zusammensetzung der städtischen Einnahmen aus Gewerbesteuer,
+                  Einkommensteueranteil, Grundsteuern und Zuweisungen.
                 </p>
               </div>
               <div className="text-xs bg-slate-950/80 px-3 py-1.5 rounded-lg border border-slate-800 text-slate-300">
@@ -386,38 +423,60 @@ export default function HaushaltClient({
                   label: "Einkommensteueranteil",
                   val: currentBudget.tax_income_share_eur || 0,
                   color: "bg-emerald-500",
-                  pct: Math.round(((currentBudget.tax_income_share_eur || 0) / currentBudget.total_revenue_eur) * 100),
+                  pct: Math.round(
+                    ((currentBudget.tax_income_share_eur || 0) /
+                      currentBudget.total_revenue_eur) *
+                      100
+                  ),
                 },
                 {
                   label: "Gewerbesteuer (Netto)",
                   val: currentBudget.tax_gewerbesteuer_eur || 0,
                   color: "bg-blue-500",
-                  pct: Math.round(((currentBudget.tax_gewerbesteuer_eur || 0) / currentBudget.total_revenue_eur) * 100),
+                  pct: Math.round(
+                    ((currentBudget.tax_gewerbesteuer_eur || 0) /
+                      currentBudget.total_revenue_eur) *
+                      100
+                  ),
                 },
                 {
                   label: "Grundsteuer B (Bebaute Grundstücke)",
                   val: currentBudget.tax_grundsteuer_b_eur || 0,
                   color: "bg-amber-500",
-                  pct: Math.round(((currentBudget.tax_grundsteuer_b_eur || 0) / currentBudget.total_revenue_eur) * 100),
+                  pct: Math.round(
+                    ((currentBudget.tax_grundsteuer_b_eur || 0) /
+                      currentBudget.total_revenue_eur) *
+                      100
+                  ),
                 },
                 {
                   label: "Umsatzsteueranteil",
                   val: currentBudget.tax_vat_share_eur || 0,
                   color: "bg-purple-500",
-                  pct: Math.round(((currentBudget.tax_vat_share_eur || 0) / currentBudget.total_revenue_eur) * 100),
+                  pct: Math.round(
+                    ((currentBudget.tax_vat_share_eur || 0) /
+                      currentBudget.total_revenue_eur) *
+                      100
+                  ),
                 },
                 {
                   label: "Grundsteuer A (Land- & Forstwirtschaft)",
                   val: currentBudget.tax_grundsteuer_a_eur || 0,
                   color: "bg-teal-500",
-                  pct: Math.round(((currentBudget.tax_grundsteuer_a_eur || 0) / currentBudget.total_revenue_eur) * 100) || 1,
+                  pct:
+                    Math.round(
+                      ((currentBudget.tax_grundsteuer_a_eur || 0) /
+                        currentBudget.total_revenue_eur) *
+                        100
+                    ) || 1,
                 },
               ].map((item) => (
                 <div key={item.label} className="space-y-1.5">
                   <div className="flex justify-between text-xs font-medium">
                     <span className="text-slate-300">{item.label}</span>
                     <span className="text-slate-200">
-                      {formatEuro(item.val)} <span className="text-slate-500">({item.pct}%)</span>
+                      {formatEuro(item.val)}{" "}
+                      <span className="text-slate-500">({item.pct}%)</span>
                     </span>
                   </div>
                   <div className="h-3 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
@@ -459,7 +518,9 @@ export default function HaushaltClient({
                         <td className="p-3">{c.municipality}</td>
                         <td className="p-3">{c.hebesatz_gewerbesteuer}%</td>
                         <td className="p-3">{c.hebesatz_grundsteuer_b}%</td>
-                        <td className="p-3">{formatEuro(c.debt_per_capita_eur)}</td>
+                        <td className="p-3">
+                          {formatEuro(c.debt_per_capita_eur)}
+                        </td>
                         <td className="p-3">{formatEuro(c.reserves_eur)}</td>
                       </tr>
                     ))}
@@ -477,16 +538,24 @@ export default function HaushaltClient({
           <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
             <div>
               <h3 className="text-lg font-bold text-slate-100">
-                Ausgaben nach Aufgabenbereichen ({selectedMunicipality} {selectedYear})
+                Ausgaben nach Aufgabenbereichen ({selectedMunicipality}{" "}
+                {selectedYear})
               </h3>
               <p className="text-sm text-slate-400 mt-1">
-                Verteilung der laufenden Ausgaben und Investitionen auf Schulen, Kitas, Straßen und Kultur nach dem hessischen Produktrahmen.
+                Verteilung der laufenden Ausgaben und Investitionen auf Schulen,
+                Kitas, Straßen und Kultur nach dem hessischen Produktrahmen.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {currentSpending.map((item) => {
-                const pctOfTotal = totalBudgetedExpenses > 0 ? Math.round((item.expense_budgeted_eur / totalBudgetedExpenses) * 100) : 0;
+                const pctOfTotal =
+                  totalBudgetedExpenses > 0
+                    ? Math.round(
+                        (item.expense_budgeted_eur / totalBudgetedExpenses) *
+                          100
+                      )
+                    : 0;
                 return (
                   <div
                     key={item.id}
@@ -517,7 +586,9 @@ export default function HaushaltClient({
 
                     <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs">
                       <span className="text-slate-400">Laufender Etat:</span>
-                      <strong className="text-slate-100">{formatEuro(item.expense_budgeted_eur)}</strong>
+                      <strong className="text-slate-100">
+                        {formatEuro(item.expense_budgeted_eur)}
+                      </strong>
                     </div>
 
                     {item.investments_eur > 0 && (
@@ -544,7 +615,8 @@ export default function HaushaltClient({
                   Wahlergebnisse & Mandate ({selectedMunicipality})
                 </h3>
                 <p className="text-sm text-slate-400 mt-1">
-                  Ergebnisse der Kommunal-, Bürgermeister- und Europawahlen sowie Sitzverteilung in der Stadtverordnetenversammlung.
+                  Ergebnisse der Kommunal-, Bürgermeister- und Europawahlen
+                  sowie Sitzverteilung in der Stadtverordnetenversammlung.
                 </p>
               </div>
 
@@ -577,19 +649,27 @@ export default function HaushaltClient({
                 <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 flex flex-wrap items-center justify-between gap-4 text-xs">
                   <div>
                     <span className="text-slate-400">Wahlbezeichnung: </span>
-                    <strong className="text-slate-100">{activeElection.title}</strong>
+                    <strong className="text-slate-100">
+                      {activeElection.title}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-slate-400">Datum: </span>
-                    <strong className="text-slate-100">{activeElection.election_date}</strong>
+                    <strong className="text-slate-100">
+                      {activeElection.election_date}
+                    </strong>
                   </div>
                   <div>
                     <span className="text-slate-400">Wahlbeteiligung: </span>
-                    <strong className="text-emerald-400 font-bold">{activeElection.turnout_percent}%</strong>
+                    <strong className="text-emerald-400 font-bold">
+                      {activeElection.turnout_percent}%
+                    </strong>
                   </div>
                   <div>
                     <span className="text-slate-400">Gültige Stimmen: </span>
-                    <strong className="text-slate-100">{activeElection.valid_votes.toLocaleString("de-DE")}</strong>
+                    <strong className="text-slate-100">
+                      {activeElection.valid_votes.toLocaleString("de-DE")}
+                    </strong>
                   </div>
                 </div>
 
@@ -603,9 +683,12 @@ export default function HaushaltClient({
                       {activeElection.results_summary.parties.map((party) => (
                         <div key={party.name} className="space-y-1">
                           <div className="flex justify-between text-xs font-medium">
-                            <span className="text-slate-300 font-semibold">{party.name}</span>
+                            <span className="text-slate-300 font-semibold">
+                              {party.name}
+                            </span>
                             <span className="text-slate-300">
-                              {party.percent}% · {party.votes.toLocaleString("de-DE")} Stimmen
+                              {party.percent}% ·{" "}
+                              {party.votes.toLocaleString("de-DE")} Stimmen
                               {party.seats ? ` · ${party.seats} Sitze` : ""}
                             </span>
                           </div>
@@ -637,7 +720,9 @@ export default function HaushaltClient({
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-sm text-slate-100">{cand.name}</h4>
+                          <h4 className="font-bold text-sm text-slate-100">
+                            {cand.name}
+                          </h4>
                           {cand.elected && (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400">
                               Gewählt
@@ -658,7 +743,10 @@ export default function HaushaltClient({
                 {/* Map Hint */}
                 <div className="p-4 rounded-xl bg-purple-950/20 border border-purple-800/40 flex items-center justify-between">
                   <div className="text-xs text-purple-200">
-                    💡 <strong>Wahlbezirke auf der Karte:</strong> Du kannst die Stimmbezirke mit Wahlbeteiligung und Wahllokalen auch direkt auf der interaktiven Karte einblenden (Schalter: <strong>🗳️ Wahlbezirke</strong>).
+                    💡 <strong>Wahlbezirke auf der Karte:</strong> Du kannst die
+                    Stimmbezirke mit Wahlbeteiligung und Wahllokalen auch direkt
+                    auf der interaktiven Karte einblenden (Schalter:{" "}
+                    <strong>🗳️ Wahlbezirke</strong>).
                   </div>
                   <Link
                     href="/#dashboard"
@@ -683,7 +771,8 @@ export default function HaushaltClient({
                   Bebauungspläne & Stadtentwicklung ({selectedMunicipality})
                 </h3>
                 <p className="text-sm text-slate-400 mt-1">
-                  Rechtskräftige und in Aufstellung befindliche B-Pläne, Neubaugebiete und Gewerbeflächen.
+                  Rechtskräftige und in Aufstellung befindliche Bau-Pläne,
+                  Neubaugebiete und Gewerbeflächen.
                 </p>
               </div>
               <Link
@@ -709,20 +798,29 @@ export default function HaushaltClient({
                             : "bg-amber-950/50 border border-amber-500/40 text-amber-400"
                         }`}
                       >
-                        {plan.status === "rechtskraeftig" ? "Rechtskräftig" : "Im Verfahren"}
+                        {plan.status === "rechtskraeftig"
+                          ? "Rechtskräftig"
+                          : "Im Verfahren"}
                       </span>
                       <h4 className="text-sm font-bold text-slate-100 mt-1.5">
                         {plan.plan_name}
                       </h4>
                     </div>
                     <div className="text-right text-xs text-slate-400">
-                      <div>Plan: <strong>{plan.plan_number}</strong></div>
+                      <div>
+                        Plan: <strong>{plan.plan_number}</strong>
+                      </div>
                       <div>{plan.area_hectares} ha</div>
                     </div>
                   </div>
 
                   <div className="text-xs text-slate-400 flex items-center justify-between pt-2 border-t border-slate-800/80">
-                    <span>Nutzung: <strong className="text-slate-200">{plan.target_use}</strong></span>
+                    <span>
+                      Nutzung:{" "}
+                      <strong className="text-slate-200">
+                        {plan.target_use}
+                      </strong>
+                    </span>
                     {plan.document_url && (
                       <a
                         href={plan.document_url}
@@ -741,25 +839,40 @@ export default function HaushaltClient({
             {/* Permits & Construction stats */}
             <div className="pt-6 border-t border-slate-800/80">
               <h4 className="text-sm font-bold text-slate-200 mb-3">
-                Baugenehmigungen & Fertigstellungen (Statistischer Bericht F II 1)
+                Baugenehmigungen & Fertigstellungen (Statistischer Bericht F II
+                1)
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {permits
-                  .filter((p) => p.municipality.toLowerCase() === selectedMunicipality.toLowerCase())
+                  .filter(
+                    (p) =>
+                      p.municipality.toLowerCase() ===
+                      selectedMunicipality.toLowerCase()
+                  )
                   .slice(0, 3)
                   .map((p) => (
                     <div
                       key={p.id}
                       className="p-4 rounded-xl bg-slate-950/50 border border-slate-800 text-xs space-y-1.5"
                     >
-                      <div className="font-bold text-slate-300">Jahr {p.year}</div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-400">Genehmigte Wohnungen:</span>
-                        <strong className="text-emerald-400">{p.residential_dwellings_count}</strong>
+                      <div className="font-bold text-slate-300">
+                        Jahr {p.year}
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-slate-400">Fertiggestellte Wohnungen:</span>
-                        <strong className="text-blue-400">{p.completions_dwellings_count}</strong>
+                        <span className="text-slate-400">
+                          Genehmigte Wohnungen:
+                        </span>
+                        <strong className="text-emerald-400">
+                          {p.residential_dwellings_count}
+                        </strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-400">
+                          Fertiggestellte Wohnungen:
+                        </span>
+                        <strong className="text-blue-400">
+                          {p.completions_dwellings_count}
+                        </strong>
                       </div>
                     </div>
                   ))}
@@ -777,7 +890,8 @@ export default function HaushaltClient({
             Open Data & Download aller Finanz- und Verwaltungsdaten
           </h4>
           <p className="text-sm text-slate-400 mt-1">
-            Alle Haushaltspläne, Steuersätze und Wahlergebnisse stehen als offene CSV-, JSON- und REST-API-Schnittstellen zur Verfügung.
+            Alle Haushaltspläne, Steuersätze und Wahlergebnisse stehen als
+            offene CSV-, JSON- und REST-API-Schnittstellen zur Verfügung.
           </p>
         </div>
         <Link

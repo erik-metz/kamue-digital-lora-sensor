@@ -1,29 +1,29 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import HeaderLogo from "./HeaderLogo";
+import { cn } from "@/lib/utils";
 import {
-  Menu,
-  X,
-  Radio,
+  BarChart3,
+  Briefcase,
+  Building2,
+  CalendarDays,
+  ChevronDown,
+  Coins,
+  Database,
+  ExternalLink,
+  FileText,
   Layers,
   LayoutGrid,
-  Building2,
-  Users,
-  BarChart3,
-  Coins,
-  Briefcase,
-  Database,
-  FileText,
+  Menu,
+  Radio,
   ShieldCheck,
-  ExternalLink,
+  Users,
   Wrench,
-  ChevronDown,
-  CalendarDays,
+  X,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import HeaderLogo from "./HeaderLogo";
 
 interface SiteHeaderProps {
   /** Number of sensors / locations or active stations to display */
@@ -57,7 +57,7 @@ export const REGIONALATLAS_NAV_SUBITEMS = [
   {
     href: "/bauen-wohnen",
     label: "Bauen & Wohnen",
-    description: "Bodenrichtwerte, Gebäudealter & B-Pläne",
+    description: "Bodenrichtwerte, Gebäudealter & Bau-Pläne",
     icon: Building2,
   },
   {
@@ -344,7 +344,9 @@ export default function SiteHeader({
               title={
                 hasStationFraction
                   ? `${activeStations} von ${totalStations} Stationen aktiv`
-                  : sensorCount === undefined ? "Sensoranzahl hier nicht geladen" : `${displayCount} gespeicherte Sensorstandorte im Ried`
+                  : sensorCount === undefined
+                  ? "Sensoranzahl hier nicht geladen"
+                  : `${displayCount} gespeicherte Sensorstandorte im Ried`
               }
             >
               <span className="relative flex h-2 w-2 shrink-0">
@@ -507,7 +509,9 @@ export default function SiteHeader({
                           <SubIcon
                             className={cn(
                               "w-3.5 h-3.5 shrink-0",
-                              isSubActive ? "text-emerald-400" : "text-slate-500"
+                              isSubActive
+                                ? "text-emerald-400"
+                                : "text-slate-500"
                             )}
                           />
                           <span>{sub.label}</span>

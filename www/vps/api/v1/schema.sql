@@ -1046,7 +1046,7 @@ INSERT INTO collector_schema_versions(version) VALUES (20260921) ON CONFLICT DO 
 -- 15. Real Estate, Buildings, Land Use & Housing Stock for the Hessisches Ried
 -- Covers Housing Stock & Age (Zensus 2022), Land Values (BORIS Hessen),
 -- Land Use (ALKIS/ATKIS), Construction Permits & Completions (Statistik Hessen),
--- Market Benchmarks (Gutachterausschuss Bergstraße) and Development Plans (B-Pläne).
+-- Market Benchmarks (Gutachterausschuss Bergstraße) and Development Plans (Bau-Pläne).
 -- ============================================================================
 
 CREATE TABLE IF NOT EXISTS realestate_sources (
@@ -1192,7 +1192,7 @@ CREATE INDEX IF NOT EXISTS idx_dev_plans_muni ON development_plans (municipality
 -- Seed Real Estate Market Benchmarks (Gutachterausschuss Kreis Bergstraße)
 
 
--- Seed Active Municipal Development Plans (B-Pläne / Neubaugebiete)
+-- Seed Active Municipal Development Plans (Bau-Pläne / Neubaugebiete)
 
 
 INSERT INTO collector_schema_versions(version) VALUES (20260922) ON CONFLICT DO NOTHING;

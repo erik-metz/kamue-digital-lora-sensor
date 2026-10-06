@@ -363,7 +363,7 @@ async def get_development_plans(
     municipality: str | None = Query(None, description="Filter by municipality"),
     status_filter: str | None = Query(None, description="Filter by status"),
 ):
-    """Active and legally approved municipal development plans (Bebauungspläne / B-Pläne)."""
+    """Active and legally approved municipal development plans (Bebauungspläne / Bau-Pläne)."""
     clauses: list[str] = []
     params: list[Any] = []
     if municipality:
