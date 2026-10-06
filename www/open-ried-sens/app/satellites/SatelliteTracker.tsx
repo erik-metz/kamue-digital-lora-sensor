@@ -89,7 +89,7 @@ export default function SatelliteTracker() {
       <label>Satellit <select className="rounded border p-2" value={selected ?? ""} onChange={e => chooseSatellite(Number(e.target.value) || null)}>
         <option value="">Bitte auswählen</option>{catalog.map(p => <option key={p.norad_id} value={p.norad_id}>{p.name ?? p.norad_id} ({p.norad_id})</option>)}
       </select></label>
-      <label>Historie (UTC) <input type="date" disabled={!selected} className="rounded border p-2" value={historyDate} onChange={e => chooseDate(e.target.value)} /></label>
+      <label>Historie (UTC) <input type="date" disabled={!selected} className="rounded border p-2" value={historyDate} onInput={e => chooseDate(e.currentTarget.value)} /></label>
       <button className="rounded border px-3" onClick={() => chooseDate("")}>Live</button>
     </div>
     <SatelliteMap positions={positions} trail={trail} selected={selected} onSelect={chooseSatellite} />
