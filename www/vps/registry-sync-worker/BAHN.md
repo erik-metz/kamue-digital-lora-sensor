@@ -95,3 +95,26 @@ The last two commands need the configured database. On first startup the SIRI jo
 may fail until the initial NeTEx inventory commits; its next scheduled run retries.
 HTTP errors, unsupported XML, stale feeds and missing required inventory leave
 existing publications untouched, with failure visible in collection health.
+
+## Frontend
+
+The Regionalatlas links to `/regionalatlas/bahn` (Bahnhöfe & Anlagen). The view
+loads the two publications independently through same-origin Next.js routes
+`/api/bahn/stations` and `/api/bahn/facilities`. The static inventory can be cached
+for up to 300 seconds; facility requests use no additional cache. Both responses
+retain source/receipt/expiry headers and are refreshed every 60 seconds while the
+page is visible. Expired status stops appearing as available even when a refresh
+fails. Missing statuses remain unknown; no local simulation or direct DB provider
+request runs in the browser.
+
+Search accepts station names, EVA numbers and DS100 codes. Each station has an
+infrastructure list with object-type filtering, identifiers and explicit missing
+coordinates. Optional Leaflet markers use only each object's own reported
+coordinates. Stored background tiles cover the Ried; Frankfurt/Mannheim object
+positions may be shown without a complete background. Coordinate links open
+OpenStreetMap. Resolving equipment-place relationships into facility positions
+and expanding geographical coverage remain separate follow-up work.
+
+Frontend verification: `npm run test:security` includes the Bahn publication,
+freshness, status and coordinate tests; `npm run build` checks the new routes and
+page. The view can be tested against the collected VPS data via `BACKEND_API_URL`.

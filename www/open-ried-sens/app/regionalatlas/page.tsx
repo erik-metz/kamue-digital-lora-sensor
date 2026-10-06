@@ -193,6 +193,10 @@ export default function RegionalatlasOverviewPage() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-10 sm:space-y-12">
         {/* Unified Tab Bar Component */}
         <RegionalatlasTabs activeTab="uebersicht" />
+        <Link href="/regionalatlas/bahn" className="block rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 text-emerald-300 hover:bg-emerald-500/15">
+          <span className="font-semibold">Bahnhöfe &amp; Anlagenstatus</span>
+          <span className="block mt-1 text-sm text-slate-300">DB-Infrastruktur erkunden: Bahnsteige, Zugänge, Aufzüge und Rolltreppen mit Quelle und Aktualität.</span>
+        </Link>
 
         {/* HERO SECTION */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 p-8 sm:p-12 shadow-2xl">

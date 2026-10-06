@@ -11,6 +11,7 @@ import {
   BarChart3,
   LayoutGrid,
   CalendarDays,
+  TrainFront,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,6 +25,7 @@ export interface RegionalatlasTab {
 }
 
 export const REGIONALATLAS_TABS: RegionalatlasTab[] = [
+  { id: "bahn", href: "/regionalatlas/bahn", label: "Bahnhöfe & Anlagen", shortLabel: "Bahn", icon: TrainFront, tag: "DB OpenStation" },
   {
     id: "uebersicht",
     href: "/regionalatlas",
@@ -83,7 +85,7 @@ export const REGIONALATLAS_TABS: RegionalatlasTab[] = [
 ];
 
 interface RegionalatlasTabsProps {
-  activeTab?: "uebersicht" | "termine" | "bauen-wohnen" | "demografie" | "statistik" | "haushalt" | "wirtschaft";
+  activeTab?: "bahn" | "uebersicht" | "termine" | "bauen-wohnen" | "demografie" | "statistik" | "haushalt" | "wirtschaft";
   className?: string;
 }
 
