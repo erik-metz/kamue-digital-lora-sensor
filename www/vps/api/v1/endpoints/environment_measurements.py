@@ -133,3 +133,31 @@ async def biodiversity_occurrences(
     return jsonable_encoder({'items': rows[:limit], 'snapshot': snapshot['metadata'],
         'stored_records': counts['records'], 'stored_species': counts['species'],
         'has_more': len(rows)>limit, 'offset': offset, 'as_of': datetime.now(UTC)})
+
+
+@router.get('/discharge')
+async def discharge_forecasts(pool=Depends(get_db_pool)):
+    """One complete archived response snapshot; no invented provider issue time."""
+    async with pool.connection() as conn:
+        ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
+        if not ready or not ready['ready']:
+            raise HTTPException(503, 'Canonical measurement storage is not installed')
+        snapshot = await (await conn.execute("""SELECT payload_sha256,received_at FROM collection_attempts
+            WHERE source_id='environment-discharge-glofas' AND status='success'
+            ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
+        rows = []
+        if snapshot:
+            cursor = await conn.execute("""SELECT d.entity_id,e.metadata,d.metric,d.unit,d.dimensions,
+                r.observed_at AS valid_at,r.value,r.quality,r.period_start,r.period_end,r.collected_at,r.provenance
+                FROM measurement_definitions d JOIN entities e ON e.id=d.entity_id
+                JOIN readings r ON r.measurement_id=d.id
+                WHERE NOT e.is_hidden AND d.source_id='environment-discharge-glofas'
+                    AND d.dimensions->>'contract'='environment-v1'
+                    AND d.dimensions->>'snapshot_sha256'=%s
+                    AND r.observed_at>=(date_trunc('day',NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')
+                    AND r.observed_at<(date_trunc('day',NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')+INTERVAL '14 days'
+                ORDER BY d.entity_id,r.observed_at,d.id LIMIT 10001""", (snapshot['payload_sha256'],))
+            rows = await cursor.fetchall()
+    return jsonable_encoder({'items': rows[:10000], 'truncated': len(rows)>10000,
+        'as_of': datetime.now(UTC), 'last_checked_at': snapshot['received_at'] if snapshot else None,
+        'provider_issue_time': None, 'forecast_identity': 'response_snapshot'})
