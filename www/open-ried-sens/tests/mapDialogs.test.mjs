@@ -17,7 +17,7 @@ test("polling preserves dialog DOM while changed readings still update", () => {
   const marker = {
     getPopup: () => popup && { getContent: () => popup },
     getTooltip: () => tooltip && { getContent: () => tooltip },
-    bindPopup: content => { popup = content; },
+    bindPopup: (content, options) => { popup = content; assert.equal(options.autoPan, false); },
     bindTooltip: (content, options) => { tooltip = content; assert.equal(options.direction, "top"); },
     setPopupContent: content => { popup = content; popupUpdates++; },
     setTooltipContent: content => { tooltip = content; tooltipUpdates++; },

@@ -227,9 +227,9 @@ export default function MapComponent(props: MapProps) {
 
   useEffect(() => {
     if (!ready || !map.current) return;
-    const group = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 35, disableClusteringAtZoom: 14, showCoverageOnHover: false,
-      iconCreateFunction: cluster => L.divIcon({ html: placeMarker("vehicles", String(cluster.getChildCount())), className: "map-vehicle-icon", iconSize: [36, 36] }),
-    }) : L.layerGroup();
+    // MarkerCluster removes/re-adds a child on every move event, closing its
+    // tooltip and reopening its popup. Animated markers need a stable layer.
+    const group = L.layerGroup();
     group.addTo(map.current);
     vehicleGroup.current = group;
     const markers = vehicleMarkers.current;
@@ -242,7 +242,7 @@ export default function MapComponent(props: MapProps) {
       for (const line of trailLayers.values()) line.remove();
       trailLayers.clear(); trails.clear();
     };
-  }, [ready, clusteringReady]);
+  }, [ready]);
 
   // Retain marker instances and open dialogs across backend snapshots.
   // Animate received coordinates or explicitly labelled backend display estimates.
