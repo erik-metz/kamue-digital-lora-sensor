@@ -29,8 +29,9 @@ def read_status(path):
 def record_status(path, previous, *, error=None, details=None):
     now = datetime.now(UTC).isoformat()
     status = {**previous, "last_attempt": now}
-    if details and details.get("soil", {}).get("status") == "failed":
-        details = {**details, "soil": {**previous.get("soil", {}), **details["soil"]}}
+    for source in ("soil", "pollen"):
+        if details and details.get(source, {}).get("status") == "failed":
+            details = {**details, source: {**previous.get(source, {}), **details[source]}}
     if error is None:
         status.update(
             status="healthy" if (details or {}).get("complete", True) else "degraded",
@@ -57,13 +58,14 @@ def check_health(path, poll_seconds, source_max_age=None):
     try:
         success = datetime.fromisoformat(data["last_success"])
         age = (datetime.now(UTC) - success).total_seconds()
-        soil = data.get("soil", {})
-        if soil.get("status") in ("failed", "success", "not_due"):
-            if not soil.get("last_success"):
-                return 1
-            soil_age = (datetime.now(UTC) - datetime.fromisoformat(soil["last_success"])).total_seconds()
-            if not 0 <= soil_age <= max(10800, 3 * int(soil.get("poll_seconds", 3600))):
-                return 1
+        for name, interval in (("soil", 3600), ("pollen", 10800)):
+            source = data.get(name, {})
+            if source.get("status") in ("failed", "success", "not_due"):
+                if not source.get("last_success"):
+                    return 1
+                source_age = (datetime.now(UTC) - datetime.fromisoformat(source["last_success"])).total_seconds()
+                if not 0 <= source_age <= max(10800, 3 * int(source.get("poll_seconds", interval))):
+                    return 1
         return 0 if 0 <= age <= max(300, 3 * poll_seconds) else 1
     except (KeyError, TypeError, ValueError):
         return 1

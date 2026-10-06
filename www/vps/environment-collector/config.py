@@ -24,6 +24,8 @@ class Settings:
     enable_soil: bool = False
     soil_poll_seconds: int = 3600
     soil_url: str = "https://single-runs-api.open-meteo.com/v1/forecast"
+    enable_pollen: bool = False
+    pollen_poll_seconds: int = 10800
     request_timeout: float = 30.0
 
     @classmethod
@@ -44,10 +46,15 @@ class Settings:
         soil_poll_seconds = int(os.getenv("SOIL_POLL_SECONDS", "3600"))
         if soil_poll_seconds < 3600:
             raise ValueError("SOIL_POLL_SECONDS must be at least 3600")
+        pollen_poll_seconds = int(os.getenv("POLLEN_POLL_SECONDS", "10800"))
+        if pollen_poll_seconds < 10800:
+            raise ValueError("POLLEN_POLL_SECONDS must be at least 10800")
         if poll_seconds <= 0:
             raise ValueError("ENVIRONMENT_POLL_SECONDS must be positive")
         return cls(
             db=db,
+            enable_pollen=os.getenv("ENABLE_POLLEN_FORECAST", "false").lower() in ("1", "true", "yes"),
+            pollen_poll_seconds=pollen_poll_seconds,
             enable_soil=os.getenv("ENABLE_SOIL_FORECAST", "false").lower() in ("1", "true", "yes"),
             soil_poll_seconds=soil_poll_seconds,
             poll_seconds=poll_seconds,

@@ -78,3 +78,31 @@ async def soil_forecasts(pool=Depends(get_db_pool)):
         rows = await cursor.fetchall()
         checked = await (await conn.execute("SELECT MAX(received_at) AS checked_at FROM collection_attempts WHERE source_id='environment-soil-icon' AND status='success'")).fetchone()
     return jsonable_encoder({'last_checked_at': checked['checked_at'], 'items': rows[:10000], 'truncated': len(rows)>10000, 'as_of': datetime.now(UTC)})
+
+
+@router.get('/pollen')
+async def pollen_forecasts(pool=Depends(get_db_pool)):
+    """One complete archived response snapshot; no invented provider issue time."""
+    async with pool.connection() as conn:
+        ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
+        if not ready or not ready['ready']:
+            raise HTTPException(503, 'Canonical measurement storage is not installed')
+        snapshot = await (await conn.execute("""SELECT payload_sha256,received_at FROM collection_attempts
+            WHERE source_id='environment-pollen-cams' AND status='success'
+            ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
+        rows = []
+        if snapshot:
+            cursor = await conn.execute("""SELECT d.entity_id,e.metadata,d.metric,d.unit,d.dimensions,
+                r.observed_at AS valid_at,r.value,r.quality,r.collected_at,r.provenance
+                FROM measurement_definitions d JOIN entities e ON e.id=d.entity_id
+                JOIN readings r ON r.measurement_id=d.id
+                WHERE NOT e.is_hidden AND d.source_id='environment-pollen-cams'
+                    AND d.dimensions->>'contract'='environment-v1'
+                    AND d.dimensions->>'snapshot_sha256'=%s
+                    AND r.observed_at>=(date_trunc('day',NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')
+                    AND r.observed_at<(date_trunc('day',NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')+INTERVAL '7 days'
+                ORDER BY d.entity_id,r.observed_at,d.id LIMIT 10001""", (snapshot['payload_sha256'],))
+            rows = await cursor.fetchall()
+    return jsonable_encoder({'items': rows[:10000], 'truncated': len(rows)>10000,
+        'as_of': datetime.now(UTC), 'last_checked_at': snapshot['received_at'] if snapshot else None,
+        'provider_issue_time': None, 'forecast_identity': 'response_snapshot'})
