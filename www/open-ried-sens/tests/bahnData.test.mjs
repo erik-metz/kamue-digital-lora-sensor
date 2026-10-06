@@ -178,12 +178,19 @@ test("RIS client preserves exact instance links and handles unconfigured or expi
   const client = load("../lib/bahnBoards.ts", { fetch: async url => {
     assert.equal(url, "/api/bahn/boards");
     if (mode === "missing") return new Response(null, { status: 404 });
+    if (mode === "not-collected") return Response.json({ detail: "Source not collected yet" }, { status: 503 });
+    if (mode === "unavailable") return Response.json({ error: "Backend data unavailable" }, { status: 503 });
+    if (mode === "stored-expired") return Response.json({ detail: "Stored source data expired" }, { status: 503 });
     if (mode === "expired") return risResponse(events, { "x-data-expires-at": "2020-01-01T00:00:00Z" });
     return risResponse(events);
   } }, { "./bahnData": data });
   const result = await client.fetchBahnBoard();
   assert.equal(result.data.events[0].gtfs_link.service_date, "2026-10-05");
   mode = "missing"; assert.equal(await client.fetchBahnBoard(), null);
+  mode = "not-collected"; assert.equal(await client.fetchBahnBoard(), null);
+  for (const failure of ["unavailable", "stored-expired"]) {
+    mode = failure; await assert.rejects(() => client.fetchBahnBoard(), /nicht erreichbar/);
+  }
   mode = "expired"; await assert.rejects(() => client.fetchBahnBoard(), /Aktualität/);
   mode = "ok"; events = [{ ...boardEvent, gtfs_link: { status: "matched" } }];
   await assert.rejects(() => client.fetchBahnBoard(), /Fahrtzuordnung/);

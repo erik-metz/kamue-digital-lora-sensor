@@ -16,6 +16,10 @@ const dateTime = (value: unknown): value is string => typeof value === "string"
 export async function fetchBahnBoard(signal?: AbortSignal): Promise<BahnSnapshot<BahnBoard> | null> {
   const response = await fetch("/api/bahn/boards", { signal });
   if (response.status === 404) return null;
+  if (response.status === 503) {
+    const error: unknown = await response.json().catch(() => null);
+    if (record(error) && error.detail === "Source not collected yet") return null;
+  }
   if (!response.ok) throw new Error("RIS-Fahrten sind momentan nicht erreichbar.");
   const sourceUpdatedAt = response.headers.get("x-source-updated-at");
   const fetchedAt = response.headers.get("x-collected-at");
