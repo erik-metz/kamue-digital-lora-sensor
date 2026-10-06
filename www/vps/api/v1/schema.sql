@@ -1637,3 +1637,9 @@ INSERT INTO collection_sources(id,source_url,adapter,enabled,interval_seconds,de
 VALUES ('adsblol-ried','https://www.adsb.lol/','adsb-json',true,15,
     'Received aircraft over the buffered Ried; adsb.lol ODbL 1.0; incomplete coverage, no OGN adapter yet')
 ON CONFLICT(id) DO NOTHING;
+
+-- Authorized browser map acquisition, separate operational identity from AISstream.
+INSERT INTO collection_sources(id,source_url,adapter,enabled,interval_seconds,description)
+VALUES ('rhein-map','urn:open-ried:rhine-map','rhine-map-browser',true,300,
+    'Authorized Rhine map reception Frankenthal–Gernsheim; provider observation times preserved')
+ON CONFLICT(id) DO NOTHING;

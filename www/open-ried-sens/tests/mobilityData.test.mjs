@@ -37,6 +37,9 @@ test('reported ships retain name, AIS source and canonical telemetry, then expir
   assert.equal(node.id,'movement:ais:211276280');
   assert.equal(node.name,'Schiff HELENE');
   assert.match(node.address,/AISstream/);
+  const mapNode=model.mobilityNodes([{...ship,source_id:'rhein-map'}],[],now)[0];
+  assert.match(mapNode.address,/AIS-Kartenposition/);
+  assert.doesNotMatch(mapNode.address,/AISstream/);
   assert.equal(node.readings[0].value,1.3);
   assert.equal(model.mobilityNodes([ship],[],now+30000).length,0);
 });

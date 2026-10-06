@@ -106,11 +106,16 @@ async def persist(conn, event, now=None):
     if sample is None:
         return False
     body = json.dumps(event, separators=(',', ':'), allow_nan=False).encode()
+    return await persist_sample(conn, sample, body, SOURCE, 'https://aisstream.io/')
+
+
+async def persist_sample(conn, sample, body, source, source_url=None, content_type='application/json'):
+    """Write validated provider samples with shared MMSI identity and observation time."""
     digest = hashlib.sha256(body).hexdigest()
     stamp = sample['timestamp']
     async with conn.transaction():
         await conn.execute("""INSERT INTO collected_payloads(sha256,body,content_type)
-            VALUES (%s,%s,'application/json') ON CONFLICT DO NOTHING""", (digest, body))
+            VALUES (%s,%s,%s) ON CONFLICT DO NOTHING""", (digest, body, content_type))
         await conn.execute("""INSERT INTO ais_vessels(mmsi,updated_at,metadata) VALUES (%s,%s,%s)
             ON CONFLICT(mmsi) DO UPDATE SET updated_at=EXCLUDED.updated_at,
             metadata=ais_vessels.metadata || EXCLUDED.metadata
@@ -121,15 +126,17 @@ async def persist(conn, event, now=None):
         vessel = await (await conn.execute('SELECT metadata FROM ais_vessels WHERE mmsi=%s',
                                           (sample['mmsi'],))).fetchone()
         metadata = {**vessel[0], **sample['motion'], 'mmsi': sample['mmsi'],
-                    'source_url': 'https://aisstream.io/', 'geometry_basis': 'reported_gps'}
+                    'geometry_basis': 'reported_gps'}
+        if source_url:
+            metadata['source_url'] = source_url
         identity = 'ais:' + sample['mmsi']
         data = {'id': identity, 'entity_id': identity, 'kind': 'ship', 'basis': 'observed',
-                'source_id': SOURCE, 'latitude': sample['latitude'], 'longitude': sample['longitude'],
+                'source_id': source, 'latitude': sample['latitude'], 'longitude': sample['longitude'],
                 'timestamp': stamp.isoformat(), 'valid_until': (stamp + timedelta(minutes=10)).isoformat(),
                 'payload_sha256': digest, 'model_version': None, 'metadata': metadata, **metadata}
         await conn.execute("""INSERT INTO movement_positions(timestamp,entity_id,kind,latitude,longitude,
             basis,source_id,payload_sha256,metadata) VALUES (%s,%s,'ship',%s,%s,'observed',%s,%s,%s)
-            ON CONFLICT DO NOTHING""", (stamp, identity, sample['latitude'], sample['longitude'], SOURCE, digest, Jsonb(metadata)))
+            ON CONFLICT DO NOTHING""", (stamp, identity, sample['latitude'], sample['longitude'], source, digest, Jsonb(metadata)))
         await conn.execute('SELECT write_movement_position(%s)', (Jsonb(data),))
         await conn.execute("""INSERT INTO movement_latest(entity_id,basis,timestamp,valid_until,data)
             VALUES (%s,'observed',%s,%s,%s) ON CONFLICT(entity_id,basis) DO UPDATE SET

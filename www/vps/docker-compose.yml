@@ -371,6 +371,37 @@ services:
       backend-api:
         condition: service_healthy
 
+  rhine-map-collector:
+    build:
+      context: ./ais-collector
+    image: ghcr.io/erik-metz/open-ried-sens-ais-collector:latest
+    command: ["xvfb-run", "-a", "python", "map_collector.py"]
+    init: true
+    shm_size: 256m
+    mem_limit: 1g
+    cpus: 1.0
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    environment:
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      RHINE_MAP_INTERVAL_SECONDS: 300
+    healthcheck:
+      test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/tmp/rhein-map-heartbeat'); exit(0 if p.exists() and time.time()-p.stat().st_mtime<660 else 1)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 240s
+      retries: 3
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      backend-api:
+        condition: service_healthy
+
   nginx:
     image: nginx:alpine
     restart: always

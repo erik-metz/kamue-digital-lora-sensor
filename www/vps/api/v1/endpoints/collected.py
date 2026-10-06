@@ -177,8 +177,13 @@ async def mobility_snapshot(pool):
                     'status': {0: 'open', 1: 'closing_soon', 2: 'closed'}.get(state, 'unknown'),
                     'timestamp': row['observed_at'], 'valid_until': row['provenance']['valid_until'],
                     'basis': row['basis'], 'model_version': row['provenance']['model_version']})
-        source = await (await conn.execute("""SELECT received_at,status FROM collection_attempts
-            WHERE source_id='aisstream-rhein' ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
+        source = await (await conn.execute("""SELECT received_at,status,source_id FROM (
+                SELECT DISTINCT ON (source_id) received_at,status,source_id FROM collection_attempts
+                WHERE source_id IN ('aisstream-rhein','rhein-map')
+                ORDER BY source_id,received_at DESC,id DESC) s
+            ORDER BY CASE WHEN status='success' AND received_at > NOW()-
+                CASE WHEN source_id='rhein-map' THEN INTERVAL '660 seconds'
+                     ELSE INTERVAL '120 seconds' END THEN 0 ELSE 1 END,received_at DESC LIMIT 1""")).fetchone()
         aircraft = await (await conn.execute("""SELECT received_at,status FROM collection_attempts
             WHERE source_id='adsblol-ried' ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
     aircraft_source = {'status': 'unavailable', 'last_contact': None}
@@ -189,7 +194,7 @@ async def mobility_snapshot(pool):
     ship_source = {'status': 'unavailable', 'last_contact': None}
     if source:
         ship_source = {'status': 'connected' if source['status']=='success' and
-            source['received_at'] > datetime.now(UTC)-timedelta(seconds=120) else 'unavailable',
+            source['received_at'] > datetime.now(UTC)-timedelta(seconds=660 if source.get('source_id')=='rhein-map' else 120) else 'unavailable',
             'last_contact': source['received_at']}
     return {'positions': positions, 'crossings': crossings, 'crossings_available': bool(ready and ready['ready']),
             'ship_source': ship_source, 'aircraft_source': aircraft_source}

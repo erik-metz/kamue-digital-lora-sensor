@@ -298,7 +298,7 @@ export default function MapComponent(props: MapProps) {
           `MMSI: ${position.mmsi ?? "unbekannt"}`,
           `Kurs: ${position.course_deg !== undefined ? `${position.course_deg}°` : "unbekannt"}`,
           ...(position.length_m && position.beam_m ? [`Abmessungen: ${position.length_m} × ${position.beam_m} m`] : []),
-          "Quelle: AISstream · gemeldete AIS-Position · Empfang kann lückenhaft sein.",
+          position.source_id === "rhein-map" ? "Gemeldete AIS-Kartenposition · Empfang kann lückenhaft sein." : "Quelle: AISstream · gemeldete AIS-Position · Empfang kann lückenhaft sein.",
         ] : []),
         "Darstellung geglättet zwischen empfangenen Positionen (leicht zeitversetzt).",
         `Stand: ${new Date(position.timestamp).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`,
@@ -621,7 +621,7 @@ export default function MapComponent(props: MapProps) {
         ? "Empfangener Flugverkehr · adsb.lol · keine vollständige Erfassung."
         : "Flugverkehrsdaten derzeit nicht verfügbar; Positionen verfallen nach 60 Sekunden."} <a href="https://www.adsb.lol/" target="_blank" rel="noreferrer">adsb.lol</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">ODbL 1.0</a></p>}
       {layers.ships && <p role="status">{shipSource?.status === "connected" && shipSource.last_contact && Date.parse(shipSource.last_contact) + 120000 > props.now
-        ? "AISstream verbunden · Empfang kann lückenhaft sein."
+        ? "Schiffsempfang verfügbar · Empfang kann lückenhaft sein."
         : "AIS-Empfang derzeit nicht verfügbar; letzte Positionen verfallen nach 10 Minuten."}</p>}
       {movementFailed && <p role="status">Bewegungsdaten nicht verfügbar.</p>}
       {(layersFailed || missing.length > 0) && <p role="status">{missing.length || "Einige"} Ebenen ohne aktuelle Quelldaten – siehe Hinweise.</p>}

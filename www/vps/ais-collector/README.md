@@ -4,7 +4,7 @@ AISstream WebSocket reception for Frankenthal–Gernsheim, with a small geograph
 49.50–49.79 latitude, 8.30–8.55 longitude. This rectangle is a reception filter,
 not a guarantee that all vessels on the river are represented. Inland-AIS/Class A
 and Class B positions are accepted; static messages enrich vessel metadata but
-never refresh a position's validity. VesselFinder is not scraped or required.
+never refresh a position's validity. The separate authorized browser adapter is described below.
 
 The server-only `AIS_STREAM_API_KEY` belongs in `www/vps/.env`. No key reaches
 FastAPI responses, logs, source receipts, container build contexts or browsers.
@@ -85,3 +85,32 @@ canonical/legacy API reads, expiry and paired coordinate history. Never point th
 test DSN at production. CI runs these tests against PostgreSQL 16/TimescaleDB.
 
 Source protocol: https://aisstream.io/documentation/
+
+## Authorized browser map collector
+
+The project owner confirmed permission for this project's VesselFinder map acquisition
+on 2026-10-05, with no additional interval/storage/attribution conditions communicated.
+`map_collector.py` uses the official map in ordinary headed Chromium under Xvfb.
+A fresh viewport is centered on Frankenthal–Gernsheim each cycle. There are no stealth
+patches, proxy rotation, imported browser cookies or CAPTCHA workarounds. Any access
+error stops the cycle and is recorded; it must be resolved with the provider.
+
+The default/minimum cycle interval is 300 seconds, limited to 240 seconds per cycle.
+Map markers discover MMSIs; the normal selected-ship view supplies paired location
+and detail responses. Their exact UTC observation times must agree. Marker age codes
+and retrieval times are not substituted for observation times. Unsupported protocol
+versions, truncated frames, stale reports and sentinel values are rejected. No vessel
+movement is extrapolated. Only fresh, observed points enter the existing animation.
+
+Operational identity is `rhein-map`; the frontend labels these as AIS map positions.
+This identity is separate from `aisstream-rhein`, with its actual adapter documented
+here and in code. Both write to `ais:<MMSI>`; the newest observation wins. Original
+paired public responses are archived without browser cookies, account data or headers.
+The provider has not supplied an SLA; zero ships does not prove an empty river.
+
+Deploy the shared AIS image, migrate the API schema, then start `rhine-map-collector`.
+The new service requires no API key. Its normal user, resource limits and browser
+runtime are defined in Compose. Use `xvfb-run -a python map_collector.py --once --probe`
+for a bounded read-only test without database access. `--once` alone persists one cycle.
+Health reflects successful acquisition within eleven minutes, not complete coverage.
+Stop `rhine-map-collector` to disable browser acquisition while keeping AISstream active.
