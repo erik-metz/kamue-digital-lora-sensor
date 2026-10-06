@@ -221,7 +221,9 @@ jobs:
         working-directory: www/open-ried-sens
       - run: npm run test:map
         working-directory: www/open-ried-sens
-      - run: npx eslint app/satellites app/api/satellites
+      - run: node --test tests/mapPresets.test.mjs tests/urlState.test.mjs tests/satelliteData.test.mjs
+        working-directory: www/open-ried-sens
+      - run: npx eslint app/components/MapSatelliteLayer.tsx lib/satelliteData.ts app/api/satellites
         working-directory: www/open-ried-sens
       - run: npm run build
         working-directory: www/open-ried-sens

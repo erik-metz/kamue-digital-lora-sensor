@@ -7,6 +7,7 @@ export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color:
   places: { label: "Öffentlicher Ort", symbol: "🏫", color: "#38bdf8" },
   crossings: { label: "Bahnübergang", symbol: "🚧", color: "#fbbf24" },
   bus: { label: "Bus", symbol: "🚌", color: "#38bdf8" },
+  satellites: { label: "Satellit", symbol: "🛰", color: "#a78bfa" },
   aircraft: { label: "Flugzeug", symbol: "✈", color: "#facc15" },
   ship: { label: "Schiff", symbol: "🚢", color: "#22d3ee" },
   train: { label: "Zug", symbol: "🚆", color: "#c084fc" },

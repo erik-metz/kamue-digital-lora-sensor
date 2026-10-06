@@ -1,6 +1,7 @@
 "use client";
 
 import L from "leaflet";
+import MapSatelliteLayer from "./MapSatelliteLayer";
 import { metricLabel } from "@/lib/telemetryData";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -61,6 +62,7 @@ export default function MapComponent(props: MapProps) {
   useEffect(() => { callbacks.current = props; });
   const [zoom, setZoom] = useState(props.initialZoom ?? DEFAULT_MAP_ZOOM);
   const [ready, setReady] = useState(false);
+  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [clusteringReady, setClusteringReady] = useState(false);
   const freshnessMinute = Math.floor(props.now / 60000);
   useEffect(() => {
@@ -93,6 +95,7 @@ export default function MapComponent(props: MapProps) {
       maxBoundsViscosity: 0.8,
     });
     map.current = instance;
+    setMapInstance(instance);
     const resize = new ResizeObserver(() => instance.invalidateSize({ pan: false }));
     resize.observe(container.current);
     const base = L.tileLayer("/api/map-tiles/base/{z}/{x}/{y}.png", {
@@ -614,9 +617,9 @@ export default function MapComponent(props: MapProps) {
       </div>
     )}
     <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
-      <a href="/satellites" className="mb-2 block underline">Satelliten live ↗</a>
+      {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} /> : null}
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
-      <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr</p>
+      <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr · 🛰 Satelliten</p>
       <p>Ⓗ Haltestelle · ⚡ Ladestation</p>
       <p>⛔ Sperrung · 🚧 Baustelle · 🚗 Verkehrsachse</p>
       <p className="mt-1">Symbol anklicken für Details und Abfahrten.</p>
