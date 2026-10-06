@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, MapPin, RefreshCw, Share2, Zap } from "lucide-react";
+import { Check, RefreshCw, Share2, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { CATEGORIES, CATEGORY_IDS, parseStoredCategories, visibleNodes, categoriesForMode, hasCoordinates, type Category, type MapMode, type StationNode, type SensorNode } from "@/lib/mapData";
@@ -33,9 +33,6 @@ function saveCategories(categories: Category[]) {
   fallback = JSON.stringify(categories);
   try { localStorage.setItem(STORAGE_KEY, fallback); } catch { /* Session filters still work when storage is blocked. */ }
   window.dispatchEvent(new Event("ried-map-filter"));
-}
-function CategoryIcon({ category }: { category: Category }) {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0" aria-hidden="true"><path d={CATEGORIES[category].path} /></svg>;
 }
 
 type Props = { nodes: StationNode[]; loadFailed?: boolean; readingsAvailable?: boolean; showIntro?: boolean };
@@ -196,9 +193,9 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
     {updateFailed ? <p role="alert" className="rounded-xl border border-amber-700/50 bg-amber-950/20 p-3 text-sm text-amber-200">Die Kartendaten konnten nicht aktualisiert werden. {nodes.length ? "Zuletzt geladene Standorte bleiben sichtbar." : "Bitte versuche es später erneut."}</p> : null}
     {!data.readingsAvailable ? <p role="status" className="text-sm text-amber-200">Messwerte sind derzeit nicht verfügbar. Du kannst die Standorte auf der Karte erkunden.</p> : null}
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 sm:p-5 space-y-4">
+      <MapDarstellungBar
+        actions={<div className="flex justify-end">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="flex items-center gap-2 text-sm font-semibold"><MapPin className="size-4 text-emerald-400" /> Themen auf der Karte</h3>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -221,19 +218,11 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
             <button type="button" onClick={reset} className="text-xs text-slate-400 underline underline-offset-4 hover:text-white">Zurücksetzen</button>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Sensorgruppen auswählen">
-          <button type="button" aria-pressed={categories.length === CATEGORY_IDS.length} onClick={() => saveCategories(CATEGORY_IDS)} className="rounded-full border border-slate-600 px-3 py-2 text-sm aria-pressed:bg-slate-100 aria-pressed:text-slate-950 focus-visible:outline-2 focus-visible:outline-emerald-400">Alle <span className="ml-1 opacity-70">{nodes.length}</span></button>
-          {CATEGORY_IDS.filter(c => counts[c] > 0).map(c => <button key={c} type="button" aria-pressed={categories.includes(c)} onClick={() => {
-            const next = categories.length === CATEGORY_IDS.length ? [c] : categories.includes(c) ? categories.filter(v => v !== c) : [...categories, c];
-            saveCategories(next);
-          }} style={{ borderColor: categories.includes(c) ? CATEGORIES[c].color : undefined, color: categories.includes(c) ? CATEGORIES[c].color : undefined }} className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-950/40 px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 focus-visible:outline-2 focus-visible:outline-white">
-            <CategoryIcon category={c} />{CATEGORIES[c].label}<span className="text-xs opacity-70">{counts[c]}</span>
-          </button>)}
-        </div>
-        <p className="text-xs text-slate-500">Ein Thema anklicken, danach weitere hinzufügen. Ein Standort kann zu mehreren Themen gehören.</p>
-      </div>
 
-      <MapDarstellungBar
+      </div>}
+        sensorCategories={categories}
+        onSensorCategoriesChange={saveCategories}
+        sensorCounts={counts}
         mode={mode}
         onModeChange={nextMode => {
           const nextCategories = categoriesForMode(nodes.filter(n => hasCoordinates(n) && n.lat >= 49.55 && n.lat <= 49.80 && n.lng >= 8.30 && n.lng <= 8.65), categories, nextMode);

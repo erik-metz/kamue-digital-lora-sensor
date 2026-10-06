@@ -9,15 +9,13 @@ import {
   SlidersHorizontal,
   Thermometer,
   RotateCcw,
-  Check,
   Satellite,
 } from "lucide-react";
-import type { MapMode } from "@/lib/mapData";
+import { CATEGORIES, CATEGORY_IDS, type Category, type MapMode } from "@/lib/mapData";
 import { MAP_LAYER_IDS, type MapLayerId, DEFAULT_MAP_LAYERS } from "@/lib/urlState";
 import {
   isLayerZoomRestricted,
   LAYER_CATEGORIES,
-  LAYER_DEFINITIONS,
   LAYER_PRESETS,
   PRESET_IDS,
   type LayerCategory,
@@ -29,6 +27,10 @@ import {
 } from "@/lib/mapPresets";
 
 interface MapDarstellungBarProps {
+  actions?: React.ReactNode;
+  sensorCategories: Category[];
+  onSensorCategoriesChange: (categories: Category[]) => void;
+  sensorCounts: Record<Category, number>;
   mode: MapMode;
   onModeChange: (mode: MapMode) => void;
   satelliteMode?: "none" | "rgb" | "ndvi";
@@ -46,6 +48,10 @@ interface MapDarstellungBarProps {
 }
 
 export default function MapDarstellungBar({
+  actions,
+  sensorCategories,
+  onSensorCategoriesChange,
+  sensorCounts,
   mode,
   onModeChange,
   satelliteMode = "none",
@@ -62,10 +68,12 @@ export default function MapDarstellungBar({
   zoom = 12,
 }: MapDarstellungBarProps) {
   const activePreset = detectActivePreset(layers);
-  const totalActive = countActiveLayers(layers);
+  const totalActive = countActiveLayers(layers) + sensorCategories.length;
+  const totalFilters = MAP_LAYER_IDS.length + CATEGORY_IDS.length;
 
   const applyPreset = (presetId: LayerPresetId) => {
     onSetLayers(LAYER_PRESETS[presetId].layers);
+    if (!sensorCategories.length) onSensorCategoriesChange(CATEGORY_IDS);
   };
 
   const toggleCategoryAll = (category: LayerCategory) => {
@@ -80,17 +88,22 @@ export default function MapDarstellungBar({
   };
 
   const enableAllLayers = () => {
+    onSensorCategoriesChange(CATEGORY_IDS);
     const next = Object.fromEntries(MAP_LAYER_IDS.map((id) => [id, true])) as Record<MapLayerId, boolean>;
     onSetLayers(next);
   };
 
   const disableAllLayers = () => {
+    onSensorCategoriesChange([]);
+    onSatelliteModeChange?.("none");
     const next = Object.fromEntries(MAP_LAYER_IDS.map((id) => [id, false])) as Record<MapLayerId, boolean>;
     onSetLayers(next);
   };
 
   const resetToDefaultLayers = () => {
     onSetLayers(DEFAULT_MAP_LAYERS);
+    onSensorCategoriesChange(CATEGORY_IDS);
+    onSatelliteModeChange?.("none");
   };
 
   const categories: LayerCategory[] = ["mobility", "environment", "infrastructure", "planning"];
@@ -99,8 +112,9 @@ export default function MapDarstellungBar({
     <div
       id="darstellung-control-panel"
       className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3.5 sm:p-4 shadow-lg transition-all duration-200"
-      aria-label="Darstellung und Ebenen-Steuerung"
+      aria-label="Darstellung und Kartenfilter"
     >
+      {actions && <div className="mb-3">{actions}</div>}
       {/* Top Primary Bar */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         {/* Left: View Mode Segmented Controls */}
@@ -150,34 +164,9 @@ export default function MapDarstellungBar({
             </button>
           </div>
 
-          {/* Quick Presets */}
-          <div className="hidden sm:flex items-center gap-1 border-l border-slate-800 pl-3">
-            <span className="text-[11px] text-slate-400 mr-1 hidden xl:inline">Schnellfilter:</span>
-            {PRESET_IDS.map((pId) => {
-              const preset = LAYER_PRESETS[pId];
-              const isActive = activePreset === pId;
-              return (
-                <button
-                  key={pId}
-                  type="button"
-                  onClick={() => applyPreset(pId)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-colors ${
-                    isActive
-                      ? "bg-slate-800 text-white font-medium border border-slate-600 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
-                  }`}
-                  title={`${preset.label}: ${preset.description}`}
-                >
-                  <span>{preset.icon}</span>
-                  <span>{preset.shortLabel}</span>
-                </button>
-              );
-            })}
-          </div>
-
           {/* Copernicus Sentinel-2 Satellite Switcher */}
           <div className="flex items-center gap-1.5 border-t sm:border-t-0 sm:border-l border-slate-800 pt-2 sm:pt-0 sm:pl-3">
-            <span className="text-[11px] font-semibold text-slate-300 hidden md:inline-flex items-center gap-1">
+            <span className="text-[11px] font-semibold text-slate-300 inline-flex items-center gap-1">
               <Satellite className="size-3 text-cyan-400" />
               <span>Satellit:</span>
             </span>
@@ -229,6 +218,32 @@ export default function MapDarstellungBar({
               </button>
             </div>
           </div>
+          {/* Quick Presets */}
+          <div className="hidden sm:flex items-center gap-1 border-l border-slate-800 pl-3">
+            <span className="text-[11px] text-slate-400 mr-1 hidden xl:inline">Schnellfilter:</span>
+            {PRESET_IDS.map((pId) => {
+              const preset = LAYER_PRESETS[pId];
+              const isActive = activePreset === pId;
+              return (
+                <button
+                  key={pId}
+                  type="button"
+                  onClick={() => applyPreset(pId)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-colors ${
+                    isActive
+                      ? "bg-slate-800 text-white font-medium border border-slate-600 shadow-sm"
+                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
+                  }`}
+                  title={`${preset.label}: ${preset.description}`}
+                >
+                  <span>{preset.icon}</span>
+                  <span>{preset.shortLabel}</span>
+                </button>
+              );
+            })}
+          </div>
+
+
         </div>
 
         {/* Right: Layer Drawer Trigger & Summary */}
@@ -241,15 +256,16 @@ export default function MapDarstellungBar({
             type="button"
             onClick={onToggleOpen}
             aria-expanded={isOpen}
+            aria-controls="map-filter-groups"
             className={`inline-flex items-center gap-2 rounded-xl px-3 py-1.5 text-xs font-semibold transition-all border ${
               isOpen
                 ? "bg-emerald-500/10 border-emerald-500/50 text-emerald-300 shadow-sm"
                 : "bg-slate-950/70 border-slate-700 text-slate-200 hover:border-slate-500 hover:text-white"
             }`}
-            title="Ebenen und Geodaten-Overlays ein- oder ausblenden"
+            title="Sensorstationen und Kartenebenen gemeinsam filtern"
           >
             <Layers className="size-3.5 text-emerald-400" />
-            <span>Ebenen ({totalActive} aktiv)</span>
+            <span>Filter &amp; Ebenen ({totalActive} aktiv)</span>
             {isOpen ? (
               <ChevronUp className="size-3.5 text-slate-400" />
             ) : (
@@ -285,14 +301,14 @@ export default function MapDarstellungBar({
 
       {/* Expandable Layer Management Drawer */}
       {isOpen && (
-        <div className="mt-4 pt-4 border-t border-slate-800 space-y-4 animate-in fade-in-50 duration-200">
+        <div id="map-filter-groups" className="mt-4 pt-4 border-t border-slate-800 space-y-4 animate-in fade-in-50 duration-200">
           {/* Quick global layer action toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-950/50 rounded-xl p-2.5 border border-slate-800/80">
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="size-3.5 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-300">Kartenebenen verwalten</span>
+              <span className="text-xs font-semibold text-slate-300">Sensoren & Kartenebenen</span>
               <span className="text-[11px] text-slate-400">
-                ({totalActive} von {MAP_LAYER_IDS.length} aktiv)
+                ({totalActive} von {totalFilters} aktiv)
               </span>
             </div>
 
@@ -301,7 +317,7 @@ export default function MapDarstellungBar({
                 type="button"
                 onClick={enableAllLayers}
                 className="text-xs text-slate-400 hover:text-emerald-300 transition-colors"
-                title={`Alle ${MAP_LAYER_IDS.length} Ebenen auf der Karte anzeigen`}
+                title="Alle Sensorgruppen und Kartenebenen anzeigen"
               >
                 Alle an
               </button>
@@ -310,7 +326,7 @@ export default function MapDarstellungBar({
                 type="button"
                 onClick={disableAllLayers}
                 className="text-xs text-slate-400 hover:text-rose-300 transition-colors"
-                title="Alle Overlays deaktivieren (nur Sensoren)"
+                title="Alle Sensorgruppen und Kartenebenen ausblenden"
               >
                 Alle aus
               </button>
@@ -328,7 +344,27 @@ export default function MapDarstellungBar({
           </div>
 
           {/* 4 Thematic Columns / Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            <section className="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2.5" aria-label="Sensorstationen">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-800/80">
+                <h4 className="text-xs font-semibold text-slate-200">Sensorstationen <span className="text-slate-400">{sensorCategories.length}/{CATEGORY_IDS.length}</span></h4>
+                <button type="button" onClick={() => onSensorCategoriesChange(sensorCategories.length === CATEGORY_IDS.length ? [] : CATEGORY_IDS)} className="text-[11px] text-slate-400 hover:text-emerald-300" aria-label={sensorCategories.length === CATEGORY_IDS.length ? "Alle Sensorgruppen ausblenden" : "Alle Sensorgruppen anzeigen"}>
+                  {sensorCategories.length === CATEGORY_IDS.length ? "Alle aus" : "Alle an"}
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400">Messstationen nach Thema auswählen. Ein Standort kann zu mehreren Themen gehören.</p>
+              <div className="flex flex-col gap-1.5" role="group" aria-label="Sensorgruppen auswählen">
+                {CATEGORY_IDS.filter(category => sensorCounts[category] > 0).map(category => {
+                  const enabled = sensorCategories.includes(category);
+                  return <button key={category} type="button" aria-pressed={enabled}
+                    onClick={() => onSensorCategoriesChange(enabled ? sensorCategories.filter(item => item !== category) : [...sensorCategories, category])}
+                    className={`flex items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-left text-xs ${enabled ? "bg-slate-900 border-emerald-500/50 text-slate-200" : "border-slate-800 text-slate-400 hover:bg-slate-900"}`}>
+                    <span className="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke={CATEGORIES[category].color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-4 shrink-0" aria-hidden="true"><path d={CATEGORIES[category].path} /></svg>{CATEGORIES[category].label} <span className="text-slate-400">{sensorCounts[category]}</span></span>
+                    <span className={enabled ? "text-emerald-300" : "text-slate-500"}>{enabled ? "An" : "Aus"}</span>
+                  </button>;
+                })}
+              </div>
+            </section>
             {categories.map((catKey) => {
               const catInfo = LAYER_CATEGORIES[catKey];
               const catLayers = getLayersByCategory(catKey);
@@ -379,6 +415,7 @@ export default function MapDarstellungBar({
                         <button
                           key={layerMeta.id}
                           type="button"
+                          aria-pressed={isEnabled}
                           onClick={() => onLayerToggle(layerMeta.id, !isEnabled)}
                           className={`flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg text-xs transition-all text-left ${
                             isEnabled
