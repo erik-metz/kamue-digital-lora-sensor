@@ -76,7 +76,7 @@ export default function HackathonDataSection() {
         <button type="submit" disabled={busy} className={`${buttonClass} border border-slate-700 text-emerald-300 hover:bg-slate-800`}>Auswahl laden (ZIP)</button>
       </form>
       <p role="status" aria-live="polite" className="text-sm text-slate-300">{busy ? "Auswahl wird geprüft …" : message}</p>
-      <p className="text-sm text-slate-400">Für den Hackathon: Ein Paket für den gewünschten Zeitraum laden und gemeinsam im lokalen Netzwerk bereitstellen. Langfristige Sensordaten findest du in den UploadThing-Archiven.</p>
+      <p className="text-sm text-slate-400">Für den Hackathon: Ein Paket für den gewünschten Zeitraum laden und gemeinsam im lokalen Netzwerk bereitstellen. Langfristige Sensordaten findest du in den Sensorarchiven.</p>
     </section>
   );
 }

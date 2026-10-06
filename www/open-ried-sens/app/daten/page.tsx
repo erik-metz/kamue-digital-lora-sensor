@@ -11,7 +11,7 @@ import CommunitySection from "./CommunitySection";
 
 export const metadata: Metadata = {
   title: "Daten herunterladen & API | Open Ried Sens",
-  description: "Stichprobe, Themen-Exporte und UploadThing-Archive für eigene Auswertungen und den Hackathon im Hessischen Ried.",
+  description: "Stichprobe, Themen-Exporte und Sensorarchive für eigene Auswertungen und den Hackathon im Hessischen Ried.",
 };
 
 export default function DataDocsPage() {
@@ -24,14 +24,14 @@ export default function DataDocsPage() {
           <p className="max-w-2xl text-slate-300">Daten aus dem Ried für deine Auswertung, App oder Hackathon-Idee. Lade Dateien herunter oder nutze die API.</p>
           <nav aria-label="Bereiche der Datenseite" className="flex flex-wrap gap-4 text-sm text-emerald-300">
             <a href="#datasets" className="hover:underline">Downloads</a>
-            <a href="#monatsarchive" className="hover:underline">UploadThing-Archive</a>
+            <a href="#monatsarchive" className="hover:underline">Sensorarchive</a>
             <a href="#api-tools" className="hover:underline">API</a>
             <Link href="/quellen" className="hover:underline">Quellen &amp; Aktualität →</Link>
           </nav>
         </header>
         <CommunitySection />
         <HackathonDataSection />
-        <Suspense fallback={<p role="status" className="text-slate-400">UploadThing-Archive werden geladen …</p>}>
+        <Suspense fallback={<p role="status" className="text-slate-400">Sensorarchive werden geladen …</p>}>
           <ArchiveDownloads />
         </Suspense>
         <details className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
