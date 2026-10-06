@@ -57,7 +57,7 @@ export default function MapComponent(props: MapProps) {
   const crossingStates = useRef(new WeakMap<L.Marker, Crossing["status"]>());
   const crossingClustered = useRef(false);
   const crossingMarkers = useRef(new Map<string, L.Marker>());
-  const vehicleGroup = useRef<L.LayerGroup | null>(null);
+  const vehicleGroups = useRef(new Map<Position["kind"], L.LayerGroup>());
   const vehicleMotions = useRef(new Map<string, MarkerMotion>());
   const vehicleIcons = useRef(new Map<string, string>());
   const vehicleMarkers = useRef(new Map<string, L.Marker>());
@@ -67,6 +67,7 @@ export default function MapComponent(props: MapProps) {
   const [ready, setReady] = useState(false);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
   const [clusteringReady, setClusteringReady] = useState(false);
+  const clusterVehicles = clusteringReady && zoom < 16;
   const freshnessMinute = Math.floor(props.now / 60000);
   const hasFreshTemperature = props.nodes.some(node => readingFreshness(primaryReading(node, markerCategory(node, props.categories), "temperature"), freshnessMinute * 60000) === "fresh");
   useEffect(() => {
@@ -181,7 +182,7 @@ export default function MapComponent(props: MapProps) {
       let target = categoryGroups.get(category);
       if (!target) {
         target = clusteringReady && props.mode !== "temperature" ? L.markerClusterGroup({
-          maxClusterRadius: 38, disableClusteringAtZoom: 16, showCoverageOnHover: false,
+          maxClusterRadius: 65, disableClusteringAtZoom: 16, showCoverageOnHover: false,
           iconCreateFunction: item => L.divIcon({
             html: createMarkerContent(category, CATEGORIES[category].color, false, `${item.getChildCount()} ${CATEGORIES[category].label}`),
             className: "map-sensor-icon", iconSize: [32, 32],
@@ -228,22 +229,32 @@ export default function MapComponent(props: MapProps) {
 
   useEffect(() => {
     if (!ready || !map.current) return;
-    // MarkerCluster removes/re-adds a child on every move event, closing its
-    // tooltip and reopening its popup. Animated markers need a stable layer.
-    const group = L.layerGroup();
-    group.addTo(map.current);
-    vehicleGroup.current = group;
+    // Overview clusters are separate for each vehicle category. At close zoom,
+    // stable layers preserve smooth movement and open dialogs.
+    const groups = vehicleGroups.current;
+    for (const kind of ["bus", "train", "ship", "aircraft", "waste"] as const) {
+      const group = clusterVehicles ? L.markerClusterGroup({
+        maxClusterRadius: 65, disableClusteringAtZoom: 16, showCoverageOnHover: false,
+        iconCreateFunction: cluster => L.divIcon({
+          html: placeMarker(kind, String(cluster.getChildCount())),
+          className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18],
+        }),
+      }) : L.layerGroup();
+      group.addTo(map.current);
+      groups.set(kind, group);
+    }
     const markers = vehicleMarkers.current;
     const motions = vehicleMotions.current;
     const icons = vehicleIcons.current;
     const trailLayers = aircraftTrailLayers.current;
     const trails = aircraftTrails.current;
     return () => {
-      group.remove(); markers.clear(); motions.clear(); icons.clear(); vehicleGroup.current = null;
+      for (const group of groups.values()) group.remove();
+      groups.clear(); markers.clear(); motions.clear(); icons.clear();
       for (const line of trailLayers.values()) line.remove();
       trailLayers.clear(); trails.clear();
     };
-  }, [ready]);
+  }, [ready, clusterVehicles]);
 
   // Retain marker instances and open dialogs across backend snapshots.
   // Animate received coordinates or explicitly labelled backend display estimates.
@@ -272,7 +283,7 @@ export default function MapComponent(props: MapProps) {
       const icon = () => L.divIcon({ html: position.kind === "aircraft" ? aircraftMarker(position, label) : placeMarker(position.kind, label, predicted, position.heading_deg ?? position.course_deg),
         className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22] });
       if (!marker) {
-        marker = L.marker(target, { icon: icon(), alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
+        marker = L.marker(target, { icon: icon(), alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroups.current.get(position.kind) ?? instance);
         marker.on("click", () => callbacks.current.onSelectNode(`movement:${position.id}`));
         marker.on("keypress", (event: L.LeafletKeyboardEvent) => { if (event.originalEvent.key === "Enter") callbacks.current.onSelectNode(`movement:${position.id}`); });
         vehicleMarkers.current.set(key, marker);
@@ -324,7 +335,7 @@ export default function MapComponent(props: MapProps) {
       updateMarkerDialogs(marker, popup, tooltip, { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
     }
     for (const [key, marker] of vehicleMarkers.current) {
-      if (!retained.has(key)) { vehicleGroup.current?.removeLayer(marker); vehicleMarkers.current.delete(key); motions.delete(key); icons.delete(key); }
+      if (!retained.has(key)) { vehicleGroups.current.get(key.split(":")[0] as Position["kind"])?.removeLayer(marker); vehicleMarkers.current.delete(key); motions.delete(key); icons.delete(key); }
     }
     for (const [key, line] of aircraftTrailLayers.current) {
       if (!retained.has(key)) { line.remove(); aircraftTrailLayers.current.delete(key); aircraftTrails.current.delete(key); }
@@ -346,7 +357,7 @@ export default function MapComponent(props: MapProps) {
         const complete = reducedMotion.matches || time >= motion.startedAt + motion.duration;
         moving ||= !complete;
         // Clustered/offscreen markers need only coarse updates; visible vehicles get 30 fps.
-        if (!complete && !refreshClusters && (!marker.getElement() || !bounds.contains(marker.getLatLng()))) continue;
+        if (!complete && !refreshClusters && (clusterVehicles || !marker.getElement() || !bounds.contains(marker.getLatLng()))) continue;
         const point = complete ? motion.to : motionPoint(motion, time);
         if (!marker.getLatLng().equals(point)) marker.setLatLng(point);
       }
@@ -362,14 +373,14 @@ export default function MapComponent(props: MapProps) {
       document.removeEventListener("visibilitychange", resume);
       reducedMotion.removeEventListener("change", resume);
     };
-  }, [ready, clusteringReady, positions, layers, zoom]);
+  }, [ready, clusteringReady, clusterVehicles, positions, layers, zoom]);
 
   useEffect(() => {
     for (const position of positions) {
       if (!(Date.parse(position.valid_until) > props.now)) {
         const key = `${position.kind}:${position.id}`;
         const marker = vehicleMarkers.current.get(key);
-        if (marker) vehicleGroup.current?.removeLayer(marker);
+        if (marker) vehicleGroups.current.get(position.kind)?.removeLayer(marker);
         vehicleMarkers.current.delete(key);
         vehicleMotions.current.delete(key);
         vehicleIcons.current.delete(key);
@@ -447,9 +458,17 @@ export default function MapComponent(props: MapProps) {
       const layerId = id as MapLayerId;
       if (!layers[layerId] || id === "crossings") continue;
       const overview = zoom < LAYER_MIN_ZOOM[layerId];
-      const pointGroup = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 45, disableClusteringAtZoom: 16, showCoverageOnHover: false,
-        iconCreateFunction: cluster => L.divIcon({ html: placeMarker(id, String(cluster.getChildCount())), className: "map-place-icon", iconSize: [36, 36] }),
-      }).addTo(group) : group;
+      const pointGroups = new Map<string, L.LayerGroup>();
+      function pointGroupFor(kind: string) {
+        let target = pointGroups.get(kind);
+        if (!target) {
+          target = clusteringReady ? L.markerClusterGroup({ maxClusterRadius: 65, disableClusteringAtZoom: 16, showCoverageOnHover: false,
+            iconCreateFunction: cluster => L.divIcon({ html: placeMarker(kind, String(cluster.getChildCount())), className: "map-place-icon", iconSize: [36, 36] }),
+          }).addTo(group) : group;
+          pointGroups.set(kind, target);
+        }
+        return target;
+      }
       const vectorLayer = L.geoJSON(geometry as GeoJsonObject, {
         style: (feature) => {
           if (id === "traffic") {
@@ -535,14 +554,23 @@ export default function MapComponent(props: MapProps) {
                 });
                 midMarker.bindPopup(featureCard(id, values), { maxHeight: 260, maxWidth: 260, autoPanPadding: L.point(20, 40) });
                 midMarker.bindTooltip(detailCard(String(values.name ?? values.title ?? mapSymbol(id).label), mapSymbol(id).label, []));
-                pointGroup.addLayer(midMarker);
+                pointGroupFor(featureKind(id, values)).addLayer(midMarker);
               }
             }
           }
         },
       });
       if (overview) vectorLayer.setStyle({ weight: 1.5, opacity: .65, fillOpacity: .06 });
-      vectorLayer.addTo(pointGroup);
+      // Cluster points by their displayed category; retain lines and polygons.
+      function addPublishedLayer(layer: L.Layer, inheritedKind = id) {
+        const feature = (layer as L.Layer & { feature?: { properties?: Record<string, unknown> } }).feature;
+        const kind = feature ? featureKind(id, feature.properties ?? {}) : inheritedKind;
+        if (layer instanceof L.Marker) {
+          pointGroupFor(kind).addLayer(layer);
+        } else if (layer instanceof L.LayerGroup) layer.eachLayer(child => addPublishedLayer(child, kind));
+        else group.addLayer(layer);
+      }
+      vectorLayer.eachLayer(layer => addPublishedLayer(layer));
     }
     const starkregenMinZoom = LAYER_MIN_ZOOM.starkregen ?? 12;
     if (layers.starkregen && zoom >= starkregenMinZoom) L.tileLayer("/api/map-tiles/rain/{z}/{x}/{y}.png", { opacity: .5 }).addTo(group);
@@ -622,7 +650,7 @@ export default function MapComponent(props: MapProps) {
       </div>
     )}
     <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
-      {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} /> : null}
+      {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} clustered={clusterVehicles} /> : null}
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
       <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr · 🛰 Satelliten</p>
       <p>Ⓗ Haltestelle · ⚡ Ladestation</p>

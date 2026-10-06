@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { detailCard, placeMarker } from "@/lib/mapPresentation";
 import { decodeSatellites, satelliteDetails, satelliteFresh, SATELLITE_FRESH_MS, type SatelliteSnapshot } from "@/lib/satelliteData";
 
-export default function MapSatelliteLayer({ map }: { map: L.Map }) {
+export default function MapSatelliteLayer({ map, clustered }: { map: L.Map; clustered: boolean }) {
   const [now, setNow] = useState(() => Date.now());
   const [snapshot, setSnapshot] = useState<SatelliteSnapshot | null>(null);
   const [failed, setFailed] = useState(false);
@@ -14,8 +14,15 @@ export default function MapSatelliteLayer({ map }: { map: L.Map }) {
   const group = useRef<L.LayerGroup | null>(null);
   useEffect(() => {
     const registry = markers.current;
-    const layer = L.layerGroup().addTo(map);
+    const layer = (clustered ? L.markerClusterGroup({
+      maxClusterRadius: 65, disableClusteringAtZoom: 16, showCoverageOnHover: false,
+      iconCreateFunction: cluster => L.divIcon({ html: placeMarker("satellites", String(cluster.getChildCount())),
+        className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18] }),
+    }) : L.layerGroup()).addTo(map);
     group.current = layer;
+    return () => { layer.remove(); registry.clear(); group.current = null; };
+  }, [map, clustered]);
+  useEffect(() => {
     const stream = new EventSource("/api/satellites/stream");
     const controller = new AbortController();
     let lastEvent = 0, lastStamp = 0;
@@ -41,7 +48,7 @@ export default function MapSatelliteLayer({ map }: { map: L.Map }) {
     void fallback();
     const freshnessTimer = setInterval(() => setNow(Date.now()), 1000);
     const timer = setInterval(() => { if (!document.hidden) void fallback(); }, SATELLITE_FRESH_MS);
-    return () => { stream.close(); controller.abort(); clearInterval(timer); clearInterval(freshnessTimer); layer.remove(); registry.clear(); group.current = null; };
+    return () => { stream.close(); controller.abort(); clearInterval(timer); clearInterval(freshnessTimer); };
   }, [map]);
   useEffect(() => {
     const layer = group.current;
@@ -59,7 +66,7 @@ export default function MapSatelliteLayer({ map }: { map: L.Map }) {
         markers.current.set(p.id, marker);
       }
       const from = marker.getLatLng(), to = L.latLng(p.latitude, p.longitude);
-      if (Math.abs(from.lng-to.lng) < 180 && from.distanceTo(to) < 100000) motions.push({ marker, from, to });
+      if (!clustered && Math.abs(from.lng-to.lng) < 180 && from.distanceTo(to) < 100000) motions.push({ marker, from, to });
       else marker.setLatLng(to);
       const popup = detailCard(`🛰 ${p.name}`, "Berechnete Satellitenposition", satelliteDetails(p));
       const tooltip = detailCard(p.name, `${p.altitude_km.toFixed(0)} km · berechnet`, []);
@@ -77,7 +84,7 @@ export default function MapSatelliteLayer({ map }: { map: L.Map }) {
     };
     if (motions.length) frame = requestAnimationFrame(animate);
     return () => { cancelAnimationFrame(frame); map.off("moveend", updateVisible); };
-  }, [map, snapshot, now]);
+  }, [map, snapshot, now, clustered]);
   const fresh = snapshot && Date.parse(snapshot.timestamp)+SATELLITE_FRESH_MS > now;
   return <p role="status">🛰 {failed || !fresh || !snapshot.available ? "Satellitendaten derzeit nicht verfügbar." : visible ? `${visible} berechnete Satelliten-Bodenpositionen im Kartenausschnitt.` : "Zurzeit keine Satelliten-Bodenposition im Kartenausschnitt."}
     {fresh && snapshot.catalog_count > 0 ? ` ${snapshot.catalog_count.toLocaleString("de-DE")} Satelliten mit Bahndaten erfasst.` : ""}
