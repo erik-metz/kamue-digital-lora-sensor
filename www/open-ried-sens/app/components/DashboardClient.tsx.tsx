@@ -3,7 +3,7 @@
 import { Check, RefreshCw, Share2, Zap } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { CATEGORIES, CATEGORY_IDS, parseStoredCategories, visibleNodes, categoriesForMode, hasCoordinates, type Category, type MapMode, type StationNode, type SensorNode } from "@/lib/mapData";
+import { CATEGORIES, CATEGORY_IDS, DEFAULT_MAP_CATEGORIES, parseStoredCategories, visibleNodes, categoriesForMode, hasCoordinates, type Category, type MapMode, type StationNode, type SensorNode } from "@/lib/mapData";
 import {
   DEFAULT_MAP_CENTER,
   DEFAULT_MAP_LAYERS,
@@ -21,7 +21,7 @@ const MapComponent = dynamic(() => import("./MapComponent"), {
   loading: () => <div className="h-[480px] sm:h-[560px] rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-400"><RefreshCw className="size-5 animate-spin mr-2" /> Karte wird geladen…</div>,
 });
 const STORAGE_KEY = "ried-map-categories-v2";
-const DEFAULT_SELECTION = JSON.stringify(CATEGORY_IDS);
+const DEFAULT_SELECTION = JSON.stringify(DEFAULT_MAP_CATEGORIES);
 let fallback = DEFAULT_SELECTION;
 function preferences() { try { return localStorage.getItem(STORAGE_KEY) ?? DEFAULT_SELECTION; } catch { return fallback; } }
 function subscribe(listener: () => void) {
@@ -176,7 +176,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
   }, [loadFailed]);
 
   const reset = () => {
-    saveCategories(CATEGORY_IDS);
+    saveCategories(DEFAULT_MAP_CATEGORIES);
     setMode("category");
     setSelectedNodeId(undefined);
     setLayers(DEFAULT_MAP_LAYERS);

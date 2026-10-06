@@ -44,9 +44,9 @@ test("hidden and invalid-coordinate sensors are not exposed on the map", () => {
 });
 test("stored filters are validated and support an intentionally empty selection", () => {
   assert.deepEqual([...model.parseStoredCategories('["weather","weather"]')], ["weather"]);
-  assert.equal(model.parseStoredCategories('["nonexistent"]') .length, model.CATEGORY_IDS.length);
+  assert.equal(model.parseStoredCategories('["nonexistent"]') .length, model.DEFAULT_MAP_CATEGORIES.length);
   assert.equal(model.parseStoredCategories("[]").length, 0);
-  assert.equal(model.parseStoredCategories("bad json").length, model.CATEGORY_IDS.length);
+  assert.equal(model.parseStoredCategories("bad json").length, model.DEFAULT_MAP_CATEGORIES.length);
 });
 test("temperature bins agree with the displayed legend, parking zero stays visible", () => {
   const bins = [-1, 0, 10, 20, 30].map(model.temperatureColor);

@@ -15,6 +15,7 @@ export const CATEGORIES = {
 } as const;
 export type Category = keyof typeof CATEGORIES;
 export const CATEGORY_IDS = Object.keys(CATEGORIES) as Category[];
+export const DEFAULT_MAP_CATEGORIES: Category[] = ["water", "air", "parking", "bikes", "seismic"];
 
 export const SENSOR_CATEGORY_MIN_ZOOM: Record<Category, number> = {
   weather: 8,
@@ -1056,7 +1057,7 @@ export function parseStoredCategories(raw: string | null): Category[] {
     const value: unknown = JSON.parse(raw ?? "null");
     if (Array.isArray(value) && value.every(v => CATEGORY_IDS.includes(v as Category))) return [...new Set(value)] as Category[];
   } catch { /* Unavailable or old preferences use the default. */ }
-  return CATEGORY_IDS;
+  return DEFAULT_MAP_CATEGORIES;
 }
 
 export interface NatureArea {

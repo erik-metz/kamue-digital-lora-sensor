@@ -128,7 +128,7 @@ test("parseMapSessionState parses delta layer mode (+broadband,-trains)", () => 
   assert.ok(parsed.layers);
   assert.equal(parsed.layers.broadband, true); // was default false
   assert.equal(parsed.layers.trains, false); // was default true
-  assert.equal(parsed.layers.charging, true); // remains default true
+  assert.equal(parsed.layers.charging, false); // remains default false
 });
 
 test("parseMapSessionState parses selected node and metric", () => {
@@ -180,4 +180,9 @@ test("parseSubpageParams and serializeSubpageParams handle domain page parameter
 
   const serialized = urlState.serializeSubpageParams(parsed, defaults);
   assert.equal(serialized, "tab=taxes&muni=buerstadt");
+});
+
+ test("standard map selection contains exactly the requested sensor groups and overlays", () => {
+  assert.deepEqual([...mapData.DEFAULT_MAP_CATEGORIES], ["water", "air", "parking", "bikes", "seismic"]);
+  assert.deepEqual(Object.entries(urlState.DEFAULT_MAP_LAYERS).filter(([, enabled]) => enabled).map(([id]) => id).sort(), ["floods", "closures", "traffic", "buses", "waste", "trains", "ships", "aircraft", "crossings"].sort());
 });

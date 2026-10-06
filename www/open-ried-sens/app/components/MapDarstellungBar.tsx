@@ -11,18 +11,14 @@ import {
   RotateCcw,
   Satellite,
 } from "lucide-react";
-import { CATEGORIES, CATEGORY_IDS, type Category, type MapMode } from "@/lib/mapData";
+import { CATEGORIES, CATEGORY_IDS, DEFAULT_MAP_CATEGORIES, type Category, type MapMode } from "@/lib/mapData";
 import { MAP_LAYER_IDS, type MapLayerId, DEFAULT_MAP_LAYERS } from "@/lib/urlState";
 import {
   isLayerZoomRestricted,
   LAYER_CATEGORIES,
-  LAYER_PRESETS,
-  PRESET_IDS,
   type LayerCategory,
-  type LayerPresetId,
   countActiveLayers,
   countCategoryActiveLayers,
-  detectActivePreset,
   getLayersByCategory,
 } from "@/lib/mapPresets";
 
@@ -67,14 +63,8 @@ export default function MapDarstellungBar({
   totalCount,
   zoom = 12,
 }: MapDarstellungBarProps) {
-  const activePreset = detectActivePreset(layers);
   const totalActive = countActiveLayers(layers) + sensorCategories.length;
   const totalFilters = MAP_LAYER_IDS.length + CATEGORY_IDS.length;
-
-  const applyPreset = (presetId: LayerPresetId) => {
-    onSetLayers(LAYER_PRESETS[presetId].layers);
-    if (!sensorCategories.length) onSensorCategoriesChange(CATEGORY_IDS);
-  };
 
   const toggleCategoryAll = (category: LayerCategory) => {
     const items = getLayersByCategory(category);
@@ -102,7 +92,7 @@ export default function MapDarstellungBar({
 
   const resetToDefaultLayers = () => {
     onSetLayers(DEFAULT_MAP_LAYERS);
-    onSensorCategoriesChange(CATEGORY_IDS);
+    onSensorCategoriesChange(DEFAULT_MAP_CATEGORIES);
     onSatelliteModeChange?.("none");
   };
 
@@ -217,30 +207,7 @@ export default function MapDarstellungBar({
               </button>
             </div>
           </div>
-          {/* Quick Presets */}
-          <div className="hidden sm:flex items-center gap-1 border-l border-slate-800 pl-3">
-            <span className="text-[11px] text-slate-400 mr-1 hidden xl:inline">Schnellfilter:</span>
-            {PRESET_IDS.map((pId) => {
-              const preset = LAYER_PRESETS[pId];
-              const isActive = activePreset === pId;
-              return (
-                <button
-                  key={pId}
-                  type="button"
-                  onClick={() => applyPreset(pId)}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-colors ${
-                    isActive
-                      ? "bg-slate-800 text-white font-medium border border-slate-600 shadow-sm"
-                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent"
-                  }`}
-                  title={`${preset.label}: ${preset.description}`}
-                >
-                  <span>{preset.icon}</span>
-                  <span>{preset.shortLabel}</span>
-                </button>
-              );
-            })}
-          </div>
+
 
 
         </div>
@@ -276,30 +243,6 @@ export default function MapDarstellungBar({
           </button>
           </div>
         </div>
-      </div>
-
-      {/* Mobile presets fallback */}
-      <div className="flex sm:hidden items-center gap-1 overflow-x-auto pt-2.5 mt-2 border-t border-slate-800/70 pb-1">
-        <span className="text-[11px] text-slate-400 mr-1 shrink-0">Filter:</span>
-        {PRESET_IDS.map((pId) => {
-          const preset = LAYER_PRESETS[pId];
-          const isActive = activePreset === pId;
-          return (
-            <button
-              key={pId}
-              type="button"
-              onClick={() => applyPreset(pId)}
-              className={`shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] ${
-                isActive
-                  ? "bg-slate-800 text-white font-medium border border-slate-600"
-                  : "text-slate-400 hover:text-slate-200 bg-slate-950/50 border border-slate-800"
-              }`}
-            >
-              <span>{preset.icon}</span>
-              <span>{preset.shortLabel}</span>
-            </button>
-          );
-        })}
       </div>
 
       {/* Expandable Layer Management Drawer */}
