@@ -21,6 +21,9 @@ class Settings:
     blitzortung_radius_km: float = 25.0
     ried_lat: float = 49.6425
     ried_lon: float = 8.4552
+    enable_soil: bool = False
+    soil_poll_seconds: int = 3600
+    soil_url: str = "https://single-runs-api.open-meteo.com/v1/forecast"
     request_timeout: float = 30.0
 
     @classmethod
@@ -38,8 +41,15 @@ class Settings:
         enable_radolan = os.getenv("ENABLE_DWD_RADOLAN", "true").lower() in ("1", "true", "yes")
         enable_mosmix = os.getenv("ENABLE_DWD_MOSMIX", "true").lower() in ("1", "true", "yes")
         enable_blitzortung = os.getenv("ENABLE_BLITZORTUNG", "true").lower() in ("1", "true", "yes")
+        soil_poll_seconds = int(os.getenv("SOIL_POLL_SECONDS", "3600"))
+        if soil_poll_seconds < 3600:
+            raise ValueError("SOIL_POLL_SECONDS must be at least 3600")
+        if poll_seconds <= 0:
+            raise ValueError("ENVIRONMENT_POLL_SECONDS must be positive")
         return cls(
             db=db,
+            enable_soil=os.getenv("ENABLE_SOIL_FORECAST", "false").lower() in ("1", "true", "yes"),
+            soil_poll_seconds=soil_poll_seconds,
             poll_seconds=poll_seconds,
             state_dir=state_dir,
             pegelonline_url=os.getenv(

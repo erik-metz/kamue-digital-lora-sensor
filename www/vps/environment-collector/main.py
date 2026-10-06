@@ -1,10 +1,12 @@
 """Collect environmental river gauge and weather data and persist atomically."""
 
+import logging
 from dataclasses import asdict
 from datetime import UTC, datetime
 from time import monotonic
 
 import psycopg
+import soil
 from config import Settings
 from normalize import normalize
 from runtime import cli
@@ -54,8 +56,11 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
         "complete": True,
     }
     if dry_run:
+        soil_bundle = payload.get("soil")
+        soil_points = soil.normalize(soil_bundle) if soil_bundle else []
         dry_res = {
             **summary,
+            "soil": soil_points,
             "gauges": [asdict(g) for g in gauges],
             "weather": [asdict(w) for w in weather_list],
             "radar": [asdict(r) for r in radar_list],
@@ -76,6 +81,28 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             forecasts=forecast_list,
             lightning=lightning_item,
         )
+    summary["soil"] = {"status": "disabled"}
+    if settings.enable_soil:
+        try:
+            async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+                bundle = payload.get("soil") if raw is not None else await soil.acquire(client, settings, conn)
+                if bundle is not None:
+                    points = soil.normalize(bundle)
+                    count = await soil.persist(conn, bundle, points)
+                    summary["ingestion"]["soil"] = count
+                    summary["accepted"] += count
+                    summary["source_coverage"].append(soil.SOURCE)
+                    summary["soil"] = {"status": "success", "run": bundle["run"], "accepted": count,
+                        "last_success": datetime.now(UTC).isoformat(),
+                        "missing": sum(row[5] == "missing" for point in points for row in point["rows"])}
+                else:
+                    last = await (await conn.execute("SELECT MAX(received_at) FROM collection_attempts WHERE source_id=%s AND status='success'", (soil.SOURCE,))).fetchone()
+                    summary["soil"] = {"status": "not_due", "last_success": last[0].isoformat() if last[0] else None}
+        except Exception as exc:
+            logging.getLogger(__name__).exception("Soil acquisition/import failed; existing environment writes retained")
+            summary["complete"] = False
+            summary["soil"] = {"status": "failed", "error_category": type(exc).__name__}
+        summary["soil"]["poll_seconds"] = settings.soil_poll_seconds
     summary["durations_seconds"] = {
         "fetch": fetched - started,
         "normalize": normalized - fetched,

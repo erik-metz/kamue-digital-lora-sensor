@@ -492,3 +492,31 @@ class EnvironmentContractTests(DatabaseCase):
         response = await environment_measurements(entity_id='env:one', start=self.now,
             end=self.now + timedelta(days=1), kind=None, metric=None, limit=1, pool=Pool())
         self.assertEqual(response['items'], [])
+
+    async def test_soil_api_uses_newest_initialization_without_mixing_runs(self):
+        from endpoints.environment_measurements import soil_forecasts
+        stamp = datetime.now(UTC)
+        await self.conn.execute("""INSERT INTO collection_attempts
+            (id,source_id,http_status,payload_sha256,status)
+            VALUES (3,'environment-soil-icon',200,'test-hash','received')""")
+        for hours, value in ((6, 1), (1, 2)):
+            await self.conn.execute("""SELECT write_environment_measurement(
+                'env:one','soil_moisture','m3/m3','environment-soil-icon','forecast','{}',%s,%s,3,
+                '{"license":"CC-BY","spatial_reference":"grid:one","model":"test"}',
+                'valid',NULL,NULL,'instantaneous',%s)""", (stamp, value, stamp-timedelta(hours=hours)))
+        conn = self.conn
+
+        class Pool:
+            @asynccontextmanager
+            async def connection(self):
+                previous = conn.row_factory
+                conn.row_factory = dict_row
+                try:
+                    yield conn
+                finally:
+                    conn.row_factory = previous
+
+        result = await soil_forecasts(pool=Pool())
+        self.assertEqual(len(result['items']), 1)
+        self.assertEqual(result['items'][0]['value'], 2)
+        self.assertFalse(result['truncated'])
