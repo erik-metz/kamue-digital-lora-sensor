@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
-const context = { exports: {}, Date, Math, Number, Set };
+const aircraftContext = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL('../lib/aircraftPresentation.ts', import.meta.url), 'utf8'), {
+ compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, aircraftContext);
+const context = { exports: {}, Date, Math, Number, Set, require: () => aircraftContext.exports };
 vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL('../lib/mobilityData.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, context);
@@ -15,7 +19,7 @@ test('OGN gliders retain their source and do not label GPS reports as pressure h
     timestamp:new Date(now).toISOString(),valid_until:new Date(now+60000).toISOString(),
     altitude_ogn_m:914.4,vertical_rate_ogn_mps:.51};
   const node=model.mobilityNodes([position],[],now)[0];
-  assert.equal(node.name,'Segelflugzeug D-TEST');
+  assert.equal(node.name,'Segelflugzeug / Motorsegler D-TEST');
   assert.match(node.address,/Open Glider Network/);
   assert.deepEqual(Array.from(node.readings,r=>r.metric),['altitude_ogn','vertical_rate_ogn','latitude','longitude']);
   assert.equal(model.mobilityNodes([position],[],now+60000).length,0);
@@ -60,7 +64,7 @@ test('aircraft expose observed telemetry with separate altitude references and e
     altitude_baro_m:3048,altitude_geom_m:3200,vertical_rate_mps:-5.08};
   const node=model.mobilityNodes([aircraft],[],now)[0];
   assert.equal(node.id,'movement:aircraft:3c6488');
-  assert.equal(node.name,'Flugzeug DLH1WP');
+  assert.equal(node.name,'Flugzeug · Kategorie unbekannt DLH1WP');
   assert.match(node.address,/adsb.lol/);
   assert.deepEqual(Array.from(node.readings,r=>r.metric),['speed','altitude_baro','altitude_geom','vertical_rate','latitude','longitude']);
   assert.equal(model.mobilityNodes([aircraft],[],now+30000).length,0);

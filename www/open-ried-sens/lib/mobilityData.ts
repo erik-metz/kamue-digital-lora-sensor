@@ -1,11 +1,12 @@
 import type { StationNode } from "./mapData";
+import { aircraftStyle } from "./aircraftPresentation";
 
 export interface Position {
   id: string; kind: "bus" | "train" | "waste" | "ship" | "aircraft"; latitude: number; longitude: number;
   display_latitude?: number; display_longitude?: number; display_timestamp?: string; display_basis?: "course_speed_estimate";
   timestamp: string; valid_until: string; basis: "observed" | "schedule_prediction";
   icao24?: string; registration?: string; aircraft_type?: string; altitude_baro_m?: number; altitude_geom_m?: number; vertical_rate_mps?: number; reception?: string; attribution?: string;
-  ogn_category?: number; altitude_ogn_m?: number; vertical_rate_ogn_mps?: number;
+  ogn_category?: number; emitter_category?: string; altitude_ogn_m?: number; vertical_rate_ogn_mps?: number;
   name?: string; mmsi?: string; course_deg?: number; heading_deg?: number; ship_type?: number; length_m?: number; beam_m?: number; source_url?: string; source_id?: string;
   line?: string; destination?: string; speed_kmh?: number; geometry_basis?: string; delay_basis?: string; delay_seconds?: number;
 }
@@ -48,7 +49,7 @@ export function mobilityNodes(positions: Position[], crossings: Crossing[], now:
   return [
     ...crossings.map(c => ({ id: c.entity_id, name: c.name, locationName: "Bahnübergang", address: "Berechneter Schrankenstatus aus Fahrplanpositionen · keine Live-Messung", lat: c.latitude, lng: c.longitude,
       categories: ["traffic"] as StationNode["categories"], readings: crossingStatus(c, now) !== "unknown" && c.timestamp ? [{ metric: "crossing_state", unit: "state", value: { open: 0, closing_soon: 1, closed: 2, unknown: -1 }[c.status], timestamp: c.timestamp }] : [] })),
-    ...positions.filter(p => Date.parse(p.valid_until)>now).map(p => ({ id: `movement:${p.id}`, name: `${p.ogn_category === 1 ? "Segelflugzeug" : { train: "Zug", bus: "Bus", waste: "Abfallsammlung", ship: "Schiff", aircraft: "Flugzeug" }[p.kind]} ${p.name ?? p.registration ?? p.line ?? ""} ${p.destination ?? ""}`.trim(), locationName: "Mobilität", address: p.basis === "observed" ? (p.kind === "aircraft" ? `Empfangene Flugposition · ${p.source_id === "ogn-ried" ? "Open Glider Network" : "adsb.lol"} · ODbL 1.0 · Empfang kann lückenhaft sein` : p.kind === "ship" ? (p.source_id === "rhein-map" ? "AIS-Kartenposition · Empfang kann lückenhaft sein" : "AIS-Position · AISstream · Empfang kann lückenhaft sein") : "Beobachtete Position") : "Fahrplan-/Tourenprognose · berechnete Position und Geschwindigkeit", lat: p.latitude, lng: p.longitude,
+    ...positions.filter(p => Date.parse(p.valid_until)>now).map(p => ({ id: `movement:${p.id}`, name: `${p.kind === "aircraft" ? aircraftStyle(p).label : { train: "Zug", bus: "Bus", waste: "Abfallsammlung", ship: "Schiff", aircraft: "Flugzeug" }[p.kind]} ${p.name ?? p.registration ?? p.line ?? ""} ${p.destination ?? ""}`.trim(), locationName: "Mobilität", address: p.basis === "observed" ? (p.kind === "aircraft" ? `Empfangene Flugposition · ${p.source_id === "ogn-ried" ? "Open Glider Network" : "adsb.lol"} · ODbL 1.0 · Empfang kann lückenhaft sein` : p.kind === "ship" ? (p.source_id === "rhein-map" ? "AIS-Kartenposition · Empfang kann lückenhaft sein" : "AIS-Position · AISstream · Empfang kann lückenhaft sein") : "Beobachtete Position") : "Fahrplan-/Tourenprognose · berechnete Position und Geschwindigkeit", lat: p.latitude, lng: p.longitude,
       categories: ["traffic"] as StationNode["categories"], readings: [
         ...(typeof p.speed_kmh === "number" ? [{ metric: "speed", unit: "km/h", value: p.speed_kmh, timestamp: p.timestamp }] : []),
         ...(typeof p.altitude_baro_m === "number" ? [{ metric: "altitude_baro", unit: "m", value: p.altitude_baro_m, timestamp: p.timestamp }] : []),

@@ -68,6 +68,9 @@ def decode(payload, now=None):
         metadata = {'icao24': hex_id.lower(), 'reception': reception,
                     'geometry_basis': 'multilateration' if reception == 'mlat' else 'reported',
                     'source_url': 'https://www.adsb.lol/', 'attribution': 'adsb.lol · ODbL 1.0'}
+        category = aircraft.get('category')
+        if isinstance(category, str) and re.fullmatch(r'[AB][0-7]', category):
+            metadata['emitter_category'] = category
         for field, source in [('name', 'flight'), ('registration', 'r'), ('aircraft_type', 't')]:
             value = text(aircraft.get(source))
             if value:

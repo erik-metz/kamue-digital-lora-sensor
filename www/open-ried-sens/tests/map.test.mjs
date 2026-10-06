@@ -401,3 +401,33 @@ test("mapPresentation formats energy facilities as private solar with static hin
   });
   assert.ok(card);
 });
+
+const aircraftElement = tag => ({ tag, attrs: {}, children: [], dataset: {}, style: { setProperty() {} },
+ setAttribute(key,value) { this.attrs[key]=value; }, append(...nodes) { this.children.push(...nodes); } });
+const aircraftContext = { exports: {}, document: { createElement: aircraftElement, createElementNS: (_,tag) => aircraftElement(tag) } };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/aircraftPresentation.ts", import.meta.url), "utf8"), {
+ compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, aircraftContext);
+const aircraftPresentation = aircraftContext.exports;
+test("all received OGN and ADS-B flight categories have distinct original silhouettes", () => {
+ const ogn = [1,2,3,5,6,7,8,9,11,12,13].map(ogn_category => aircraftPresentation.aircraftStyle({ogn_category}));
+ assert.equal(new Set(ogn.map(c=>c.path)).size,ogn.length);
+ const adsb = ['A1','A2','A3','A4','A5','A6','A7','B1','B2','B3','B4','B6','B7'].map(emitter_category => aircraftPresentation.aircraftStyle({emitter_category}));
+ assert.equal(new Set(adsb.map(c=>c.path)).size,adsb.length);
+ assert.equal(aircraftPresentation.aircraftStyle({emitter_category:'A7'}).key,'helicopter');
+ assert.equal(aircraftPresentation.aircraftStyle({emitter_category:'B1'}).key,'glider');
+ assert.equal(aircraftPresentation.aircraftStyle({ogn_category:1,emitter_category:'A3'}).key,'glider');
+ for (const emitter_category of ['A0','B0','B5','C1','garbage',undefined]) {
+  assert.equal(aircraftPresentation.aircraftStyle({emitter_category}).key,'unknown');
+ }
+});
+test("aircraft marker rotates north-facing silhouettes and treats provider labels as text", () => {
+ const label='<img src=x onerror=alert(1)>';
+ const marker=aircraftPresentation.aircraftMarker({ogn_category:1,course_deg:90},label);
+ assert.equal(marker.dataset.aircraftCategory,'glider');
+ assert.equal(marker.children[0].style.transform,'rotate(90deg)');
+ assert.equal(marker.children[1].textContent,label);
+ assert.equal(marker.children[0].attrs['aria-hidden'],'true');
+ assert.equal(aircraftPresentation.aircraftMarker({ogn_category:11,course_deg:90},'').children[0].style.transform,undefined);
+ assert.equal(aircraftPresentation.aircraftMarker({ogn_category:1,course_deg:NaN},'').children[0].style.transform,undefined);
+});

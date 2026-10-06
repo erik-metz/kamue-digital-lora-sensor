@@ -35,6 +35,16 @@ The Flugverkehr layer shows direction, source/age and a short trace of received
 points (at most 12 points / two minutes). Traces break after reception gaps or large
 position jumps. Animation interpolates received coordinates only, stops at its target,
 respects reduced motion and does not run for stationary vehicles or hidden tabs.
+Each reported OGN category has an original SVG silhouette, color and German label.
+ADS-B emitter categories (A0–B7) are preserved as `emitter_category` in descriptive
+metadata; the existing writer and API need no schema change. Only reported categories
+select icons: model codes are not guessed into categories. ADS-B size groups do not
+imply piston/jet engines, and its combined ultralight or lighter-than-air groups remain
+combined. Missing/reserved categories use a generic fallback. Map popups, selection
+names and the expandable legend share the same category labels. Directional silhouettes
+point north before course rotation; balloons, parachutes and multirotor symbols stay
+upright. Category changes refresh existing markers and accessible titles.
+
 Positions expire in the browser even during stream failure. The shared stream already
 reconnects and supplies full snapshots; polling is retained as fallback.
 

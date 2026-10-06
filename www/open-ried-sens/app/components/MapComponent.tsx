@@ -9,6 +9,8 @@ import { createMarkerContent, createTempPinContent, createLevelCrossingMarkerCon
 import "./map.css";
 import { motionPoint, nextMotion, MOVEMENT_POLL_MS, type MarkerMotion } from "@/lib/mapMotion";
 import { detailCard, featureCard, featureKind, mapSymbol, placeMarker } from "@/lib/mapPresentation";
+import { aircraftMarker, aircraftStyle } from "@/lib/aircraftPresentation";
+import AircraftLegend from "./AircraftLegend";
 import { useEffect, useRef, useState } from "react";
 import type { GeoJsonObject } from "geojson";
 import { CATEGORIES, markerCategory, readingFreshness, primaryReading, valueLabel, observationLabel, temperatureColor, type Category, type MapMode, type SensorNode, type StationNode } from "@/lib/mapData";
@@ -258,13 +260,14 @@ export default function MapComponent(props: MapProps) {
       const key = `${position.kind}:${position.id}`;
       retained.add(key);
       const predicted = position.basis === "schedule_prediction";
-      const style = mapSymbol(position.kind);
-      const title = `${position.ogn_category === 1 ? "Segelflugzeug" : style.label} ${position.name ?? position.registration ?? position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
+      const style = position.kind === "aircraft" ? aircraftStyle(position) : mapSymbol(position.kind);
+      const title = `${style.label} ${position.name ?? position.registration ?? position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
       const estimated = position.display_basis === "course_speed_estimate";
       const target = L.latLng(position.display_latitude ?? position.latitude, position.display_longitude ?? position.longitude);
       let marker = vehicleMarkers.current.get(key);
-      const iconKey = `${position.kind}:${position.name ?? position.line ?? ""}:${predicted}:${position.heading_deg ?? position.course_deg ?? ""}`;
-      const icon = () => L.divIcon({ html: placeMarker(position.kind, position.name || position.line || style.label, predicted, position.heading_deg ?? position.course_deg),
+      const iconKey = `${position.kind}:${position.ogn_category ?? position.emitter_category ?? ""}:${position.name ?? position.registration ?? position.line ?? ""}:${predicted}:${position.heading_deg ?? position.course_deg ?? ""}`;
+      const label = position.name || position.registration || position.line || style.label;
+      const icon = () => L.divIcon({ html: position.kind === "aircraft" ? aircraftMarker(position, label) : placeMarker(position.kind, label, predicted, position.heading_deg ?? position.course_deg),
         className: "map-vehicle-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -22] });
       if (!marker) {
         marker = L.marker(target, { icon: icon(), title, alt: title, keyboard: true, zIndexOffset: 500 }).addTo(vehicleGroup.current ?? instance);
@@ -275,6 +278,10 @@ export default function MapComponent(props: MapProps) {
         if (icons.get(key) !== iconKey) marker.setIcon(icon());
       }
       icons.set(key, iconKey);
+      marker.options.title = title;
+      marker.options.alt = title;
+      marker.getElement()?.setAttribute("title", title);
+      marker.getElement()?.setAttribute("aria-label", title);
       motions.set(key, nextMotion(motions.get(key), target, Date.parse(position.display_timestamp ?? position.timestamp), receivedAt, estimated ? "ship_estimate" : position.kind === "aircraft" ? "aircraft" : position.kind === "ship"));
       if (position.kind === "aircraft") {
         const bounded = updateAircraftTrail(aircraftTrails.current.get(key) ?? [],
@@ -292,6 +299,7 @@ export default function MapComponent(props: MapProps) {
         ...(typeof position.speed_kmh === "number" ? [`${predicted ? "Modellierte Geschwindigkeit" : "Geschwindigkeit"}: ${Math.round(position.speed_kmh)} km/h`] : []),
         ...(position.delay_basis === "next_reported_stop_approximation" ? [`Gemeldete Haltestellenverspätung: ${Math.round((position.delay_seconds ?? 0) / 60)} Min. (auf die Fahrt angenähert)`] : []),
         ...(position.kind === "aircraft" ? [
+          `Kategorie: ${style.label}`,
           `ICAO: ${position.icao24 ?? "unbekannt"} · Kennzeichen: ${position.registration ?? "unbekannt"}`,
           `Typ: ${position.aircraft_type ?? "unbekannt"} · Kurs: ${position.course_deg !== undefined ? `${Math.round(position.course_deg)}°` : "unbekannt"}`,
           ...(position.altitude_baro_m !== undefined ? [`Druckhöhe: ${Math.round(position.altitude_baro_m)} m (Standarddruck 1013,25 hPa; keine Höhe über Grund)`] : []),
@@ -626,6 +634,7 @@ export default function MapComponent(props: MapProps) {
       <p className="mt-1 text-slate-400">Gestrichelter Rand: Prognose · Durchgehend: beobachtet (Fahrzeuge)</p>
       {(missing.length > 0) && <p>Ohne aktuelle Quelle: {missing.map(id => mapSymbol(id).label).join(", ")}.</p>}
       </details>
+      {layers.aircraft && <AircraftLegend />}
       {layers.aircraft && <p role="status">{aircraftSource?.status === "connected" && aircraftSource.last_contact && Date.parse(aircraftSource.last_contact) + 60000 > props.now
         ? "Empfangener Flugverkehr · adsb.lol · keine vollständige Erfassung."
         : "Flugverkehrsdaten derzeit nicht verfügbar; Positionen verfallen nach 60 Sekunden."} <a href="https://www.adsb.lol/" target="_blank" rel="noreferrer">adsb.lol</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">ODbL 1.0</a></p>}

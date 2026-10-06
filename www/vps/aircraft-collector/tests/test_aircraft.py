@@ -17,6 +17,11 @@ def snapshot(now=NOW, **fields):
 
 
 class DecodeTests(unittest.TestCase):
+    def test_reported_emitter_category_is_preserved_without_model_guessing(self):
+        self.assertEqual(decode(snapshot(category='A7'), NOW)[0]['metadata']['emitter_category'], 'A7')
+        for category in [None, 'C1', 'B9', 1, '<script>']:
+            self.assertNotIn('emitter_category', decode(snapshot(category=category), NOW)[0]['metadata'])
+        self.assertNotIn('emitter_category', decode(snapshot(t='A321'), NOW)[0]['metadata'])
     def test_position_age_units_and_altitude_references(self):
         sample = decode(snapshot(), NOW)[0]
         self.assertEqual(sample['timestamp'], NOW-timedelta(seconds=2))
@@ -68,9 +73,9 @@ class PersistenceTests(DatabaseCase):
         from starlette.requests import Request
         now = datetime.now(UTC)
         await install(self.conn)
-        self.assertEqual(await persist(self.conn, snapshot(now), now), 1)
-        self.assertEqual(await persist(self.conn, snapshot(now), now), 0)
-        self.assertEqual(await persist(self.conn, snapshot(now-timedelta(seconds=15)), now), 1)
+        self.assertEqual(await persist(self.conn, snapshot(now, category='A3'), now), 1)
+        self.assertEqual(await persist(self.conn, snapshot(now, category='A3'), now), 0)
+        self.assertEqual(await persist(self.conn, snapshot(now-timedelta(seconds=15), category='A3'), now), 1)
         await install(self.conn)  # Existing aircraft must survive all AIS/schema constraints.
         self.assertEqual(await self.scalar("SELECT COUNT(*) FROM movement_positions WHERE kind='aircraft'"), 2)
         self.assertEqual(await self.scalar('SELECT COUNT(*) FROM collected_payloads'), 2)
@@ -87,6 +92,7 @@ class PersistenceTests(DatabaseCase):
                 body = await mobility_snapshot(Pool())
                 aircraft = next(p for p in body['positions'] if p['kind'] == 'aircraft')
                 self.assertEqual(aircraft['name'], 'DLH1WP')
+                self.assertEqual(aircraft['emitter_category'], 'A3')
                 self.assertEqual(aircraft['altitude_baro_m'], 3048)
                 self.assertEqual(body['aircraft_source']['status'], 'connected')
                 self.assertEqual(datetime.fromisoformat(aircraft['valid_until']), datetime.fromisoformat(aircraft['timestamp'])+timedelta(seconds=MAX_AGE))
