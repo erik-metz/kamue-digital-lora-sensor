@@ -321,6 +321,31 @@
       "http_retries": 2
     },
     {
+      "id": "buergerstiftung-biblis-events",
+      "group": "social",
+      "adapter": "biblis-events",
+      "enabled": true,
+      "url": "https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events",
+      "description": "Bürgerstiftung Biblis: Vereinsveranstaltungen und offene Angebote mit geprüften Veranstaltungsorten im Ried.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_venues": {
+        "1695": {
+          "source_name": "Rathausplatz",
+          "venue_name": "Rathausplatz Nordheim",
+          "municipality": "Biblis",
+          "evidence_url": "https://www.biblis.eu/rathaus/aktuelles/pressemitteilungen/verkehrsfuehrung-waehrend-der-kerwe-in-nordheim-1/"
+        },
+        "1646": {
+          "source_name": "Vereinsgelände",
+          "venue_name": "Vereinsgelände Vogel- und Naturschutzverein Wattenheim",
+          "municipality": "Biblis",
+          "evidence_url": "https://tip-suedhessen.de/issues/tip_09sa26.pdf"
+        }
+      }
+    },
+    {
       "id": "demographics-published-source",
       "group": "demographics",
       "adapter": "json",

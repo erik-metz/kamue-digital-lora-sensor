@@ -1,0 +1,671 @@
+[
+  {
+    "id": 6726,
+    "global_id": "www.buergerstiftung-biblis.de?id=6726",
+    "global_id_lineage": [
+      "www.buergerstiftung-biblis.de?id=6726"
+    ],
+    "author": "6",
+    "status": "publish",
+    "date": "2025-09-15 15:25:42",
+    "date_utc": "2025-09-15 13:25:42",
+    "modified": "2025-10-07 15:19:12",
+    "modified_utc": "2025-10-07 13:19:12",
+    "url": "https://www.buergerstiftung-biblis.de/event/phil-the-genesis-phil-collins-tribute-show/",
+    "rest_url": "https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events/6726",
+    "title": "PHIL – THE GENESIS &#038; PHIL COLLINS TRIBUTE SHOW",
+    "description": "<p>40 Jahre die Filminsel Biblis!</p>\n<p>29.- € VVK &#8211; Vorverkaufsstellen sind: Hollerbach Biblis, Radio Preuss Bürstadt, Bücherkiste Lampertheim, an der Kinokasse und online in unserem Ticketshop!</p>\n<p><strong>Die Veranstaltung ist unbestuhlt</strong>. Lediglich im hinteren Bereich der Riedhalle werden einige Tische und Stühle aufgestellt sein!</p>\n<p>Einlass ab 19 Uhr</p>",
+    "excerpt": "",
+    "slug": "phil-the-genesis-phil-collins-tribute-show",
+    "image": false,
+    "all_day": false,
+    "start_date": "2026-01-31 20:00:00",
+    "start_date_details": {
+      "year": "2026",
+      "month": "01",
+      "day": "31",
+      "hour": "20",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "end_date": "2026-01-31 23:30:00",
+    "end_date_details": {
+      "year": "2026",
+      "month": "01",
+      "day": "31",
+      "hour": "23",
+      "minutes": "30",
+      "seconds": "00"
+    },
+    "utc_start_date": "2026-01-31 19:00:00",
+    "utc_start_date_details": {
+      "year": "2026",
+      "month": "01",
+      "day": "31",
+      "hour": "19",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_end_date": "2026-01-31 22:30:00",
+    "utc_end_date_details": {
+      "year": "2026",
+      "month": "01",
+      "day": "31",
+      "hour": "22",
+      "minutes": "30",
+      "seconds": "00"
+    },
+    "timezone": "Europe/Berlin",
+    "timezone_abbr": "CET",
+    "cost": "",
+    "cost_details": {
+      "currency_symbol": "€",
+      "currency_code": "USD",
+      "currency_position": "prefix",
+      "values": []
+    },
+    "website": "",
+    "show_map": true,
+    "show_map_link": true,
+    "hide_from_listings": false,
+    "sticky": false,
+    "featured": false,
+    "categories": [],
+    "tags": [],
+    "venue": {
+      "id": 1125,
+      "author": "6",
+      "status": "publish",
+      "date": "2021-10-06 11:57:04",
+      "date_utc": "2021-10-06 09:57:04",
+      "modified": "2021-10-06 11:57:04",
+      "modified_utc": "2021-10-06 09:57:04",
+      "url": "https://www.buergerstiftung-biblis.de/veranstaltungsort/riedhalle/",
+      "venue": "Riedhalle",
+      "slug": "riedhalle",
+      "address": "Lindenstr. 38",
+      "city": "Biblis",
+      "zip": "68647",
+      "show_map": true,
+      "show_map_link": true,
+      "global_id": "www.buergerstiftung-biblis.de?id=1125",
+      "global_id_lineage": [
+        "www.buergerstiftung-biblis.de?id=1125"
+      ]
+    },
+    "organizer": [
+      {
+        "id": 1557,
+        "author": "6",
+        "status": "publish",
+        "date": "2022-01-11 16:20:08",
+        "date_utc": "2022-01-11 15:20:08",
+        "modified": "2022-01-11 16:20:08",
+        "modified_utc": "2022-01-11 15:20:08",
+        "url": "https://www.buergerstiftung-biblis.de/veranstalter/filminsel-kommunales-kino-biblis-e-v/",
+        "organizer": "Filminsel &#8211; Kommunales Kino Biblis e.V.",
+        "slug": "filminsel-kommunales-kino-biblis-e-v",
+        "website": "https://www.filminsel-biblis.de/",
+        "global_id": "www.buergerstiftung-biblis.de?id=1557",
+        "global_id_lineage": [
+          "www.buergerstiftung-biblis.de?id=1557"
+        ]
+      }
+    ],
+    "custom_fields": []
+  },
+  {
+    "id": 7831,
+    "global_id": "www.buergerstiftung-biblis.de?id=7831",
+    "global_id_lineage": [
+      "www.buergerstiftung-biblis.de?id=7831"
+    ],
+    "author": "6",
+    "status": "publish",
+    "date": "2026-05-11 13:45:20",
+    "date_utc": "2026-05-11 11:45:20",
+    "modified": "2026-05-11 13:45:31",
+    "modified_utc": "2026-05-11 11:45:31",
+    "url": "https://www.buergerstiftung-biblis.de/event/buergertreff-21/",
+    "rest_url": "https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events/7831",
+    "title": "Bürgertreff",
+    "description": "<p>findet jeden Mittwoch statt,</p>\n<p>bei schlechtem Wetter im Rathaus</p>",
+    "excerpt": "",
+    "slug": "buergertreff-21",
+    "image": false,
+    "all_day": false,
+    "start_date": "2026-10-07 16:00:00",
+    "start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "07",
+      "hour": "16",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "end_date": "2026-10-07 16:00:00",
+    "end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "07",
+      "hour": "16",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_start_date": "2026-10-07 14:00:00",
+    "utc_start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "07",
+      "hour": "14",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_end_date": "2026-10-07 14:00:00",
+    "utc_end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "07",
+      "hour": "14",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "timezone": "Europe/Berlin",
+    "timezone_abbr": "CEST",
+    "cost": "",
+    "cost_details": {
+      "currency_symbol": "€",
+      "currency_code": "USD",
+      "currency_position": "prefix",
+      "values": []
+    },
+    "website": "",
+    "show_map": true,
+    "show_map_link": true,
+    "hide_from_listings": false,
+    "sticky": false,
+    "featured": false,
+    "categories": [],
+    "tags": [],
+    "venue": {
+      "id": 6386,
+      "author": "6",
+      "status": "publish",
+      "date": "2025-05-17 20:26:12",
+      "date_utc": "2025-05-17 18:26:12",
+      "modified": "2025-05-17 20:28:02",
+      "modified_utc": "2025-05-17 18:28:02",
+      "url": "https://www.buergerstiftung-biblis.de/veranstaltungsort/grossschachfeld-hinter-dem-rathaus-nordheim/",
+      "venue": "Groß-Schachfeld hinter dem Rathaus Nordheim",
+      "slug": "grossschachfeld-hinter-dem-rathaus-nordheim",
+      "city": "Biblis-Nordheim",
+      "zip": "68647",
+      "show_map": true,
+      "show_map_link": true,
+      "global_id": "www.buergerstiftung-biblis.de?id=6386",
+      "global_id_lineage": [
+        "www.buergerstiftung-biblis.de?id=6386"
+      ]
+    },
+    "organizer": [
+      {
+        "id": 6387,
+        "author": "6",
+        "status": "publish",
+        "date": "2025-05-17 20:26:12",
+        "date_utc": "2025-05-17 18:26:12",
+        "modified": "2026-03-08 17:17:15",
+        "modified_utc": "2026-03-08 16:17:15",
+        "url": "https://www.buergerstiftung-biblis.de/veranstalter/schachverein-biblis-und-ruediger-glaser/",
+        "organizer": "Schachverein Biblis",
+        "slug": "schachverein-biblis-und-ruediger-glaser",
+        "global_id": "www.buergerstiftung-biblis.de?id=6387",
+        "global_id_lineage": [
+          "www.buergerstiftung-biblis.de?id=6387"
+        ]
+      }
+    ],
+    "custom_fields": []
+  },
+  {
+    "id": 8211,
+    "global_id": "www.buergerstiftung-biblis.de?id=8211",
+    "global_id_lineage": [
+      "www.buergerstiftung-biblis.de?id=8211"
+    ],
+    "author": "6",
+    "status": "publish",
+    "date": "2026-09-20 12:09:00",
+    "date_utc": "2026-09-20 10:09:00",
+    "modified": "2026-09-24 16:00:00",
+    "modified_utc": "2026-09-24 14:00:00",
+    "url": "https://www.buergerstiftung-biblis.de/event/stadtfuehrung-heppenheim/",
+    "rest_url": "https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events/8211",
+    "title": "Stadtführung Heppenheim",
+    "description": "<div data-olk-copy-source=\"MessageBody\">TG Biblis Wanderabteilung: Heppenheim &#8211; Besuch im Biergarten und Führung in der Altstadt</div>\n<div>Weitere Infos siehe Flyer</div>\n<p><img decoding=\"async\" class=\"aligncenter wp-image-8213\" src=\"https://www.buergerstiftung-biblis.de/wp-content/uploads/2026/09/Stadtfuehrung-HP-240x300.png\" alt=\"\" width=\"480\" height=\"600\" srcset=\"https://www.buergerstiftung-biblis.de/wp-content/uploads/2026/09/Stadtfuehrung-HP-240x300.png 240w, https://www.buergerstiftung-biblis.de/wp-content/uploads/2026/09/Stadtfuehrung-HP-819x1024.png 819w, https://www.buergerstiftung-biblis.de/wp-content/uploads/2026/09/Stadtfuehrung-HP-768x960.png 768w, https://www.buergerstiftung-biblis.de/wp-content/uploads/2026/09/Stadtfuehrung-HP.png 1080w\" sizes=\"(max-width: 480px) 100vw, 480px\" /></p>",
+    "excerpt": "",
+    "slug": "stadtfuehrung-heppenheim",
+    "image": false,
+    "all_day": false,
+    "start_date": "2026-10-09 17:00:00",
+    "start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "17",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "end_date": "2026-10-09 17:00:00",
+    "end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "17",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_start_date": "2026-10-09 15:00:00",
+    "utc_start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "15",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_end_date": "2026-10-09 15:00:00",
+    "utc_end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "15",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "timezone": "Europe/Berlin",
+    "timezone_abbr": "CEST",
+    "cost": "",
+    "cost_details": {
+      "currency_symbol": "€",
+      "currency_code": "USD",
+      "currency_position": "prefix",
+      "values": []
+    },
+    "website": "",
+    "show_map": true,
+    "show_map_link": true,
+    "hide_from_listings": false,
+    "sticky": false,
+    "featured": false,
+    "categories": [],
+    "tags": [],
+    "venue": [],
+    "organizer": [
+      {
+        "id": 7646,
+        "author": "6",
+        "status": "publish",
+        "date": "2026-03-26 12:05:33",
+        "date_utc": "2026-03-26 11:05:33",
+        "modified": "2026-03-26 12:05:33",
+        "modified_utc": "2026-03-26 11:05:33",
+        "url": "https://www.buergerstiftung-biblis.de/veranstalter/tg-biblis-abteilung-wandern/",
+        "organizer": "TG Biblis Abteilung Wandern",
+        "slug": "tg-biblis-abteilung-wandern",
+        "phone": "0151 25310472",
+        "website": "https://www.tg-biblis.de/sportgruppen/wandern/",
+        "email": "wandern@tg-biblis.de",
+        "global_id": "www.buergerstiftung-biblis.de?id=7646",
+        "global_id_lineage": [
+          "www.buergerstiftung-biblis.de?id=7646"
+        ]
+      }
+    ],
+    "custom_fields": []
+  },
+  {
+    "id": 7430,
+    "global_id": "www.buergerstiftung-biblis.de?id=7430",
+    "global_id_lineage": [
+      "www.buergerstiftung-biblis.de?id=7430"
+    ],
+    "author": "6",
+    "status": "publish",
+    "date": "2026-01-23 13:50:12",
+    "date_utc": "2026-01-23 12:50:12",
+    "modified": "2026-01-23 14:12:00",
+    "modified_utc": "2026-01-23 13:12:00",
+    "url": "https://www.buergerstiftung-biblis.de/event/kompressionsmode-neu-erleben/",
+    "rest_url": "https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events/7430",
+    "title": "&#8222;Kompressionsmode neu erleben&#8220;",
+    "description": "<p>Farben, Modelle und Inspirationen! Sanitätshäuser präsentieren die neuesten Trends.</p>\n<p>Alle Treffen finden von 19-21 Uhr im Bürgerzentrum im kleinen Raum statt.</p>\n<p>Bei Interesse, bitte unbedingt unter 0175 1981 540 oder <a href=\"mailto:anmeldung@shg-lilys-ausm-ried.de\">anmeldung@shg-lilys-ausm-ried.de</a> Ihr Kommen anmelden.</p>\n<p>Die Veranstaltung ist für Mitglieder und Nichtmitglieder – für Nichtmitglieder Unkostenbeitrag 5 €</p>",
+    "excerpt": "",
+    "slug": "kompressionsmode-neu-erleben",
+    "image": false,
+    "all_day": false,
+    "start_date": "2026-10-09 19:00:00",
+    "start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "19",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "end_date": "2026-10-09 21:00:00",
+    "end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "21",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_start_date": "2026-10-09 17:00:00",
+    "utc_start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "17",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_end_date": "2026-10-09 19:00:00",
+    "utc_end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "19",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "timezone": "Europe/Berlin",
+    "timezone_abbr": "CEST",
+    "cost": "",
+    "cost_details": {
+      "currency_symbol": "€",
+      "currency_code": "USD",
+      "currency_position": "prefix",
+      "values": []
+    },
+    "website": "",
+    "show_map": true,
+    "show_map_link": true,
+    "hide_from_listings": false,
+    "sticky": false,
+    "featured": false,
+    "categories": [],
+    "tags": [],
+    "venue": {
+      "id": 628,
+      "author": "6",
+      "status": "publish",
+      "date": "2021-08-03 13:14:33",
+      "date_utc": "2021-08-03 11:14:33",
+      "modified": "2023-01-30 14:49:54",
+      "modified_utc": "2023-01-30 13:49:54",
+      "url": "https://www.buergerstiftung-biblis.de/veranstaltungsort/gemeindezentrum-biblis-darmstaedter-str-2/",
+      "venue": "Bürgerzentrum Biblis",
+      "slug": "gemeindezentrum-biblis-darmstaedter-str-2",
+      "address": "Darmstädter Str. 2",
+      "city": "Biblis",
+      "country": "Deutschland",
+      "province": "Hessen",
+      "zip": "68647",
+      "stateprovince": "Hessen",
+      "show_map": true,
+      "show_map_link": true,
+      "global_id": "www.buergerstiftung-biblis.de?id=628",
+      "global_id_lineage": [
+        "www.buergerstiftung-biblis.de?id=628"
+      ]
+    },
+    "organizer": [
+      {
+        "id": 5211,
+        "author": "6",
+        "status": "publish",
+        "date": "2024-09-08 09:48:26",
+        "date_utc": "2024-09-08 07:48:26",
+        "modified": "2026-01-23 13:19:57",
+        "modified_utc": "2026-01-23 12:19:57",
+        "url": "https://www.buergerstiftung-biblis.de/veranstalter/lilys-ausm-ried/",
+        "organizer": "Lily&#8217;s aus&#8217;m Ried",
+        "slug": "lilys-ausm-ried",
+        "phone": "0175 1981540",
+        "website": "https://shg-lilys-ausm-ried.de/",
+        "email": "anmeldung@shg-lilys-ausm-ried.de",
+        "global_id": "www.buergerstiftung-biblis.de?id=5211",
+        "global_id_lineage": [
+          "www.buergerstiftung-biblis.de?id=5211"
+        ]
+      }
+    ],
+    "custom_fields": []
+  },
+  {
+    "id": 7131,
+    "global_id": "www.buergerstiftung-biblis.de?id=7131",
+    "global_id_lineage": [
+      "www.buergerstiftung-biblis.de?id=7131"
+    ],
+    "author": "6",
+    "status": "publish",
+    "date": "2025-11-27 13:56:06",
+    "date_utc": "2025-11-27 12:56:06",
+    "modified": "2025-11-27 13:56:15",
+    "modified_utc": "2025-11-27 12:56:15",
+    "url": "https://www.buergerstiftung-biblis.de/event/abangeln-der-jugend-2/",
+    "rest_url": "https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events/7131",
+    "title": "Abangeln der Jugend",
+    "description": "",
+    "excerpt": "",
+    "slug": "abangeln-der-jugend-2",
+    "image": false,
+    "all_day": true,
+    "start_date": "2026-10-10 00:00:00",
+    "start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "10",
+      "hour": "00",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "end_date": "2026-10-10 23:59:59",
+    "end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "10",
+      "hour": "23",
+      "minutes": "59",
+      "seconds": "59"
+    },
+    "utc_start_date": "2026-10-09 22:00:00",
+    "utc_start_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "09",
+      "hour": "22",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_end_date": "2026-10-10 21:59:59",
+    "utc_end_date_details": {
+      "year": "2026",
+      "month": "10",
+      "day": "10",
+      "hour": "21",
+      "minutes": "59",
+      "seconds": "59"
+    },
+    "timezone": "Europe/Berlin",
+    "timezone_abbr": "CEST",
+    "cost": "",
+    "cost_details": {
+      "currency_symbol": "€",
+      "currency_code": "USD",
+      "currency_position": "prefix",
+      "values": []
+    },
+    "website": "",
+    "show_map": true,
+    "show_map_link": true,
+    "hide_from_listings": false,
+    "sticky": false,
+    "featured": false,
+    "categories": [],
+    "tags": [],
+    "venue": {
+      "id": 1592,
+      "author": "6",
+      "status": "publish",
+      "date": "2022-01-20 11:51:36",
+      "date_utc": "2022-01-20 10:51:36",
+      "modified": "2022-01-20 11:51:36",
+      "modified_utc": "2022-01-20 10:51:36",
+      "url": "https://www.buergerstiftung-biblis.de/veranstaltungsort/neudeichloch/",
+      "venue": "Neudeichloch",
+      "slug": "neudeichloch",
+      "city": "Biblis-Nordheim",
+      "zip": "68647",
+      "show_map": true,
+      "show_map_link": true,
+      "global_id": "www.buergerstiftung-biblis.de?id=1592",
+      "global_id_lineage": [
+        "www.buergerstiftung-biblis.de?id=1592"
+      ]
+    },
+    "organizer": [
+      {
+        "id": 1593,
+        "author": "6",
+        "status": "publish",
+        "date": "2022-01-20 11:51:36",
+        "date_utc": "2022-01-20 10:51:36",
+        "modified": "2022-01-20 11:51:36",
+        "modified_utc": "2022-01-20 10:51:36",
+        "url": "https://www.buergerstiftung-biblis.de/veranstalter/asv-rheinmoeve-nordheim-e-v/",
+        "organizer": "ASV Rheinmöve Nordheim e.V.",
+        "slug": "asv-rheinmoeve-nordheim-e-v",
+        "global_id": "www.buergerstiftung-biblis.de?id=1593",
+        "global_id_lineage": [
+          "www.buergerstiftung-biblis.de?id=1593"
+        ]
+      }
+    ],
+    "custom_fields": []
+  },
+  {
+    "id": 7141,
+    "global_id": "www.buergerstiftung-biblis.de?id=7141",
+    "global_id_lineage": [
+      "www.buergerstiftung-biblis.de?id=7141"
+    ],
+    "author": "6",
+    "status": "publish",
+    "date": "2025-11-27 14:08:01",
+    "date_utc": "2025-11-27 13:08:01",
+    "modified": "2025-11-27 14:08:15",
+    "modified_utc": "2025-11-27 13:08:15",
+    "url": "https://www.buergerstiftung-biblis.de/event/weihnachtsmarkt-nordheim/",
+    "rest_url": "https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events/7141",
+    "title": "Weihnachtsmarkt Nordheim",
+    "description": "",
+    "excerpt": "",
+    "slug": "weihnachtsmarkt-nordheim",
+    "image": false,
+    "all_day": true,
+    "start_date": "2026-12-06 00:00:00",
+    "start_date_details": {
+      "year": "2026",
+      "month": "12",
+      "day": "06",
+      "hour": "00",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "end_date": "2026-12-06 23:59:59",
+    "end_date_details": {
+      "year": "2026",
+      "month": "12",
+      "day": "06",
+      "hour": "23",
+      "minutes": "59",
+      "seconds": "59"
+    },
+    "utc_start_date": "2026-12-05 23:00:00",
+    "utc_start_date_details": {
+      "year": "2026",
+      "month": "12",
+      "day": "05",
+      "hour": "23",
+      "minutes": "00",
+      "seconds": "00"
+    },
+    "utc_end_date": "2026-12-06 22:59:59",
+    "utc_end_date_details": {
+      "year": "2026",
+      "month": "12",
+      "day": "06",
+      "hour": "22",
+      "minutes": "59",
+      "seconds": "59"
+    },
+    "timezone": "Europe/Berlin",
+    "timezone_abbr": "CET",
+    "cost": "",
+    "cost_details": {
+      "currency_symbol": "€",
+      "currency_code": "USD",
+      "currency_position": "prefix",
+      "values": []
+    },
+    "website": "",
+    "show_map": true,
+    "show_map_link": true,
+    "hide_from_listings": false,
+    "sticky": false,
+    "featured": false,
+    "categories": [],
+    "tags": [],
+    "venue": {
+      "id": 1695,
+      "author": "6",
+      "status": "publish",
+      "date": "2022-01-20 14:15:58",
+      "date_utc": "2022-01-20 13:15:58",
+      "modified": "2022-01-20 14:15:58",
+      "modified_utc": "2022-01-20 13:15:58",
+      "url": "https://www.buergerstiftung-biblis.de/veranstaltungsort/rathausplatz/",
+      "venue": "Rathausplatz",
+      "slug": "rathausplatz",
+      "show_map": true,
+      "show_map_link": true,
+      "global_id": "www.buergerstiftung-biblis.de?id=1695",
+      "global_id_lineage": [
+        "www.buergerstiftung-biblis.de?id=1695"
+      ]
+    },
+    "organizer": [
+      {
+        "id": 1668,
+        "author": "6",
+        "status": "publish",
+        "date": "2022-01-20 14:01:22",
+        "date_utc": "2022-01-20 13:01:22",
+        "modified": "2022-08-12 12:59:04",
+        "modified_utc": "2022-08-12 10:59:04",
+        "url": "https://www.buergerstiftung-biblis.de/veranstalter/arge/",
+        "organizer": "ARGE Nordheim",
+        "slug": "arge",
+        "global_id": "www.buergerstiftung-biblis.de?id=1668",
+        "global_id_lineage": [
+          "www.buergerstiftung-biblis.de?id=1668"
+        ]
+      }
+    ],
+    "custom_fields": []
+  }
+]

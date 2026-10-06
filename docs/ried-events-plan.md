@@ -91,7 +91,7 @@ neues Jahr werden erst nach Veröffentlichung übernommen.
 
 - [x] 1. Quellen, Filter und Anzeige untersuchen; Gebiet und Lücken festhalten.
 - [x] 2. Kommunale Kalender vollständig und mit belastbaren Orts-/Datumsangaben erfassen.
-- [ ] 3. Bürgerstiftung Biblis anbinden.
+- [x] 3. Bürgerstiftung Biblis anbinden.
 - [ ] 4. Vereins- und Ortsteilkalender ergänzen.
 - [ ] 5. PDF-Jahreskalender ergänzen.
 - [ ] 6. Dubletten, Absagen und wiederkehrende Termine behandeln.
@@ -147,3 +147,29 @@ keine neue Quelle oder Filterlogik.
   Datumsfelder, Preise, Ortsgrenzen, Aliase, Weiterblätterung und Fehlerfälle.
   Die produktive Datenbank und VPS-Ausführung wurden nicht geprüft; ein
   veröffentlichter Container allein bestätigt noch keinen erfolgten Live-Import.
+
+
+## Ergebnis Schritt 3 (6. Oktober 2026)
+
+- Bürgerstiftung Biblis über ihre öffentliche Events-API angebunden:
+  https://www.buergerstiftung-biblis.de/wp-json/tribe/events/v1/events .
+  Der Import fragt das aktuelle und folgende Kalenderjahr ab, alle sechs Stunden.
+- Live-Simulation ohne produktive Datenbankänderung: 338 Einträge auf sieben
+  Seiten, davon 302 örtlich bestätigte Termine (74 noch bevorstehend).
+  32 Einträge ohne belegten Veranstaltungsort im Ried und vier mit
+  widersprüchlichen Datumsangaben bleiben zurückgestellt. Ausflüge außerhalb
+  des Rieds werden nicht aufgrund des Bibliser Veranstalters übernommen.
+- Wiederkehrende Angebote werden mit den einzelnen vom Anbieter gelieferten
+  Termin-IDs übernommen. Ganztägige Termine, HTML-Text, Winter-/Sommerzeit und
+  Preisbedingungen werden berücksichtigt. Unbekannte Preise gelten nicht als
+  ausdrücklich kostenlos. Dubletten zwischen Quellen bleiben Schritt 6.
+- Zwei konkret belegte Veranstaltungsorte ohne strukturierte Adresse werden
+  ausschließlich über passende Quell-Orts-ID und Bezeichnung aufgelöst:
+  Rathausplatz Nordheim und Vereinsgelände des Vogel- und Naturschutzvereins
+  Wattenheim. Beleglinks stehen in der Quellenkonfiguration.
+- Alle Seiten und Anzahlen müssen konsistent sein; fehlende, wiederholte oder
+  geänderte Seiten verhindern Abgleich und Veröffentlichung. Der Abgleich
+  betrifft ausschließlich diese Quelle und den vollständig angefragten Zeitraum.
+- 15 neue Regressionstestfälle; gesamte lokale Worker-Suite: 123 bestanden,
+  14 übersprungen (abhängige Infrastruktur nicht verfügbar).
+  Der tatsächliche Import auf dem produktiven VPS bleibt unbestätigt.
