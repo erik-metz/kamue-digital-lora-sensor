@@ -14,8 +14,9 @@ in `reading_revisions`; different publications of the same epoch remain separate
 1. Install the existing canonical measurement migration before starting the
    collector (see `../measurement-migration-runbook.md`). No new main table is needed.
 2. Configure `SPACE_TRACK_IDENTITY`, `SPACE_TRACK_PASSWORD` and a comma-separated
-   `SATELLITE_NORAD_IDS` selection in the server environment. The default is ISS
-   (`25544`); at most 500 identifiers are accepted. Never put credentials in Git
+   `SATELLITE_NORAD_IDS` selection in the server environment. The default is `all`: every publicly available PAYLOAD satellite with fresh GP
+   elements. New satellites are discovered on every hourly bulk GP refresh.
+   An explicit comma-separated selection (maximum 500 IDs) remains supported. Never put credentials in Git
    or in the browser. Direct execution also accepts `SPACE_TRACK_IDENTITY_FILE`
    and `SPACE_TRACK_PASSWORD_FILE` pointing to mounted secret files.
 3. `docker compose --profile satellites up -d satellite-collector backend-api`
@@ -43,11 +44,14 @@ Only configured NORAD IDs are imported; repeated imports are idempotent. Stop
 the live collector during the import because both intentionally share a lock.
 This restores orbital history; it does not invent previously recorded positions.
 The orbit API can reconstruct a historical track from elements published by the
-requested time. Ten-second recorded position histories begin with live collection.
+requested time. Ten-second recorded position histories begin with live collection
+and are recorded only inside the Ried bounds.
 
 ## API and cadence
 
-- `/api/v1/satellites/latest`: centrally cached one-second model snapshot.
+- `/api/v1/satellites/latest`: centrally cached one-second regional model snapshot.
+  Contains `status`, `catalog_count`, `valid_orbit_count`, import time and region
+  bounds; an empty region with valid orbits is `ready`, not a source failure.
 - `/api/v1/satellites/stream`: SSE every second, cleanup on disconnect.
 - `/api/v1/satellites/{norad}/history?start=...&end=...&limit=...`:
   recorded positions, maximum seven days, up to 10,000 points per page.
@@ -56,16 +60,35 @@ requested time. Ten-second recorded position histories begin with live collectio
   thirty-second samples from one element set, maximum 180 minutes.
   UTC/timezone-qualified timestamps required; absent or stale elements return 404.
 
-Original elements are polled hourly; positions are persisted every ten seconds.
+Original elements are polled hourly as one bulk GP query (`OBJECT_TYPE/PAYLOAD`,
+`DECAY_DATE/null-val`, `EPOCH/>now-10`). This discovers new satellites without a
+separate request per object. SATCAT PAYLOAD records are reconciled daily after
+17:05 UTC (or on startup after that time), with persistent independent cooldowns.
+Explicit decay records disable current propagation; missing records never delete
+history. Changed catalog records are stored as `catalog_status` readings with raw
+catalog provenance. No SATCAT fetch is made before 17:05 UTC.
+
+Positions are persisted every ten seconds only within the inclusive bounds
+49.45–49.90° N, 8.15–8.80° E, matching the existing map's regional bounding box
+(not municipal polygon boundaries). `regional_presence` readings record sampled
+entry/exit transitions (ten-second resolution); no outside coordinates are stored.
+Previous presence survives restarts. Historical orbital records are never deleted.
+
+Compiled SGP4 orbits are retained in memory. A cheap geocentric latitude and
+longitude gate rejects outside candidates before WGS84 projection; the final
+WGS84 coordinate must pass the exact region test. The API reloads orbits every
+60 seconds and runs propagation off the event loop, sharing one regional snapshot
+per process across clients. This bounds stream/DB payloads to regional satellites.
 The API shares live propagation across viewers within each server process.
 No client makes per-satellite upstream queries. Elements older than ten days are
 excluded, and the UI displays element age. WGS72 SGP4 dynamics and WGS84 geodetic
 coordinates are used; TEME rotation uses GMST without polar motion, suitable for
 visualization rather than precision navigation. Speed is TEME inertial speed.
 
-Four position readings every ten seconds produce 34,560 rows per satellite/day.
-Choose IDs deliberately and apply the existing archive/retention workflow after
-measuring capacity. Do not activate a full catalog at this cadence by default.
+Only regional samples produce the four position readings; outside passes produce
+none. Apply the existing archive/retention workflow to historical regional readings.
+The historical orbit API remains explicit and may reconstruct global tracks; it is
+not part of the live regional stream or frontend playback.
 
 Tests: `PYTHONPATH=www/vps/satellite-collector:www/vps/api/v1 .venv/bin/python -m pytest www/vps/satellite-collector/tests`.
 Database tests require `SATELLITE_TEST_DATABASE_URL` and create an isolated schema.

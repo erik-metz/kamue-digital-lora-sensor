@@ -11,13 +11,20 @@ import httpx
 import psycopg
 import psycopg_pool
 import pytest
-from collector import identifiers, ingest, refresh, store_positions
+from collector import (
+    identifiers,
+    ingest,
+    ingest_catalog,
+    next_catalog_time,
+    refresh,
+    store_positions,
+)
 from dependencies import get_db_pool
 from endpoints import satellite_tracking
 from fastapi import FastAPI
 from psycopg import sql
 from psycopg.rows import dict_row
-from satellite_orbits import element, position
+from satellite_orbits import element, in_ried, position, regional_position
 from sgp4 import exporter
 from sgp4.api import Satrec
 
@@ -88,11 +95,12 @@ def test_idempotency_same_epoch_publications_corrections_and_positions(database,
     assert conn.execute('SELECT count(*) FROM reading_revisions').fetchone()[0] == 1
     ingest(conn, [raw], [25544], now + timedelta(seconds=2))
     assert conn.execute("SELECT provenance->'omm'->>'MEAN_ANOMALY' FROM latest_readings").fetchone()[0] == '87'
-    store_positions(conn, now)
-    store_positions(conn, now)
-    assert conn.execute('SELECT count(*) FROM readings').fetchone()[0] == 6
+    with patch('collector.regional_position', return_value={**position(raw, now), 'latitude': 49.65, 'longitude': 8.45}):
+        store_positions(conn, now)
+        store_positions(conn, now)
+    assert conn.execute('SELECT count(*) FROM readings').fetchone()[0] == 7
     store_positions(conn, now + timedelta(days=11))
-    assert conn.execute('SELECT count(*) FROM readings').fetchone()[0] == 6
+    assert conn.execute('SELECT count(*) FROM readings').fetchone()[0] == 8
 
 
 def test_cooldown_survives_failed_request(database):
@@ -113,8 +121,9 @@ def test_api_history_pagination_historical_elements_and_stream_disconnect(databa
     dsn = os.environ["SATELLITE_TEST_DATABASE_URL"]
     now = datetime(2019, 12, 9, 21, tzinfo=UTC)
     ingest(conn, [raw], [25544], now)
-    store_positions(conn, now)
-    store_positions(conn, now + timedelta(seconds=10))
+    with patch('collector.regional_position', side_effect=lambda orbit, at: {**position(raw, at), 'latitude': 49.65, 'longitude': 8.45}):
+        store_positions(conn, now)
+        store_positions(conn, now + timedelta(seconds=10))
     async def check():
         async with psycopg_pool.AsyncConnectionPool(dsn, kwargs={'options': f'-c search_path={schema},public', 'row_factory': dict_row}, open=False) as pool:
             app = FastAPI()
@@ -137,7 +146,7 @@ def test_api_history_pagination_historical_elements_and_stream_disconnect(databa
                 assert invalid.status_code == 422
             # No live positions from stale fixtures; catalog retains satellite metadata.
             snapshot = await satellite_tracking.snapshot(pool)
-            assert snapshot['positions'] == [] and snapshot['satellites'][0]['norad_id'] == 25544
+            assert snapshot['positions'] == [] and snapshot['catalog_count'] == 1 and snapshot['status'] == 'unavailable'
             request = AsyncMock()
             request.is_disconnected.side_effect = [False, True]
             streamed = await satellite_tracking.stream(request, pool)
@@ -147,4 +156,110 @@ def test_api_history_pagination_historical_elements_and_stream_disconnect(databa
                 assert json.loads(event.removeprefix('data: ').strip())['basis'] == 'model'
                 with pytest.raises(StopAsyncIteration):
                     await anext(iterator)
+    asyncio.run(check())
+
+
+def test_region_bounds_and_fast_gate_match_full_propagation(raw):
+    assert in_ried({'latitude': 49.45, 'longitude': 8.15})
+    assert in_ried({'latitude': 49.90, 'longitude': 8.80})
+    assert not in_ried({'latitude': 49.449, 'longitude': 8.5})
+    assert not in_ried({'latitude': 49.65, 'longitude': 8.801})
+    orbit = element(raw)
+    start = datetime(2019, 12, 9, 21, tzinfo=UTC)
+    for seconds in range(0, 86400 * 3, 30):
+        at = start + timedelta(seconds=seconds)
+        full = position(raw, at)
+        fast = regional_position(orbit, at)
+        assert bool(fast) == in_ried(full)
+        if fast:
+            assert fast == full
+
+
+def test_catalog_new_satellites_changes_and_decay_are_historical(database, raw):
+    conn, _ = database
+    now = datetime(2019, 12, 9, 21, tzinfo=UTC)
+    assert identifiers('all') is None
+    ingest(conn, [raw, {**raw, 'NORAD_CAT_ID': 12345, 'OBJECT_NAME': 'NEW'}], None, now)
+    assert conn.execute("SELECT count(*) FROM entities WHERE entity_type='satellite'").fetchone()[0] == 2
+    catalog = {'NORAD_CAT_ID': 25544, 'OBJECT_TYPE': 'PAYLOAD', 'SATNAME': 'ISS', 'DECAY': None}
+    ingest_catalog(conn, [catalog], now)
+    ingest_catalog(conn, [catalog], now + timedelta(seconds=1))
+    assert conn.execute("SELECT count(*) FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='catalog_status'").fetchone()[0] == 1
+    ingest_catalog(conn, [{**catalog, 'DECAY': '2019-12-10'}], now + timedelta(days=1))
+    assert conn.execute("SELECT metadata->>'decayed' FROM entities WHERE id='satellite:25544'").fetchone()[0] == 'true'
+    assert conn.execute("SELECT count(*) FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='catalog_status'").fetchone()[0] == 2
+    from collector import load_elements
+    assert [key for key, _ in load_elements(conn)] == ['satellite:12345']
+    with pytest.raises(ValueError):
+        ingest_catalog(conn, [], now)
+
+
+def test_only_regional_positions_persist_and_exit_is_recorded(database, raw):
+    conn, _ = database
+    now = datetime(2019, 12, 9, 21, tzinfo=UTC)
+    ingest(conn, [raw], None, now)
+    store_positions(conn, now)
+    assert conn.execute('SELECT count(*) FROM readings').fetchone()[0] == 1
+    sample = {**position(raw, now), 'latitude': 49.65, 'longitude': 8.45}
+    with patch('collector.regional_position', return_value=sample):
+        store_positions(conn, now + timedelta(seconds=10))
+    store_positions(conn, now + timedelta(seconds=20))
+    states = conn.execute("SELECT r.value FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='regional_presence' ORDER BY observed_at").fetchall()
+    assert [int(row[0]) for row in states] == [1, 0]
+    assert conn.execute("SELECT count(*) FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.metric='latitude'").fetchone()[0] == 1
+
+
+def test_catalog_schedule_after_1700_utc():
+    assert next_catalog_time(datetime(2026, 10, 6, 8, tzinfo=UTC)) == datetime(2026, 10, 6, 17, 5, tzinfo=UTC)
+    assert next_catalog_time(datetime(2026, 10, 6, 18, tzinfo=UTC)) == datetime(2026, 10, 7, 17, 5, tzinfo=UTC)
+
+
+def test_bulk_refresh_discovers_new_ids_and_persists_both_cooldowns(database, raw):
+    conn, _ = database
+    stamp = datetime(2019, 12, 9, 18, tzinfo=UTC)
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return stamp
+    async def check():
+        with patch('collector.datetime', Clock), patch('collector.httpx.AsyncClient') as factory:
+            client = factory.return_value.__aenter__.return_value
+            client.post = AsyncMock(return_value=httpx.Response(200, request=httpx.Request('POST', 'https://test/login')))
+            client.get = AsyncMock(side_effect=[
+                httpx.Response(200, json=[raw, {**raw, 'NORAD_CAT_ID': 12345}], request=httpx.Request('GET', 'https://test/gp')),
+                httpx.Response(200, json=[{'NORAD_CAT_ID': 25544, 'OBJECT_TYPE': 'PAYLOAD', 'DECAY': None}], request=httpx.Request('GET', 'https://test/catalog')),
+            ])
+            assert await refresh(conn, None, 'account', 'secret')
+            assert not await refresh(conn, None, 'account', 'secret')
+            assert client.get.call_count == 2
+            assert '/class/gp/OBJECT_TYPE/PAYLOAD/' in client.get.call_args_list[0].args[0]
+            assert '/class/satcat/OBJECT_TYPE/PAYLOAD/' in client.get.call_args_list[1].args[0]
+    asyncio.run(check())
+    metadata = conn.execute("SELECT metadata FROM entities WHERE id='satellite:feed'").fetchone()[0]
+    assert metadata['scope'] == 'all' and metadata['count'] == 2
+    assert metadata['next_catalog_attempt'].startswith('2019-12-10T17:05')
+
+
+def test_api_has_no_500_catalog_cap_and_shares_regional_snapshot(database, raw):
+    _, schema = database
+    stamp = datetime(2019, 12, 9, 21, tzinfo=UTC)
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return stamp
+    rows = [{'id': f'satellite:{n}', 'name': str(n), 'provenance': {'omm': {**raw, 'NORAD_CAT_ID': n}}} for n in range(1, 602)]
+    def regional(orbit, at):
+        if orbit[0] != 601:
+            return None
+        return {**position(raw, at), 'norad_id': 601, 'latitude': 49.65, 'longitude': 8.45}
+    async def check():
+        async with psycopg_pool.AsyncConnectionPool(os.environ['SATELLITE_TEST_DATABASE_URL'], kwargs={'options': f'-c search_path={schema},public', 'row_factory': dict_row}, open=False) as pool:
+            with patch('endpoints.satellite_tracking.elements', AsyncMock(return_value=rows)) as loader, patch('endpoints.satellite_tracking.datetime', Clock), patch('endpoints.satellite_tracking.regional_position', side_effect=regional) as propagate:
+                first = await satellite_tracking.snapshot(pool)
+                second = await satellite_tracking.snapshot(pool)
+                assert first is second
+                assert first['catalog_count'] == first['valid_orbit_count'] == 601
+                assert first['status'] == 'ready'
+                assert [p['norad_id'] for p in first['positions']] == [601]
+                assert loader.await_count == 1 and propagate.call_count == 601
     asyncio.run(check())

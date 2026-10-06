@@ -32,3 +32,11 @@ test("stale cached snapshots and expired positions cannot remain live", () => {
   assert.equal(decodeSatellites(body([{ ...sample, timestamp: new Date(now-6000).toISOString() }]), now).positions.length, 0);
   assert.throws(() => decodeSatellites({ positions: [], timestamp: "invalid" }, now));
 });
+
+test("an empty regional view is ready when the backend has valid orbital data", () => {
+  const empty = decodeSatellites({ ...body([]), status: "ready", catalog_count: 15000 }, now);
+  assert.equal(empty.available, true);
+  assert.equal(empty.catalog_count, 15000);
+  assert.equal(empty.positions.length, 0);
+  assert.equal(decodeSatellites({ ...body([]), status: "unavailable", catalog_count: 15000 }, now).available, false);
+});

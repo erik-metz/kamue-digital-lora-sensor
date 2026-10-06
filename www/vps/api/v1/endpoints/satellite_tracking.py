@@ -8,13 +8,22 @@ from dependencies import get_db_pool
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse, StreamingResponse
-from satellite_orbits import position
+from satellite_orbits import (
+    MAX_ELEMENT_AGE,
+    RIED_BOUNDS,
+    element,
+    position,
+    regional_position,
+)
 
 router = APIRouter(prefix="/satellites", tags=["Satellite tracking"])
 _lock = asyncio.Lock()
 _cache = None
 _cached_at = 0.0
 _cache_pool = None
+_orbits = []
+_orbits_at = 0.0
+_orbits_pool = None
 
 def response(body):
     return JSONResponse(jsonable_encoder(body), headers={"Cache-Control": "no-store"})
@@ -32,7 +41,8 @@ async def elements(pool, norad=None, at=None):
                 JOIN latest_readings r ON r.measurement_id=d.id
                 WHERE e.entity_type='satellite' AND d.metric='orbital_elements'
                 AND d.source_id='space-track' AND (%s::text IS NULL OR e.id=%s)
-                ORDER BY e.id LIMIT 500""", (None if norad is None else f"satellite:{norad}", f"satellite:{norad}"))
+                AND COALESCE(e.metadata->>'decayed','false') != 'true'
+                ORDER BY e.id""", (None if norad is None else f"satellite:{norad}", f"satellite:{norad}"))
         else:
             cursor = await conn.execute("""SELECT e.id,e.name,r.provenance FROM entities e
                 JOIN measurement_definitions d ON d.entity_id=e.id JOIN readings r ON r.measurement_id=d.id
@@ -42,28 +52,41 @@ async def elements(pool, norad=None, at=None):
         return await cursor.fetchall()
 
 async def snapshot(pool):
-    global _cache, _cached_at, _cache_pool
+    global _cache, _cached_at, _cache_pool, _orbits, _orbits_at, _orbits_pool
     async with _lock:
         if _cache_pool is pool and _cache is not None and time.monotonic()-_cached_at < 1:
             return _cache
-        rows = await elements(pool)
         now = datetime.now(UTC)
-        samples = []
-        unavailable = []
-        for row in rows:
-            try:
-                sample = position(row['provenance']['omm'], now)
-            except (KeyError, TypeError, ValueError):
-                sample = None
-            if sample is None:
-                unavailable.append(row['id'])
-            else:
-                sample.update(id=row['id'], name=row['name'])
-                samples.append(sample)
+        if _orbits_pool is not pool or time.monotonic()-_orbits_at >= 60:
+            rows = await elements(pool)
+            def compile_rows():
+                compiled = []
+                for row in rows:
+                    try:
+                        compiled.append((row['id'], row['name'], element(row['provenance']['omm'])))
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                return compiled
+            _orbits = await asyncio.to_thread(compile_rows)
+            _orbits_pool, _orbits_at = pool, time.monotonic()
+        def calculate():
+            samples, valid = [], 0
+            for key, name, orbit in _orbits:
+                if not orbit[1] <= now <= orbit[1] + MAX_ELEMENT_AGE:
+                    continue
+                valid += 1
+                sample = regional_position(orbit, now)
+                if sample:
+                    sample.update(id=key, name=name)
+                    samples.append(sample)
+            return samples, valid
+        samples, valid = await asyncio.to_thread(calculate)
         async with pool.connection() as conn:
             cursor = await conn.execute("SELECT metadata FROM entities WHERE id='satellite:feed'")
             feed = await cursor.fetchone()
-        _cache = {"positions": samples, "satellites": [{"norad_id": int(row["id"].split(":")[1]), "name": row["name"]} for row in rows], "timestamp": now.isoformat(), "unavailable": unavailable,
+        _cache = {"positions": samples, "satellites": [{"norad_id": p['norad_id'], "name": p['name']} for p in samples], "timestamp": now.isoformat(),
+                  "catalog_count": len(_orbits), "valid_orbit_count": valid, "status": "ready" if valid else "unavailable",
+                  "region": {"name": "ried", "bounds": RIED_BOUNDS},
                   "source": "space-track", "basis": "model",
                   "last_import": feed['metadata'].get('last_success') if feed else None}
         _cached_at, _cache_pool = time.monotonic(), pool

@@ -4,7 +4,7 @@ export interface SatellitePosition {
   altitude_km: number; speed_km_s: number; timestamp: string; element_epoch: string;
   element_age_seconds: number; basis: "model"; source: "space-track";
 }
-export interface SatelliteSnapshot { positions: SatellitePosition[]; timestamp: string; last_import: string | null }
+export interface SatelliteSnapshot { positions: SatellitePosition[]; timestamp: string; last_import: string | null; available: boolean; catalog_count: number }
 export const SATELLITE_FRESH_MS = 5000;
 export function satelliteFresh(position: SatellitePosition, now: number) {
   const stamp = Date.parse(position.timestamp);
@@ -29,6 +29,8 @@ export function decodeSatellites(value: unknown, now = Date.now()): SatelliteSna
       && typeof p.element_epoch === "string" && Number.isFinite(Date.parse(p.element_epoch)) && satelliteFresh(p, now);
   });
   return { positions, timestamp: body.timestamp,
+    available: body.status === "ready" || (body.status === undefined && positions.length > 0),
+    catalog_count: Number.isInteger(body.catalog_count) && Number(body.catalog_count) >= 0 ? Number(body.catalog_count) : 0,
     last_import: typeof body.last_import === "string" && Number.isFinite(Date.parse(body.last_import)) ? body.last_import : null };
 }
 export function satelliteDetails(p: SatellitePosition): string[] {

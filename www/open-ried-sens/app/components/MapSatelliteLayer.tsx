@@ -79,6 +79,7 @@ export default function MapSatelliteLayer({ map }: { map: L.Map }) {
     return () => { cancelAnimationFrame(frame); map.off("moveend", updateVisible); };
   }, [map, snapshot, now]);
   const fresh = snapshot && Date.parse(snapshot.timestamp)+SATELLITE_FRESH_MS > now;
-  return <p role="status">🛰 {failed || !fresh || !snapshot.positions.length ? "Satellitendaten derzeit nicht verfügbar." : visible ? `${visible} berechnete Satelliten-Bodenpositionen im Kartenausschnitt.` : "Zurzeit keine Satelliten-Bodenposition im Kartenausschnitt."}
+  return <p role="status">🛰 {failed || !fresh || !snapshot.available ? "Satellitendaten derzeit nicht verfügbar." : visible ? `${visible} berechnete Satelliten-Bodenpositionen im Kartenausschnitt.` : "Zurzeit keine Satelliten-Bodenposition im Kartenausschnitt."}
+    {fresh && snapshot.catalog_count > 0 ? ` ${snapshot.catalog_count.toLocaleString("de-DE")} Satelliten mit Bahndaten erfasst.` : ""}
     {fresh && snapshot.last_import ? ` Letzter Import: ${new Date(snapshot.last_import).toLocaleString("de-DE")}.` : ""}</p>;
 }
