@@ -74,6 +74,7 @@ export default function MapComponent(props: MapProps) {
   const [publication, setPublication] = useState<LayerPublication>({ layers: {}, unavailable: [] });
   const [movementFailed, setMovementFailed] = useState(false);
   const [aircraftSource, setAircraftSource] = useState<{ status: string; last_contact?: string } | null>(null);
+  const [ognSource, setOgnSource] = useState<{ status: string; last_contact?: string } | null>(null);
   const aircraftTrails = useRef(new Map<string, TrailPoint[]>());
   const aircraftTrailLayers = useRef(new Map<string, L.Polyline>());
   const [shipSource, setShipSource] = useState<{ status: string; last_contact?: string } | null>(null);
@@ -115,9 +116,10 @@ export default function MapComponent(props: MapProps) {
     let streaming = false;
     let lastEvent = 0;
     const stream = new EventSource("/api/mobility/stream");
-    const accept = (body: { positions: Position[]; crossings?: Crossing[]; ship_source?: { status: string; last_contact?: string }; aircraft_source?: { status: string; last_contact?: string } }) => {
+    const accept = (body: { positions: Position[]; crossings?: Crossing[]; ship_source?: { status: string; last_contact?: string }; aircraft_source?: { status: string; last_contact?: string }; ogn_source?: { status: string; last_contact?: string } }) => {
       if (!Array.isArray(body.positions)) throw new Error("Invalid response");
       setPositions(body.positions); setCrossings(body.crossings ?? []); setShipSource(body.ship_source ?? null); setAircraftSource(body.aircraft_source ?? null); setMovementFailed(false);
+      setOgnSource(body.ogn_source ?? null);
     };
     stream.onmessage = event => {
       try { accept(JSON.parse(event.data)); streaming = true; lastEvent = Date.now(); } catch { streaming = false; }
@@ -254,7 +256,7 @@ export default function MapComponent(props: MapProps) {
       retained.add(key);
       const predicted = position.basis === "schedule_prediction";
       const style = mapSymbol(position.kind);
-      const title = `${style.label} ${position.name ?? position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
+      const title = `${position.ogn_category === 1 ? "Segelflugzeug" : style.label} ${position.name ?? position.registration ?? position.line ?? ""}${position.destination ? ` → ${position.destination}` : ""}`.trim();
       const target = L.latLng(position.latitude, position.longitude);
       let marker = vehicleMarkers.current.get(key);
       const iconKey = `${position.kind}:${position.name ?? position.line ?? ""}:${predicted}:${position.heading_deg ?? position.course_deg ?? ""}`;
@@ -291,7 +293,9 @@ export default function MapComponent(props: MapProps) {
           ...(position.altitude_baro_m !== undefined ? [`Druckhöhe: ${Math.round(position.altitude_baro_m)} m (Standarddruck 1013,25 hPa; keine Höhe über Grund)`] : []),
           ...(position.altitude_geom_m !== undefined ? [`Geometrische Höhe: ${Math.round(position.altitude_geom_m)} m (WGS84; keine Höhe über Grund)`] : []),
           ...(position.vertical_rate_mps !== undefined ? [`Steigrate: ${position.vertical_rate_mps} m/s (barometrisch)`] : []),
-          `Quelle: adsb.lol · ODbL 1.0 · ${position.reception === "mlat" ? "Position durch Multilateration" : "empfangene Flugposition"}`,
+          ...(position.altitude_ogn_m !== undefined ? [`Gemeldete Höhe: ${Math.round(position.altitude_ogn_m)} m (OGN; keine Höhe über Grund)`] : []),
+          ...(position.vertical_rate_ogn_mps !== undefined ? [`Gemeldete Steigrate: ${position.vertical_rate_ogn_mps} m/s (OGN)`] : []),
+          `Quelle: ${position.source_id === "ogn-ried" ? "Open Glider Network" : "adsb.lol"} · ODbL 1.0 · ${position.reception === "mlat" ? "Position durch Multilateration" : "empfangene Flugposition"}`,
           "Empfang kann lückenhaft sein; Segelflugzeuge sind nur teilweise erfasst. Flugspur zeigt empfangene Punkte, keine Flugroute.",
         ] : []),
         ...(position.kind === "ship" ? [
@@ -610,7 +614,7 @@ export default function MapComponent(props: MapProps) {
     )}
     <div className="absolute bottom-5 left-3 z-[500] max-w-sm rounded bg-slate-950/90 p-3 text-xs text-slate-200">
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
-      <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff</p>
+      <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr</p>
       <p>Ⓗ Haltestelle · ⚡ Ladestation</p>
       <p>⛔ Sperrung · 🚧 Baustelle · 🚗 Verkehrsachse</p>
       <p className="mt-1">Symbol anklicken für Details und Abfahrten.</p>
@@ -620,6 +624,9 @@ export default function MapComponent(props: MapProps) {
       {layers.aircraft && <p role="status">{aircraftSource?.status === "connected" && aircraftSource.last_contact && Date.parse(aircraftSource.last_contact) + 60000 > props.now
         ? "Empfangener Flugverkehr · adsb.lol · keine vollständige Erfassung."
         : "Flugverkehrsdaten derzeit nicht verfügbar; Positionen verfallen nach 60 Sekunden."} <a href="https://www.adsb.lol/" target="_blank" rel="noreferrer">adsb.lol</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">ODbL 1.0</a></p>}
+      {layers.aircraft && <p role="status">{ognSource?.status === "connected" && ognSource.last_contact && Date.parse(ognSource.last_contact) + 60000 > props.now
+        ? "OGN-Empfang verfügbar · auch Segelflug · nur freigegebene Geräte."
+        : "OGN-Empfang derzeit nicht verfügbar."} <a href="https://www.glidernet.org/" target="_blank" rel="noreferrer">Open Glider Network</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noreferrer">ODbL 1.0</a></p>}
       {layers.ships && <p role="status">{shipSource?.status === "connected" && shipSource.last_contact && Date.parse(shipSource.last_contact) + 120000 > props.now
         ? "Schiffsempfang verfügbar · Empfang kann lückenhaft sein."
         : "AIS-Empfang derzeit nicht verfügbar; letzte Positionen verfallen nach 10 Minuten."}</p>}

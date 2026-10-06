@@ -1,4 +1,4 @@
-# Ried aircraft collector (ADS-B MVP)
+# Ried aircraft collector (ADS-B + OGN)
 
 `adsb.lol → aircraft-collector → PostgreSQL/TimescaleDB → movements/latest + SSE → Next.js/Leaflet`
 
@@ -13,7 +13,7 @@ slower polling can produce intervals without visible aircraft because positions 
 expire 60 seconds after the actual observation, independent of fetch time.
 Dynamic limits are handled using Retry-After, exponential backoff and jitter.
 Failed requests are recorded in collection_attempts and never generate synthetic aircraft.
-Health checks track successful acquisition, not whether aircraft were present.
+Health checks track successful acquisition from either source, not whether aircraft were present.
 
 Only ICAO-addressed ADS-B/ADS-R/TIS-B/MLAT positions with fresh timestamps and an
 indication of airborne altitude are accepted. Ground reports, anonymous non-ICAO
@@ -46,23 +46,52 @@ databases/exports. Aircraft history stays in the existing common archive/retenti
 pipeline; this change does not silently introduce a seven-day deletion policy.
 Monitor storage growth and configure the existing archive deployment accordingly.
 
-This first adapter does **not** consume OGN/FLARM. Small aircraft and gliders are
-therefore incomplete. A future OGN adapter must implement current DDB privacy choices,
-avoid identity guessing across ICAO/FLARM identifiers and enforce OGN's rule against
-redistributing positions older than 24 hours, including archive/export paths. It cannot
-simply send OGN records through the unrestricted common history exporter.
+## OGN / FLARM
+
+A concurrent, read-only APRS connection to `aprs.glidernet.org:14580` subscribes to
+`r/49.725/8.475/40` (40 km), with a second local bounding-box check. ADS-B failures
+and OGN failures back off independently. Server acknowledgements/comments establish
+connection status; an empty region is not an error. Keepalives are sent every 30 seconds.
+
+The official HTTPS DDB is refreshed at startup and every 15 minutes. Permissions
+expire after 30 minutes: missing, unknown, untracked or unidentified devices are
+excluded. This conservative version requires both TRACKED=Y and IDENTIFIED=Y;
+it does not publish anonymous tracks. Stealth/no-tracking packet flags are rejected
+and immediately delete previous observations for that device. DDB revocations delete
+positions transactionally. ICAO, FLARM and OGN tracker addresses have distinct namespaces;
+only explicit ICAO addresses can suppress a duplicate already present in ADS-B.
+
+OGN uses dedicated `ogn_permissions` and `ogn_positions` tables. Accepted observations
+are deduplicated by device/time. The API joins current permissions and always excludes
+positions older than 24 hours, even when the collector stops. Cleanup runs every
+30 seconds while connected, at DDB refresh and on failures. No OGN packets, identities
+or readings enter permanent collected_payloads, movement_positions, entities or
+canonical readings, so the common backfill, raw-payload and archive/export pipeline
+cannot redistribute them. The dedicated telemetry endpoint is also permission-checked,
+limited to 24 hours, and marked no-store. Mobility snapshots are no-store too.
+OGN positions expire live after 60 seconds. Browser traces remain limited to two minutes.
+
+APRS coordinates, precision extensions, nearest-day UTC times, category/address/privacy
+bits and reception error counts are validated. Ground/static categories and stationary
+reports below five knots are suppressed; APRS has no reliable airborne flag, so a moving
+aircraft on the ground can still appear. Height and climb are labelled as OGN reports,
+without claiming a pressure/WGS84 reference or height above ground. Raw packets are
+never logged. The map exposes OGN and ADS-B connection status independently and attributes
+both ODbL sources. Coverage, including gliders, remains incomplete.
 
 References:
 - https://api.adsb.lol/docs
 - https://github.com/adsblol/api (dynamic rate limits)
 - https://github.com/adsblol/website/blob/main/content/en/docs/open-data/api.md (ODbL)
-- https://www.glidernet.org/ogn-data-usage/ (future OGN restrictions)
+- https://www.glidernet.org/ogn-data-usage/ (OGN restrictions)
 
 ## Deploy
 
 Publish API, collector and frontend from this release. New Compose services are not
-created by Watchtower. Back up the database using the existing runbook before applying
-schema changes. In the VPS Compose directory, with updated Compose and images:
+created by Watchtower. For an existing aircraft deployment, apply only the additive
+`api/v1/migrations/20261006_ogn.sql` in one transaction before updating the collector.
+This creates isolated tables and does not rewrite existing mobility history.
+For a fresh installation, in the VPS Compose directory with updated images:
 
 ```sh
 docker compose pull backend-api aircraft-collector
@@ -77,7 +106,8 @@ source; the second installs the canonical writer with aircraft support. Reinstal
 preserves existing ship/aircraft rows. These steps do not enable shadow writes, backfill
 history or switch measurement reader modes. Deploy the frontend too.
 
-Verify Docker health, adsblol-ried in collection status, aircraft_source in movements,
+Verify Docker health, adsblol-ried and ogn-ried in collection status, aircraft_source
+and ogn_source in movements,
 fresh kind=aircraft entries (when received), repeated SSE batches and the Flugverkehr
 layer. An empty valid feed is successful acquisition, not evidence of an empty sky.
 A bounded acquisition test is available via `python collector.py --seconds 180`.
@@ -93,6 +123,7 @@ PYTHONPATH=www/vps/aircraft-collector:www/vps/api/v1:www/vps/tests \
 
 COLLECTOR_TEST_DATABASE_URL must point to a disposable database; the harness creates
 and removes an isolated schema. Set COLLECTOR_TEST_TIMESCALE=1 for TimescaleDB.
-CI checks normalization, deduplication, late reports, repeated installation with
+CI checks OGN tracking revocations, flag rejection, DDB expiry, 24-hour reads and
+isolation from permanent archives, plus ADS-B normalization, deduplication, late reports, repeated installation with
 existing aircraft, canonical telemetry, both API reader modes and expiry before
 building/publishing the aircraft image along with the other main-branch images.

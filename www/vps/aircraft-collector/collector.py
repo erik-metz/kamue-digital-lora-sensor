@@ -141,7 +141,7 @@ def retry_delay(response, failures, interval):
     return delay + random.random()
 
 
-async def run(seconds=None):
+async def run_adsb(seconds=None):
     interval = float(os.getenv('AIRCRAFT_POLL_SECONDS', '15'))
     if not math.isfinite(interval) or interval < 10 or interval > 300:
         raise ValueError('AIRCRAFT_POLL_SECONDS must be between 10 and 300')
@@ -179,6 +179,14 @@ async def run(seconds=None):
                 except (OSError, psycopg.Error):
                     LOG.warning('Cannot record aircraft source status')
             await asyncio.sleep(min(delay, max(0, stop_at - asyncio.get_running_loop().time())))
+
+
+async def run(seconds=None):
+    from ogn import run as run_ogn
+    db = {'host': os.getenv('DB_HOST', 'timescaledb'), 'port': int(os.getenv('DB_PORT', '5432')),
+          'dbname': os.getenv('DB_NAME', 'mydatabase'), 'user': os.getenv('DB_USER', 'postgres'),
+          'password': os.getenv('DB_PASSWORD', ''), 'connect_timeout': 10, 'options': os.getenv('DB_OPTIONS', '')}
+    await asyncio.gather(run_adsb(seconds), run_ogn(db, seconds))
 
 
 if __name__ == '__main__':

@@ -63,7 +63,7 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
     async def test_position_read_prefers_observations_and_excludes_expired(self):
         pool,conn=pool_for(rows=[])
         response=await movements(request(),pool)
-        self.assertEqual(json.loads(response.body),{'positions':[], 'crossings':[], 'crossings_available':False, 'ship_source': {'status':'unavailable','last_contact':None}, 'aircraft_source': {'status':'unavailable','last_contact':None}})
+        self.assertEqual(json.loads(response.body),{'positions':[], 'crossings':[], 'crossings_available':False, 'ship_source': {'status':'unavailable','last_contact':None}, 'aircraft_source': {'status':'unavailable','last_contact':None}, 'ogn_source': {'status':'unavailable','last_contact':None}})
         sql=conn.execute.call_args_list[0].args[0]
         self.assertIn('valid_until > NOW()',sql)
         self.assertIn("basis='observed'",sql)

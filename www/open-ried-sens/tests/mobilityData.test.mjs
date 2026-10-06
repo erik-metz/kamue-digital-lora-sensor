@@ -9,6 +9,17 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL('../lib/mobilityDa
 }).outputText, context);
 const model = context.exports;
 const now = Date.parse('2026-10-05T10:00:00Z');
+test('OGN gliders retain their source and do not label GPS reports as pressure height', () => {
+  const position={id:'aircraft:ogn:F:ABC123',kind:'aircraft',source_id:'ogn-ried',ogn_category:1,
+    registration:'D-TEST',latitude:49.65,longitude:8.45,basis:'observed',
+    timestamp:new Date(now).toISOString(),valid_until:new Date(now+60000).toISOString(),
+    altitude_ogn_m:914.4,vertical_rate_ogn_mps:.51};
+  const node=model.mobilityNodes([position],[],now)[0];
+  assert.equal(node.name,'Segelflugzeug D-TEST');
+  assert.match(node.address,/Open Glider Network/);
+  assert.deepEqual(Array.from(node.readings,r=>r.metric),['altitude_ogn','vertical_rate_ogn','latitude','longitude']);
+  assert.equal(model.mobilityNodes([position],[],now+60000).length,0);
+});
 const crossing = { id:'a',entity_id:'crossing:a',name:'Gate',barrier:'half',latitude:49.64,longitude:8.45,
   status:'closed',timestamp:new Date(now).toISOString(),valid_until:new Date(now+30000).toISOString(),members:['a','b'] };
 const feature = (id, barrier, longitude=8.45) => ({geometry:{type:'Point',coordinates:[longitude,49.64]},properties:{id,barrier,name:'Gate'}});

@@ -162,6 +162,19 @@ async def mobility_snapshot(pool):
             ORDER BY entity_id,
             CASE WHEN basis='observed' THEN 0 ELSE 1 END, timestamp DESC"""))
         positions = [r["data"] for r in await cursor.fetchall()]
+        ogn_ready = await (await conn.execute("SELECT to_regclass('ogn_public_positions') IS NOT NULL AS ready")).fetchone()
+        ogn = None
+        if ogn_ready and ogn_ready['ready']:
+            cursor = await conn.execute("""SELECT DISTINCT ON (p.device_key) p.data||d.metadata AS data
+                FROM ogn_public_positions p JOIN ogn_permissions d USING(device_key)
+                WHERE p.timestamp>NOW()-INTERVAL '60 seconds'
+                ORDER BY p.device_key,p.timestamp DESC""")
+            # Only the explicit ICAO address type permits matching ADS-B identities.
+            icao = {p.get('icao24') for p in positions if p.get('icao24')}
+            positions.extend(r['data'] for r in await cursor.fetchall()
+                if not r['data'].get('icao24') or r['data']['icao24'] not in icao)
+            ogn = await (await conn.execute("""SELECT received_at,status FROM collection_attempts
+                WHERE source_id='ogn-ried' ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
         ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
         crossings = []
         if ready and ready['ready']:
@@ -186,6 +199,11 @@ async def mobility_snapshot(pool):
                      ELSE INTERVAL '120 seconds' END THEN 0 ELSE 1 END,received_at DESC LIMIT 1""")).fetchone()
         aircraft = await (await conn.execute("""SELECT received_at,status FROM collection_attempts
             WHERE source_id='adsblol-ried' ORDER BY received_at DESC,id DESC LIMIT 1""")).fetchone()
+    ogn_source = {'status': 'unavailable', 'last_contact': None}
+    if ogn:
+        ogn_source = {'status': 'connected' if ogn['status']=='success' and
+            ogn['received_at'] > datetime.now(UTC)-timedelta(seconds=60) else 'unavailable',
+            'last_contact': ogn['received_at']}
     aircraft_source = {'status': 'unavailable', 'last_contact': None}
     if aircraft:
         aircraft_source = {'status': 'connected' if aircraft['status']=='success' and
@@ -197,12 +215,12 @@ async def mobility_snapshot(pool):
             source['received_at'] > datetime.now(UTC)-timedelta(seconds=660 if source.get('source_id')=='rhein-map' else 120) else 'unavailable',
             'last_contact': source['received_at']}
     return {'positions': positions, 'crossings': crossings, 'crossings_available': bool(ready and ready['ready']),
-            'ship_source': ship_source, 'aircraft_source': aircraft_source}
+            'ship_source': ship_source, 'aircraft_source': aircraft_source, 'ogn_source': ogn_source}
 
 
 @router.get("/movements/latest")
 async def movements(request: Request, pool=Depends(get_db_pool)):
-    return cached_response(await mobility_snapshot(pool), request, 5)
+    return cached_response(await mobility_snapshot(pool), request, 0, {'Cache-Control':'no-store'})
 
 
 @router.get("/movements/stream")
@@ -223,6 +241,8 @@ async def movement_telemetry(entity_id: str, request: Request, pool=Depends(get_
         raise HTTPException(400, 'Invalid mobility entity')
     end = datetime.now(UTC)
     start = end - timedelta(hours=24)
+    if entity_id.startswith('movement:aircraft:ogn:'):
+        return await ogn_telemetry(entity_id, request, pool, start, end)
     async with pool.connection() as conn:
         ready = await (await conn.execute("SELECT to_regclass('measurement_definitions') IS NOT NULL AS ready")).fetchone()
         if not ready or not ready['ready']:
@@ -281,6 +301,38 @@ async def movement_telemetry(entity_id: str, request: Request, pool=Depends(get_
         'historyMode': 'states' if entity_id.startswith('crossing:') else 'averages',
         'historyUnavailable': False, 'historyTruncated': len(history)>=10000,
         'basis': 'model' if entity_id.startswith('crossing:') else (latest[0]['basis'] if latest else 'unknown')}, request, 5)
+
+
+async def ogn_telemetry(entity_id, request, pool, start, end):
+    """Only the permission/24-hour guarded view, never canonical or archived readings."""
+    async with pool.connection() as conn:
+        ready = await (await conn.execute("SELECT to_regclass('ogn_public_positions') IS NOT NULL AS ready")).fetchone()
+        rows = []
+        if ready and ready['ready']:
+            rows = await (await conn.execute("""SELECT timestamp,data FROM ogn_public_positions
+                WHERE device_key=%s ORDER BY timestamp DESC LIMIT 10000""",
+                (entity_id.removeprefix('movement:aircraft:ogn:'),))).fetchall()
+    metrics = [('speed_kmh','speed','km/h'),('course_deg','course','degrees'),
+        ('latitude','latitude','degrees'),('longitude','longitude','degrees'),
+        ('altitude_ogn_m','altitude_ogn','m'),('vertical_rate_ogn_mps','vertical_rate_ogn','m/s')]
+    latest = []
+    if rows and rows[0]['timestamp']+timedelta(seconds=60)>end:
+        latest = [{'metric':metric,'unit':unit,'value':rows[0]['data'][field],
+            'timestamp':rows[0]['timestamp'],'basis':'observed','quality':'valid'}
+            for field,metric,unit in metrics if field in rows[0]['data']]
+    buckets = {}
+    for row in rows:
+        stamp = row['timestamp']
+        bucket = stamp.replace(minute=stamp.minute//5*5,second=0,microsecond=0)
+        for field,metric,unit in metrics:
+            if field in row['data'] and metric!='course':
+                values = buckets.setdefault((metric,unit,bucket),[])
+                values.append(row['data'][field])
+    history = [{'metric':m,'unit':u,'bucket':b,'avg_value':sum(v)/len(v)}
+        for (m,u,b),v in buckets.items()]
+    return cached_response({'readings':latest,'history':history,'start':start,'end':end,
+        'historyMode':'averages','historyUnavailable':False,'historyTruncated':len(rows)>=10000,
+        'basis':'observed'},request,0,{'Cache-Control':'no-store'})
 
 
 @router.get("/map-tiles/{layer}/{z}/{x}/{y}.png")

@@ -134,7 +134,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
   },
   aircraft: {
     id: "aircraft", label: "Flugverkehr", icon: "✈", category: "mobility",
-    description: "Empfangene ADS-B-/MLAT-Positionen über dem Ried · adsb.lol · keine vollständige Erfassung, Segelflugzeuge nur teilweise",
+    description: "Empfangene Flugpositionen über dem Ried · adsb.lol und Open Glider Network (auch Segelflug) · keine vollständige Erfassung",
     minZoom: LAYER_MIN_ZOOM.aircraft, highlightColor: "border-yellow-500 text-yellow-300",
   },
   ships: {

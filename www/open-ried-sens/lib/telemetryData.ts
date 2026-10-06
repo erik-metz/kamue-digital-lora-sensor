@@ -14,6 +14,7 @@ const LABELS: Record<string, string> = {
   bike_capacity: "Station Kapazität (Docks)", bike_ebikes: "E-Bikes / Pedelecs",
   course: "Kurs über Grund",
   altitude_baro: "Druckhöhe (1013,25 hPa)", altitude_geom: "Geometrische Höhe (WGS84)", vertical_rate: "Steigrate (barometrisch)",
+  altitude_ogn: "Gemeldete Höhe (OGN)", vertical_rate_ogn: "Gemeldete Steigrate (OGN)",
   speed: "Geschwindigkeit", delay: "Verspätung", latitude: "Breitengrad", longitude: "Längengrad",
   crossing_state: "Schrankenzustand", closure_duration: "Schließdauer", crossing_closures: "Schließungen gesamt",
 };

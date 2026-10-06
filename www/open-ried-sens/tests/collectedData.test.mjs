@@ -53,7 +53,7 @@ test('expired shared-cache entries are never relabelled current',async()=>{
 test('movement compatibility routes pass the same stored batch through unchanged',async()=>{
  for (const route of ['mobility','buses','waste-trucks']) {
   const expected=Response.json({positions:[]});
-  const lib=load(`../app/api/${route}/route.ts`,{'@/lib/collectedBackend':{proxyBackend:(path,ttl)=>{assert.equal(path,'movements/latest');assert.equal(ttl,5);return expected;}}});
+  const lib=load(`../app/api/${route}/route.ts`,{'@/lib/collectedBackend':{proxyBackend:(path,ttl)=>{assert.equal(path,'movements/latest');assert.equal(ttl,0);return expected;}}});
   assert.equal(await lib.GET(),expected);
  }
 });
