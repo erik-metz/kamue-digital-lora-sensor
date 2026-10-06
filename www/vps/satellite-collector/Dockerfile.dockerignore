@@ -1,0 +1,7 @@
+**
+!satellite-collector/
+!satellite-collector/collector.py
+!satellite-collector/requirements.txt
+!api/
+!api/v1/
+!api/v1/satellite_orbits.py

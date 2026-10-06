@@ -1,4 +1,26 @@
 services:
+  satellite-collector:
+    profiles: [satellites]
+    build:
+      context: .
+      dockerfile: satellite-collector/Dockerfile
+    image: ghcr.io/erik-metz/open-ried-sens-satellite-collector:latest
+    restart: unless-stopped
+    environment:
+      SPACE_TRACK_IDENTITY: ${SPACE_TRACK_IDENTITY:-}
+      SPACE_TRACK_PASSWORD: ${SPACE_TRACK_PASSWORD:-}
+      SATELLITE_NORAD_IDS: ${SATELLITE_NORAD_IDS:-25544}
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    depends_on:
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
   timescaledb:
     image: timescale/timescaledb:latest-pg16
     container_name: timescaledb

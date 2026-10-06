@@ -221,6 +221,15 @@ jobs:
         working-directory: www/open-ried-sens
       - run: npm run test:map
         working-directory: www/open-ried-sens
+      - run: npx eslint app/satellites app/api/satellites
+        working-directory: www/open-ried-sens
+      - run: npm run build
+        working-directory: www/open-ried-sens
+        env:
+          BACKEND_API_URL: http://127.0.0.1:8080
+          ADMIN_PASSWORD: ci-placeholder
+          ADMIN_SESSION_SECRET: ci-placeholder-session-secret
+          BACKEND_ADMIN_API_KEY: open_ried_sens_admin_ci-placeholder
 
   validate-aircraft-collector:
     name: Aircraft collector tests
@@ -299,11 +308,35 @@ jobs:
         env:
           ARCHIVE_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
 
+  validate-satellite-collector:
+    name: Satellite collector and propagation tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r www/vps/satellite-collector/requirements.txt -r www/vps/api/requirements.txt ruff pytest
+      - run: ruff check --config www/vps/pyproject.toml www/vps/satellite-collector www/vps/api/v1/satellite_orbits.py www/vps/api/v1/endpoints/satellite_tracking.py
+      - run: PYTHONPATH=www/vps/satellite-collector:www/vps/api/v1 python -m pytest -q www/vps/satellite-collector/tests
+        env:
+          SATELLITE_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
+
   build-and-push-ghcr:
     name: Build & Push Docker Image to GHCR
     runs-on: ubuntu-latest
     needs:
       - validate-api-code
+      - validate-satellite-collector
       - validate-shake-collector-code
       - validate-smartcity-collector
       - validate-nextbike-collector
@@ -332,6 +365,14 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image Satellite Collector
+        uses: docker/build-push-action@v6
+        with:
+          context: ./www/vps
+          file: ./www/vps/satellite-collector/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/open-ried-sens-satellite-collector:latest
 
       - name: Build and Push Docker Image Aircraft Collector
         uses: docker/build-push-action@v6
