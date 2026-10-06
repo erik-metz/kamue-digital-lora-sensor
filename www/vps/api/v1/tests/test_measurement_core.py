@@ -402,3 +402,93 @@ class MeasurementCoreTests(DatabaseCase):
             await self.conn.execute("""UPDATE collected_datasets SET data=jsonb_set(data,
                 '{features,0,properties,name}','"OTHER"') WHERE dataset='map/layers/floods'""")
         self.assertEqual(await self.scalar("SELECT data FROM core_gauge_datasets WHERE dataset='map/layers/floods'"),feature)
+
+
+class EnvironmentContractTests(DatabaseCase):
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
+        await install(self.conn)
+        await install(self.conn)
+        self.now = datetime(2026, 10, 6, 12, tzinfo=UTC)
+        await self.conn.execute("INSERT INTO entities(id,name,entity_type) VALUES ('env:one','One','model_point')")
+        await self.conn.execute("INSERT INTO collected_payloads VALUES ('test-hash','{}','application/json',%s)", (self.now,))
+        for attempt in (1, 2):
+            await self.conn.execute("""INSERT INTO collection_attempts
+                (id,source_id,received_at,http_status,payload_sha256,status)
+                VALUES (%s,'environment-test',%s,200,'test-hash','received')""",
+                (attempt, self.now + timedelta(minutes=attempt)))
+
+    async def write(self, value=1, attempt=1, issued=None, kind='forecast', dimensions=None, metadata=None):
+        return await self.scalar("""SELECT write_environment_measurement(
+            'env:one','soil_moisture','m3/m3','environment-test',%s,%s,%s,%s,%s,%s,
+            'valid',NULL,NULL,'instantaneous',%s)""",
+            (kind, Jsonb(dimensions or {}), self.now + timedelta(hours=1), value, attempt,
+             Jsonb(metadata or {'license': 'CC-BY-4.0', 'spatial_reference': 'grid:one', 'model': 'test'}),
+             issued))
+
+    async def test_runs_replay_revisions_and_missing_values(self):
+        first = await self.write(issued=self.now)
+        await self.write(issued=self.now)
+        self.assertEqual(await self.scalar('SELECT COUNT(*) FROM readings'), 1)
+        self.assertEqual(await self.scalar('SELECT COUNT(*) FROM reading_revisions'), 0)
+        await self.write(value=2, attempt=2, issued=self.now)
+        await self.write(value=1, attempt=1, issued=self.now)
+        self.assertEqual(await self.scalar('SELECT value FROM readings WHERE measurement_id=%s', (first,)), 2)
+        self.assertEqual(await self.scalar('SELECT COUNT(*) FROM reading_revisions'), 1)
+        second = await self.write(issued=self.now - timedelta(hours=1))
+        self.assertNotEqual(first, second)
+        self.assertEqual(await self.scalar('SELECT COUNT(*) FROM readings'), 2)
+        await self.conn.execute("""SELECT write_environment_measurement(
+            'env:one','pollen','grains/m3','environment-test','model','{}',%s,NULL,1,
+            '{"license":"CC-BY","spatial_reference":"grid:one","model":"test"}',
+            'missing')""", (self.now,))
+        self.assertEqual(await self.scalar("SELECT COUNT(*) FROM readings WHERE quality='missing' AND value IS NULL"), 1)
+
+    async def test_invalid_receipts_and_forecast_contract(self):
+        for kwargs in ({'attempt': 999}, {'issued': None}, {'issued': self.now + timedelta(days=1)},
+                       {'issued': self.now, 'dimensions': {'data_kind': 'observation'}},
+                       {'issued': self.now, 'metadata': {'license': 'CC-BY'}},
+                       {'issued': self.now, 'kind': 'observation'}):
+            with self.assertRaises(psycopg.errors.CheckViolation):
+                await self.write(**kwargs)
+        await self.conn.execute("UPDATE collection_attempts SET http_status=500 WHERE id=1")
+        with self.assertRaises(psycopg.errors.CheckViolation):
+            await self.write(issued=self.now)
+        self.assertEqual(await self.scalar('SELECT COUNT(*) FROM readings'), 0)
+
+    async def test_api_preserves_contract_and_hides_private_entities(self):
+        from endpoints.environment_measurements import environment_measurements
+
+        await self.write(issued=self.now)
+        conn = self.conn
+
+        class Pool:
+            @asynccontextmanager
+            async def connection(self):
+                previous = conn.row_factory
+                conn.row_factory = dict_row
+                try:
+                    yield conn
+                finally:
+                    conn.row_factory = previous
+
+        response = await environment_measurements(entity_id='env:one', start=self.now,
+            end=self.now + timedelta(days=1), kind=None, metric=None, limit=1, pool=Pool())
+        self.assertEqual(response['items'][0]['provenance']['payload_sha256'], 'test-hash')
+        self.assertEqual(response['items'][0]['dimensions']['data_kind'], 'forecast')
+        self.assertEqual(response['items'][0]['unit'], 'm3/m3')
+        await self.write(issued=self.now - timedelta(hours=1))
+        response = await environment_measurements(entity_id='env:one', start=self.now,
+            end=self.now + timedelta(days=1), kind='forecast', metric='soil_moisture', limit=1, pool=Pool())
+        self.assertTrue(response['truncated'])
+        from fastapi import HTTPException
+        with self.assertRaises(HTTPException):
+            await environment_measurements(entity_id='env:one', start=self.now.replace(tzinfo=None),
+                end=self.now, kind=None, metric=None, limit=1, pool=Pool())
+        with self.assertRaises(HTTPException):
+            await environment_measurements(entity_id='env:one', start=self.now,
+                end=self.now + timedelta(days=32), kind=None, metric=None, limit=1, pool=Pool())
+        await self.conn.execute("UPDATE entities SET is_hidden=TRUE WHERE id='env:one'")
+        response = await environment_measurements(entity_id='env:one', start=self.now,
+            end=self.now + timedelta(days=1), kind=None, metric=None, limit=1, pool=Pool())
+        self.assertEqual(response['items'], [])

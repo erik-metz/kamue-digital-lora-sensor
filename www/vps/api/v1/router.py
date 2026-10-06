@@ -4,6 +4,7 @@ from endpoints import (
     buses,
     collected,
     data_exports,
+    environment_measurements,
     map_sensors,
     satellite,
     satellite_tracking,
@@ -17,6 +18,7 @@ from endpoints import (
 from fastapi import APIRouter
 
 api_router = APIRouter()
+api_router.include_router(environment_measurements.router)
 api_router.include_router(collected.router)
 api_router.include_router(satellite.router)
 api_router.include_router(satellite_tracking.router)
