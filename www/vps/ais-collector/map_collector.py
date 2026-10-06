@@ -13,7 +13,8 @@ from map_protocol import SOURCE, map_vessels, position
 from playwright.async_api import Error as BrowserError
 from playwright.async_api import async_playwright
 
-BASE = 'https://www.vesselfinder.com/'
+MAP_PROVIDER = os.environ['RHINE_MAP_PROVIDER']
+BASE = f'https://www.{MAP_PROVIDER}.com/'
 LOG = logging.getLogger('rhein-map')
 
 
@@ -39,7 +40,7 @@ async def acquire(conn=None):
         try:
             context = await browser.new_context(viewport={'width': 1280, 'height': 900},
                 storage_state={'cookies': [], 'origins': [{'origin': BASE.rstrip('/'),
-                    'localStorage': [{'name': 'vesselfinder-mapPosition', 'value': '10,8.425,49.645'}]}]})
+                    'localStorage': [{'name': f'{MAP_PROVIDER}-mapPosition', 'value': '10,8.425,49.645'}]}]})
             page = await context.new_page()
             async with page.expect_response(lambda r: urlsplit(r.url).path == '/api/pub/mp2', timeout=45000) as listing:
                 document = await page.goto(BASE, wait_until='domcontentloaded', timeout=45000)

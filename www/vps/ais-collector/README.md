@@ -114,3 +114,5 @@ runtime are defined in Compose. Use `xvfb-run -a python map_collector.py --once 
 for a bounded read-only test without database access. `--once` alone persists one cycle.
 Health reflects successful acquisition within eleven minutes, not complete coverage.
 Stop `rhine-map-collector` to disable browser acquisition while keeping AISstream active.
+
+Set `RHINE_MAP_PROVIDER=vesselfinder` in the server-only `.env`. The browser adapter uses this variable for its host and map storage key; it is required when starting the adapter.

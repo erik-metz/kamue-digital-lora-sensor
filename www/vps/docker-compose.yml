@@ -390,6 +390,7 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       RHINE_MAP_INTERVAL_SECONDS: 300
+      RHINE_MAP_PROVIDER: ${RHINE_MAP_PROVIDER:?Set the Rhine map provider}
     healthcheck:
       test: ["CMD", "python", "-c", "import pathlib,time; p=pathlib.Path('/tmp/rhein-map-heartbeat'); exit(0 if p.exists() and time.time()-p.stat().st_mtime<660 else 1)"]
       interval: 30s
