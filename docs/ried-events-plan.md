@@ -511,3 +511,12 @@ Die anschließende öffentliche Prüfung am 07.10.2026 bestätigt:
 
 Damit ist die zuvor offene produktive Aufnahme der Vereinsquellen bestätigt.
 Die HTTP-410-PDF-Quellen aus Schritt 5 bleiben offen.
+
+## Alternative Quellen für Groß-Rohrheim
+
+Die erneute Recherche vom 07.10.2026 ist in
+[Groß-Rohrheim: Alternativen zum Jahreskalender](ried-events-gross-rohrheim-alternativen.md)
+festgehalten. Sie enthält sechs konkret datierte Lücken gegenüber dem geprüften
+Backendbestand sowie weitere Angebote und die Reihenfolge zur Umsetzung.
+Besonders geeignet ist der erreichbare strukturierte Kalender der Musikkiste.
+In diesem Rechercheschritt wurden noch keine zusätzlichen Importquellen aktiviert.
