@@ -1,4 +1,4 @@
-"""Bürgerstiftung Biblis: public Events Calendar REST feed, with venue checks."""
+"""Public Events Calendar REST feeds with complete pagination and venue checks."""
 
 import logging
 import math
@@ -44,7 +44,7 @@ def page_url(source, now, page):
         parts.scheme != "https"
         or parts.path.rstrip("/") != "/wp-json/tribe/events/v1/events"
     ):
-        raise ValueError("Unexpected Biblis event API URL")
+        raise ValueError("Unexpected Tribe event API URL")
     query = dict(parse_qsl(parts.query))
     query.update(
         start_date=start.date().isoformat(),
@@ -58,7 +58,7 @@ def page_url(source, now, page):
 
 def pagination(body):
     if not isinstance(body, dict) or not isinstance(body.get("events"), list):
-        raise TypeError("Biblis event list missing")
+        raise TypeError("Tribe event list missing")
     total, pages = body.get("total"), body.get("total_pages")
     if (
         type(total) is not int
@@ -66,12 +66,12 @@ def pagination(body):
         or total < 0
         or not 0 <= pages <= MAX_PAGES
     ):
-        raise ValueError("Invalid or unbounded Biblis pagination")
+        raise ValueError("Invalid or unbounded Tribe pagination")
     if pages not in {
         max(1, math.ceil(total / PAGE_SIZE)),
         math.ceil(total / PAGE_SIZE),
     }:
-        raise ValueError("Inconsistent Biblis pagination")
+        raise ValueError("Inconsistent Tribe pagination")
     return total, max(1, pages)
 
 
@@ -79,7 +79,7 @@ def venue_location(venue, source):
     if isinstance(venue, list) and not venue:
         return "", None, None, None
     if not isinstance(venue, dict):
-        raise TypeError("Unexpected Biblis venue structure")
+        raise TypeError("Unexpected Tribe venue structure")
     name = plain(venue.get("venue", ""))
     city, postcode = venue.get("city"), venue.get("zip")
     municipality = municipality_for_venue(name, city=city, postcode=postcode)
@@ -105,7 +105,7 @@ def venue_location(venue, source):
 
 def period(item):
     if not isinstance(item.get("all_day"), bool):
-        raise TypeError("Biblis all-day flag missing")
+        raise TypeError("Tribe all-day flag missing")
     if item["all_day"]:
         return event_period(item["start_date"], end_date=item["end_date"])
     if item.get("utc_start_date") and item.get("utc_end_date"):
@@ -132,7 +132,7 @@ def period(item):
             .astimezone(BERLIN)
         )
     if end < start:
-        raise ValueError("Biblis event ends before it starts")
+        raise ValueError("Tribe event ends before it starts")
     return start, end
 
 
@@ -172,7 +172,7 @@ def parse_event(item, source, now):
         or type(item.get("id")) is not int
         or not item.get("title")
     ):
-        raise ValueError("Biblis event identity missing")
+        raise ValueError("Tribe event identity missing")
     if item.get("status") != "publish" or item.get("hide_from_listings") is True:
         return None
     title = plain(item["title"])
@@ -180,12 +180,12 @@ def parse_event(item, source, now):
         item.get("venue", []), source
     )
     if not municipality:
-        LOG.info("Biblis event deferred: unknown or external venue, id=%s", item["id"])
+        LOG.info("Tribe event deferred: unknown or external venue, id=%s", item["id"])
         return None
     try:
         start, end = period(item)
     except (KeyError, ValueError):
-        LOG.warning("Biblis event deferred: invalid dates, id=%s", item["id"])
+        LOG.warning("Tribe event deferred: invalid dates, id=%s", item["id"])
         return None
     url = item.get("url")
     if (
@@ -193,7 +193,7 @@ def parse_event(item, source, now):
         or urlsplit(url).scheme != "https"
         or urlsplit(url).netloc != urlsplit(source["url"]).netloc
     ):
-        raise ValueError("Unexpected Biblis event URL")
+        raise ValueError("Unexpected Tribe event URL")
     description = plain(item.get("description", ""))
     cost = plain(item.get("cost", ""))
     free = admission(cost, description)
@@ -211,13 +211,13 @@ def parse_event(item, source, now):
     if not isinstance(organizer, list) or not all(
         isinstance(org, dict) for org in organizer
     ):
-        raise ValueError("Unexpected Biblis organizers")
+        raise ValueError("Unexpected Tribe organizers")
     image = item.get("image")
     image_url = image.get("url") if isinstance(image, dict) else None
     if image_url and urlsplit(image_url).scheme != "https":
         image_url = None
     return {
-        "id": f"bsb-{item['id']}",
+        "id": f"{source.get('event_id_prefix', 'bsb')}-{item['id']}",
         "title": title,
         "organizer": "; ".join(plain(org.get("organizer", "")) for org in organizer),
         "venue_name": venue,
@@ -252,18 +252,18 @@ async def import_biblis_events(conn, client, source):
             expected = total, pages
         if expected != (total, pages) or digest in digests:
             raise ValueError(
-                "Biblis calendar changed/repeated during pagination; incomplete import rejected"
+                "Tribe calendar changed/repeated during pagination; incomplete import rejected"
             )
         digests.add(digest)
         receipts.append(attempt)
         wanted = min(PAGE_SIZE, max(0, total - (page - 1) * PAGE_SIZE))
         if len(body["events"]) != wanted:
-            raise ValueError("Biblis event page truncated")
+            raise ValueError("Tribe event page truncated")
         for item in body["events"]:
             event = parse_event(item, source, now)
             identity = item["id"]
             if identity in identities:
-                raise ValueError("Biblis event repeated across pages")
+                raise ValueError("Tribe event repeated across pages")
             identities.add(identity)
             count += 1
             if event:
@@ -271,9 +271,9 @@ async def import_biblis_events(conn, client, source):
         if page == pages:
             break
     else:
-        raise ValueError("Biblis page limit reached; incomplete import rejected")
+        raise ValueError("Tribe page limit reached; incomplete import rejected")
     if count != expected[0]:
-        raise ValueError("Biblis import count mismatch")
+        raise ValueError("Tribe import count mismatch")
     start, until = window(now)
     async with conn.transaction():
         # Only this source and the fully requested window may be reconciled.
@@ -290,7 +290,7 @@ async def import_biblis_events(conn, client, source):
             )
     await conn.commit()
     LOG.info(
-        "Biblis events: %s acquired, %s local, %s deferred",
+        "Tribe events: %s acquired, %s local, %s deferred",
         count,
         len(events),
         count - len(events),

@@ -92,7 +92,7 @@ neues Jahr werden erst nach Veröffentlichung übernommen.
 - [x] 1. Quellen, Filter und Anzeige untersuchen; Gebiet und Lücken festhalten.
 - [x] 2. Kommunale Kalender vollständig und mit belastbaren Orts-/Datumsangaben erfassen.
 - [x] 3. Bürgerstiftung Biblis anbinden.
-- [ ] 4. Vereins- und Ortsteilkalender ergänzen.
+- [x] 4. Vereins- und Ortsteilkalender ergänzen.
 - [ ] 5. PDF-Jahreskalender ergänzen.
 - [ ] 6. Dubletten, Absagen und wiederkehrende Termine behandeln.
 - [ ] 7. Importabdeckung und Anzeige gegen recherchierte Beispiele prüfen; dokumentierte Anzeigefehler beheben.
@@ -173,3 +173,72 @@ keine neue Quelle oder Filterlogik.
 - 15 neue Regressionstestfälle; gesamte lokale Worker-Suite: 123 bestanden,
   14 übersprungen (abhängige Infrastruktur nicht verfügbar).
   Der tatsächliche Import auf dem produktiven VPS bleibt unbestätigt.
+
+
+## Ergebnis Schritt 4 (7. Oktober 2026)
+
+Sieben neue Quellen für sechs Anbieter sind aktiv; Abruf alle sechs Stunden.
+Live-Simulation ohne produktive Datenbankänderung: **87 lokal bestätigte
+Vorkommen, davon 29 bevorstehend**. Diese Zahl ist vor dem quellenübergreifenden
+Dublettenabgleich in Schritt 6 zu verstehen. Einzelne Veranstaltungen stehen
+bereits in kommunalen Kalendern. Die vollständige Rechercheliste steht in
+[ried-events-vereine.md](ried-events-vereine.md).
+
+| Quelle | Übernommene Vorkommen | Bevorstehend |
+| --- | ---: | ---: |
+| TV Bürstadt | 25 | 1 |
+| KKM Bürstadt | 13 | 1 |
+| SG Hüttenfeld | 11 | 4 |
+| DLRG Lampertheim | 19 | 17 |
+| TV Hofheim – Kalender | 4 | 4 |
+| Hofheimer Volkslauf – eigene Veranstaltungsseite | 1 | 0 |
+| Neuschloß | 14 | 2 |
+
+- TV/KKM: vollständige HTML-Tabellen mit kontrollierter Spaltenstruktur.
+  Explizite Tages- und Mehrtagesdaten; leere Datumszellen erben keinen Termin
+  aus der vorherigen Zeile. Mehrdeutige Datumsangaben, Platzhalter und interne
+  Hallenreinigung werden nicht veröffentlicht. Lokale Hallenkürzel sind nur
+  für den jeweiligen Kalender anhand belegter Veranstaltungsstätten aufgelöst.
+  Auswärtige Wettkämpfe und Zeltlager sowie Orte ohne Nachweis bleiben draußen.
+- SG Hüttenfeld: acht explizit konfigurierte öffentliche Veranstaltungsseiten.
+  Sichtbare datierte Programme haben Vorrang vor Countdown-Widgets.
+  Der Kerwelauf beginnt gemäß Ausschreibung um 15 Uhr, nicht um 14 Uhr laut
+  Countdown. Das Ostereierschießen liefert fünf veröffentlichte Termine für
+  März 2026; die widersprüchliche Überschrift für 2027 wird nicht zur Erfindung
+  neuer Termine verwendet. Nikolausschießen: zwei separate Tage. Kinderfasching
+  und Maifest haben ausdrücklich bestätigte Daten für 2027. Nur „Oktober 2027“
+  beim Oktoberfest und ein unbestätigter Rückkehrhinweis zur Summer Night
+  genügen nicht für einen neuen Termin.
+- DLRG: vollständige eingebettete Seminarliste statt leerer HTML-Tabellenzeilen.
+  Öffentliche Details liefern Gebühren, Teilnehmerkreis, Anmeldestatus und
+  Kalenderexport. Jeder vom Anbieter explizit exportierte Kurstag hat eine
+  eigene ID, Zeit und tatsächliche Adresse. Damit werden Hallenbad und
+  Unterrichtsstation nicht verwechselt. Ein Export muss die angekündigte Anzahl
+  von Terminen enthalten; unvollständige Exporte und noch nicht expandierte
+  Wiederholungsregeln verhindern die gesamte Veröffentlichung. Teamkleidung-
+  Bestellungen und die Freizeit in Oberhausen-Rheinhausen werden ausgeschlossen.
+  Mitgliedsangebote bleiben mit ihren Teilnahmebedingungen gekennzeichnet.
+- Hofheim: öffentliche Jahresansicht über die vom Anbieter vorgesehene
+  Kalenderanzeige-Anfrage; alle darin enthaltenen HTML-Seiten werden gelesen.
+  Schulferien sind keine lokalen Vereinsveranstaltungen. Die separat
+  veröffentlichte Volkslauf-Seite wird zusätzlich gelesen. Ihr Veranstaltungsort
+  ist für die bestätigte Ausgabe 2026 belegt; eine neue Ausgabe benötigt erneut
+  einen konkreten Ortsnachweis. Der dynamische Kalender liefert den vom Anbieter
+  dargestellten Zeitraum, keine zugesicherte Vollständigkeit für beide Jahre.
+- Neuschloß: Wiederverwendung der paginierten öffentlichen Events-API mit
+  eigener ID-Kennung. 14 von 16 Vorkommen haben bestätigte Veranstaltungsorte;
+  zwei ohne Ortsnachweis bleiben zurückgestellt. Bibliser IDs bleiben erhalten.
+- Alle Abrufe und Details einer Quelle müssen erfolgreich sein, bevor ein
+  Abgleich veröffentlicht wird. Der Abgleich löscht ausschließlich noch aktuelle
+  eigene Quelleneinträge im angefragten Zeitraum; vergangene Vereinsvorkommen
+  bleiben als Archiv erhalten. Neuschloß nutzt den bereits bestehenden Abgleich
+  des vollständigen angefragten Kalenderzeitraums.
+- 37 neue Regressionstestfälle; lokale Worker-Suite: 160 bestanden, 14
+  übersprungen. Ruff besteht für alle geänderten Python-Dateien. Ein zusätzlicher
+  Lauf über das gesamte Worker-Verzeichnis meldet drei bereits bestehende
+  Befunde in `osm_addresses.py`, `prediction.py` und `test_rail_geometry.py`;
+  diese fremden Pfade wurden nicht verändert.
+- Die Simulation prüft Live-Abrufe, Parser, Schema-Feldlängen und den vollständigen
+  Importablauf mit simulierten Datenbankoperationen. Produktiver VPS-Import und
+  Anzeige bleiben unbestätigt und werden nicht aus einer Container-Veröffentlichung
+  abgeleitet. Deduplizierung und Darstellung folgen in den nächsten Schritten.

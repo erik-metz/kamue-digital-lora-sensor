@@ -1,0 +1,256 @@
+{
+  "events": [
+    {
+      "id": 18704,
+      "global_id": "neuschloss.net?id=18704",
+      "global_id_lineage": [
+        "neuschloss.net?id=18704"
+      ],
+      "author": "1",
+      "status": "publish",
+      "date": "2026-02-22 09:20:47",
+      "date_utc": "2026-02-22 08:20:47",
+      "modified": "2026-02-22 09:24:51",
+      "modified_utc": "2026-02-22 08:24:51",
+      "url": "https://neuschloss.net/termine/aktion-saubere-gemarkung-mit-der-buergerkammer/",
+      "rest_url": "https://neuschloss.net/wp-json/tribe/events/v1/events/18704",
+      "title": "Aktion Saubere Gemarkung mit der Bürgerkammer",
+      "description": "<p>Treffpunkt: 9 Uhr am Spielplatz Alter Lorscher Weg.</p>\n<figure id=\"attachment_18707\" aria-describedby=\"caption-attachment-18707\" style=\"width: 640px\" class=\"wp-caption alignnone\"><img loading=\"lazy\" decoding=\"async\" class=\"size-large wp-image-18707\" src=\"https://neuschloss.net/wp-content/uploads/2026/02/IMG_0123-766x1024.jpeg\" alt=\"\" width=\"640\" height=\"856\" srcset=\"https://neuschloss.net/wp-content/uploads/2026/02/IMG_0123-766x1024.jpeg 766w, https://neuschloss.net/wp-content/uploads/2026/02/IMG_0123-224x300.jpeg 224w, https://neuschloss.net/wp-content/uploads/2026/02/IMG_0123-768x1027.jpeg 768w, https://neuschloss.net/wp-content/uploads/2026/02/IMG_0123-374x500.jpeg 374w, https://neuschloss.net/wp-content/uploads/2026/02/IMG_0123.jpeg 770w\" sizes=\"auto, (max-width: 640px) 100vw, 640px\" /><figcaption id=\"caption-attachment-18707\" class=\"wp-caption-text\">Screenshot</figcaption></figure>",
+      "excerpt": "",
+      "slug": "aktion-saubere-gemarkung-mit-der-buergerkammer",
+      "image": false,
+      "all_day": false,
+      "start_date": "2026-02-28 09:00:00",
+      "start_date_details": {
+        "year": "2026",
+        "month": "02",
+        "day": "28",
+        "hour": "09",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "end_date": "2026-02-28 12:00:00",
+      "end_date_details": {
+        "year": "2026",
+        "month": "02",
+        "day": "28",
+        "hour": "12",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_start_date": "2026-02-28 08:00:00",
+      "utc_start_date_details": {
+        "year": "2026",
+        "month": "02",
+        "day": "28",
+        "hour": "08",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_end_date": "2026-02-28 11:00:00",
+      "utc_end_date_details": {
+        "year": "2026",
+        "month": "02",
+        "day": "28",
+        "hour": "11",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "timezone": "Europe/Berlin",
+      "timezone_abbr": "CET",
+      "cost": "",
+      "cost_details": {
+        "currency_symbol": "€",
+        "currency_code": "EUR",
+        "currency_position": "suffix",
+        "values": []
+      },
+      "website": "",
+      "show_map": true,
+      "show_map_link": true,
+      "hide_from_listings": false,
+      "sticky": false,
+      "featured": false,
+      "categories": [
+        {
+          "name": "Bürgerkammer",
+          "slug": "buergerkammer",
+          "term_group": 0,
+          "term_taxonomy_id": 204,
+          "taxonomy": "tribe_events_cat",
+          "description": "",
+          "parent": 0,
+          "count": 34,
+          "filter": "raw",
+          "term_order": "0",
+          "id": 204,
+          "urls": {
+            "self": "https://neuschloss.net/wp-json/tribe/events/v1/categories/204",
+            "collection": "https://neuschloss.net/wp-json/tribe/events/v1/categories"
+          }
+        }
+      ],
+      "tags": [],
+      "venue": [],
+      "organizer": [
+        {
+          "id": 5333,
+          "author": "1",
+          "status": "publish",
+          "date": "2016-05-02 14:03:18",
+          "date_utc": "2016-05-02 13:03:18",
+          "modified": "2026-02-22 18:40:57",
+          "modified_utc": "2026-02-22 17:40:57",
+          "url": "https://neuschloss.net/veranstalter/buergerkammer-neuschloss/",
+          "organizer": "Bürgerkammer Neuschloß",
+          "slug": "buergerkammer-neuschloss",
+          "phone": "06206/22 41 (Vorsitzende Carola Biehal)",
+          "email": "vorstand@buergerkammer-neuschloss.de",
+          "global_id": "neuschloss.net?id=5333",
+          "global_id_lineage": [
+            "neuschloss.net?id=5333"
+          ]
+        }
+      ],
+      "custom_fields": []
+    },
+    {
+      "id": 18675,
+      "global_id": "neuschloss.net?id=18675",
+      "global_id_lineage": [
+        "neuschloss.net?id=18675"
+      ],
+      "author": "1",
+      "status": "publish",
+      "date": "2026-02-21 14:03:50",
+      "date_utc": "2026-02-21 13:03:50",
+      "modified": "2026-02-21 14:07:55",
+      "modified_utc": "2026-02-21 13:07:55",
+      "url": "https://neuschloss.net/termine/kirchenkino-der-ev-johannesgemeinde-im-gemeindesaal-am-ahornplatz-5/",
+      "rest_url": "https://neuschloss.net/wp-json/tribe/events/v1/events/18675",
+      "title": "Kirchenkino der ev. Johannesgemeinde im Gemeindesaal am Ahornplatz",
+      "description": "<p class=\"p1\"><span class=\"s1\">Die schüchterne Angela hat gerade das College beendet, als </span>sie einen der gefragtesten Jobs in New York ergattert. Sie darf in dem beliebten Modemagazin &#8222;Runaway&#8220; als Assistentin der Chefin Miranda Priestley arbeiten. Das Mauerblümchen <span class=\"s2\">passt jedoch so gar nicht in die Modebranche, in der Eitelkeit, </span>Neid und Manipulation vorherrschen, und eckt mit ihrer über<span class=\"s2\">kandidelten Chefin wiederholt an. Aufgeben will sie jedoch noch lange nicht.</span></p>\n<p class=\"p1\"><span class=\"s1\">Der Eintritt ist wie immer frei.</span></p>",
+      "excerpt": "",
+      "slug": "kirchenkino-der-ev-johannesgemeinde-im-gemeindesaal-am-ahornplatz-5",
+      "image": false,
+      "all_day": false,
+      "start_date": "2026-03-04 19:00:00",
+      "start_date_details": {
+        "year": "2026",
+        "month": "03",
+        "day": "04",
+        "hour": "19",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "end_date": "2026-03-04 19:00:00",
+      "end_date_details": {
+        "year": "2026",
+        "month": "03",
+        "day": "04",
+        "hour": "19",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_start_date": "2026-03-04 18:00:00",
+      "utc_start_date_details": {
+        "year": "2026",
+        "month": "03",
+        "day": "04",
+        "hour": "18",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "utc_end_date": "2026-03-04 18:00:00",
+      "utc_end_date_details": {
+        "year": "2026",
+        "month": "03",
+        "day": "04",
+        "hour": "18",
+        "minutes": "00",
+        "seconds": "00"
+      },
+      "timezone": "Europe/Berlin",
+      "timezone_abbr": "CET",
+      "cost": "",
+      "cost_details": {
+        "currency_symbol": "€",
+        "currency_code": "EUR",
+        "currency_position": "suffix",
+        "values": []
+      },
+      "website": "",
+      "show_map": true,
+      "show_map_link": false,
+      "hide_from_listings": false,
+      "sticky": false,
+      "featured": false,
+      "categories": [
+        {
+          "name": "Ev. Johannesgemeinde",
+          "slug": "ev-johannesgemeinde",
+          "term_group": 0,
+          "term_taxonomy_id": 201,
+          "taxonomy": "tribe_events_cat",
+          "description": "",
+          "parent": 0,
+          "count": 109,
+          "filter": "raw",
+          "term_order": "0",
+          "id": 201,
+          "urls": {
+            "self": "https://neuschloss.net/wp-json/tribe/events/v1/categories/201",
+            "collection": "https://neuschloss.net/wp-json/tribe/events/v1/categories"
+          }
+        }
+      ],
+      "tags": [],
+      "venue": {
+        "id": 1519,
+        "author": "1",
+        "status": "publish",
+        "date": "2013-11-29 10:50:02",
+        "date_utc": "2013-11-29 09:50:02",
+        "modified": "2013-11-29 10:50:02",
+        "modified_utc": "2013-11-29 09:50:02",
+        "url": "https://neuschloss.net/veranstaltungsort/gemeinderaum-am-ahornplatz/",
+        "venue": "Gemeinderaum der evangelischen Johannesgemeinde am Ahornplatz",
+        "slug": "gemeinderaum-am-ahornplatz",
+        "address": "Ahornweg 1",
+        "city": "Lampertheim",
+        "country": "Deutschland",
+        "zip": "68623",
+        "show_map": true,
+        "show_map_link": false,
+        "global_id": "neuschloss.net?id=1519",
+        "global_id_lineage": [
+          "neuschloss.net?id=1519"
+        ]
+      },
+      "organizer": [
+        {
+          "id": 1803,
+          "author": "1",
+          "status": "publish",
+          "date": "2014-01-03 14:28:27",
+          "date_utc": "2014-01-03 13:28:27",
+          "modified": "2014-01-03 14:28:27",
+          "modified_utc": "2014-01-03 13:28:27",
+          "url": "https://neuschloss.net/veranstalter/evangelische-johannesgemeinde/",
+          "organizer": "Evangelische Johannesgemeinde",
+          "slug": "evangelische-johannesgemeinde",
+          "phone": "06256/8 20 10",
+          "website": "http://evangelisch-huettenfeld.de/index.php?id=13",
+          "email": "info@kirche-huettenfeld.de",
+          "global_id": "neuschloss.net?id=1803",
+          "global_id_lineage": [
+            "neuschloss.net?id=1803"
+          ]
+        }
+      ],
+      "custom_fields": []
+    }
+  ],
+  "total": 2,
+  "total_pages": 1
+}

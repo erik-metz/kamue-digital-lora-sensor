@@ -346,6 +346,183 @@
       }
     },
     {
+      "id": "tv-buerstadt-events",
+      "group": "social",
+      "adapter": "club-events",
+      "enabled": true,
+      "url": "https://www.xn--tvbrstadt-s9a.de/798-2/",
+      "organizer": "TV 1891 Bürstadt",
+      "format": "table",
+      "description": "Öffentliche Vereins-/Ortsteiltermine: TV 1891 Bürstadt; tatsächlicher Veranstaltungsort im Ried.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "table_kind": "tv",
+      "columns": [
+        "Datum",
+        "Abteilung",
+        "Veranstaltung",
+        "Ort"
+      ],
+      "verified_venue_names": {
+        "TV Halle": {
+          "venue_name": "Jahnturnhalle des TV Bürstadt, Wasserwerkstraße",
+          "municipality": "Bürstadt",
+          "evidence_url": "https://www.xn--tvbrstadt-s9a.de/willkommen/"
+        },
+        "TV Gelände": {
+          "venue_name": "TV-Gelände Bürstadt, Wasserwerkstraße",
+          "municipality": "Bürstadt",
+          "evidence_url": "https://www.xn--tvbrstadt-s9a.de/willkommen/"
+        },
+        "Stadion/ TV-Halle": {
+          "venue_name": "Leichtathletikstadion / Jahnturnhalle Bürstadt, Wasserwerkstraße",
+          "municipality": "Bürstadt",
+          "evidence_url": "https://www.xn--tvbrstadt-s9a.de/willkommen/"
+        },
+        "LA Stadion": {
+          "venue_name": "Leichtathletikstadion Bürstadt, Wasserwerkstraße",
+          "municipality": "Bürstadt",
+          "evidence_url": "https://www.xn--tvbrstadt-s9a.de/willkommen/"
+        },
+        "LA-Stadion": {
+          "venue_name": "Leichtathletikstadion Bürstadt, Wasserwerkstraße",
+          "municipality": "Bürstadt",
+          "evidence_url": "https://www.xn--tvbrstadt-s9a.de/willkommen/"
+        },
+        "EKS -Halle": {
+          "venue_name": "Sporthalle Erich-Kästner-Schule Bürstadt",
+          "municipality": "Bürstadt",
+          "evidence_url": "https://www.eks-buerstadt.de/lernen-sie-unsere-schule-kennen-ein-rundgang-durch-die-eks/"
+        },
+        "Grillhütte – Wald": {
+          "venue_name": "TV-Grillhütte im Leichtathletikstadion Bürstadt",
+          "municipality": "Bürstadt",
+          "evidence_url": "https://www.tvbuerstadt.de/index.php?start=16"
+        }
+      },
+      "verified_event_venues": {
+        "Bürstädter Stadtlauf": {
+          "year": 2026,
+          "venue_name": "Bürstadt – Stadtlauf; genauer Startort siehe Ausschreibung",
+          "evidence_url": "https://www.xn--tvbrstadt-s9a.de/798-2/"
+        }
+      }
+    },
+    {
+      "id": "kkm-buerstadt-events",
+      "group": "social",
+      "adapter": "club-events",
+      "enabled": true,
+      "url": "https://www.kkm-buerstadt.de/kalender-2/",
+      "organizer": "KKM Bürstadt",
+      "format": "table",
+      "description": "Öffentliche Vereins-/Ortsteiltermine: KKM Bürstadt; tatsächlicher Veranstaltungsort im Ried.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "table_kind": "kkm",
+      "columns": [
+        "Datum",
+        "Termin"
+      ],
+      "verified_event_venues": {
+        "KKM Oktoberfest": {
+          "year": 2026,
+          "venue_name": "Autohaus Jakob & Morweiser, Bürstadt",
+          "evidence_url": "https://www.kkm-buerstadt.de/2026/%F0%9F%8D%BB%F0%9F%92%99-save-the-date-%F0%9F%92%99%F0%9F%8D%BB/"
+        }
+      }
+    },
+    {
+      "id": "sg-huettenfeld-events",
+      "group": "social",
+      "adapter": "club-events",
+      "enabled": true,
+      "url": "https://www.sg-huettenfeld.de/",
+      "organizer": "SG 1946 Hüttenfeld",
+      "format": "sgh",
+      "description": "Öffentliche Vereins-/Ortsteiltermine: SG 1946 Hüttenfeld; tatsächlicher Veranstaltungsort im Ried.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "event_pages": [
+        "/kerwe/",
+        "/kerwelauf/",
+        "/kinderfasching/",
+        "/maifest/",
+        "/ostereierschiessen/",
+        "/nikolausschiessen/",
+        "/oktoberfest/",
+        "/events-summernight/"
+      ]
+    },
+    {
+      "id": "dlrg-lampertheim-events",
+      "group": "social",
+      "adapter": "club-events",
+      "enabled": true,
+      "url": "https://lampertheim.dlrg.de/aktuelle-termine/",
+      "organizer": "DLRG Ortsverband Lampertheim",
+      "format": "dlrg",
+      "description": "Öffentliche Vereins-/Ortsteiltermine: DLRG Ortsverband Lampertheim; tatsächlicher Veranstaltungsort im Ried.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "edvnummer": "0719009",
+      "exclude_titles": "Teamkleidung|Bestellung|Sammelbestellung"
+    },
+    {
+      "id": "tv-hofheim-events",
+      "group": "social",
+      "adapter": "club-events",
+      "enabled": true,
+      "url": "https://tv1896hofheim.de/termine/",
+      "organizer": "TV 1896 Hofheim/Ried",
+      "format": "hofheim",
+      "description": "Öffentliche Vereins-/Ortsteiltermine: TV 1896 Hofheim/Ried; tatsächlicher Veranstaltungsort im Ried.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_venue_names": {
+        "Sporthalle": {
+          "venue_name": "Sporthalle Hofheim, Am Sportplatz 20, 68623 Lampertheim-Hofheim",
+          "municipality": "Lampertheim",
+          "evidence_url": "https://hhv-darmstadt.de/hallenverzeichnis"
+        }
+      }
+    },
+    {
+      "id": "hofheimer-volkslauf",
+      "group": "social",
+      "adapter": "club-events",
+      "enabled": true,
+      "url": "https://tv1896hofheim.de/hofheimer-volkslauf/",
+      "organizer": "TV 1896 Hofheim/Ried",
+      "format": "hofheim-race",
+      "description": "Öffentliche Vereins-/Ortsteiltermine: TV 1896 Hofheim/Ried; tatsächlicher Veranstaltungsort im Ried.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_race_venue": {
+        "year": 2026,
+        "venue_name": "Sportpark Hofheim, Am Sportplatz, 68623 Lampertheim-Hofheim",
+        "evidence_url": "https://tv1896hofheim.de/wp-content/uploads/2026/05/Ausschreibung_2026.pdf"
+      }
+    },
+    {
+      "id": "neuschloss-events",
+      "group": "social",
+      "adapter": "tribe-events",
+      "enabled": true,
+      "url": "https://neuschloss.net/wp-json/tribe/events/v1/events",
+      "event_id_prefix": "neuschloss",
+      "description": "Veranstaltungskalender Lampertheim-Neuschloß mit einzeln geprüften Veranstaltungsorten.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2
+    },
+    {
       "id": "demographics-published-source",
       "group": "demographics",
       "adapter": "json",

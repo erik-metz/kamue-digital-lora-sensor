@@ -17,6 +17,7 @@ from bahn import import_fasta, import_netex, import_ris_stations, import_siri
 from biblis_events import import_biblis_events
 from budgets import import_biblis_budget
 from chargers import import_chargers
+from club_events import import_club_events
 from config import Settings
 from elections import import_elections
 from groundwater import import_groundwater
@@ -50,6 +51,8 @@ ADAPTERS = {
     "cross7": import_cross7,
     "lampertheim-events": import_lampertheim_events,
     "biblis-events": import_biblis_events,
+    "tribe-events": import_biblis_events,
+    "club-events": import_club_events,
     "tiles": import_tiles,
     "gtfs-rt": import_realtime,
     "zakb": import_zakb,
