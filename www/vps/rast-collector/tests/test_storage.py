@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from config import Settings
 from db_support import DatabaseCase
 from normalize import RastSiteObservation
+from psycopg import sql
 from storage import persist_rast_sites
 
 
@@ -29,6 +30,34 @@ def sample_site():
 
 
 class RastStorageTests(DatabaseCase):
+    async def test_unrelated_schema_function_does_not_enable_measurement_core(self):
+        other_schema = self.schema + "_unrelated"
+        await self.conn.execute(
+            sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(other_schema))
+        )
+        try:
+            await self.conn.execute(
+                sql.SQL(
+                    "CREATE FUNCTION {}.write_measurement() RETURNS integer LANGUAGE sql AS 'SELECT 1'"
+                ).format(sql.Identifier(other_schema))
+            )
+            settings = Settings(
+                roads=("A67",), poll_seconds=900, state_dir="/tmp", db={}
+            )
+            stats = await persist_rast_sites(self.conn, [sample_site()], settings)
+            self.assertEqual(stats["sites_updated"], 1)
+            self.assertEqual(
+                await self.scalar(
+                    "SELECT count(*) FROM sensor_metadata WHERE id=%s",
+                    (sample_site().sensor_id,),
+                ),
+                1,
+            )
+        finally:
+            await self.conn.execute(
+                sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(other_schema))
+            )
+
     async def test_persist_rast_sites_schema_and_metadata(self):
         settings = Settings(
             roads=("A67",),

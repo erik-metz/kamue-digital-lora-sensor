@@ -87,3 +87,11 @@ seine Wiederholung ohne Duplikate.
 Die vollständige Worker-Suite einschließlich aller Datenbanktests besteht:
 **217 bestanden, keine übersprungen**. Ruff für die geänderten Python-Dateien
 und die Prüfung des Diffs sind erfolgreich.
+
+Der erste Veröffentlichungsversuch scheiterte in einem unabhängigen
+Rastplatz-Collector-Test: Die Erkennung von `write_measurement` berücksichtigte
+auch Funktionen anderer Datenbankschemas und aktivierte dadurch einen
+Speicherpfad ohne passende lokale `entities`-Tabelle. Die Erkennung prüft nun
+das aktive Schema und die vorhandene Tabelle. Ein Regressionstest stellt eine
+gleichnamige Funktion in einem getrennten Schema bereit. Alle 13 Rastplatz-
+Collector-Tests einschließlich Datenbanktests und Ruff sind erfolgreich.
