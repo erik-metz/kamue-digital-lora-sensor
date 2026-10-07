@@ -67,6 +67,7 @@ async def lifespan(app: FastAPI):
     try:
         await init_db(app.state.pool)
         async with app.state.pool.connection() as conn:
+            await conn.execute((Path(__file__).parent / "migrations" / "20261007_archive_format.sql").read_text())
             await ensure_core_ready(conn)
         yield
     finally:

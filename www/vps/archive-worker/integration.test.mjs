@@ -29,6 +29,11 @@ test('database export, publication, retry, replacement and visibility', { skip: 
       assert.ok(statement, `Missing schema definition for ${table}`);
       await client.query(statement[0]);
     }
+    // Upgrade a real old catalogue independently of the skipped bootstrap schema.
+    await client.query('ALTER TABLE data_archives DROP COLUMN entity_ids, DROP COLUMN format_version');
+    const upgrade = await readFile(new URL('../api/v1/migrations/20261007_archive_format.sql', import.meta.url), 'utf8');
+    await client.query(upgrade);
+    await client.query(upgrade);
     let sequence = 0;
     let failAt = Infinity;
     const removed = [];
