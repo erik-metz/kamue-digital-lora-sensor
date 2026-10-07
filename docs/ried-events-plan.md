@@ -447,3 +447,44 @@ nun denselben Kalendervertrag: `/termine` und der Eventbereich von `/statistik`.
   diesen Nachweis nicht. Der vorhandene Watchtower ist für automatische
   Image-Aktualisierungen vorgesehen; sein tatsächlicher Laufzustand wurde
   in dieser Prüfung nicht ermittelt.
+
+## Ergänzung: produktiven Vereinsimport reparieren
+
+Der inzwischen erreichbare öffentliche
+[Importstatus](https://open-ried-sens.duckdns.org/api/v1/collection/status)
+zeigt am 07.10.2026 bei TV Bürstadt, KKM Bürstadt, SG Hüttenfeld, DLRG
+Lampertheim und Hofheimer Volkslauf `ForeignKeyViolation` in der Speicherphase.
+TV Hofheim meldete beim älteren Versuch einen Verarbeitungsfehler.
+
+Die Vereinsimporte berechneten einen gemeinsamen Hash aus den Hashes aller
+abgerufenen Seiten, ohne Daten unter diesem gemeinsamen Hash zu archivieren.
+Die Veröffentlichung referenzierte dadurch einen nicht vorhandenen Eintrag in
+`collected_payloads`. Die Fremdschlüsselprüfung rollte auch die zuvor eingefügten
+Termine zurück. Das erklärt, warum erfolgreiche öffentliche Abrufe trotzdem
+keine neuen Vereinsveranstaltungen sichtbar machten.
+
+Der Import archiviert jetzt innerhalb derselben Veröffentlichungstransaktion
+ein JSON-Manifest mit Quellkennung und den Hashes aller tatsächlich archivierten
+Antworten. Sein Inhalt bestimmt den Veröffentlichungshash. Die ursprünglichen
+HTML-/ICS-Antworten und ihre Abrufbelege bleiben erhalten.
+
+Nachweise:
+
+- Drei neue Integrationstests mit echten PostgreSQL-Fremdschlüsseln prüfen
+  einen einfachen Kalender, den mehrseitigen SGH-Kalender und den dynamischen
+  Hofheimer Kalender, jeweils mit erneutem Import ohne Duplikate.
+  Die unveränderte frühere Importversion scheitert in allen drei Fällen mit
+  `collected_dataset_versions_payload_sha256_fkey`; die Korrektur besteht sie.
+- Erneute öffentliche Live-Abrufe liefern alle sieben Quellen erfolgreich.
+  Zusätzlich wurde die komplette Live-Kette in einer isolierten lokalen
+  TimescaleDB bis zur Veröffentlichung geprüft: TV Bürstadt 25, KKM Bürstadt 13,
+  SG Hüttenfeld 11, DLRG Lampertheim 19, TV Hofheim 4, Hofheimer Volkslauf 1,
+  Neuschloß 14; insgesamt 87 veröffentlichte Termine.
+- Diese Testdatenbank ist vom produktiven VPS getrennt. Die tatsächliche
+  produktive Übernahme muss nach Veröffentlichung des korrigierten Images
+  erneut über den öffentlichen Importstatus und Eventbestand geprüft werden.
+- Die vollständige Worker-Suite besteht mit allen Datenbanktests in einer
+  isolierten TimescaleDB: **212 bestanden, keine übersprungen**. Ruff für die
+  geänderten Python-Dateien ist erfolgreich.
+- Die fehlenden Groß-Rohrheimer PDFs aus Schritt 5 bleiben ein anderer offener
+  Punkt; ihre Termine werden nicht aus unvollständigen Auszügen erfunden.

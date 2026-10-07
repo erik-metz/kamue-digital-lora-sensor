@@ -670,7 +670,14 @@ async def import_club_events(conn, client, source):
         raise ValueError("Club calendar occurrence repeated")
     today = now.astimezone(BERLIN).replace(hour=0, minute=0, second=0, microsecond=0)
     _, until = window(now)
-    digest = hashlib.sha256("\n".join(digests).encode()).hexdigest()
+    # Publication digests must identify archived bytes, including when a
+    # calendar combines a listing, detail pages and individual ICS feeds.
+    bundle = json.dumps(
+        {"source_id": source["id"], "payload_sha256": digests},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
+    digest = hashlib.sha256(bundle).hexdigest()
     async with conn.transaction():
         # Upcoming-only providers must never erase archived past occurrences.
         await conn.execute(
@@ -678,6 +685,11 @@ async def import_club_events(conn, client, source):
             AND NOT (id = ANY(%s)) AND COALESCE(end_time,start_time) >= %s
             AND start_time < %s""",
             (source["id"], ids, today, until),
+        )
+        await conn.execute(
+            """INSERT INTO collected_payloads(sha256,body,content_type)
+            VALUES (%s,%s,'application/json') ON CONFLICT DO NOTHING""",
+            (digest, bundle),
         )
         await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         for attempt in receipts:

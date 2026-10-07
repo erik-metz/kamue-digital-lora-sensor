@@ -342,7 +342,7 @@ async def test_dlrg_import_excludes_orders_and_foreign_trips_and_imports_session
     await clubs.import_club_events(conn, None, SOURCES["dlrg-lampertheim-events"])
     assert acquire.await_count == 3
     assert len(publish.call_args.args[2]) == 3
-    assert conn.execute.await_count == 4
+    assert conn.execute.await_count == 5
 
 
 def test_new_sources_are_enabled_unique_and_registered():
