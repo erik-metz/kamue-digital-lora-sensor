@@ -57,7 +57,8 @@ async def acquire(client, settings, conn, product, now=None):
         raise ValueError('ENTSO-E acquisition failed') from None
     sha = hashlib.sha256(body).hexdigest()
     await conn.execute("INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,'application/xml') ON CONFLICT DO NOTHING", (sha,body))
-    receipt = await (await conn.execute("INSERT INTO collection_attempts(source_id,http_status,payload_sha256,status) VALUES (%s,%s,%s,%s) RETURNING id,received_at", (source(product),response.status_code,sha,'received' if response.is_success else 'failed'))).fetchone()
+    # The transaction starts before HTTP; now() would predate the response document.
+    receipt = await (await conn.execute("INSERT INTO collection_attempts(source_id,http_status,payload_sha256,status,received_at) VALUES (%s,%s,%s,%s,clock_timestamp()) RETURNING id,received_at", (source(product),response.status_code,sha,'received' if response.is_success else 'failed'))).fetchone()
     await conn.commit()
     if not response.is_success:
         raise ValueError(f'ENTSO-E HTTP status {response.status_code}')

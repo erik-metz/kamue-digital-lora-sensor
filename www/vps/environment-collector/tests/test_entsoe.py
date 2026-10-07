@@ -1,5 +1,6 @@
 """ENTSO-E official XML shapes, interval contracts, token boundary and snapshots."""
 
+import asyncio
 import hashlib
 import sys
 import tempfile
@@ -181,6 +182,26 @@ class EntsoeStorageTests(DatabaseCase):
         with self.assertRaisesRegex(ValueError,'ENTSO-E acquisition failed') as raised:await acquire(client,settings,self.conn,'price')
         self.assertNotIn('unit-test-secret',str(raised.exception))
         self.assertEqual(await self.scalar("SELECT error FROM collection_attempts WHERE status='failed'"),'ENTSOE acquisition failed')
+
+    async def test_response_created_during_fetch_has_later_receipt(self):
+        await self.conn.set_autocommit(False)
+        transaction_start = await self.scalar('SELECT CURRENT_TIMESTAMP')
+
+        async def delayed_response(*args, **kwargs):
+            await asyncio.sleep(0.05)
+            sample = bundle('load', datetime.now(UTC))
+            created = datetime.now(UTC)
+            change(sample, lambda r: setattr(r.find('createdDateTime'), 'text', created.isoformat()))
+            self.assertGreater(created, transaction_start)
+            return httpx.Response(200, content=sample['xml'].encode(), request=httpx.Request('GET', URL))
+
+        client = AsyncMock()
+        client.get.side_effect = delayed_response
+        captured = await acquire(client, Settings(db={}, entsoe_token='unit-test-secret'), self.conn, 'load')
+        rows = normalize(captured)
+        self.assertTrue(rows)
+        self.assertGreater(datetime.fromisoformat(captured['snapshot_at']), transaction_start)
+        self.assertGreater(await persist(self.conn, captured, rows), 0)
 
 
 class EntsoePipelineTests(unittest.IsolatedAsyncioTestCase):
