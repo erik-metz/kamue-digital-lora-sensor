@@ -3,7 +3,8 @@
 Recherche und direkter Quellenabgleich: 7. Oktober 2026.
 Alle genannten Veranstaltungen liegen in Groß-Rohrheim und damit im
 vereinbarten Ried-Gebiet. Dieser Schritt dokumentiert die Recherche;
-zusätzliche Importquellen wurden noch nicht aktiviert.
+zusätzliche Importquellen wurden bei der Recherche noch nicht aktiviert.
+Die anschließend beauftragte Musikkiste-Integration ist unten dokumentiert.
 
 ## Sechs datierte Lücken im geprüften Bestand
 
@@ -60,3 +61,29 @@ Vorgeschlagene Umsetzung in getrennten Schritten:
 
 Der PDF-Schritt bleibt als PDF-Import offen. Die erreichbaren Alternativen
 ermöglichen unabhängig davon eine weitere Verbesserung der Ried-Abdeckung.
+
+## Umsetzung: Musikkiste als zusätzliche Importquelle
+
+Die Quelle `musikkiste-gross-rohrheim-events` nutzt den vorhandenen
+Tribe-Adapter und die eindeutige ID-Vorsilbe `musikkiste-gr`. Der Abruf erfolgt
+alle sechs Stunden für das aktuelle und folgende Kalenderjahr, mit vollständiger
+Pagination, Prüfung des tatsächlichen Veranstaltungsortes und Erhalt früherer
+Vorkommen. Für die belegten Musikreihen sind exakte Titelzuordnungen zu
+`concert` hinterlegt; andere Titel behalten die normale Rubrikzuordnung.
+
+Der vollständige öffentliche Feed liefert aktuell 13 Einträge. Davon werden
+zwölf übernommen, einschließlich der Offenen Bühne am 03.11.2026 und
+01.12.2026 von jeweils 20:00 bis 22:00 Uhr in der Alemannia, Eintritt frei.
+Das ältere Herbstjazz-Konzert bleibt wegen widersprüchlicher Ortsdaten
+zurückgestellt: Der Feed nennt Groß-Rohrheim, aber die Postleitzahl `68647`
+statt `68649`. Es wird keine ungeprüfte Adresskorrektur vorgenommen.
+
+Die Live-Kette wurde bis zur Veröffentlichung in einer isolierten TimescaleDB
+geprüft und veröffentlicht dort zwölf Termine. Neue Regressionstests prüfen
+Originaltermine, Preise, Uhrzeiten, Quellenkennungen, fremde/fehlende Orte und
+Titelzuordnungen. Ein echter Datenbanktest prüft den vollständigen Import und
+seine Wiederholung ohne Duplikate.
+
+Die vollständige Worker-Suite einschließlich aller Datenbanktests besteht:
+**217 bestanden, keine übersprungen**. Ruff für die geänderten Python-Dateien
+und die Prüfung des Diffs sind erfolgreich.

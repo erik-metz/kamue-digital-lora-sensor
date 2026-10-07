@@ -224,7 +224,7 @@ def parse_event(item, source, now):
         "municipality": municipality,
         "start_time": start.isoformat(),
         "end_time": end.isoformat(),
-        "category": classify_category(title),
+        "category": source.get("category_overrides", {}).get(title, classify_category(title)),
         "description": " ".join(filter(None, notes)),
         "event_url": url,
         "ticket_url": url,

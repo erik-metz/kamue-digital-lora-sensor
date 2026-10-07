@@ -523,6 +523,23 @@
       "http_retries": 2
     },
     {
+      "id": "musikkiste-gross-rohrheim-events",
+      "group": "social",
+      "adapter": "tribe-events",
+      "enabled": true,
+      "url": "https://www.musikkiste.net/wp-json/tribe/events/v1/events",
+      "event_id_prefix": "musikkiste-gr",
+      "category_overrides": {
+        "Offene Bühne": "concert",
+        "Rock am Grill": "concert",
+        "Herbstjazz in der Groß-Rohrheimer Kirche": "concert"
+      },
+      "description": "Öffentlicher Musikkiste-Kalender mit einzeln geprüften Veranstaltungsorten im Ried; keine Ortszuordnung aus dem Vereinssitz.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2
+    },
+    {
       "id": "demographics-published-source",
       "group": "demographics",
       "adapter": "json",

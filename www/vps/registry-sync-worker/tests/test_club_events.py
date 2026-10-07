@@ -350,7 +350,8 @@ def test_new_sources_are_enabled_unique_and_registered():
 
     manifest = runner.sources()
     added = [s for s in manifest if s["adapter"] in ("club-events", "tribe-events")]
-    assert len(added) == 7
+    assert len(added) == 8
+    assert any(s["id"] == "musikkiste-gross-rohrheim-events" for s in added)
     assert all(s["enabled"] for s in added)
     assert runner.ADAPTERS["club-events"] is clubs.import_club_events
     assert runner.ADAPTERS["tribe-events"] is tribe.import_biblis_events
