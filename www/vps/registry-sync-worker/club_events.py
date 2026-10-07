@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urljoin, urlsplit
 
 from adapters import classify_category, sync_cultural_events_to_db_and_publish
 from biblis_events import admission, plain, window
+from calendar_recurrence import expand_calendar
 from icalendar import Calendar
 from municipal_events import (
     BERLIN,
@@ -444,21 +445,16 @@ def ical_events(body, row, source, now, description, cost, expected_count=None):
     calendar = Calendar.from_ical(body)
     if calendar.name != "VCALENDAR":
         raise ValueError("DLRG calendar invalid")
-    records = calendar.walk("VEVENT")
+    records = expand_calendar(calendar)
     if not records or len(records) > 1000:
         raise ValueError("DLRG calendar occurrences missing or unbounded")
     if expected_count is not None and len(records) != expected_count:
         raise ValueError("DLRG calendar export truncated or inconsistent")
     result, ids = [], set()
-    for record in records:
-        if any(key in record for key in ("RRULE", "RDATE", "EXDATE", "RECURRENCE-ID")):
-            raise ValueError("DLRG recurrence rules require expansion before import")
-        uid = str(record.get("UID", ""))
-        if not uid or uid in ids or record.errors:
-            raise ValueError("DLRG occurrence identity invalid or repeated")
+    for record, uid in records:
+        if uid in ids:
+            raise ValueError("DLRG occurrence identity repeated")
         ids.add(uid)
-        if str(record.get("STATUS", "")).upper() == "CANCELLED":
-            continue
         start = record.decoded("DTSTART")
         end = record.decoded("DTEND") if "DTEND" in record else None
         if isinstance(start, datetime):
@@ -495,6 +491,8 @@ def ical_events(body, row, source, now, description, cost, expected_count=None):
             organizer=row.get("veranstalter"),
         )
         if parsed:
+            if str(record.get("STATUS", "")).upper() == "CANCELLED":
+                parsed["status"] = "cancelled"
             result.append(parsed)
     return result
 

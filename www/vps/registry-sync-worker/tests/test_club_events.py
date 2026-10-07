@@ -180,12 +180,15 @@ def test_dlrg_ical_keeps_individual_dates_actual_venues_prices_and_dst():
     assert all(not e["is_free"] for e in events)
 
 
-@pytest.mark.parametrize("extra", ["RRULE:FREQ=WEEKLY\n", "RDATE:20261029T180000\n"])
-def test_unexpanded_recurrence_feed_aborts(extra):
+@pytest.mark.parametrize(
+    "extra",
+    ["RRULE:FREQ=WEEKLY\n", "RDATE;VALUE=PERIOD:20261029T180000/20261029T190000\n"],
+)
+def test_unbounded_or_unsupported_recurrence_feed_aborts(extra):
     body = fixture("dlrg-junior.ics").replace(
         "DTSTART:20261022T180000", extra + "DTSTART:20261022T180000"
     )
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, TypeError)):
         clubs.ical_events(
             body,
             {"titel": "Course", "link": "https://lampertheim.dlrg.de", "id": 1},
@@ -351,3 +354,31 @@ def test_new_sources_are_enabled_unique_and_registered():
     assert all(s["enabled"] for s in added)
     assert runner.ADAPTERS["club-events"] is clubs.import_club_events
     assert runner.ADAPTERS["tribe-events"] is tribe.import_biblis_events
+
+
+def test_dlrg_expanded_count_and_cancelled_slot_keep_course_identity():
+    body = """BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:weekly-course
+DTSTART;TZID=Europe/Berlin:20261022T180000
+DTEND;TZID=Europe/Berlin:20261022T190000
+RRULE:FREQ=WEEKLY;COUNT=2
+SUMMARY:Juniorretter
+LOCATION:DLRG Station Lampertheim, Weidweg 21, 68623 Lampertheim
+END:VEVENT
+BEGIN:VEVENT
+UID:weekly-course
+RECURRENCE-ID;TZID=Europe/Berlin:20261029T180000
+STATUS:CANCELLED
+END:VEVENT
+END:VCALENDAR
+"""
+    row = {"titel": "Kurs", "link": "https://lampertheim.dlrg.de", "id": 1}
+    args = (body, row, SOURCES["dlrg-lampertheim-events"], NOW, "", "")
+    events = clubs.ical_events(*args, expected_count=2)
+    assert len(events) == 2 and events[1]["status"] == "cancelled"
+    assert len({item["id"] for item in events}) == 2
+    assert events[1]["start_time"] == "2026-10-29T18:00:00+01:00"
+    with pytest.raises(ValueError, match="truncated"):
+        clubs.ical_events(*args, expected_count=3)

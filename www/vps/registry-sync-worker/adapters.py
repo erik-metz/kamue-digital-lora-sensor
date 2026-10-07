@@ -3,6 +3,7 @@ import re
 from datetime import UTC, datetime
 from urllib.parse import urlencode, urlsplit
 
+from event_policy import aggregate_events, event_status
 from municipal_events import (
     BERLIN,
     calendar_page,
@@ -86,7 +87,7 @@ async def sync_cultural_events_to_db_and_publish(conn, source, new_events, diges
                 ev.get("image_url"),
                 ev.get("street_address"),
                 ev.get("postal_code"),
-                ev.get("status", "scheduled"),
+                event_status(ev),
                 ev.get("is_free", True),
                 ev.get("source", source["id"]),
             ),
@@ -113,7 +114,7 @@ async def sync_cultural_events_to_db_and_publish(conn, source, new_events, diges
     if not all_events:
         all_events = new_events
 
-    await publish(conn, source, "social/events", all_events, digest, now)
+    await publish(conn, source, "social/events", aggregate_events(all_events), digest, now)
 
 
 async def import_cross7(conn, client, source):

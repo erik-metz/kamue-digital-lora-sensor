@@ -94,7 +94,7 @@ neues Jahr werden erst nach Veröffentlichung übernommen.
 - [x] 3. Bürgerstiftung Biblis anbinden.
 - [x] 4. Vereins- und Ortsteilkalender ergänzen.
 - [ ] 5. PDF-Jahreskalender ergänzen — Originaldatei derzeit nicht erreichbar (Prüfung 7. Oktober 2026; siehe unten).
-- [ ] 6. Dubletten, Absagen und wiederkehrende Termine behandeln.
+- [x] 6. Dubletten, Absagen und begrenzte Kalenderwiederholungen behandeln.
 - [ ] 7. Importabdeckung und Anzeige gegen recherchierte Beispiele prüfen; dokumentierte Anzeigefehler beheben.
 
 Nach jedem Schritt passende Prüfungen ausführen, die eigenen Änderungen
@@ -293,3 +293,74 @@ ausschließen, Veranstaltungsorte belegen und vollständige Abrufe vor jeder
 Datenbankänderung sicherstellen. Erst mit Originaldatei, Regressionstests und
 Live-Simulation wird diese Quelle aktiviert. Schritt 5 bleibt bis dahin offen;
 Schritt 6 kann nach Zustimmung unabhängig davon umgesetzt werden.
+
+## Schritt 6: Dubletten, Absagen und Kalenderwiederholungen
+
+Implementiert am 7. Oktober 2026. Die Veröffentlichung `social/events`
+fasst sichere Dubletten zusammen; die einzelnen Quellen bleiben in
+`cultural_events` unabhängig gespeichert und können beim nächsten vollständigen
+Quellenabruf einzeln aktualisiert bzw. abgeglichen werden.
+
+- Eine Dublette benötigt denselben normalisierten Titel, Veranstaltungsort und
+  dieselbe Gemeinde sowie identischen Beginn und identisches Ende. Groß-/
+  Kleinschreibung, Leerzeichen und Satzzeichen dürfen abweichen. Vergleich
+  der Zeiten in Europe/Berlin; unterschiedliche UTC-Schreibweisen sind möglich.
+  Fehlender Veranstaltungsort, andere Zeit, abweichender Ort oder abweichender
+  Titel führen nicht zu einer Zusammenfassung. Keine unscharfe Suche und
+  keine automatische Gleichsetzung von ganztägigen mit zeitlich bestimmten
+  Veranstaltungen. Unterschiedliche Schreibweisen wie „Kerwe“/„Kerb“ bleiben
+  vorsichtshalber getrennt. Auch mehrtägige Feste werden nicht mit einzelnen
+  Programmpunkten verschmolzen.
+- Die Veröffentlichungs-ID wird deterministisch aus den vorhandenen IDs gewählt.
+  `source_events` enthält für jeden Bestandteil ID, Quelle, URL und Status.
+  Fehlende Detailfelder werden aus anderen Bestandteilen ergänzt. Bei
+  widersprüchlichen bzw. unbekannten Preisangaben wird kein bedingungsloser
+  kostenloser Eintritt beworben. Die rohe Tabellen-API bleibt eine Ansicht
+  der einzelnen Quellen; ihr Vertrag und die Darstellung werden in Schritt 7
+  separat geprüft.
+- Eindeutige Absagepräfixe im Titel, etwa „ABGESAGT: …“ oder „Entfällt: …“,
+  sowie expliziter Status `cancelled` werden als Absage gespeichert. Reine
+  Erwähnungen früherer Absagen im Beschreibungstext lösen keine Absage aus.
+  Bei einer sicheren Dublette hat eine bestätigte Absage Vorrang vor einem
+  weiterhin regulären Eintrag. Abgesagte Termine bleiben mit Status
+  `cancelled` erhalten; die sichtbare Kennzeichnung wird in Schritt 7 geprüft.
+- DLRG-Kalenderexporte können nun explizite tägliche, wöchentliche, monatliche
+  oder jährliche Regeln (`RRULE`), zusätzliche Tage (`RDATE`), Ausnahmen
+  (`EXDATE`) und einzelne Verschiebungen/Absagen (`RECURRENCE-ID`) enthalten.
+  Der ursprüngliche Serienplatz bestimmt die ID auch bei einer Verschiebung.
+  Jede einzelne tatsächliche Adresse wird anschließend nach den vorhandenen
+  Ried-Gebietsregeln geprüft. Bereits separat exportierte Einzeldaten behalten
+  ihre bisherigen IDs. Ganztägige Enddaten bleiben gemäß RFC 5545 exklusiv.
+- Regeln müssen genau eine explizite Grenze (`COUNT` oder `UNTIL`) haben.
+  Höchstens 1.000 Vorkommen pro Export; `UNTIL` höchstens drei Jahre nach
+  Serienbeginn. Keine unbegrenzten Serien, sub-täglichen Regeln, mehreren
+  täglichen Uhrzeiten, `PERIOD`-Zusatzdaten, `EXRULE` oder
+  `RANGE=THISANDFUTURE`. Verwaiste oder doppelte Ausnahmen, unpassende
+  Datentypen, ungültige Intervalle und nicht existierende Sommerzeit-Uhrzeiten
+  verhindern die Veröffentlichung des gesamten Exports. Die nach Expansion
+  erhaltene Anzahl muss weiterhin zur vom Anbieter angekündigten Zahl passen.
+- Aus einer vergangenen Kerwe oder einem Volkslauf wird kein Folgetermin
+  erfunden. Unbefristete Wiederholungshinweise auf HTML-Seiten bleiben ohne
+  belegten Gültigkeitszeitraum und Ausnahmen zurückgestellt. Der PDF-Import
+  aus Schritt 5 bleibt durch die nicht erreichbare Originaldatei blockiert.
+
+Grundlagen: [RFC 5545](https://www.rfc-editor.org/rfc/rfc5545) und die
+[offizielle dateutil-Dokumentation](https://dateutil.readthedocs.io/en/stable/rrule.html).
+`python-dateutil>=2.9,<3` ist als direkte Worker-Abhängigkeit angegeben.
+
+Prüfung: 23 zusätzliche Regressionstestfälle; vollständige lokale Worker-Suite
+183 bestanden, 14 übersprungen. Ruff wird für die geänderten Python-Dateien
+geprüft. Tests decken Quellenreihenfolge, Quellenbelege, konkurrierende
+Absagemeldungen, unterschiedliche Kurszeiten, Ausnahmen, Winterzeitwechsel,
+Jahreswechsel und vollständigen Abbruch bei unzuverlässigen Exporten ab.
+Produktiver VPS-Import und sichtbare Anzeige sind damit nicht nachgewiesen.
+
+Live-Simulation am 7. Oktober: TV Bürstadt 25, KKM 13, SG Hüttenfeld 11,
+DLRG 19, Hofheimer Volkslauf 1 und Neuschloß 14 bestätigte Vorkommen.
+Der dynamische TV-Hofheim-Jahreskalender liefert aktuell keine auswertbare
+Kalenderansicht; zwei Abrufversuche scheitern kontrolliert vor dem Abgleich.
+Dieser Anbieterfehler ist unabhängig von der Erweiterung für Kalenderexporte
+und wird als offener Prüfpunkt für Schritt 7 festgehalten. Die sechs erfolgreichen
+Quellen wurden mit echten HTTP-Abrufen und simulierten Datenbankoperationen
+geprüft; keine produktive Datenbank wurde verändert. Die sichere
+Dublettenregel ist zusätzlich mit kontrollierten Quellenpaaren getestet.
