@@ -172,6 +172,7 @@ class EntsoeStorageTests(DatabaseCase):
         captured=await acquire(client,settings,self.conn,'load')
         args=client.get.call_args.kwargs
         self.assertEqual(args['headers']['SECURITY_TOKEN'],'unit-test-secret')
+        self.assertEqual(args['timeout'],settings.request_timeout)
         self.assertNotIn('securityToken',args['params'])
         self.assertEqual(await self.scalar('SELECT COUNT(*) FROM collected_payloads'),1)
         await persist(self.conn,captured,normalize(captured))

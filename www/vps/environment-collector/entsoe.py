@@ -47,7 +47,7 @@ async def acquire(client, settings, conn, product, now=None):
     end = start+timedelta(days=3)
     params = parameters(product, start, end)
     try:
-        response = await client.get(URL, params=params, headers={'SECURITY_TOKEN': settings.entsoe_token}, timeout=min(settings.request_timeout, 15), follow_redirects=False)
+        response = await client.get(URL, params=params, headers={'SECURITY_TOKEN': settings.entsoe_token}, timeout=settings.request_timeout, follow_redirects=False)
         body = response.content
         if len(body) > 10*1024*1024 or settings.entsoe_token.encode() in body:
             raise ValueError('ENTSO-E response is oversized or echoes the credential')
