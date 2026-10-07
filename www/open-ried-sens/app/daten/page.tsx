@@ -34,10 +34,7 @@ export default function DataDocsPage() {
         <Suspense fallback={<p role="status" className="text-slate-400">Sensorarchive werden geladen …</p>}>
           <ArchiveDownloads />
         </Suspense>
-        <details className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-          <summary className="cursor-pointer font-semibold">Satellitenbilder herunterladen</summary>
-          <div className="pt-6"><SatelliteDownloadSection /></div>
-        </details>
+        <SatelliteDownloadSection />
         <ApiDevToolsSection />
         <section className="rounded-2xl border border-slate-800 p-6 space-y-2">
           <h2 className="text-lg font-semibold">Quellen &amp; Nutzungsbedingungen</h2>
