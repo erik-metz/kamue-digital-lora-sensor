@@ -102,3 +102,18 @@ ihren Tests. Die Collector-Suiten wurden mit absichtlich fremder Funktion und
 Tabelle in einer eigenen Testdatenbank ausgeführt: Rastplatz 13, OpenSenseMap 12,
 UBA 10, TTN Mapper 15 und EMF 5 Tests bestanden. Diese Korrekturen beheben die
 konkreten Blockaden der gemeinsamen Container-Veröffentlichung.
+
+### Produktiver Abschluss
+
+Die neue Quelle ist als `8544adc` auf `main` veröffentlicht. Nach den gezielten
+CI-Korrekturen ist der Lauf für `1ea5c07e66b3351bf97abe638768c345708193e3`
+[vollständig erfolgreich](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37663098141),
+einschließlich aller 17 vorgesehenen Container-Builds und GHCR-Veröffentlichungen.
+
+Der öffentliche Importstatus meldet für `musikkiste-gross-rohrheim-events`
+`success` mit Abrufzeit 07.10.2026, 18:12:09 UTC. Im produktiven Eventbestand
+sind zwölf zugehörige Termine bestätigt. Die beiden kommenden Offene-Bühne-
+Abende am 03.11.2026 und 01.12.2026 sind jeweils mit 20:00–22:00 Ortszeit,
+Groß-Rohrheim, Rubrik `concert` und kostenlosem Eintritt enthalten.
+Die Veröffentlichung wurde nach der automatischen Image-Übernahme überprüft;
+erfolgreiche Tests allein wurden nicht als produktiver Importnachweis gewertet.
