@@ -190,7 +190,8 @@ class EntsoeStorageTests(DatabaseCase):
         async def delayed_response(*args, **kwargs):
             await asyncio.sleep(0.05)
             sample = bundle('load', datetime.now(UTC))
-            created = datetime.now(UTC)
+            # Use the database clock: CI runs PostgreSQL in a separate container.
+            created = await self.scalar('SELECT clock_timestamp()')
             change(sample, lambda r: setattr(r.find('createdDateTime'), 'text', created.isoformat()))
             self.assertGreater(created, transaction_start)
             return httpx.Response(200, content=sample['xml'].encode(), request=httpx.Request('GET', URL))
