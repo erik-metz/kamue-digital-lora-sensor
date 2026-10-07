@@ -1,5 +1,4 @@
 import Link from "next/link";
-import RegionalCatalog from "./RegionalCatalog";
 import { proxyBackend } from "@/lib/collectedBackend";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -83,12 +82,10 @@ export default async function SourcesPage() {
             Datenquellen &amp; Erfassungsstatus
           </h1>
           <p className="text-slate-300 text-base sm:text-lg max-w-3xl leading-relaxed">
-            Woher stammen die Daten im Ried? Hier findest du die regionalen Kataloge, Originalquellen und ihren letzten erfolgreichen Abruf.
+            Woher stammen die Daten im Ried? Hier findest du die Originalquellen und ihren letzten erfolgreichen Abruf.
           </p>
           <Link href="/daten" className="inline-block text-sm text-emerald-300 hover:underline">Zu Downloads &amp; API →</Link>
         </div>
-
-        <RegionalCatalog />
 
         {/* Error State if Backend Status Unavailable */}
         {!sources ? (
