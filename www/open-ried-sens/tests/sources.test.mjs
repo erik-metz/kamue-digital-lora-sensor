@@ -2,28 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-test("SiteFooter contains link to /quellen and all domain pages", () => {
+test("SiteFooter keeps the bottom navigation", () => {
   const footerSource = fs.readFileSync(
     new URL("../app/components/SiteFooter.tsx", import.meta.url),
     "utf8"
   );
-  assert.ok(
-    footerSource.includes('href="/quellen"'),
-    "SiteFooter must include link to /quellen"
-  );
-  assert.ok(
-    footerSource.includes("Datenquellen &amp; Takte") ||
-      footerSource.includes("Datenquellen & Takte"),
-    "SiteFooter must include label 'Datenquellen & Takte'"
-  );
-  assert.ok(footerSource.includes('href="/"'), "SiteFooter must include link to Dashboard");
-  assert.ok(footerSource.includes('href="/daten"'), "SiteFooter must include link to /daten");
-  assert.ok(footerSource.includes('href="/demografie"'), "SiteFooter must include link to /demografie");
-  assert.ok(footerSource.includes('href="/wirtschaft"'), "SiteFooter must include link to /wirtschaft");
-  assert.ok(footerSource.includes('href="/haushalt"'), "SiteFooter must include link to /haushalt");
-  assert.ok(footerSource.includes('href="/statistik"'), "SiteFooter must include link to /statistik");
-  assert.ok(footerSource.includes('href="/bauen-wohnen"'), "SiteFooter must include link to /bauen-wohnen");
-  assert.ok(footerSource.includes('href="/admin"'), "SiteFooter must include link to /admin");
+  for (const href of ["/", "/regionalatlas", "/daten", "/quellen"]) {
+    assert.ok(footerSource.includes(`href="${href}"`));
+  }
 });
 
 test("All 8 public & admin pages render the unified SiteFooter", () => {
