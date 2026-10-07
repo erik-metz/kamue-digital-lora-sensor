@@ -93,7 +93,7 @@ neues Jahr werden erst nach Veröffentlichung übernommen.
 - [x] 2. Kommunale Kalender vollständig und mit belastbaren Orts-/Datumsangaben erfassen.
 - [x] 3. Bürgerstiftung Biblis anbinden.
 - [x] 4. Vereins- und Ortsteilkalender ergänzen.
-- [ ] 5. PDF-Jahreskalender ergänzen.
+- [ ] 5. PDF-Jahreskalender ergänzen — Originaldatei derzeit nicht erreichbar (Prüfung 7. Oktober 2026; siehe unten).
 - [ ] 6. Dubletten, Absagen und wiederkehrende Termine behandeln.
 - [ ] 7. Importabdeckung und Anzeige gegen recherchierte Beispiele prüfen; dokumentierte Anzeigefehler beheben.
 
@@ -242,3 +242,54 @@ bereits in kommunalen Kalendern. Die vollständige Rechercheliste steht in
   Importablauf mit simulierten Datenbankoperationen. Produktiver VPS-Import und
   Anzeige bleiben unbestätigt und werden nicht aus einer Container-Veröffentlichung
   abgeleitet. Deduplizierung und Darstellung folgen in den nächsten Schritten.
+
+## Schritt 5: PDF-Recherche — externe Blockade
+
+Geprüft am 7. Oktober 2026. Der PDF-Import ist **nicht implementiert und
+nicht aktiviert**. Für eine belastbare Tabellen-, Seitenwechsel- und
+Vollständigkeitsprüfung fehlt derzeit eine erreichbare Originaldatei.
+Die vorhandenen kommunalen und Vereinsimporte bleiben aktiv.
+
+| Geprüfte Quelle | Ergebnis |
+| --- | --- |
+| [Aktueller Orts-App-Beitrag](https://gross-rohrheim.orts.app/-veranstaltungskalender_UoGU) | Erreichbar; verlinkt die unten genannte Datei |
+| [Datei aus diesem Beitrag](https://gross-rohrheim.orts.app/file/1d12216b-e2a3-4520-940c-adb9f90217c6) | Direkter HTTP-Abruf liefert 410 Gone |
+| [Zuvor recherchierter Jahreskalender](https://gross-rohrheim.orts.app/file/aa29fbe9-f0dc-443c-b739-454603b44121) | Direkter HTTP-Abruf liefert ebenfalls 410 Gone |
+| [Gemeindlicher Veranstaltungskalender](https://www.gross-rohrheim.de/freizeit-kultur/veranstaltungen/veranstaltungskalender) | Erreichbar; keine Ersatz-PDF gefunden |
+| [Langfristige Termine der Gemeinde](https://www.gross-rohrheim.de/freizeit-kultur/veranstaltungen/veranstaltungskalender/langfristige-termine) | Erreichbare HTML-Seite, kein Ersatz für den Jahreskalender |
+
+Der Suchindex enthält noch Teile des früheren Jahreskalenders für
+01.01.2026–31.03.2027. Diese Auszüge ersetzen weder die Originaldatei noch
+einen Nachweis vollständiger und aktueller Termine. Sie werden nicht als
+Importdaten oder als geprüfte PDF-Testfixture übernommen.
+
+### Zusätzlich gefundene Hinweise aus der Gemeindeseite
+
+Die Seite „Langfristige Termine“ nennt folgende konkrete Daten; dies ist eine
+Rechercheliste, **kein Nachweis eines zusätzlichen Imports**:
+
+| Veranstaltung in Groß-Rohrheim | Veröffentlichtes Datum |
+| --- | --- |
+| Maimarkt 2026 | 16.–17. Mai 2026 |
+| Maimarkt 2027 | 22.–23. Mai 2027 |
+| Kirchweih 2026 | 22. August 2026 |
+| Kirchweih 2027 | 21. August 2027 |
+
+Außerdem nennt sie den Bauernmarkt freitags 14–17 Uhr in der Allee
+(März–November), Winzer Vollmer dienstags ab 17 Uhr in der Allee
+(Mitte Mai–Anfang September) und die Offene Bühne der Musikkiste am ersten
+Dienstag im Monat ab 20 Uhr im FC-Heim. Diese Wiederholungshinweise benötigen
+vor einer Übernahme eine Prüfung von Gültigkeitszeitraum, Ausnahmen und
+tatsächlichem Veranstaltungsort in Schritt 6. Pfingsten allein wird nicht als
+Veranstaltung aufgenommen. Die genannten Festdaten belegen keinen vollständigen
+Programmzeitraum oder eine Uhrzeit.
+
+### Voraussetzung für die Fortsetzung
+
+Eine erreichbare, vom Anbieter veröffentlichte Original-PDF ist erforderlich.
+Danach: Tabellenlayout und Seitenwechsel visuell prüfen, explizite Jahre und
+Datumsbereiche einschließlich Jahreswechsel auslesen, Ferien und Feiertage
+ausschließen, Veranstaltungsorte belegen und vollständige Abrufe vor jeder
+Datenbankänderung sicherstellen. Erst mit Originaldatei, Regressionstests und
+Live-Simulation wird diese Quelle aktiviert. Schritt 5 bleibt bis dahin offen;
+Schritt 6 kann nach Zustimmung unabhängig davon umgesetzt werden.
