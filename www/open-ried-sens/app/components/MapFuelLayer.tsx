@@ -45,14 +45,16 @@ export default function MapFuelLayer({ map, clustered }: { map: L.Map; clustered
       if (onlyOpen && (!fresh || !s.is_open)) continue;
       const status = fresh ? (s.is_open ? "Geöffnet laut Anbieter" : "Geschlossen laut Anbieter") : "Veraltet · Öffnungsstatus unbekannt";
       const label = zoom >= 15 ? `${formatFuelPrice(s[fuel])}${fresh ? "" : " · alt"}` : "";
-      L.marker([s.latitude, s.longitude], { alt: `${s.name} · ${status}`, keyboard: true,
+      const marker = L.marker([s.latitude, s.longitude], { title: `${s.name} · ${status}`, alt: `${s.name} · ${status}`, keyboard: true,
         icon: L.divIcon({ html: placeMarker("fuel", label, !fresh), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18] }),
       }).bindTooltip(detailCard(s.name, status, []))
         .bindPopup(detailCard(s.name, status, [s.brand, `${s.street} ${s.houseNumber}, ${s.postCode} ${s.place}`,
           ...Object.entries(FUEL_LABELS).map(([key, name]) => `${name}: ${formatFuelPrice(s[key as Fuel])}`),
           `Abgerufen: ${snapshot?.fetched_at ? new Date(snapshot.fetched_at).toLocaleString("de-DE") : "unbekannt"}`,
           "Quelle: Tankerkönig / MTS-K · CC BY 4.0",
-        ])).addTo(group);
+        ]));
+      marker.on("add", () => marker.getElement()?.setAttribute("aria-label", `${s.name} · ${status} · ${FUEL_LABELS[fuel]}: ${formatFuelPrice(s[fuel])}`));
+      marker.addTo(group);
     }
     return () => { group.remove(); };
   }, [map, clustered, snapshot, fuel, onlyOpen, fresh, zoom]);
