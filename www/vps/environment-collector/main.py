@@ -21,12 +21,14 @@ from storage import persist_environment_data
 
 
 async def poll_cycle(client, settings, *, raw=None, dry_run=False):
+    cycle_started = monotonic()
     payload = raw
     if raw is None and not dry_run:
         async with await psycopg.AsyncConnection.connect(**settings.db) as archive_conn:
             payload = await fetch(client, settings, archive_conn)
     try:
-        return await _poll_cycle(client, settings, raw=payload, dry_run=dry_run)
+        return await _poll_cycle(client, settings, raw=payload, dry_run=dry_run,
+                                 cycle_started=cycle_started)
     except Exception as exc:
         if not dry_run and payload:
             ids = [value for key, value in payload.items() if key.endswith('_attempt_id')]
@@ -41,8 +43,8 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
         raise
 
 
-async def _poll_cycle(client, settings, *, raw=None, dry_run=False):
-    started = monotonic()
+async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_started=None):
+    started = cycle_started if cycle_started is not None else monotonic()
     if dry_run and raw is None:
         raise ValueError(
             "Dry-run requires --input; provider acquisition must be archived"
