@@ -185,24 +185,28 @@ class EntsoeStorageTests(DatabaseCase):
 
     async def test_response_created_during_fetch_has_later_receipt(self):
         await self.conn.set_autocommit(False)
-        transaction_start = await self.scalar('SELECT CURRENT_TIMESTAMP')
+        try:
+            transaction_start = await self.scalar('SELECT CURRENT_TIMESTAMP')
 
-        async def delayed_response(*args, **kwargs):
-            await asyncio.sleep(0.05)
-            sample = bundle('load', datetime.now(UTC))
-            # Use the database clock: CI runs PostgreSQL in a separate container.
-            created = await self.scalar('SELECT clock_timestamp()')
-            change(sample, lambda r: setattr(r.find('createdDateTime'), 'text', created.isoformat()))
-            self.assertGreater(created, transaction_start)
-            return httpx.Response(200, content=sample['xml'].encode(), request=httpx.Request('GET', URL))
+            async def delayed_response(*args, **kwargs):
+                await asyncio.sleep(0.05)
+                sample = bundle('load', datetime.now(UTC))
+                # Use the database clock: CI runs PostgreSQL in a separate container.
+                created = await self.scalar('SELECT clock_timestamp()')
+                change(sample, lambda r: setattr(r.find('createdDateTime'), 'text', created.isoformat()))
+                self.assertGreater(created, transaction_start)
+                return httpx.Response(200, content=sample['xml'].encode(), request=httpx.Request('GET', URL))
 
-        client = AsyncMock()
-        client.get.side_effect = delayed_response
-        captured = await acquire(client, Settings(db={}, entsoe_token='unit-test-secret'), self.conn, 'load')
-        rows = normalize(captured)
-        self.assertTrue(rows)
-        self.assertGreater(datetime.fromisoformat(captured['snapshot_at']), transaction_start)
-        self.assertGreater(await persist(self.conn, captured, rows), 0)
+            client = AsyncMock()
+            client.get.side_effect = delayed_response
+            captured = await acquire(client, Settings(db={}, entsoe_token='unit-test-secret'), self.conn, 'load')
+            rows = normalize(captured)
+            self.assertTrue(rows)
+            self.assertGreater(datetime.fromisoformat(captured['snapshot_at']), transaction_start)
+            self.assertGreater(await persist(self.conn, captured, rows), 0)
+        finally:
+            await self.conn.rollback()
+            await self.conn.set_autocommit(True)
 
 
 class EntsoePipelineTests(unittest.IsolatedAsyncioTestCase):
