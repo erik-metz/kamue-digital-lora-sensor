@@ -61,6 +61,10 @@ export default function HackathonDataSection() {
             <select name="topic" className={inputClass}>
               <option value="all">Alle Themen</option>
               <option value="temperature">Temperatur aller Messpunkte</option>
+              <option value="humidity">Luftfeuchtigkeit</option>
+              <option value="precipitation">Niederschlag</option>
+              <option value="water">Wasserstände &amp; Abfluss</option>
+              <option value="soil">Bodenfeuchte &amp; Bodentemperatur</option>
               <option value="mobility">Mobilität &amp; Verkehr</option>
               <option value="roadworks">Baustellen &amp; Sperrungen</option>
             </select>

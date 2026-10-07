@@ -104,6 +104,30 @@ class ExportDatabaseTests(DatabaseCase):
         self.assertEqual({r['id'] for r in tables['entities.csv']}, {'trip', 'traffic'})
         self.assertIn('schedule_prediction', {r['basis'] for r in tables['measurement_definitions.csv']})
 
+    async def test_environmental_topics_filter_readings_and_preserve_links(self):
+        metrics = {
+            'humidity': ['humidity', 'relative_humidity'],
+            'precipitation': ['precipitation', 'rainfall'],
+            'water': ['groundwater_level', 'water_level_delta', 'discharge'],
+            'soil': ['soil_moisture_30cm', 'soil_temperature'],
+        }
+        for topic, names in metrics.items():
+            for metric in names:
+                await self.reading(metric, metric=metric)
+        await self.reading('unrelated', metric='traffic_count')
+        for topic, names in metrics.items():
+            with self.subTest(topic=topic):
+                tables, manifest = await self.unzip(await download_data(
+                    topic=topic, sample=False, start=date(2030, 1, 1),
+                    end=date(2030, 1, 31), pool=self.pool))
+                self.assertEqual({row['id'] for row in tables['entities.csv']}, set(names))
+                definitions = tables['measurement_definitions.csv']
+                self.assertEqual({row['metric'] for row in definitions}, set(names))
+                self.assertEqual({row['measurement_id'] for row in tables['readings.csv']},
+                                 {row['id'] for row in definitions})
+                self.assertEqual(manifest['topic'], topic)
+                self.assertNotIn('traffic_incidents.csv', tables)
+
     async def test_full_export_streams_every_batch_without_a_row_limit(self):
         await self.reading('a')
         definition = (await (await self.conn.execute('SELECT id FROM measurement_definitions')).fetchone())['id']

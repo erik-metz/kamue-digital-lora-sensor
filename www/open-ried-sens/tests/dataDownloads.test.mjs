@@ -77,3 +77,14 @@ test("availability check returns JSON before starting a native ZIP download", as
   assert.deepEqual(await response.json(), { available: true });
   assert.equal(response.headers.has("Content-Disposition"), false);
 });
+
+
+test("additional environmental topics are forwarded to the export backend", async () => {
+  for (const topic of ["humidity", "precipitation", "water", "soil"]) {
+    const api = route(async url => {
+      assert.equal(url.searchParams.get("topic"), topic);
+      return new Response("zip", { headers: { "Content-Type": "application/zip" } });
+    });
+    assert.equal((await api.GET(new Request(`https://app.example/api/data-download?topic=${topic}&start=2030-01-01&end=2030-01-31`))).status, 200);
+  }
+});

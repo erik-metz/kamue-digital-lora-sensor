@@ -141,7 +141,15 @@ class ZipBuffer(io.RawIOBase):
 
 
 def topic_condition(topic):
-    return TEMPERATURE if topic == 'temperature' else MOBILITY if topic == 'mobility' else 'TRUE'
+    conditions = {
+        'temperature': TEMPERATURE,
+        'mobility': MOBILITY,
+        'humidity': "(d.metric IN ('humidity','relative_humidity','air_humidity'))",
+        'precipitation': "(d.metric ILIKE '%%precipitation%%' OR d.metric IN ('rain','rainfall','rain_rate'))",
+        'water': "(d.metric ILIKE '%%water_level%%' OR d.metric IN ('discharge','water_flow','water_level_delta'))",
+        'soil': "(d.metric ILIKE 'soil_%%' OR d.metric IN ('soilTemp','soilMoisture'))",
+    }
+    return conditions.get(topic, 'TRUE')
 
 
 def export_queries(topic, start, end):
@@ -216,7 +224,7 @@ async def stream_export(pool, topic, start, end):
 
 @router.get('/downloads', summary='Download related public CSV tables as ZIP')
 async def download_data(
-    topic: Literal['all', 'temperature', 'mobility', 'roadworks'] = 'all',
+    topic: Literal['all', 'temperature', 'mobility', 'roadworks', 'humidity', 'precipitation', 'water', 'soil'] = 'all',
     sample: bool = False, start: date | None = None, end: date | None = None,
     check: bool = False, pool=Depends(get_db_pool),
 ):

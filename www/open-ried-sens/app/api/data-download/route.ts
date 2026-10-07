@@ -1,6 +1,6 @@
 import { env } from "@/env";
 
-const TOPICS = new Set(["all", "temperature", "mobility", "roadworks"]);
+const TOPICS = new Set(["all", "temperature", "mobility", "roadworks", "humidity", "precipitation", "water", "soil"]);
 
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
