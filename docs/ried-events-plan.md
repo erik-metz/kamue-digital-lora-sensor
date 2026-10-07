@@ -488,3 +488,26 @@ Nachweise:
   geänderten Python-Dateien ist erfolgreich.
 - Die fehlenden Groß-Rohrheimer PDFs aus Schritt 5 bleiben ein anderer offener
   Punkt; ihre Termine werden nicht aus unvollständigen Auszügen erfunden.
+
+### Produktiver Abschlussnachweis
+
+Die Korrektur wurde als `13d129fd12ffd02f1f1ae8aba27955cc4b38c71b` auf
+`main` veröffentlicht. Der zugehörige
+[FastAPI-&-Docker-CI/CD-Lauf](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37590226471)
+ist erfolgreich abgeschlossen, einschließlich aller 16 Container-Builds und
+GHCR-Veröffentlichungen.
+
+Die anschließende öffentliche Prüfung am 07.10.2026 bestätigt:
+
+- Alle sieben Vereins-/Ortsteilquellen melden `success`, ohne Fehler.
+- Der öffentliche Eventbestand enthält nun auch TV Bürstadt 25, KKM Bürstadt 13,
+  SG Hüttenfeld 11, DLRG Lampertheim 19, TV Hofheim 4 und Hofheimer Volkslauf 1
+  als primäre Quellen; Neuschloß bleibt mit 14 vertreten. Insgesamt sind
+  87 Einträge diesen sieben Quellen primär zugeordnet.
+- Der gemeinsame Bestand umfasst 1.481 sichtbare Einträge einschließlich Archiv
+  und Quellenzuordnungen. Bei Dubletten können zusätzliche Vereinsvorkommen in
+  `source_events` einer anderen primären Quelle zugeordnet sein; archivierte
+  Einzelvorkommen bleiben erhalten.
+
+Damit ist die zuvor offene produktive Aufnahme der Vereinsquellen bestätigt.
+Die HTTP-410-PDF-Quellen aus Schritt 5 bleiben offen.
