@@ -2,7 +2,7 @@ import Link from "next/link";
 import { proxyBackend } from "@/lib/collectedBackend";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
-import QuellenClient, { SourceItem } from "./QuellenClient";
+import { SOURCE_INFO, type SourceItem } from "./sourceInfo";
 import { getSourceLogo } from "./SourceLogos";
 import { ExternalLink, Database, Activity } from "lucide-react";
 
@@ -103,94 +103,97 @@ export default async function SourcesPage() {
             Noch keine Erfassungen registriert.
           </div>
         ) : (
-          <>
-            {/* Interactive Dashboard with Timeframes, Volumes, Graphics & Cards */}
-            <QuellenClient sources={sources} />
+          <section aria-labelledby="source-details-title" className="space-y-4 rounded-2xl border border-slate-800 p-5">
+            <div className="space-y-1">
+              <h2 id="source-details-title" className="text-lg font-bold text-slate-200">
+                Technische Übersicht der Datenquellen
+              </h2>
+              <p className="text-xs text-slate-400">
+                Anbieter, Themen, Aktivierung, Abrufintervalle und Zeitstempel je Quelle. Der Status beschreibt den letzten Abrufversuch; Fehlermeldungen stehen direkt bei der Quelle. Alle Zeiten gelten für Europe/Berlin.
+              </p>
+            </div>
 
-            {/* Technical Tabular Audit View */}
-            <details className="space-y-4 rounded-2xl border border-slate-800 p-5">
-              <summary className="cursor-pointer font-semibold text-slate-300">Technische Details zu den Abrufen</summary>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold text-slate-200">
-                  Abrufintervalle &amp; Zeitstempel
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Zeitstempel, Prüfintervalle und Fehlermeldungen je Quelle.
-                </p>
-              </div>
-
-              <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50 shadow-inner">
-                <table className="w-full text-left text-xs sm:text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 font-semibold">
-                      <th className="p-3.5">Quelle &amp; Identifikator</th>
-                      <th className="p-3.5">Status</th>
-                      <th className="p-3.5">Abrufintervall</th>
-                      <th className="p-3.5">Letzter Versuch</th>
-                      <th className="p-3.5">Letzter Erfolg</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/80">
-                    {sources.map((source) => (
-                      <tr
-                        key={source.source_id}
-                        className="hover:bg-slate-800/40 transition-colors"
-                      >
-                        <td className="p-3.5">
-                          <div className="flex items-center gap-2.5">
-                            {getSourceLogo(source.source_id, "w-6 h-6")}
-                            {source.source_url ? (
-                              <a
-                                className="text-emerald-400 hover:text-emerald-300 underline font-medium inline-flex items-center gap-1"
-                                href={source.source_url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {source.source_id}
-                                <ExternalLink className="w-3 h-3 text-slate-400" />
-                              </a>
-                            ) : (
-                              <span className="font-mono text-slate-300">{source.source_id}</span>
-                            )}
-                          </div>
-                          {source.error && (
-                            <div className="text-[11px] text-amber-400/90 mt-1 pl-8">
-                              {source.error}
-                            </div>
+            <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/50 shadow-inner">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-900/90 text-slate-400 font-semibold">
+                    <th className="p-3.5">Quelle &amp; Identifikator</th>
+                    <th className="p-3.5">Status</th>
+                    <th className="p-3.5">Aktivierung</th>
+                    <th className="p-3.5">Abrufintervall</th>
+                    <th className="p-3.5">Letzter Versuch</th>
+                    <th className="p-3.5">Letzter Erfolg</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/80">
+                  {sources.map((source) => (
+                    <tr
+                      key={source.source_id}
+                      className="hover:bg-slate-800/40 transition-colors"
+                    >
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-2.5">
+                          {getSourceLogo(source.source_id, "w-6 h-6")}
+                          {source.source_url ? (
+                            <a
+                              className="text-emerald-400 hover:text-emerald-300 underline font-medium inline-flex items-center gap-1"
+                              href={source.source_url}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {source.source_id}
+                              <ExternalLink className="w-3 h-3 text-slate-400" />
+                            </a>
+                          ) : (
+                            <span className="font-mono text-slate-300">{source.source_id}</span>
                           )}
-                        </td>
-                        <td className="p-3.5 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                              source.status === "success"
-                                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
-                                : source.status === "partial"
-                                ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
-                                : "bg-slate-800 text-slate-400 border border-slate-700"
-                            }`}
-                          >
-                            {labels[source.status] ?? "Unbekannter Status"}
-                            {source.enabled === false && " (deaktiviert)"}
-                          </span>
-                        </td>
-                        <td className="p-3.5 whitespace-nowrap text-slate-300">
-                          {source.interval_seconds
-                            ? `${source.interval_seconds.toLocaleString("de-DE")} Sekunden`
-                            : "–"}
-                        </td>
-                        <td className="p-3.5 whitespace-nowrap text-slate-400">
-                          {timestamp(source.received_at)}
-                        </td>
-                        <td className="p-3.5 whitespace-nowrap text-emerald-400/90 font-medium">
-                          {timestamp(source.last_success_at)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </details>
-          </>
+                        </div>
+                        {SOURCE_INFO[source.source_id] && (
+                          <div className="mt-2 space-y-1 text-xs pl-8">
+                            <p className="text-slate-200">{SOURCE_INFO[source.source_id].title}</p>
+                            <p className="text-slate-400">{SOURCE_INFO[source.source_id].provider} · {SOURCE_INFO[source.source_id].domain}</p>
+                          </div>
+                        )}
+                        {!source.source_url && <p className="mt-1 pl-8 text-xs text-slate-500">Kein Quellenlink hinterlegt.</p>}
+                        {source.error && (
+                          <div className="text-[11px] text-amber-400/90 mt-1 pl-8">
+                            {source.error}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3.5 whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            source.status === "success"
+                              ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/25"
+                              : source.status === "partial"
+                              ? "bg-amber-500/15 text-amber-300 border border-amber-500/25"
+                              : "bg-slate-800 text-slate-400 border border-slate-700"
+                          }`}
+                        >
+                          {labels[source.status] ?? "Unbekannter Status"}
+                        </span>
+                      </td>
+                      <td className="p-3.5 whitespace-nowrap text-slate-300">
+                        {source.enabled === true ? "Aktiv" : source.enabled === false ? "Deaktiviert" : "Nicht hinterlegt"}
+                      </td>
+                      <td className="p-3.5 whitespace-nowrap text-slate-300">
+                        {source.interval_seconds
+                          ? `${source.interval_seconds.toLocaleString("de-DE")} Sekunden`
+                          : "–"}
+                      </td>
+                      <td className="p-3.5 whitespace-nowrap text-slate-400">
+                        {timestamp(source.received_at)}
+                      </td>
+                      <td className="p-3.5 whitespace-nowrap text-emerald-400/90 font-medium">
+                        {timestamp(source.last_success_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
         )}
 
         {/* Disclaimer / Notice */}
