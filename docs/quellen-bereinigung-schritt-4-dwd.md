@@ -49,8 +49,44 @@ separate HTTP-401-Zugriffsfehler bei Blitzortung bleibt ein offener Schritt.
 - Wiederholte Speicherung erzeugt keine zusätzlichen identischen Messungen.
 - Auf dem produktiven VPS ist der benötigte Messdatenkern bereits installiert.
 
-CI-/GHCR-Erfolg und die produktive Übernahme werden nach dem Push separat
-geprüft. Lokale Simulationsdaten wurden nicht in die produktive Datenbank
-übertragen. Die RADOLAN-Abfrage repräsentiert eine Rasterzelle am konfigurierten
+Lokale Simulationsdaten wurden nicht in die produktive Datenbank übertragen. Die RADOLAN-Abfrage repräsentiert eine Rasterzelle am konfigurierten
 Ried-Punkt; MOSMIX bezieht sich auf die konfigurierte DWD-Station 10729. Daraus
 folgt keine vollständige räumliche Abdeckung des Rieds.
+
+
+## Produktiver Abschlussnachweis
+
+Die Korrektur wurde als `a3aef12e47aeee06386d6495fdf08e96fe518ba4` auf `main`
+veröffentlicht. Der zugehörige
+[FastAPI-&-Docker-CI/CD-Lauf](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37663137460)
+ist vollständig erfolgreich: alle Prüfungen und alle **17 vorgesehenen
+Container-Builds samt GHCR-Veröffentlichung**.
+
+Beim ersten Update über `latest` wurde dennoch eine ältere Collector-Version
+geladen. Deshalb wurde ausschließlich der Umweltcollector über die zusätzliche
+VPS-Datei `/root/docker-compose.dwd-fix-a3aef12.yml` auf den eindeutigen Digest
+des geprüften CI-Laufs festgelegt:
+
+`ghcr.io/erik-metz/open-ried-sens-environment-collector@sha256:ab5d13aed4d25808db6cb88223abd05bdccd4b6eb57f5edcaa98a9bb0e4d5259`
+
+Diese Datei ergänzt die vorhandenen `/root/docker-compose.yml` und
+`/root/docker-compose.override.yml`. Beim nächsten beabsichtigten Update des
+Umweltcollectors muss der Digest gezielt aktualisiert oder diese Fixierung
+nach Prüfung der neuen Version entfernt werden. Automatische `latest`-Updates
+erfassen den auf einen Digest festgelegten Collector nicht.
+
+Die SHA-256-Prüfung der drei geänderten produktiven Dateien `main.py`,
+`normalize.py` und `storage.py` stimmt mit dem veröffentlichten Commit überein.
+Die Produktionsdatenbank und die
+[öffentliche Quellenstatus-API](https://open-ried-sens.duckdns.org/api/v1/collection/status)
+bestätigen am **7. Oktober 2026 um 20:09 Uhr Europe/Berlin**:
+
+- RADOLAN: `success`, **1 Messwert**, HTTP 200, bestätigter Abschluss, kein Fehler.
+  Gespeicherter Quellenzeitpunkt 19:40 Uhr, tatsächliche Stundensumme 0 mm.
+- MOSMIX: `success`, **120 Messwerte**, HTTP 200, bestätigter Abschluss, kein Fehler.
+  In `readings` stehen je 24 Werte für die fünf Prognosemetriken. Mengenabgleich
+  mit dem jüngsten Import erfolgreich; alle Definitionen haben `basis=model`.
+
+Damit sind die zuvor gemeldeten Nullimporte beider DWD-Quellen behoben.
+Blitzortung, DB OpenStation SIRI-FM, INVEKOS und der Haushaltsabgleich bleiben
+separate Schritte, die dieser Abschluss nicht als erfolgreich bewertet.
