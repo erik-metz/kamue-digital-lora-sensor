@@ -90,3 +90,15 @@ bestätigen am **7. Oktober 2026 um 20:09 Uhr Europe/Berlin**:
 Damit sind die zuvor gemeldeten Nullimporte beider DWD-Quellen behoben.
 Blitzortung, DB OpenStation SIRI-FM, INVEKOS und der Haushaltsabgleich bleiben
 separate Schritte, die dieser Abschluss nicht als erfolgreich bewertet.
+
+## Gesonderter Healthcheck-Befund
+
+Nach dem ersten vollständigen Lauf meldet die Statusdatei `healthy`, ohne
+Fehlerkategorie und mit null aufeinanderfolgenden Laufabbrüchen. Der gemeinsame
+CLI-Healthcheck liefert dennoch **1**: Der letzte erfolgreiche Bodenimport
+liegt bei 09:32 Uhr Europe/Berlin, der Pollenimport bei 08:30 Uhr. Die
+konfigurierten Healthcheck-Altersgrenzen von drei bzw. neun Stunden sind
+überschritten; beide Teilquellen melden derzeit `not_due`. Die neue
+DWD-Speicherung und deren öffentliche Erfolgsmeldungen sind separat bestätigt.
+Dieser zusätzliche Aktualitäts-/Überwachungsbefund wird nicht als vollständig
+gesunder Umweltcollector ausgegeben und bleibt ein eigener Folgeschritt.
