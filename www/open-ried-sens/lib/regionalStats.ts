@@ -1252,7 +1252,7 @@ export function generateIcsCalendar(event: CulturalEvent): string {
     `DESCRIPTION:${cleanDesc}\\nVeranstalter: ${event.organizer}`,
     `LOCATION:${location}`,
     event.ticket_url || event.event_url ? `URL:${event.ticket_url || event.event_url}` : "",
-    "STATUS:CONFIRMED",
+    event.status === "cancelled" ? "STATUS:CANCELLED" : "STATUS:CONFIRMED",
     "END:VEVENT",
     "END:VCALENDAR",
   ].filter(Boolean).join("\r\n");

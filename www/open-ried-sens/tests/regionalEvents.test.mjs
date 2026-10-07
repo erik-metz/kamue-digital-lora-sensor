@@ -144,3 +144,10 @@ test("BASELINE_EVENTS contains both scheduled upcoming events and archived past 
   assert.ok(majorEvents.length >= 4, "Major festivals have visitor estimates for environmental correlation");
 });
 
+
+test("cancelled event export preserves the cancellation for personal calendars", () => {
+  const event = { ...regionalStats.BASELINE_EVENTS[0], status: "cancelled" };
+  const ics = regionalStats.generateIcsCalendar(event);
+  assert.match(ics, /STATUS:CANCELLED/);
+  assert.doesNotMatch(ics, /STATUS:CONFIRMED/);
+});

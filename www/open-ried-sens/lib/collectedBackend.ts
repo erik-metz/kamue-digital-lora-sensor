@@ -13,7 +13,10 @@ export async function collectedFetch(input: URL | string, _init?: RequestInit) {
     throw new Error("Data requests must use the VPS API");
   }
   url.pathname = url.pathname.replace("/api/v1/", "/api/v1/collected/");
-  const response = await fetch(url, { next: { revalidate: 300 }, signal: AbortSignal.timeout(10000) });
+  // The complete event archive can exceed Next.js's per-entry cache limit.
+  const response = await fetch(url, url.pathname === "/api/v1/collected/social/events"
+    ? { cache: "no-store", signal: AbortSignal.timeout(10000) }
+    : { next: { revalidate: 300 }, signal: AbortSignal.timeout(10000) });
   if (!unexpired(response)) throw new Error("Stored data expired");
   return response;
 }

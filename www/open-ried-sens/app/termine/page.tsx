@@ -1,4 +1,4 @@
-import { fetchCulturalEvents, BASELINE_EVENTS } from "@/lib/regionalStats";
+import { fetchCulturalEvents } from "@/lib/regionalStats";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import RegionalatlasTabs from "../components/RegionalatlasTabs";
@@ -13,7 +13,10 @@ export const metadata = {
 };
 
 export default async function TerminePage() {
-  const initialEvents = await fetchCulturalEvents({ includePast: true }).catch(() => BASELINE_EVENTS);
+  const result = await Promise.allSettled([fetchCulturalEvents({ includePast: true })]);
+  const initialEvents = result[0].status === "fulfilled" ? result[0].value : [];
+  // eslint-disable-next-line react-hooks/purity -- Request-time snapshot in a dynamic Server Component.
+  const now = Date.now();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -21,7 +24,7 @@ export default async function TerminePage() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-12">
         <RegionalatlasTabs activeTab="termine" />
-        <TermineClient initialEvents={initialEvents} />
+        <TermineClient initialEvents={initialEvents} now={now} eventsUnavailable={result[0].status === "rejected"} />
       </main>
 
       <SiteFooter />

@@ -382,3 +382,27 @@ END:VCALENDAR
     assert events[1]["start_time"] == "2026-10-29T18:00:00+01:00"
     with pytest.raises(ValueError, match="truncated"):
         clubs.ical_events(*args, expected_count=3)
+
+
+@pytest.mark.asyncio
+async def test_hofheim_refreshes_nonce_page_before_read_only_calendar_request(
+    monkeypatch,
+):
+    acquire = AsyncMock(
+        side_effect=[
+            (SimpleNamespace(text=fixture("hofheim-request.html")), "page", 1),
+            (SimpleNamespace(text=fixture("hofheim-calendar.html")), "calendar", 2),
+        ]
+    )
+    publish = AsyncMock()
+    monkeypatch.setattr(clubs, "datetime", FixedClock)
+    monkeypatch.setattr(clubs, "acquire", acquire)
+    monkeypatch.setattr(clubs, "sync_cultural_events_to_db_and_publish", publish)
+    await clubs.import_club_events(Connection(), None, SOURCES["tv-hofheim-events"])
+    assert (
+        acquire.call_args_list[0]
+        .args[3]
+        .startswith(SOURCES["tv-hofheim-events"]["url"] + "?ried_calendar=")
+    )
+    assert acquire.call_args_list[1].kwargs["form"]["subaction"] == "display_calendar"
+    assert len(publish.call_args.args[2]) == 4

@@ -616,8 +616,14 @@ async def import_club_events(conn, client, source):
         digests.append(digest)
         return response
 
-    response = await get()
     kind = source["format"]
+    if kind == "hofheim":
+        # The public WordPress page cache can outlive its calendar nonce.
+        # Obtain fresh display metadata before the read-only rendering request.
+        fresh_url = source["url"] + ("&" if "?" in source["url"] else "?") + "ried_calendar=" + str(int(now.timestamp()))
+        response = await get(fresh_url)
+    else:
+        response = await get()
     if kind == "table":
         events = table_events(response.text, source, now)
     elif kind == "sgh":

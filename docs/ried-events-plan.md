@@ -95,7 +95,7 @@ neues Jahr werden erst nach Veröffentlichung übernommen.
 - [x] 4. Vereins- und Ortsteilkalender ergänzen.
 - [ ] 5. PDF-Jahreskalender ergänzen — Originaldatei derzeit nicht erreichbar (Prüfung 7. Oktober 2026; siehe unten).
 - [x] 6. Dubletten, Absagen und begrenzte Kalenderwiederholungen behandeln.
-- [ ] 7. Importabdeckung und Anzeige gegen recherchierte Beispiele prüfen; dokumentierte Anzeigefehler beheben.
+- [x] 7. Importabdeckung und Anzeige gegen recherchierte Beispiele prüfen; dokumentierte Anzeigefehler beheben (produktive Vereinsabdeckung noch nicht bestätigt).
 
 Nach jedem Schritt passende Prüfungen ausführen, die eigenen Änderungen
 committen und pushen sowie nur die für diese Pfade vorgesehenen CI-Läufe des
@@ -364,3 +364,86 @@ und wird als offener Prüfpunkt für Schritt 7 festgehalten. Die sechs erfolgrei
 Quellen wurden mit echten HTTP-Abrufen und simulierten Datenbankoperationen
 geprüft; keine produktive Datenbank wurde verändert. Die sichere
 Dublettenregel ist zusätzlich mit kontrollierten Quellenpaaren getestet.
+
+## Schritt 7: Anzeige und tatsächliche Importabdeckung
+
+Geprüft und implementiert am 7. Oktober 2026. Beide Oberflächen verwenden
+nun denselben Kalendervertrag: `/termine` und der Eventbereich von `/statistik`.
+
+### Korrekturen
+
+- Kein fester September-Stichtag mehr. Der Server übergibt einen Zeitstand
+  für eine konsistente erste Darstellung; der Browser aktualisiert ihn jede
+  Minute und bei erneutem Fokus. Archiv/Anstehend richten sich nach dem
+  tatsächlichen Ende, sodass laufende Mehrtagesveranstaltungen sichtbar bleiben.
+- „Alle Kommunen“ umfasst die vier vereinbarten Ried-Gemeinden unabhängig von
+  der Auswahl für Sozialstatistiken. Orte außerhalb dieses Gebiets werden
+  auch in der Anzeige ausgeschlossen. Suche, Gemeinde, Rubrik und Zeitraum
+  wirken identisch auf Kalender und Liste. Die Tagesauswahl schränkt erst
+  die Liste ein; die anderen passenden Kalendertage bleiben auswählbar.
+- Der Wochenendfilter berücksichtigt überschneidende Veranstaltungen und
+  das aktuelle Wochenende auch am Samstag/Sonntag. „Diesen Monat“ bezeichnet
+  den laufenden Kalendermonat, nicht einen 35-Tage-Abstand. Alle Datums- und
+  Uhrzeitzuordnungen erfolgen in Europe/Berlin, unabhängig von Browser-Zeitzone
+  oder UTC-Schreibweise der API.
+- Lange Veranstaltungen werden für alle betroffenen Tage des sichtbaren
+  Monats markiert. Der bisherige 14-Tage-Abbruch entfällt; nur höchstens
+  31 sichtbare Tage werden untersucht, ohne den gesamten Zeitraum aufzufalten.
+- Beide Seiten fordern das Archiv ausdrücklich mit `include_past=true` an.
+  Der vollständige Eventdatensatz überschreitet bereits 2 MB; dieser Abruf
+  wird deshalb ohne Next.js-Einzelobjektcache durchgeführt. Ablaufhinweise
+  des Backends werden weiterhin geprüft.
+- Fehler der unabhängigen Statistik-/Einrichtungsabfragen entfernen den
+  Eventbereich nicht mehr. Fehlende Kennzahlen und Event-API-Fehler erhalten
+  jeweils einen eigenen Hinweis. `/termine` ersetzt Fehler nicht mehr durch
+  den statischen Beispielkatalog.
+- Absagen/Verschiebungen werden in Karten und Listen gekennzeichnet; beim
+  ICS-Export bleibt eine Absage `STATUS:CANCELLED`. Nur ausdrücklich bestätigter
+  kostenloser Eintritt wird so beworben. Tagesgrenzen 00:00–23:59 werden als
+  „Ganztägig / Uhrzeit siehe Quelle“ angezeigt. Ein künstlicher Tagesabschluss
+  23:59 wird nicht als bekannte Enduhrzeit ausgegeben. Bei tatsächlichem Ende
+  an einem anderen Tag enthält die Zeitangabe auch dessen Datum.
+- Die Rubrikzuordnung prüft den Titel vor ergänzender Prosa und verwendet
+  genauere Sportbegriffe. „rad“ in „traditionell“ oder „lauf“ und „turn“ als
+  beliebige Wortbestandteile sollen keine Feste/Konzerte
+  aus ihren Rubriken verdrängen. Kerwelauf und Volkslauf bleiben Sport.
+- TV Hofheim: Der öffentliche WordPress-Seitencache liefert einen veralteten
+  Kalender-Nonce und eine leere Anzeigeantwort. Ein frischer Seitenabruf
+  mit zeitgestempeltem Abfrageparameter liefert die vier bekannten Termine.
+  Der Import lädt diese Metadaten nun frisch vor der vorgesehenen
+  read-only `display_calendar`-Anfrage. Ein Regressionstest prüft diesen Ablauf.
+
+### Nachweise und Grenzen
+
+- Live-Simulation aller sieben Vereins-/Ortsteilquellen: erneut **87 lokal
+  bestätigte Vorkommen**, davon 29 bevorstehend. Für die Simulation werden
+  echte öffentliche Abrufe, aber simulierte Datenbankoperationen verwendet.
+- Der produktive öffentliche Endpunkt
+  [social/events mit Archiv](https://open-ried-sens.duckdns.org/api/v1/collected/social/events?include_past=true)
+  lieferte beim ersten Abruf 1.394 Einträge: Bürstadt 479, Lampertheim 489,
+  Groß-Rohrheim 110, Bürgerstiftung Biblis 302 und Neuschloß 14. Die sechs
+  weiteren Vereinsquellen fehlten dabei; `source_events` war ebenfalls noch
+  nicht enthalten. Bei der folgenden lokalen Browserprüfung mit echten
+  Backenddaten waren 1.399 Einträge vorhanden. Das ist kein Beleg für einen
+  vollständigen produktiven Import aller neuen Vereinsquellen.
+- Browserprüfung des lokalen Produktionsbuilds: Biblis-Filter liefert
+  passende Tagesmarkierungen; Auswahl 09.10.2026 liefert einen Treffer,
+  während die Markierungen anderer passender Tage erhalten bleiben.
+  Archivwechsel zeigt 228 vergangene Bibliser Termine. `/statistik` zeigt
+  trotz aktuell fehlender Sozialkennzahlen weiterhin den Eventbereich.
+  Beim geprüften Tagesfilter wurden keine Browser-Konsolenfehler erfasst.
+- Lokale Prüfungen: vollständige Frontend-Suite **206 bestanden**, TypeScript
+  ohne Fehler, ESLint für die Kalenderkomponenten und neuen Helfer ohne Fehler.
+  Der breitere Prüflauf enthält bestehende Warnungen zu ungenutzten Variablen
+  und zwei bereits vorhandene `no-explicit-any`-Fehler in `regionalStats.ts`
+  außerhalb der geänderten Exportzeile. Worker-Suite **195 bestanden,
+  14 übersprungen**; Ruff für geänderte Python-Dateien erfolgreich.
+  Produktionsbuild geprüft. `Frontend CI` führt nun die Event-Regressionstests
+  ausdrücklich aus.
+- Schritt 5 bleibt offen: beide Groß-Rohrheimer PDF-Dateien liefern HTTP 410.
+  Die produktive Aufnahme der zusätzlichen Vereinsquellen und die Anwendung
+  der neuen Dublettenveröffentlichung müssen am laufenden VPS separat
+  bestätigt werden. Erfolgreiche CI-/GHCR-Veröffentlichungen allein ersetzen
+  diesen Nachweis nicht. Der vorhandene Watchtower ist für automatische
+  Image-Aktualisierungen vorgesehen; sein tatsächlicher Laufzustand wurde
+  in dieser Prüfung nicht ermittelt.

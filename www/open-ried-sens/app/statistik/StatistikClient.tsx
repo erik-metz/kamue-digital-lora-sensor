@@ -45,12 +45,15 @@ import {
   updateUrlDebounced,
 } from "@/lib/urlState";
 import EventCalendarWidget from "./EventCalendarWidget";
+import { EVENT_TIME_ZONE, eventDay, eventTimeText, eventIsPast, eventOnDay, filterCalendarEvents } from "@/lib/eventCalendar";
 
 interface Props {
   summaries: SocialKpiSummary[];
   wasteStats: ZakbWasteStat[];
   facilities: RegionalFacility[];
   events: CulturalEvent[];
+  now: number;
+  eventsUnavailable?: boolean;
 }
 
 export default function StatistikClient({
@@ -58,6 +61,8 @@ export default function StatistikClient({
   wasteStats,
   facilities,
   events,
+  now: initialNow,
+  eventsUnavailable = false,
 }: Props) {
   const [selectedMuni, setSelectedMuni] = useState<string>("Bürstadt");
   const [activeTab, setActiveTab] = useState<
@@ -70,17 +75,21 @@ export default function StatistikClient({
   // Initial read from URL
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const p = parseSubpageParams(window.location.search, {
-      tab: "all",
-      muni: "Bürstadt",
-      cat: "all",
-    });
-    if (["all", "employment", "healthcare", "waste", "culture", "tourism"].includes(p.tab)) {
-      setActiveTab(p.tab as any);
-    }
-    if (p.muni) setSelectedMuni(p.muni);
-    if (p.cat) setFacilityCategoryFilter(p.cat);
-    setMounted(true);
+    const timer = window.setTimeout(() => {
+      const p = parseSubpageParams(window.location.search, {
+        tab: "all",
+        muni: "Bürstadt",
+        cat: "all",
+      });
+      if (["all", "employment", "healthcare", "waste", "culture", "tourism"].includes(p.tab)) {
+        setActiveTab(p.tab as typeof activeTab);
+      }
+      if (p.muni) setSelectedMuni(p.muni);
+      if (p.cat) setFacilityCategoryFilter(p.cat);
+      setMounted(true);
+
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // Listen to popstate
@@ -92,7 +101,7 @@ export default function StatistikClient({
         cat: "all",
       });
       if (["all", "employment", "healthcare", "waste", "culture", "tourism"].includes(p.tab)) {
-        setActiveTab(p.tab as any);
+        setActiveTab(p.tab as typeof activeTab);
       }
       setSelectedMuni(p.muni || "Bürstadt");
       setFacilityCategoryFilter(p.cat || "all");
@@ -190,79 +199,27 @@ export default function StatistikClient({
     }
   };
 
-  const filteredEvents = useMemo(() => {
-    return events.filter((e) => {
-      // 1. Municipality filter
-      if (eventMuniFilter !== "all") {
-        if (e.municipality.toLowerCase() !== eventMuniFilter.toLowerCase()) return false;
-      } else if (selectedMuni !== "Kreis Bergstraße" && selectedMuni !== "Hessen") {
-        if (e.municipality.toLowerCase() !== selectedMuni.toLowerCase()) return false;
-      }
-
-      // 2. Category filter
-      if (eventCategoryFilter !== "all" && e.category !== eventCategoryFilter) {
-        return false;
-      }
-
-      // 3. Search query
-      if (eventSearch.trim()) {
-        const q = eventSearch.toLowerCase().trim();
-        const matchTitle = e.title.toLowerCase().includes(q);
-        const matchDesc = (e.description || "").toLowerCase().includes(q);
-        const matchOrg = e.organizer.toLowerCase().includes(q);
-        const matchVenue = e.venue_name.toLowerCase().includes(q);
-        const matchStreet = (e.street_address || "").toLowerCase().includes(q);
-        if (!matchTitle && !matchDesc && !matchOrg && !matchVenue && !matchStreet) {
-          return false;
-        }
-      }
-
-      // 4. Calendar Day filter
-      if (selectedCalendarDate) {
-        const startDay = e.start_time.split("T")[0];
-        const endDay = e.end_time ? e.end_time.split("T")[0] : startDay;
-        if (selectedCalendarDate < startDay || selectedCalendarDate > endDay) {
-          return false;
-        }
-      }
-
-      // 5. Time horizon
-      const nowMs = new Date("2026-09-17T00:00:00Z").getTime();
-      const startMs = new Date(e.start_time).getTime();
-      const endMs = e.end_time ? new Date(e.end_time).getTime() : startMs;
-
-      if (eventTimeHorizon === "archive") {
-        return e.status === "past" || endMs < nowMs;
-      } else {
-        if (e.status === "past" && endMs < nowMs) return false;
-
-        if (eventTimeHorizon === "weekend") {
-          const dayOfWeek = new Date(startMs).getDay(); // 0 Sun, 5 Fri, 6 Sat
-          const diffDays = (startMs - nowMs) / (1000 * 60 * 60 * 24);
-          const isWeekendDay = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
-          return diffDays >= -0.5 && diffDays <= 7 && isWeekendDay;
-        }
-
-        if (eventTimeHorizon === "month") {
-          const diffDays = (startMs - nowMs) / (1000 * 60 * 60 * 24);
-          return diffDays >= -0.5 && diffDays <= 35;
-        }
-      }
-
-      return true;
-    });
-  }, [
-    events,
-    selectedMuni,
-    eventMuniFilter,
-    eventCategoryFilter,
-    eventSearch,
-    selectedCalendarDate,
-    eventTimeHorizon,
-  ]);
+  const [now, setNow] = useState(initialNow);
+  useEffect(() => {
+    const refresh = () => setNow(Date.now());
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
+  const calendarEvents = useMemo(() => filterCalendarEvents(events, {
+    municipality: eventMuniFilter, category: eventCategoryFilter,
+    search: eventSearch, horizon: eventTimeHorizon, now,
+  }), [events, eventMuniFilter, eventCategoryFilter, eventSearch, eventTimeHorizon, now]);
+  const filteredEvents = useMemo(() => selectedCalendarDate
+    ? calendarEvents.filter(event => eventOnDay(event, selectedCalendarDate))
+    : calendarEvents, [calendarEvents, selectedCalendarDate]);
 
   return (
     <div className="space-y-12">
+      {currentSummary ? <>
       {/* 1. Municipal Switcher Bar */}
       <div className="bg-slate-900/80 border border-slate-800 p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-lg backdrop-blur-sm">
         <div>
@@ -730,6 +687,8 @@ export default function StatistikClient({
         </div>
       </section>
 
+      </> : <p role="status" className="text-sm text-slate-400">Die regionalen Kennzahlen sind derzeit nicht verfügbar. Der Veranstaltungskalender wird unabhängig geladen.</p>}
+
       {/* 6. Section: Kultur- & Veranstaltungskalender (KAMÜ Spotlight & Ried Events) */}
       <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl relative overflow-hidden">
         {/* Background glow decoration */}
@@ -746,7 +705,7 @@ export default function StatistikClient({
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 max-w-2xl">
               Geprüfte Termine aus Bürstadt, Lampertheim, Biblis & Groß-Rohrheim.
-              Echtdaten aus Rathäusern, Vereinen, Reservix, TIP Südhessen & historischem Archiv.
+              Termine aus kommunalen Kalendern sowie angebundenen Vereins- und Ortsteilkalendern.
             </p>
           </div>
 
@@ -773,6 +732,8 @@ export default function StatistikClient({
             </a>
           </div>
         </div>
+
+        {eventsUnavailable && <p role="alert" className="text-sm text-amber-300">Die Veranstaltungsdaten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</p>}
 
         {/* Search & Filter Control Bar */}
         <div className="space-y-3 bg-slate-950/60 p-4 sm:p-5 rounded-2xl border border-slate-800/80">
@@ -834,14 +795,14 @@ export default function StatistikClient({
             {[
               { id: "upcoming", label: "Alle Zukünftigen" },
               { id: "weekend", label: "Dieses Wochenende" },
-              { id: "month", label: "Nächste 30 Tage" },
+              { id: "month", label: "Diesen Monat" },
               { id: "archive", label: "📁 Historisches Archiv" },
             ].map((th) => (
               <button
                 key={th.id}
                 type="button"
                 onClick={() => {
-                  setEventTimeHorizon(th.id as any);
+                  setEventTimeHorizon(th.id as typeof eventTimeHorizon);
                   setSelectedCalendarDate(null);
                 }}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
@@ -918,7 +879,8 @@ export default function StatistikClient({
         {eventViewMode === "calendar" && (
           <div className="animate-in fade-in duration-200">
             <EventCalendarWidget
-              events={events}
+              events={calendarEvents}
+              now={now}
               selectedDate={selectedCalendarDate}
               onSelectDate={(d) => setSelectedCalendarDate(d)}
             />
@@ -964,19 +926,15 @@ export default function StatistikClient({
         </div>
 
         {/* Event Cards Grid */}
-        {filteredEvents.length > 0 ? (
+        {!eventsUnavailable && (filteredEvents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredEvents.map((evt) => {
               const startDate = new Date(evt.start_time);
-              const dayStr = String(startDate.getDate()).padStart(2, "0");
-              const monthStr = new Intl.DateTimeFormat("de-DE", { month: "short" })
+              const dayStr = eventDay(evt.start_time).slice(-2);
+              const monthStr = new Intl.DateTimeFormat("de-DE", { month: "short", timeZone: EVENT_TIME_ZONE })
                 .format(startDate)
                 .toUpperCase();
-              const timeStr = new Intl.DateTimeFormat("de-DE", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }).format(startDate);
-              const isPast = evt.status === "past" || new Date(evt.start_time).getTime() < new Date("2026-09-17T00:00:00Z").getTime();
+              const isPast = eventIsPast(evt, now);
 
               return (
                 <div
@@ -1002,7 +960,7 @@ export default function StatistikClient({
                         <div className="space-y-0.5">
                           <div className="flex items-center gap-1 text-xs text-slate-300 font-semibold">
                             <Clock className="w-3 h-3 text-purple-400" />
-                            {timeStr} Uhr
+                            {eventTimeText(evt)}
                           </div>
                           <div className="text-[11px] text-slate-400 font-medium">
                             {evt.municipality}
@@ -1019,6 +977,8 @@ export default function StatistikClient({
                             Eintritt frei
                           </span>
                         )}
+                        {evt.status === "cancelled" && <span className="text-[10px] font-semibold text-red-300 bg-red-950/50 border border-red-800 px-2 py-0.5 rounded-full">Abgesagt</span>}
+                        {evt.status === "postponed" && <span className="text-[10px] font-semibold text-amber-300">Verschoben</span>}
                         {isPast && (
                           <span className="text-[10px] font-semibold text-slate-400 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">
                             Archiv
@@ -1117,7 +1077,7 @@ export default function StatistikClient({
               Filter zurücksetzen
             </button>
           </div>
-        )}
+        ))}
 
         {/* Modal: Veranstaltung melden / vorschlagen */}
         {showSubmitModal && (

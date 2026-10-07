@@ -1,4 +1,3 @@
-import OfficialStatisticsPage from "../components/OfficialStatisticsPage";
 import {
   fetchCulturalEvents,
   fetchRegionalFacilities,
@@ -27,14 +26,16 @@ import StatistikClient from "./StatistikClient";
 export const dynamic = "force-dynamic";
 
 export default async function RegionalStatistikPage() {
-  const collected = await Promise.all([
-    fetchSocialSummary(),
-    fetchWasteStatistics(),
-    fetchRegionalFacilities(),
-    fetchCulturalEvents(),
-  ]).catch(() => null);
-  if (!collected || !collected[0].length) return <OfficialStatisticsPage domain="social" title="Regionale Statistik" />;
-  const [summaries, wasteStats, facilities, events] = collected;
+  const [summaryResult, wasteResult, facilityResult, eventResult] = await Promise.allSettled([
+    fetchSocialSummary(), fetchWasteStatistics(), fetchRegionalFacilities(),
+    fetchCulturalEvents({ includePast: true }),
+  ]);
+  const summaries = summaryResult.status === "fulfilled" ? summaryResult.value : [];
+  const wasteStats = wasteResult.status === "fulfilled" ? wasteResult.value : [];
+  const facilities = facilityResult.status === "fulfilled" ? facilityResult.value : [];
+  const events = eventResult.status === "fulfilled" ? eventResult.value : [];
+  // eslint-disable-next-line react-hooks/purity -- Request-time snapshot in a dynamic Server Component.
+  const now = Date.now();
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
@@ -95,6 +96,8 @@ export default async function RegionalStatistikPage() {
           wasteStats={wasteStats}
           facilities={facilities}
           events={events}
+          now={now}
+          eventsUnavailable={eventResult.status === "rejected"}
         />
 
         {/* Developer / Hackathon Callout */}

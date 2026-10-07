@@ -84,3 +84,13 @@ test('departure proxy preserves stop namespace and bounds cache', async () => {
  assert.equal(seen.path,'transport/stops/shared/departures?source=rail%26other');
  assert.equal(seen.ttl,10);
 });
+
+test('full event archive bypasses the per-entry Next cache and preserves query options',async()=>{
+ let call;
+ const lib=load('../lib/collectedBackend.ts',{'@/env':env},{fetch:async(url,options)=>{call={url,options};return Response.json([]);}});
+ await lib.collectedFetch('https://vps.example/api/v1/social/events?include_past=true');
+ assert.equal(call.url.pathname,'/api/v1/collected/social/events');
+ assert.equal(call.url.searchParams.get('include_past'),'true');
+ assert.equal(call.options.cache,'no-store');
+ assert.equal(call.options.next,undefined);
+});

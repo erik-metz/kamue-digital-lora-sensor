@@ -39,8 +39,12 @@ import {
 } from "@/lib/urlState";
 import EventCalendarWidget from "../statistik/EventCalendarWidget";
 
+import { EVENT_TIME_ZONE, eventTimeText, eventIsPast, eventOnDay, filterCalendarEvents } from "@/lib/eventCalendar";
+
 interface TermineClientProps {
   initialEvents: CulturalEvent[];
+  now: number;
+  eventsUnavailable?: boolean;
 }
 
 const CATEGORY_META: Record<
@@ -105,7 +109,7 @@ const MUNICIPALITIES = [
   { id: "Groß-Rohrheim", label: "Groß-Rohrheim" },
 ];
 
-export default function TermineClient({ initialEvents }: TermineClientProps) {
+export default function TermineClient({ initialEvents, now: initialNow, eventsUnavailable = false }: TermineClientProps) {
   const [events, setEvents] = useState<CulturalEvent[]>(initialEvents);
   const [selectedMuni, setSelectedMuni] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
@@ -143,21 +147,25 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
   // URL state synchronization
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const p = parseSubpageParams(window.location.search, {
-      muni: "all",
-      cat: "all",
-      horizon: "upcoming",
-      view: "calendar",
-    });
-    if (p.muni) setSelectedMuni(p.muni);
-    if (p.cat) setSelectedCategory(p.cat);
-    if (["upcoming", "weekend", "month", "archive"].includes(p.horizon)) {
-      setTimeHorizon(p.horizon as any);
-    }
-    if (["calendar", "cards", "list"].includes(p.view)) {
-      setViewMode(p.view as any);
-    }
-    setMounted(true);
+    const timer = window.setTimeout(() => {
+      const p = parseSubpageParams(window.location.search, {
+        muni: "all",
+        cat: "all",
+        horizon: "upcoming",
+        view: "calendar",
+      });
+      if (p.muni) setSelectedMuni(p.muni);
+      if (p.cat) setSelectedCategory(p.cat);
+      if (["upcoming", "weekend", "month", "archive"].includes(p.horizon)) {
+        setTimeHorizon(p.horizon as typeof timeHorizon);
+      }
+      if (["calendar", "cards", "list"].includes(p.view)) {
+        setViewMode(p.view as typeof viewMode);
+      }
+      setMounted(true);
+
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -174,99 +182,25 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
     updateUrlDebounced(query);
   }, [mounted, selectedMuni, selectedCategory, timeHorizon, viewMode]);
 
-  // Filtered Events Calculation
-  const filteredEvents = useMemo(() => {
-    const now = new Date();
-    const todayStr = now.toISOString().split("T")[0];
-
-    return events.filter((evt) => {
-      // Municipality filter
-      if (
-        selectedMuni !== "all" &&
-        evt.municipality.toLowerCase() !== selectedMuni.toLowerCase()
-      ) {
-        return false;
-      }
-
-      // Category filter
-      if (selectedCategory !== "all" && evt.category !== selectedCategory) {
-        return false;
-      }
-
-      // Calendar day filter (if specific date is selected in widget)
-      if (selectedCalendarDate) {
-        const startDay = evt.start_time.split("T")[0];
-        const endDay = evt.end_time ? evt.end_time.split("T")[0] : startDay;
-        if (selectedCalendarDate < startDay || selectedCalendarDate > endDay) {
-          return false;
-        }
-      }
-
-      // Time horizon filter
-      const evtStart = new Date(evt.start_time);
-      const evtEnd = evt.end_time ? new Date(evt.end_time) : evtStart;
-      const isPast = (evt.status === "past" || evtEnd < now) && evt.status !== "scheduled";
-
-      if (timeHorizon === "archive") {
-        if (!isPast && evt.status !== "past") return false;
-      } else if (timeHorizon === "upcoming") {
-        if (isPast && !selectedCalendarDate) return false;
-      } else if (timeHorizon === "weekend") {
-        if (isPast) return false;
-        const day = evtStart.getDay();
-        const diffToFri = (5 - now.getDay() + 7) % 7;
-        const friday = new Date(now);
-        friday.setDate(now.getDate() + diffToFri);
-        friday.setHours(0, 0, 0, 0);
-
-        const sunday = new Date(friday);
-        sunday.setDate(friday.getDate() + 2);
-        sunday.setHours(23, 59, 59, 999);
-
-        if (evtStart < friday || evtStart > sunday) return false;
-      } else if (timeHorizon === "month") {
-        if (isPast) return false;
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-        if (
-          evtStart.getMonth() !== currentMonth ||
-          evtStart.getFullYear() !== currentYear
-        ) {
-          return false;
-        }
-      }
-
-      // Search query
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const titleMatch = evt.title.toLowerCase().includes(q);
-        const descMatch = evt.description?.toLowerCase().includes(q) ?? false;
-        const venueMatch = evt.venue_name.toLowerCase().includes(q);
-        const orgMatch = evt.organizer.toLowerCase().includes(q);
-        const streetMatch = evt.street_address?.toLowerCase().includes(q) ?? false;
-        if (!titleMatch && !descMatch && !venueMatch && !orgMatch && !streetMatch) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-  }, [events, selectedMuni, selectedCategory, selectedCalendarDate, timeHorizon, searchQuery]);
-
-  // Statistics summaries
+  const [now, setNow] = useState(initialNow);
+  useEffect(() => {
+    const refresh = () => setNow(Date.now());
+    const timer = window.setInterval(refresh, 60_000);
+    window.addEventListener("focus", refresh);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", refresh); };
+  }, []);
+  const calendarEvents = useMemo(() => filterCalendarEvents(events, {
+    municipality: selectedMuni, category: selectedCategory,
+    search: searchQuery, horizon: timeHorizon, now,
+  }), [events, selectedMuni, selectedCategory, searchQuery, timeHorizon, now]);
+  const filteredEvents = useMemo(() => selectedCalendarDate
+    ? calendarEvents.filter(event => eventOnDay(event, selectedCalendarDate))
+    : calendarEvents, [calendarEvents, selectedCalendarDate]);
   const stats = useMemo(() => {
-    const now = new Date();
-    const upcomingCount = events.filter((e) => {
-      const end = e.end_time ? new Date(e.end_time) : new Date(e.start_time);
-      return end >= now || e.status === "scheduled";
-    }).length;
-    const pastCount = events.filter((e) => {
-      const end = e.end_time ? new Date(e.end_time) : new Date(e.start_time);
-      return end < now || e.status === "past";
-    }).length;
-    const orgs = new Set(events.map((e) => e.organizer)).size;
-    return { upcomingCount, pastCount, orgs, total: events.length };
-  }, [events]);
+    const upcomingCount = filterCalendarEvents(events, { municipality: "all", category: "all", search: "", horizon: "upcoming", now }).length;
+    const pastCount = filterCalendarEvents(events, { municipality: "all", category: "all", search: "", horizon: "archive", now }).length;
+    return { upcomingCount, pastCount, orgs: new Set(events.map(event => event.organizer)).size };
+  }, [events, now]);
 
   const handleDownloadIcs = (evt: CulturalEvent) => {
     try {
@@ -323,8 +257,8 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
       const created: CulturalEvent = await res.json();
       setEvents((prev) => [created, ...prev]);
       setSubmitSuccess(true);
-    } catch (err: any) {
-      setSubmitError(err.message || "Unerwarteter Fehler beim Einreichen.");
+    } catch (err: unknown) {
+      setSubmitError(err instanceof Error ? err.message : "Unerwarteter Fehler beim Einreichen.");
     } finally {
       setSubmitSubmitting(false);
     }
@@ -332,6 +266,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
 
   return (
     <div className="space-y-8">
+      {eventsUnavailable && <p role="alert" className="text-sm text-amber-300">Die Veranstaltungsdaten sind derzeit nicht verfügbar. Bitte versuchen Sie es später erneut.</p>}
       {/* 1. Hero Header & Quick Stats */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-925 to-slate-950 border border-slate-800 p-6 sm:p-10 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -398,7 +333,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
           <div className="bg-slate-900/80 rounded-2xl p-3 sm:p-4 border border-slate-800">
             <div className="text-[11px] text-slate-400 uppercase font-medium">Ried-Kommunen</div>
             <div className="text-2xl sm:text-3xl font-bold text-sky-400 mt-1">4</div>
-            <div className="text-[11px] text-slate-500 mt-0.5">Vollständige Abdeckung</div>
+            <div className="text-[11px] text-slate-500 mt-0.5">Gemeinsamer Kalender</div>
           </div>
         </div>
       </section>
@@ -499,7 +434,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
                 key={h.id}
                 type="button"
                 onClick={() => {
-                  setTimeHorizon(h.id as any);
+                  setTimeHorizon(h.id as typeof timeHorizon);
                   setSelectedCalendarDate(null);
                 }}
                 className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
@@ -558,7 +493,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
             <span>
               Gefiltert auf Datum:{" "}
               <strong>
-                {new Date(selectedCalendarDate).toLocaleDateString("de-DE", {
+                {new Date(selectedCalendarDate).toLocaleDateString("de-DE", { timeZone: EVENT_TIME_ZONE,
                   weekday: "long",
                   year: "numeric",
                   month: "long",
@@ -581,7 +516,8 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
       {viewMode === "calendar" && (
         <div className="space-y-6">
           <EventCalendarWidget
-            events={events}
+            events={calendarEvents}
+            now={now}
             selectedDate={selectedCalendarDate}
             onSelectDate={(d) => setSelectedCalendarDate(d)}
           />
@@ -601,6 +537,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
                 <EventCard
                   key={evt.id}
                   event={evt}
+                  now={now}
                   onDownloadIcs={() => handleDownloadIcs(evt)}
                 />
               ))}
@@ -635,6 +572,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
               <EventCard
                 key={evt.id}
                 event={evt}
+                now={now}
                 onDownloadIcs={() => handleDownloadIcs(evt)}
               />
             ))}
@@ -671,7 +609,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
                 {filteredEvents.map((evt) => {
                   const start = new Date(evt.start_time);
-                  const isPast = evt.status === "past" || start < new Date();
+                  const isPast = eventIsPast(evt, now);
                   const meta = CATEGORY_META[evt.category] || CATEGORY_META.civic;
 
                   return (
@@ -683,7 +621,7 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
                     >
                       <td className="py-3 px-4 whitespace-nowrap">
                         <div className="font-semibold text-slate-100">
-                          {start.toLocaleDateString("de-DE", {
+                          {start.toLocaleDateString("de-DE", { timeZone: EVENT_TIME_ZONE,
                             day: "2-digit",
                             month: "2-digit",
                             year: "numeric",
@@ -691,16 +629,14 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
                         </div>
                         <div className="text-[11px] text-slate-500 flex items-center gap-1">
                           <Clock className="w-3 h-3 text-slate-500" />
-                          {start.toLocaleTimeString("de-DE", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}{" "}
-                          Uhr
+                          {eventTimeText(evt)}
                         </div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="font-semibold text-slate-100 max-w-md line-clamp-1">
                           {evt.title}
+                          {evt.status === "cancelled" && <span className="ml-2 text-red-300">Abgesagt</span>}
+                          {evt.status === "postponed" && <span className="ml-2 text-amber-300">Verschoben</span>}
                         </div>
                         {evt.description && (
                           <div className="text-[11px] text-slate-400 line-clamp-1 max-w-md mt-0.5">
@@ -1101,26 +1037,20 @@ export default function TermineClient({ initialEvents }: TermineClientProps) {
 function EventCard({
   event,
   onDownloadIcs,
+  now,
 }: {
   event: CulturalEvent;
+  now: number;
   onDownloadIcs: () => void;
 }) {
   const start = new Date(event.start_time);
-  const end = event.end_time ? new Date(event.end_time) : null;
-  const isPast = event.status === "past" || (end || start) < new Date();
+  const isPast = eventIsPast(event, now);
   const meta = CATEGORY_META[event.category] || CATEGORY_META.civic;
 
-  const dateDay = start.toLocaleDateString("de-DE", { day: "2-digit" });
-  const dateMonth = start.toLocaleDateString("de-DE", { month: "short" }).toUpperCase();
-  const dateWeekday = start.toLocaleDateString("de-DE", { weekday: "short" });
+  const dateDay = start.toLocaleDateString("de-DE", { timeZone: EVENT_TIME_ZONE, day: "2-digit" });
+  const dateMonth = start.toLocaleDateString("de-DE", { timeZone: EVENT_TIME_ZONE, month: "short" }).toUpperCase();
+  const dateWeekday = start.toLocaleDateString("de-DE", { timeZone: EVENT_TIME_ZONE, weekday: "short" });
 
-  const timeStr = start.toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const endTimeStr = end
-    ? end.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
-    : null;
 
   return (
     <div
@@ -1147,7 +1077,7 @@ function EventCard({
               <div className="text-xs text-slate-300 flex items-center gap-1 mt-0.5">
                 <Clock className="w-3 h-3 text-slate-500" />
                 <span>
-                  {timeStr} Uhr{endTimeStr ? ` – ${endTimeStr} Uhr` : ""}
+                  {eventTimeText(event)}
                 </span>
               </div>
             </div>
@@ -1161,12 +1091,14 @@ function EventCard({
               <span>{meta.label}</span>
             </span>
 
+            {event.status === "cancelled" && <span className="text-xs text-red-300">Abgesagt</span>}
+            {event.status === "postponed" && <span className="text-xs text-amber-300">Verschoben</span>}
             {isPast ? (
               <span className="text-[10px] font-mono text-amber-400/80 bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-800/40">
                 Archiv
               </span>
             ) : (
-              event.is_free !== false && (
+              event.is_free === true && (
                 <span className="text-[10px] font-medium text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-800/40">
                   Eintritt frei
                 </span>

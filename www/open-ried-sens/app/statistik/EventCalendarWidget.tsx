@@ -2,10 +2,13 @@
 
 import React, { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, X } from "lucide-react";
-import { CulturalEvent } from "../../lib/regionalStats";
+import type { CulturalEvent } from "../../lib/regionalStats";
+
+import { eventDay, eventsInMonth } from "@/lib/eventCalendar";
 
 interface EventCalendarWidgetProps {
   events: CulturalEvent[];
+  now: number;
   selectedDate: string | null;
   onSelectDate: (date: string | null) => void;
 }
@@ -23,6 +26,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export default function EventCalendarWidget({
   events,
+  now,
   selectedDate,
   onSelectDate,
 }: EventCalendarWidgetProps) {
@@ -36,59 +40,26 @@ export default function EventCalendarWidget({
         if (!isNaN(y) && !isNaN(m)) return { year: y, month: m };
       }
     }
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() };
+    const [year, month] = eventDay(now).split("-").map(Number);
+    return { year, month: month - 1 };
   });
 
   const { year, month } = currentYearMonth;
 
   // Month name
-  const monthName = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric" }).format(
-    new Date(year, month, 1)
+  const monthName = new Intl.DateTimeFormat("de-DE", { month: "long", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(year, month, 1))
   );
 
-  const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-
+  const todayStr = eventDay(now);
   const handleToday = () => {
-    const d = new Date();
-    setCurrentYearMonth({ year: d.getFullYear(), month: d.getMonth() });
+    const [year, month] = eventDay(now).split("-").map(Number);
+    setCurrentYearMonth({ year, month: month - 1 });
   };
+  const eventsByDate = useMemo(() => eventsInMonth(events, year, month), [events, year, month]);
 
-  // Map events to date strings (YYYY-MM-DD)
-  const eventsByDate = useMemo(() => {
-    const map = new Map<string, CulturalEvent[]>();
-    for (const evt of events) {
-      try {
-        const start = new Date(evt.start_time);
-        const end = evt.end_time ? new Date(evt.end_time) : start;
-
-        // Loop through each day from start to end (up to 14 days max)
-        const cur = new Date(start);
-        cur.setHours(0, 0, 0, 0);
-        const endDay = new Date(end);
-        endDay.setHours(0, 0, 0, 0);
-
-        let daysCount = 0;
-        while (cur <= endDay && daysCount < 14) {
-          const y = cur.getFullYear();
-          const m = String(cur.getMonth() + 1).padStart(2, "0");
-          const d = String(cur.getDate()).padStart(2, "0");
-          const key = `${y}-${m}-${d}`;
-          if (!map.has(key)) map.set(key, []);
-          map.get(key)!.push(evt);
-          cur.setDate(cur.getDate() + 1);
-          daysCount++;
-        }
-      } catch {
-        // Skip invalid date
-      }
-    }
-    return map;
-  }, [events]);
-
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7; // Monday = 0
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const firstDayIndex = (new Date(Date.UTC(year, month, 1)).getUTCDay() + 6) % 7; // Monday = 0
 
   const handlePrevMonth = () => {
     setCurrentYearMonth((prev) => {
@@ -181,6 +152,8 @@ export default function EventCalendarWidget({
                 }
               }}
               disabled={!hasEvents}
+              aria-pressed={isSelected}
+              aria-label={`${dateStr}: ${dayEvents.length} Veranstaltungen${dayEvents.some(event => event.status === "cancelled") ? ", enthält abgesagte Termine" : ""}`}
               className={`h-9 sm:h-10 rounded-xl flex flex-col items-center justify-center relative transition-all duration-150 ${
                 isSelected
                   ? "bg-purple-600 text-white font-bold ring-2 ring-purple-400 ring-offset-2 ring-offset-slate-950 shadow-md scale-105"

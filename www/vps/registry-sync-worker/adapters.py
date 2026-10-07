@@ -18,25 +18,24 @@ from publications import acquire, publish
 logger = logging.getLogger(__name__)
 
 
-def classify_category(text: str) -> str:
-    """Classifies an event into standard UI categories based on title/category text."""
-    t = text.lower()
-    if any(k in t for k in ["sport", "lauf", "turn", "fußball", "fussball", "rad", "schieß", "schuetzen", "reit", "wasser"]):
-        return "sports"
-    if any(k in t for k in ["konzert", "musik", "chor", "gesang", "rock", "band", "live", "akustik", "acoustic"]):
-        return "concert"
-    if any(k in t for k in ["fest", "kerwe", "kerb", "feiern", "fasching", "fastnacht", "karneval", "sommerfest", "glühen", "frühschoppen"]):
-        return "festival"
-    if any(k in t for k in ["markt", "basar", "flohmarkt", "börse", "advent", "weihnacht"]):
-        return "market"
-    if any(k in t for k in ["theater", "kabarett", "comedy", "lesung", "bühne", "kino", "film", "musical"]):
-        return "theater"
-    if any(k in t for k in ["repair", "reparier", "nachhaltig", "umweltmobil", "müll", "abfall"]):
-        return "civic"
-    if any(k in t for k in ["workshop", "kurs", "seminar", "schulung", "hackathon", "sprechstunde"]):
-        return "workshop"
-    if any(k in t for k in ["ausstellung", "museum", "galerie", "kunst"]):
-        return "exhibition"
+CATEGORY_PATTERNS = (
+    ("sports", r"\bsport\w*|\b(?:volks|stadt|kerwe|kerb|spenden|silvester|benefiz)?lauf\b|\blaufen\b|\bläufe\b|\bturn(?:en|ier|fest)\w*|fußball|fussball|\brad(?:fahren|tour|rennen|sport)\w*|schieß|schiess|schützen|schuetzen|\breit\w*|schwimm|triathlon|bosseln"),
+    ("festival", r"kerwe|kerb|kirchweih|\w*fest\b|\bfestkommers\b|\bfeier\w*|fasching|fastnacht|fasnacht|karneval|\b\w*glühen\b|frühschoppen"),
+    ("market", r"markt|basar|flohmarkt|börse|advent|weihnacht"),
+    ("concert", r"konzert|musik|\b\w*chor\b|gesang|\brock\b|\bband\b|akustik|acoustic"),
+    ("theater", r"theater|kabarett|comedy|lesung|bühne|kino|\bfilm\w*|musical"),
+    ("civic", r"repair|reparier|nachhaltig|umweltmobil|müll|abfall"),
+    ("workshop", r"workshop|kurs|seminar|schulung|hackathon|sprechstunde"),
+    ("exhibition", r"ausstellung|museum|galerie|kunst"),
+)
+
+
+def classify_category(text: str, details: str = "") -> str:
+    """Title takes precedence; generic prose must not override a named festival."""
+    for value in (text, details):
+        for category, pattern in CATEGORY_PATTERNS:
+            if re.search(pattern, value, re.IGNORECASE):
+                return category
     return "civic"
 
 
@@ -162,7 +161,7 @@ async def import_cross7(conn, client, source):
 
             # Category classification
             cat_names = " ".join([c.get("name", "") for c in item.get("categoryNames", [])])
-            cat = classify_category(f"{item['name']} {cat_names} {item.get('teaserText') or ''}")
+            cat = classify_category(item["name"], f"{cat_names} {item.get('teaserText') or ''}")
 
             street = f"{venue_addr.get('street', '')} {venue_addr.get('houseNumber', '')}".strip() or None
             zip_code = venue_addr.get("zipCode")
@@ -253,7 +252,7 @@ async def import_lampertheim_events(conn, client, source):
             event["is_free"] = free
             event["description"] = " ".join(filter(None, [description, event["description"],
                 "Preis: " + fields["Preis"] if fields.get("Preis") else "Preis nicht angegeben."]))
-            event["category"] = classify_category(event["title"] + " " + description)
+            event["category"] = classify_category(event["title"], description)
             events.append(event)
         if not next_url:
             break
