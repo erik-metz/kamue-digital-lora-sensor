@@ -111,7 +111,8 @@ class OpenSenseStorageTests(DatabaseCase):
         # Check entities table if present
         row = await (
             await self.conn.execute(
-                "SELECT 1 FROM information_schema.tables WHERE table_name = 'entities'"
+                """SELECT 1 FROM information_schema.tables
+                WHERE table_name = 'entities' AND table_schema = current_schema()"""
             )
         ).fetchone()
         if row:

@@ -87,7 +87,8 @@ class TTNMapperStorageTests(DatabaseCase):
         # Verify entity created if table exists
         async with self.conn.cursor() as cur:
             await cur.execute(
-                "SELECT 1 FROM information_schema.tables WHERE table_name = 'entities'"
+                """SELECT 1 FROM information_schema.tables
+                WHERE table_name = 'entities' AND table_schema = current_schema()"""
             )
             if (await cur.fetchone()) is not None:
                 await cur.execute(

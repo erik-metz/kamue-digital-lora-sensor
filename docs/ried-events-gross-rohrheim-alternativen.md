@@ -95,3 +95,10 @@ Speicherpfad ohne passende lokale `entities`-Tabelle. Die Erkennung prüft nun
 das aktive Schema und die vorhandene Tabelle. Ein Regressionstest stellt eine
 gleichnamige Funktion in einem getrennten Schema bereit. Alle 13 Rastplatz-
 Collector-Tests einschließlich Datenbanktests und Ruff sind erfolgreich.
+
+Die gleiche schemaübergreifende Erkennung wurde auch in OpenSenseMap, UBA,
+TTN Mapper und EMF korrigiert, ebenso die betroffenen Tabellenprüfungen in
+ihren Tests. Die Collector-Suiten wurden mit absichtlich fremder Funktion und
+Tabelle in einer eigenen Testdatenbank ausgeführt: Rastplatz 13, OpenSenseMap 12,
+UBA 10, TTN Mapper 15 und EMF 5 Tests bestanden. Diese Korrekturen beheben die
+konkreten Blockaden der gemeinsamen Container-Veröffentlichung.

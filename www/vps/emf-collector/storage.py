@@ -8,7 +8,6 @@ import logging
 from datetime import UTC, datetime
 
 import psycopg
-
 from normalize import NormalizedEmfSite
 
 LOG = logging.getLogger("emf-collector.storage")
@@ -57,7 +56,10 @@ async def persist_emf_sites(
 
         # Check write_measurement procedure availability
         await cur.execute(
-            "SELECT 1 FROM information_schema.routines WHERE routine_name = 'write_measurement'"
+            """SELECT 1 FROM information_schema.routines
+            WHERE routine_name = 'write_measurement'
+            AND routine_schema = current_schema()
+            AND to_regclass('entities') IS NOT NULL"""
         )
         has_measurement_core = (await cur.fetchone()) is not None
 

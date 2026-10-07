@@ -80,7 +80,10 @@ async def persist_boxes(
             )
 
         await cur.execute(
-            "SELECT 1 FROM information_schema.routines WHERE routine_name = 'write_measurement'"
+            """SELECT 1 FROM information_schema.routines
+            WHERE routine_name = 'write_measurement'
+            AND routine_schema = current_schema()
+            AND to_regclass('entities') IS NOT NULL"""
         )
         has_measurement_core = (await cur.fetchone()) is not None
 
