@@ -12,7 +12,7 @@ class ArchiveCatalogueTests(unittest.IsolatedAsyncioTestCase):
             "key": "private-storage-key",
         }
         row = {
-            "month": "2025-01", "generated_at": "2025-02-01T00:00:00Z",
+            "month": "2025-01", "format_version": 2, "generated_at": "2025-02-01T00:00:00Z",
             "is_complete": True, "reading_count": 6001, "size_bytes": 123,
             "files": [file],
         }
@@ -28,6 +28,10 @@ class ArchiveCatalogueTests(unittest.IsolatedAsyncioTestCase):
         sql = connection.execute.call_args.args[0]
         self.assertIn("NOT s.is_hidden", sql)
         self.assertIn("unnest(a.station_ids)", sql)
+        self.assertIn("unnest(a.entity_ids)", sql)
+        self.assertIn("NOT e.is_hidden", sql)
+        self.assertIn("legacy_deleted", sql)
+        self.assertEqual(result[0]["format_version"], 2)
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ class ArchiveFile(BaseModel):
 
 class Archive(BaseModel):
     month: str
+    format_version: int
     generated_at: datetime
     is_complete: bool
     reading_count: int
@@ -39,19 +40,24 @@ async def list_archives(pool: psycopg_pool.AsyncConnectionPool = Depends(get_db_
     """
     async with pool.connection() as conn:
         cur = await conn.execute(read_sql("""
-            SELECT month, generated_at, is_complete, reading_count, size_bytes, files
+            SELECT month, format_version, generated_at, is_complete, reading_count, size_bytes, files
             FROM data_archives a
             WHERE NOT EXISTS (
                 SELECT 1 FROM unnest(a.station_ids) AS included(station_id)
                 WHERE NOT EXISTS (SELECT 1 FROM sensor_metadata s
                     WHERE s.id = included.station_id AND NOT s.is_hidden)
             )
+            AND NOT EXISTS (
+                SELECT 1 FROM unnest(a.entity_ids) AS included(entity_id)
+                WHERE NOT EXISTS (SELECT 1 FROM entities e WHERE e.id=included.entity_id
+                    AND NOT e.is_hidden AND e.metadata->>'legacy_deleted' IS DISTINCT FROM 'true')
+            )
             ORDER BY month DESC;
         """))
         rows = await cur.fetchall()
     return [
         {
-            **{key: row[key] for key in ("month", "generated_at", "is_complete", "reading_count", "size_bytes")},
+            **{key: row[key] for key in ("month", "format_version", "generated_at", "is_complete", "reading_count", "size_bytes")},
             "files": [
                 {key: file[key] for key in ("filename", "url", "size_bytes", "reading_count", "sha256")}
                 for file in row["files"]

@@ -32,7 +32,7 @@ export default async function ArchiveDownloads() {
   return (
     <section id="monatsarchive" className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 space-y-4">
       <h2 className="text-2xl font-bold">Sensorarchive</h2>
-      <p className="text-sm text-slate-300">Gespeicherte Sensormesswerte als ZIP mit Messwert-CSV und Stationsmetadaten. Bei mehrteiligen Archiven alle Teile des Zeitraums herunterladen.</p>
+      <p className="text-sm text-slate-300">Gespeicherte öffentliche Daten als ZIP mit drei verknüpften CSV-Tabellen: Objekte, Messgrößen und Messwerte. Bei mehrteiligen Archiven alle Teile des Zeitraums herunterladen.</p>
       {archives === null ? (
         <p role="status" className="text-sm text-amber-300">Der Downloadkatalog ist momentan nicht erreichbar. Bitte später erneut versuchen.</p>
       ) : years.size === 0 ? (

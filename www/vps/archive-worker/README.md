@@ -1,6 +1,6 @@
 # Public monthly archives
 
-The opt-in Node 22 worker exports **all public measurements**, bypassing the
+The opt-in Node 22 worker exports **all public canonical measurements**, bypassing the
 interactive API's 5,000-row cap. It streams a repeatable-read PostgreSQL snapshot
 to CSV parts (64 MiB uncompressed by default), compresses each into a ZIP, uploads
 to UploadThing and atomically publishes the month's catalogue record. No
@@ -67,11 +67,27 @@ be recalled. Hiding a station is not retroactive revocation of published data.
 
 ## Contents and resources
 
-Every ZIP has `measurements.csv`, `stations.json`, `manifest.json`, and
-`README.txt`. Timestamps use UTC; a month is `[month start, next month start)`.
-Station metadata reflects export time. CSV text is escaped for spreadsheets;
-negative numeric measurements remain numeric. The catalogue contains each part's
-SHA-256, size, reading count and public URL. UploadThing keys stay in the database.
+Every ZIP contains `entities.csv`, `measurement_definitions.csv`, `readings.csv`,
+`manifest.json`, and `README.txt` (format version 2). Each part includes exactly
+the entities and definitions referenced by its readings. Metadata may repeat
+across parts; merge it by `id`. Numeric values and bigint IDs are retained as
+exact strings during export; timestamps retain microseconds. Structured fields
+are JSON in CSV cells. Metadata reflects export time, not historical versions.
+Sources/licences follow `source_id` and the project source catalogue.
+
+Before taking the read snapshot, the worker transactionally inserts missing
+public legacy telemetry for the period into the canonical tables. It never
+overwrites existing canonical readings and does not enable shadow writes or
+change API read mode. Legacy source/basis uncertainty is explicitly retained.
+Identical legacy duplicates collapse to one canonical key; conflicting duplicates
+fail the period instead of inventing a value. No production history is deleted.
+
+Deploy the updated backend first: its idempotent schema adds `format_version`
+and `entity_ids` to the archive catalogue. The worker automatically regenerates
+all format-1 catalogue entries, including empty months, and discovers closed
+months from both public canonical and legacy history. New files are fully
+uploaded and published before old files are queued for deletion. Both entity and
+legacy sensor visibility are checked at export, publication and catalogue read.
 
 Temporary disk must accommodate approximately one month's CSV plus compressed
 ZIPs. Memory is bounded by cursor batches, stream buffers, metadata, and SDK

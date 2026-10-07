@@ -7,7 +7,7 @@ import { pathToFileURL } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
 import { buildArchives, monthRange } from './archive.mjs';
 import { uploadThingStorage } from './storage.mjs';
-import { measurementReadSql } from './measurement-reads.mjs';
+import { PUBLIC, ROWS, includeLegacy } from './canonical.mjs';
 
 export async function drainCleanup(client, storage) {
   const pending = (await client.query('SELECT key FROM archive_cleanup ORDER BY queued_at LIMIT 1000')).rows;
@@ -35,26 +35,35 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
     // The API migration creates the catalogue. Fail clearly if not deployed yet.
     await client.query('SELECT month FROM data_archives LIMIT 0');
     await drainCleanup(client, storage);
-    // Withdraw snapshots when any included station is now hidden or deleted.
-    const stale = await client.query(measurementReadSql(`SELECT month, files FROM data_archives a WHERE EXISTS (
-      SELECT 1 FROM unnest(a.station_ids) AS included(station_id) WHERE NOT EXISTS
-      (SELECT 1 FROM sensor_metadata s WHERE s.id = included.station_id AND NOT s.is_hidden))`));
-    for (const archive of stale.rows) {
-      await storage.remove(archive.files.map(file => file.key));
-      await client.query('DELETE FROM data_archives WHERE month = $1', [archive.month]);
-    }
+    // Rebuild old formats and newly private snapshots without deleting valid URLs first.
+    const staleCondition = `EXISTS (SELECT 1 FROM unnest(a.entity_ids) included(id)
+      WHERE NOT EXISTS (SELECT 1 FROM entities e WHERE e.id=included.id AND ${PUBLIC}))
+      OR EXISTS (SELECT 1 FROM unnest(a.station_ids) included(id)
+        WHERE NOT EXISTS (SELECT 1 FROM sensor_metadata s WHERE s.id=included.id AND NOT s.is_hidden))`;
     const explicitPeriod = requestedPeriod || requestedMonth;
-    const months = explicitPeriod ? [explicitPeriod] : (await client.query(measurementReadSql(`
-      SELECT to_char(months.month_start, 'YYYY-MM') AS month FROM generate_series(
-        date_trunc('month', (SELECT min(timestamp) FROM sensor_data d JOIN sensor_metadata s ON s.id=d.sensor_id WHERE NOT s.is_hidden) AT TIME ZONE 'UTC'),
-        date_trunc('month', now() AT TIME ZONE 'UTC') - interval '1 month', interval '1 month') AS months(month_start)
-      WHERE NOT EXISTS (SELECT 1 FROM data_archives a WHERE a.month = to_char(months.month_start, 'YYYY-MM') AND a.is_complete) ORDER BY month`))).rows.map(row => row.month);
+    const months = explicitPeriod ? [explicitPeriod] : (await client.query(`
+      WITH earliest AS (SELECT min(time) AS time FROM (
+        SELECT min(r.observed_at) AS time FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id
+          JOIN entities e ON e.id=d.entity_id WHERE ${PUBLIC}
+        UNION ALL SELECT min(t.timestamp) FROM sensor_data t JOIN sensor_metadata s ON s.id=t.sensor_id WHERE NOT s.is_hidden
+      ) dates), candidates AS (
+        SELECT to_char(month_start,'YYYY-MM') AS month FROM generate_series(
+          date_trunc('month',(SELECT time FROM earliest) AT TIME ZONE 'UTC'),
+          date_trunc('month',now() AT TIME ZONE 'UTC')-interval '1 month',interval '1 month') months(month_start)
+        UNION SELECT month FROM data_archives WHERE format_version < 2
+      ) SELECT c.month FROM candidates c LEFT JOIN data_archives a ON a.month=c.month
+      WHERE a.month IS NULL OR NOT a.is_complete OR a.format_version < 2 OR ${staleCondition}
+      ORDER BY c.month`)).rows.map(row => row.month);
     for (const month of months) {
       if (signal?.aborted) break;
       const { start, end } = monthRange(month);
       if (start > new Date()) throw new Error('Cannot export a future period');
       const previous = (await client.query('SELECT * FROM data_archives WHERE month=$1', [month])).rows[0];
-      if (previous?.is_complete && !refresh) continue;
+      if (previous?.is_complete && previous.format_version === 2 && !refresh) {
+        const stale = await client.query(`SELECT 1 FROM data_archives a WHERE month=$1 AND (${staleCondition})`, [month]);
+        if (!stale.rowCount) continue;
+      }
+      await includeLegacy(client, start, end);
       const directory = await mkdtemp(path.join(tmpdir(), 'ried-archive-'));
       const uploaded = [];
       let published = false;
@@ -62,14 +71,9 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
         await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
         await client.query("SET LOCAL TIME ZONE 'UTC'");
         const generatedAt = (await client.query('SELECT transaction_timestamp() AS time')).rows[0].time.toISOString();
-        const stations = (await client.query(measurementReadSql(`SELECT id, friendly_name, latitude, longitude, description FROM sensor_metadata s
-          WHERE NOT is_hidden AND EXISTS (SELECT 1 FROM sensor_data d WHERE d.sensor_id=s.id AND d.timestamp >= $1 AND d.timestamp < $2) ORDER BY id`), [start, end])).rows;
-        const stream = client.query(new QueryStream(measurementReadSql(`SELECT to_char(d.timestamp AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS timestamp,
-          d.sensor_id, d.metric, d.value, d.unit FROM sensor_data d
-          JOIN sensor_metadata s ON s.id=d.sensor_id WHERE NOT s.is_hidden AND d.timestamp >= $1 AND d.timestamp < $2
-          ORDER BY d.timestamp, d.sensor_id, d.metric, d.unit, d.value`), [start, end], { batchSize: 2000 }));
+        const stream = client.query(new QueryStream(ROWS, [start, end], { batchSize: 2000 }));
         let archive;
-        try { archive = await buildArchives(stream, stations, directory, month, generatedAt, partBytes); }
+        try { archive = await buildArchives(stream, directory, month, generatedAt, partBytes); }
         finally { stream.destroy(); }
         await client.query('COMMIT');
         for (const file of archive.files) {
@@ -78,14 +82,17 @@ export async function runArchives({ storage, dbConfig, requestedMonth = null, re
         }
         // Lock station visibility until publication; downloads also filter current visibility.
         await client.query('BEGIN');
-        const ids = stations.map(station => station.id);
+        const entityIds = archive.entity_ids;
+        const ids = entityIds.filter(id => id.startsWith('sensor:')).map(id => id.slice(7));
+        const publicEntities = await client.query(`SELECT e.id FROM entities e WHERE e.id=ANY($1::text[]) AND ${PUBLIC} FOR SHARE OF e`, [entityIds]);
+        if (publicEntities.rowCount !== entityIds.length) throw new Error('Entity visibility changed during export; retry');
         const visible = await client.query('SELECT id FROM sensor_metadata WHERE id = ANY($1::text[]) AND NOT is_hidden FOR SHARE', [ids]);
         if (visible.rowCount !== ids.length) throw new Error('Station visibility changed during export; retry');
-        await client.query(`INSERT INTO data_archives (month, generated_at, is_complete, reading_count, size_bytes, station_ids, files)
-          VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (month) DO UPDATE SET
+        await client.query(`INSERT INTO data_archives (month, generated_at, is_complete, reading_count, size_bytes, station_ids, files, entity_ids, format_version)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,2) ON CONFLICT (month) DO UPDATE SET
           generated_at=EXCLUDED.generated_at, is_complete=EXCLUDED.is_complete, reading_count=EXCLUDED.reading_count,
-          size_bytes=EXCLUDED.size_bytes, station_ids=EXCLUDED.station_ids, files=EXCLUDED.files`,
-          [month, generatedAt, end <= new Date(generatedAt), archive.reading_count, uploaded.reduce((sum, file) => sum + file.size_bytes, 0), ids, JSON.stringify(uploaded)]);
+          size_bytes=EXCLUDED.size_bytes, station_ids=EXCLUDED.station_ids, files=EXCLUDED.files, entity_ids=EXCLUDED.entity_ids, format_version=2`,
+          [month, generatedAt, end <= new Date(generatedAt), archive.reading_count, uploaded.reduce((sum, file) => sum + file.size_bytes, 0), ids, JSON.stringify(uploaded), entityIds]);
         if (previous) await queueCleanup(client, previous.files.map(file => file.key));
         await client.query('COMMIT');
         published = true;

@@ -75,8 +75,13 @@ CREATE TABLE IF NOT EXISTS data_archives (
     reading_count BIGINT NOT NULL CHECK (reading_count >= 0),
     size_bytes BIGINT NOT NULL CHECK (size_bytes >= 0),
     station_ids TEXT[] NOT NULL,
+    entity_ids TEXT[] NOT NULL DEFAULT '{}',
+    format_version INTEGER NOT NULL DEFAULT 1,
     files JSONB NOT NULL
 );
+
+ALTER TABLE data_archives ADD COLUMN IF NOT EXISTS entity_ids TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE data_archives ADD COLUMN IF NOT EXISTS format_version INTEGER NOT NULL DEFAULT 1;
 
 -- Smart City collector: scoped provenance/idempotency, without altering TTN/Shake.
 CREATE TABLE IF NOT EXISTS smartcity_sources (

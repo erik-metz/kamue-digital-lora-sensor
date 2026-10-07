@@ -41,12 +41,18 @@ kanonischen Tabellen und deren bestehende Migration müssen eingerichtet sein;
 der Download aktiviert keinen Read-Cutover und startet keinen History-Backfill.
 Noch nicht migrierte Daten gehören nicht zum kanonischen Exportbestand.
 
-Die bestehenden UploadThing-Archive sind unabhängige Sensor-Snapshots mit
-`measurements.csv` und Stationsmetadaten. Am 5. Oktober 2026 lieferte der öffentliche
-Endpunkt `/api/v1/archives` eine leere Liste. Vorhandene Daten allein veröffentlichen
-keine Archivdateien. Der Archiv-Worker muss auf dem VPS eingerichtet und ausgeführt
-werden; siehe [Archiv-Worker](../www/vps/archive-worker/README.md). Im Rahmen dieses
-Seitenumbaus wurden keine Cloud-Archive erzeugt oder auf UploadThing veröffentlicht.
+Die UploadThing-Monatsarchive verwenden ab Formatversion 2 ebenfalls
+`entities.csv`, `measurement_definitions.csv` und `readings.csv` sowie README und
+Manifest. Jeder ZIP-Teil enthält die zu seinen Messwerten gehörenden Objekte und
+Messgrößen; beim Zusammenführen mehrerer Teile Metadaten nach `id` deduplizieren.
+Der Archiv-Worker übernimmt fehlende öffentliche Legacy-Sensormesswerte des
+Zeitraums transaktional in den kanonischen Bestand, ohne vorhandene Werte zu
+überschreiben, und exportiert anschließend alle öffentlichen kanonischen Werte.
+Er aktiviert weder Shadow-Writes noch einen API-Read-Cutover. Widersprüchliche
+Legacy-Duplikate stoppen den Export; identische Schlüssel werden dedupliziert.
+Alte Archivformate werden beim nächsten Worker-Lauf automatisch ersetzt, erst
+nach erfolgreicher Veröffentlichung der neuen Dateien. Der öffentliche Katalog
+nennt `format_version`; siehe [Archiv-Worker](../www/vps/archive-worker/README.md).
 
 ## Prüfung
 

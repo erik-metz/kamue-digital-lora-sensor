@@ -1,10 +1,11 @@
 import { test } from 'node:test';
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import { buildArchives, csvCell, monthRange, periodRange } from './archive.mjs';
+import { buildArchives, tableLine, csvCell, monthRange, periodRange } from './archive.mjs';
 
 test('month, quarter, and year boundaries calculate correct UTC intervals', () => {
   assert.equal(monthRange('2024-02').end.toISOString(), '2024-03-01T00:00:00.000Z');
@@ -38,9 +39,9 @@ test('partitioned export preserves every row and supplies matching checksums', a
   const directory = await mkdtemp(path.join(tmpdir(), 'archive-test-'));
   try {
     async function* rows() {
-      for (let i = 0; i < 6001; i++) yield { timestamp: '2026-09-01T00:00:00.123456Z', sensor_id: 'station', metric: 'temperature', value: i, unit: 'C' };
+      for (let i = 0; i < 6001; i++) yield { entity: { id: 'station', name: '=Station', entity_type: 'sensor', metadata: {} }, definition: { id: '1', entity_id: 'station', metric: 'temperature', unit: 'C', source_id: 'test', basis: 'observed', dimensions: {}, semantics: 'instantaneous' }, reading: { measurement_id: '1', observed_at: '2026-09-01T00:00:00.123456Z', value: String(i), quality: 'valid', provenance: {}, revision: 0 } };
     }
-    const result = await buildArchives(rows(), [{ id: 'station' }], directory, '2026-09', '2026-10-01T00:00:00Z', 4096);
+    const result = await buildArchives(rows(), directory, '2026-09', '2026-10-01T00:00:00Z', 4096);
     assert.equal(result.reading_count, 6001);
     assert.ok(result.files.length > 1);
     assert.equal(result.files.reduce((sum, file) => sum + file.reading_count, 0), 6001);
@@ -53,12 +54,26 @@ test('partitioned export preserves every row and supplies matching checksums', a
       count += csv.split('\r\n').length - 2;
       assert.ok(csv.includes('2026-09-01T00:00:00.123456Z'));
       assert.ok(data.includes(Buffer.from('README.txt')));
-      assert.ok(data.includes(Buffer.from('stations.json')));
+      assert.ok(data.includes(Buffer.from('entities.csv')));
       assert.ok(data.includes(Buffer.from('manifest.json')));
     }
     assert.equal(count, 6001);
-    const empty = await buildArchives([], [], directory, '2026-09', '2026-10-01T00:00:00Z');
-    assert.deepEqual(empty, { files: [], reading_count: 0 });
+    execFileSync('python3', ['-c', `
+import csv,io,json,zipfile,sys
+for filename in sys.argv[1:]:
+    with zipfile.ZipFile(filename) as z:
+        assert set(z.namelist()) == {'entities.csv','measurement_definitions.csv','readings.csv','manifest.json','README.txt'}
+        tables = {n:list(csv.DictReader(io.StringIO(z.read(n+'.csv').decode('utf-8-sig')))) for n in ('entities','measurement_definitions','readings')}
+        entities = {r['id'] for r in tables['entities']}
+        definitions = {r['id'] for r in tables['measurement_definitions']}
+        assert all(r['entity_id'] in entities for r in tables['measurement_definitions'])
+        assert all(r['measurement_id'] in definitions for r in tables['readings'])
+        m=json.loads(z.read('manifest.json'))
+        assert m['format_version']==2 and m['complete']
+        assert m['tables']=={n:len(rows) for n,rows in tables.items()}
+`, ...result.files.map(file => file.path)]);
+    const empty = await buildArchives([], directory, '2026-09', '2026-10-01T00:00:00Z');
+    assert.deepEqual(empty, { files: [], reading_count: 0, entity_ids: [] });
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -66,9 +81,15 @@ test('source failure rejects the export instead of publishing a partial month', 
   const directory = await mkdtemp(path.join(tmpdir(), 'archive-test-'));
   try {
     async function* rows() {
-      yield { timestamp: new Date(), sensor_id: 'a', metric: 'x', value: 1, unit: 'C' };
+      yield { entity: { id: 'a' }, definition: { id: '1', entity_id: 'a' }, reading: { measurement_id: '1', observed_at: '2026-09-01T00:00:00Z', value: '1' } };
       throw new Error('database disconnected');
     }
-    await assert.rejects(buildArchives(rows(), [], directory, '2026-09', '2026-10-01T00:00:00Z'), /disconnected/);
+    await assert.rejects(buildArchives(rows(), directory, '2026-09', '2026-10-01T00:00:00Z'), /disconnected/);
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('canonical numeric strings retain exact negative decimals and large IDs', () => {
+  const line = tableLine('readings', { measurement_id: '9007199254740993', value: '-1.234567890123456789', provenance: { label: 'a,b' } });
+  assert.ok(line.startsWith('9007199254740993,"",-1.234567890123456789,'));
+  assert.throws(() => tableLine('readings', { value: '=BAD()' }));
 });
