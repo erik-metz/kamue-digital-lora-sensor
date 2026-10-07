@@ -1,4 +1,6 @@
+import sys
 from datetime import UTC, datetime
+from pathlib import Path
 
 from config import Settings
 from db_support import DatabaseCase
@@ -42,6 +44,10 @@ def sample_snapshot(gateways: list[NormalizedGateway]):
 
 class TTNMapperStorageTests(DatabaseCase):
     async def test_persist_gateways_and_core_schema(self):
+        # This collector writes the canonical core; bootstrap alone is insufficient.
+        sys.path.append(str(Path(__file__).resolve().parents[2] / 'api/v1'))
+        from measurement_migration import install
+        await install(self.conn)
         settings = Settings(
             poll_seconds=900,
             state_dir="/tmp",

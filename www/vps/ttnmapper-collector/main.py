@@ -4,6 +4,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from time import monotonic
 
+import collection_status
 import psycopg
 from config import Settings
 from normalize import compute_ried_snapshot, normalize_gateways_payload
@@ -14,9 +15,25 @@ from storage import persist_gateways
 
 
 async def poll_cycle(client, settings, *, raw=None, dry_run=False):
+    if dry_run:
+        return await _poll_cycle(client, settings, raw=raw, dry_run=True)
+    attempt_id = await collection_status.start(settings, 'ttnmapper')
+    try:
+        result = await _poll_cycle(client, settings, raw=raw, attempt_id=attempt_id)
+        await collection_status.finish(settings, attempt_id, result['gateways_count'], 'gateways',
+                                       partial_error=None if result['gateways_count'] else
+                                       'No usable regional gateways produced')
+        return result
+    except Exception as exc:
+        await collection_status.fail(settings, attempt_id, exc)
+        raise
+
+
+async def _poll_cycle(client, settings, *, raw=None, dry_run=False, attempt_id=None):
     started = monotonic()
     if raw is None:
         raw_gateways, raw_bytes, sha256 = await fetch_gateways(settings, client)
+        await collection_status.received(settings, attempt_id)
     else:
         raw_gateways = raw
         raw_bytes = None

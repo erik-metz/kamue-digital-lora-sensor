@@ -30,6 +30,7 @@ async def init_db(pool: psycopg_pool.AsyncConnectionPool) -> None:
             if await cursor.fetchone() is not None:
                 # Explicit versioned migrations own an upgraded database. The
                 # old bootstrap would recreate retired registries on restart.
+                await conn.execute((Path(__file__).parent / "migrations" / "20261007_collection_status.sql").read_text())
                 logger.info("Canonical database: skipping legacy bootstrap DDL")
                 return
     if SCHEMA_SQL:

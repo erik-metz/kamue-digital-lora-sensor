@@ -352,15 +352,23 @@ async def persist_environment_data(
             )
 
         if payload:
-            success_shas = [
-                payload[k]
-                for k in ("pegel_sha256", "weather_sha256", "radolan_sha256", "mosmix_sha256", "blitzortung_sha256")
-                if payload.get(k)
-            ]
-            if success_shas:
+            counts = {
+                'pegel': (updated_gauges, 'gauges'),
+                'weather': (updated_weather, 'metrics'),
+                'radolan': (updated_radar, 'metrics'),
+                'mosmix': (updated_forecasts, 'metrics'),
+                'blitzortung': (updated_lightning, 'observations'),
+            }
+            for name, (count, unit) in counts.items():
+                attempt_id = payload.get(name + '_attempt_id')
+                if attempt_id is None:
+                    continue
                 await conn.execute(
-                    "UPDATE collection_attempts SET status='success' WHERE payload_sha256 = ANY(%s) AND source_id LIKE 'environment-%%'",
-                    (success_shas,),
+                    """UPDATE collection_attempts SET status=%s,item_count=%s,item_count_unit=%s,
+                    error=%s,error_stage=%s WHERE id=%s AND source_id=%s AND status='received'""",
+                    ('success' if count else 'partial', count, unit,
+                     None if count else 'No usable regional observations produced',
+                     None if count else 'processing', attempt_id, 'environment-' + name),
                 )
 
     return {

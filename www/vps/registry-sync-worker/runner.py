@@ -124,8 +124,10 @@ async def collect(source, settings):
         except Exception as exc:  # noqa: BLE001 - isolate source jobs; record failure without secret URLs
             await conn.rollback()
             await conn.execute(
-                "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'failed',%s)",
-                (source["id"], acquisition_error(exc)),
+                "INSERT INTO collection_attempts(source_id,status,error,error_stage) VALUES (%s,'failed',%s,%s)",
+                (source["id"], acquisition_error(exc),
+                 "acquisition" if isinstance(exc, httpx.HTTPError) else
+                 "storage" if isinstance(exc, psycopg.Error) else "processing"),
             )
             await conn.commit()
             # Do not log a credential-bearing request URL from the exception.

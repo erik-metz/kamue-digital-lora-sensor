@@ -35,6 +35,10 @@ class CollectedDatabaseTests(DatabaseCase):
         self.assertEqual(rows['configured']['status'], 'pending')
         self.assertIsNone(rows['legacy-worker']['enabled'])
         self.assertIsNotNone(rows['legacy-worker']['last_success_at'])
+        self.assertTrue(rows['legacy-worker']['completion_recorded'])
+        self.assertIsNotNone(rows['legacy-worker']['last_processed_at'])
+        self.assertIsNone(rows['legacy-worker']['item_count'])
+        self.assertIsNone(rows['configured']['last_processed_at'])
 
     async def test_indexed_departures_scope_sources_and_cascade(self):
         from datetime import UTC, datetime, timedelta
@@ -90,3 +94,21 @@ class CollectedDatabaseTests(DatabaseCase):
         body = json.loads((await map_layers(request, Pool())).body)
         self.assertEqual([f['properties']['id'] for f in body['layers']['traffic']['features']], ['current'])
         self.assertEqual(len(body['layers']['closures']['features']), 1)
+
+    async def test_download_is_not_processing_and_history_is_not_rewritten(self):
+        await self.conn.execute("""INSERT INTO collection_attempts(source_id,status,http_status)
+            VALUES ('download-only','received',200),('broken','failed',401)""")
+        downloaded = await (await self.conn.execute("""SELECT fetched_at,processed_at
+            FROM collection_attempts WHERE source_id='download-only'""")).fetchone()
+        self.assertIsNotNone(downloaded[0])
+        self.assertIsNone(downloaded[1])
+        await self.conn.execute("""UPDATE collection_attempts SET status='partial',item_count=0,
+            error_stage='processing' WHERE source_id='download-only'""")
+        self.assertIsNotNone(await self.scalar("SELECT processed_at FROM collection_attempts WHERE source_id='download-only'"))
+        self.assertIsNone(await self.scalar("SELECT fetched_at FROM collection_attempts WHERE source_id='broken'"))
+        # A historical success with no instrumented completion must remain unknown.
+        await self.conn.execute('ALTER TABLE collection_attempts DISABLE TRIGGER collection_attempt_completion')
+        await self.conn.execute("INSERT INTO collection_attempts(source_id,status) VALUES ('historic','success')")
+        await self.conn.execute('ALTER TABLE collection_attempts ENABLE TRIGGER collection_attempt_completion')
+        await self.conn.execute((Path(__file__).resolve().parents[1] / 'migrations/20261007_collection_status.sql').read_text())
+        self.assertIsNone(await self.scalar("SELECT processed_at FROM collection_attempts WHERE source_id='historic'"))

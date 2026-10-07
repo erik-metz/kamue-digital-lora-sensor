@@ -74,7 +74,7 @@ async def _acquire_once(conn, client, source, url=None, *, form=None):
         )
     except Exception as exc:
         await conn.execute(
-            "INSERT INTO collection_attempts(source_id,status,error) VALUES (%s,'failed',%s)",
+            "INSERT INTO collection_attempts(source_id,status,error,error_stage) VALUES (%s,'failed',%s,'acquisition')",
             (source["id"], acquisition_error(exc)),
         )
         await conn.commit()
@@ -92,13 +92,15 @@ async def _acquire_once(conn, client, source, url=None, *, form=None):
             ),
         )
         cursor = await conn.execute(
-            """INSERT INTO collection_attempts(source_id,http_status,payload_sha256,status)
-            VALUES (%s,%s,%s,%s) RETURNING id""",
+            """INSERT INTO collection_attempts(source_id,http_status,payload_sha256,status,error,error_stage)
+            VALUES (%s,%s,%s,%s,%s,%s) RETURNING id""",
             (
                 source["id"],
                 response.status_code,
                 digest,
                 "received" if response.is_success else "failed",
+                None if response.is_success else f"HTTP {response.status_code}",
+                None if response.is_success else "acquisition",
             ),
         )
         attempt_id = (await cursor.fetchone())[0]

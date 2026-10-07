@@ -21,6 +21,27 @@ from storage import persist_environment_data
 
 
 async def poll_cycle(client, settings, *, raw=None, dry_run=False):
+    payload = raw
+    if raw is None and not dry_run:
+        async with await psycopg.AsyncConnection.connect(**settings.db) as archive_conn:
+            payload = await fetch(client, settings, archive_conn)
+    try:
+        return await _poll_cycle(client, settings, raw=payload, dry_run=dry_run)
+    except Exception as exc:
+        if not dry_run and payload:
+            ids = [value for key, value in payload.items() if key.endswith('_attempt_id')]
+            if ids:
+                async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+                    await conn.execute(
+                        """UPDATE collection_attempts SET status='failed',error=%s,error_stage=%s
+                        WHERE id=ANY(%s) AND status='received'""",
+                        (type(exc).__name__, 'storage' if isinstance(exc, psycopg.Error)
+                         else 'processing', ids),
+                    )
+        raise
+
+
+async def _poll_cycle(client, settings, *, raw=None, dry_run=False):
     started = monotonic()
     if dry_run and raw is None:
         raise ValueError(

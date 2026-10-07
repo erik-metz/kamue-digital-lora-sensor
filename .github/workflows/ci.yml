@@ -196,13 +196,14 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
-      - run: pip install -r www/vps/api/requirements.txt -r www/vps/shake-collector/requirements.txt -r www/vps/registry-sync-worker/requirements.txt -r www/vps/rast-collector/requirements.txt -r www/vps/opensensemap-collector/requirements.txt -r www/vps/uba-collector/requirements.txt -r www/vps/ttnmapper-collector/requirements.txt pytest
+      - run: pip install -r www/vps/api/requirements.txt -r www/vps/shake-collector/requirements.txt -r www/vps/registry-sync-worker/requirements.txt -r www/vps/rast-collector/requirements.txt -r www/vps/opensensemap-collector/requirements.txt -r www/vps/uba-collector/requirements.txt -r www/vps/ttnmapper-collector/requirements.txt -r www/vps/emf-collector/requirements.txt pytest
       - name: Test independent persistence contracts
         run: |
-          for service in nextbike traffic shake environment rast opensensemap uba ttnmapper; do
+          for service in nextbike traffic shake environment rast opensensemap uba ttnmapper emf; do
             PYTHONPATH=www/vps/$service-collector:www/vps/tests python -m pytest -q www/vps/$service-collector/tests
           done
           PYTHONPATH=www/vps/registry-sync-worker:www/vps/tests python -m pytest -q www/vps/registry-sync-worker/tests
+          PYTHONPATH=www/vps/api/v1:www/vps/tests python -m pytest -q www/vps/api/v1/tests/test_collected_database.py -k "status or download"
           PYTHONPATH=www/vps/api/v1:www/vps/tests python -m pytest -q www/vps/api/v1/tests/test_ingestion_batches.py
           PYTHONPATH=www/vps/api/v1:www/vps/tests python -m pytest -q www/vps/api/v1/tests/test_measurement_core.py www/vps/api/v1/tests/test_measurement_reads.py www/vps/api/v1/tests/test_snapshot_cache.py www/vps/api/v1/tests/test_map_sensors.py www/vps/tests/test_backup_stream.py
         env:

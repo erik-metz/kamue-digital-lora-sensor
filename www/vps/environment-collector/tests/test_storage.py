@@ -24,8 +24,15 @@ class EnvironmentStorageTests(DatabaseCase):
             'pegel':{'longname':'WORMS','number':'23900200','latitude':49.63,'longitude':8.37,'water':{'longname':'RHEIN'},
                 'timeseries':[{'shortname':'W','currentMeasurement':{'timestamp':measured.isoformat(),'value':-22}}]},
             'weather':{'latitude':49.625,'longitude':8.4375,'timezone':'UTC','current':{'time':measured.isoformat(),'temperature_2m':18.5,'relative_humidity_2m':65,'precipitation':0}}}
+        for name in ('pegel', 'weather'):
+            row = await (await self.conn.execute("""INSERT INTO collection_attempts(source_id,http_status,payload_sha256,status)
+                VALUES (%s,200,%s,'received') RETURNING id""", ('environment-' + name, digest))).fetchone()
+            payload[name + '_attempt_id'] = row[0]
         gauges,weather=normalize(payload,Settings(db={}))
         await persist_environment_data(self.conn,gauges,weather,now,payload=payload,source_url='https://example.org/gauge')
+        self.assertEqual(await self.scalar("SELECT item_count FROM collection_attempts WHERE source_id='environment-pegel'"), 1)
+        self.assertEqual(await self.scalar("SELECT item_count FROM collection_attempts WHERE source_id='environment-weather'"), 3)
+        self.assertEqual(await self.scalar("SELECT status FROM collection_attempts WHERE source_id='environment-weather'"), 'success')
         self.assertIsNone(await self.scalar("SELECT alarm_level_1_m FROM flood_gauges WHERE id='pegel-rhein-worms'"))
         self.assertEqual(await self.scalar("SELECT source_updated_at FROM collected_datasets WHERE dataset='environment/flood/gauges'"),measured)
         self.assertEqual(await self.scalar("SELECT COUNT(*) FROM sensor_data WHERE sensor_id='weather-dwd-ried' AND timestamp=%s",(measured,)),3)
@@ -65,3 +72,18 @@ class EnvironmentStorageTests(DatabaseCase):
             payload['weather_attempt_id'] = -1
             with self.assertRaises(ValueError):
                 await persist_environment_data(self.conn,[],weather,now,payload=payload)
+
+    async def test_empty_optional_download_is_partial_and_only_current_receipt_changes(self):
+        ids = []
+        for source in ('environment-radolan','environment-radolan','environment-mosmix'):
+            row = await (await self.conn.execute("""INSERT INTO collection_attempts(source_id,http_status,status)
+                VALUES (%s,200,'received') RETURNING id""", (source,))).fetchone()
+            ids.append(row[0])
+        await persist_environment_data(self.conn, [], [], datetime.now(UTC),
+            payload={'radolan_attempt_id':ids[1], 'mosmix_attempt_id':ids[2]})
+        self.assertEqual(await self.scalar('SELECT status FROM collection_attempts WHERE id=%s',(ids[0],)), 'received')
+        for attempt in ids[1:]:
+            row = await (await self.conn.execute("""SELECT status,item_count,error_stage,processed_at
+                FROM collection_attempts WHERE id=%s""",(attempt,))).fetchone()
+            self.assertEqual(row[:3], ('partial',0,'processing'))
+            self.assertIsNotNone(row[3])

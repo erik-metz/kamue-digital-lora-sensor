@@ -694,10 +694,17 @@ async def collection_status(request: Request, pool=Depends(get_db_pool)):
             WHERE NOT EXISTS(SELECT 1 FROM collection_sources s WHERE s.id=a.source_id))
             SELECT s.id AS source_id,s.source_url,s.enabled,s.interval_seconds,
                 a.received_at,COALESCE(a.status,'pending') AS status,a.error,
+                a.http_status,a.fetched_at,a.processed_at,a.item_count,a.item_count_unit,a.error_stage,
+                COALESCE(a.processed_at IS NOT NULL,FALSE) AS completion_recorded,
+                (SELECT COUNT(*) FROM collected_datasets d WHERE d.source_id=s.id) AS published_dataset_count,
+                (SELECT MAX(fetched_at) FROM collection_attempts f
+                 WHERE f.source_id=s.id AND f.fetched_at IS NOT NULL) AS last_fetch_success_at,
+                (SELECT MAX(processed_at) FROM collection_attempts p
+                 WHERE p.source_id=s.id AND p.status='success' AND p.processed_at IS NOT NULL) AS last_processed_at,
                 (SELECT MAX(received_at) FROM collection_attempts ok
                  WHERE ok.source_id=s.id AND ok.status='success') AS last_success_at
             FROM sources s LEFT JOIN LATERAL (
-                SELECT received_at,status,error FROM collection_attempts
+                SELECT received_at,status,error,http_status,fetched_at,processed_at,item_count,item_count_unit,error_stage FROM collection_attempts
                 WHERE source_id=s.id ORDER BY received_at DESC,id DESC LIMIT 1) a ON TRUE ORDER BY s.id""")
         rows = await cursor.fetchall()
     return cached_response({"sources": rows}, request, 30)

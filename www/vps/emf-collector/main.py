@@ -6,9 +6,9 @@ import sys
 from datetime import UTC, datetime
 from time import monotonic
 
+import collection_status
 import httpx
 import psycopg
-
 from client import BNetzAEmfClient
 from config import Settings
 from normalize import normalize_site
@@ -21,13 +21,14 @@ logging.basicConfig(
 LOG = logging.getLogger("emf-collector")
 
 
-async def poll_cycle(
+async def _poll_cycle(
     client: httpx.AsyncClient,
     settings: Settings,
     *,
     dry_run: bool = False,
     fetch_details: bool = True,
     max_details: int | None = None,
+    attempt_id: int | None = None,
 ) -> dict:
     """Execute one complete EMF collection cycle for the configured BBox."""
     started = monotonic()
@@ -47,6 +48,7 @@ async def poll_cycle(
 
     normalized_sites = []
     details_count = 0
+    detail_failures = 0
 
     for raw in raw_sites:
         fid = int(raw["fID"])
@@ -57,11 +59,14 @@ async def poll_cycle(
                 await asyncio.sleep(0.1)
                 details = await emf_client.get_site_details(fid)
                 details_count += 1
-            except Exception as e:
-                LOG.warning("Failed to fetch detail for FID %d: %s", fid, e)
+            except Exception as e:  # noqa: BLE001 - keep usable sites, report partial details
+                detail_failures += 1
+                LOG.warning("Failed to fetch detail for FID %d: %s", fid, type(e).__name__)
 
         normalized = normalize_site(raw, details)
         normalized_sites.append(normalized)
+
+    await collection_status.received(settings, attempt_id)
 
     LOG.info(
         "Normalized %d sites (with %d detailed HTML fetches)",
@@ -86,12 +91,33 @@ async def poll_cycle(
 
     LOG.info("Persist complete in %s seconds: %s", duration_sec, stats)
     return {
-        "status": "success",
+        "status": "partial" if detail_failures else "success",
+        "detail_failures": detail_failures,
         "sites_count": len(normalized_sites),
         "details_count": details_count,
         "duration_sec": duration_sec,
         **stats,
     }
+
+
+async def poll_cycle(client, settings, *, dry_run=False, fetch_details=True, max_details=None):
+    if dry_run:
+        return await _poll_cycle(client, settings, dry_run=True,
+                                 fetch_details=fetch_details, max_details=max_details)
+    attempt_id = await collection_status.start(settings, 'bnetza-emf')
+    try:
+        result = await _poll_cycle(client, settings, fetch_details=fetch_details,
+                                   max_details=max_details, attempt_id=attempt_id)
+        partial_error = (f"{result['detail_failures']} site detail requests failed"
+                         if result['detail_failures'] else
+                         None if result['sites_count'] else 'No usable regional sites produced')
+        await collection_status.finish(settings, attempt_id, result['sites_count'], 'sites',
+                                       partial_error=partial_error,
+                                       error_stage="acquisition" if result["detail_failures"] else "processing")
+        return result
+    except Exception as exc:
+        await collection_status.fail(settings, attempt_id, exc)
+        raise
 
 
 async def main():
@@ -115,8 +141,8 @@ async def main():
         while True:
             try:
                 await poll_cycle(http_client, settings)
-            except Exception as exc:
-                LOG.exception("Error in EMF collection cycle: %s", exc)
+            except Exception:
+                LOG.exception("Error in EMF collection cycle")
             LOG.info("Sleeping for %d seconds...", settings.poll_seconds)
             await asyncio.sleep(settings.poll_seconds)
 

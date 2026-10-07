@@ -1,5 +1,6 @@
 """Packet Broker & TTN Mapper HTTP API client."""
 
+import hashlib
 import logging
 from typing import Any
 
@@ -40,8 +41,8 @@ async def fetch_gateways(
         raw_bytes = resp.content
         data = resp.json()
         if not isinstance(data, list):
-            data = []
-        return data, raw_bytes, resp.headers.get("etag", "")
+            raise TypeError("Packet Broker gateway response must be a list")
+        return data, raw_bytes, hashlib.sha256(raw_bytes).hexdigest()
     finally:
         if should_close:
             await client.aclose()
