@@ -56,13 +56,14 @@ async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_starte
         payload = raw
     fetched_at = datetime.now(UTC)
     fetched = monotonic()
-    gauges, weather_list = normalize(payload, settings)
+    environment = normalize(payload, settings)
+    gauges, weather_list = environment
     if not gauges or not weather_list:
         raise ValueError("Incomplete environment source data")
     normalized = monotonic()
-    radar_list = getattr(weather_list, "radar", [])
-    forecast_list = getattr(weather_list, "forecasts", [])
-    lightning_item = getattr(weather_list, "lightning", None)
+    radar_list = environment.radar
+    forecast_list = environment.forecasts
+    lightning_item = environment.lightning
     coverage = ["pegelonline_wsv", "open_meteo_dwd"]
     if radar_list:
         coverage.append("dwd_radolan")

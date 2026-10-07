@@ -87,3 +87,39 @@ class EnvironmentStorageTests(DatabaseCase):
                 FROM collection_attempts WHERE id=%s""",(attempt,))).fetchone()
             self.assertEqual(row[:3], ('partial',0,'processing'))
             self.assertIsNotNone(row[3])
+
+    async def test_dwd_core_forecasts_persist_in_legacy_weather_mode(self):
+        """The default weather mode must not acknowledge unwritten MOSMIX values."""
+        sys.path.append(str(Path(__file__).resolve().parents[2] / 'api' / 'v1'))
+        from measurement_migration import install
+        from normalize import NormalizedForecast, NormalizedRadar
+
+        await install(self.conn)
+        now = datetime(2026, 10, 7, 17, tzinfo=UTC)
+        payload = {}
+        for name in ('radolan', 'mosmix'):
+            row = await (await self.conn.execute("""INSERT INTO collection_attempts(source_id,http_status,status)
+                VALUES (%s,200,'received') RETURNING id""", ('environment-' + name,))).fetchone()
+            payload[name + '_attempt_id'] = row[0]
+        radar = NormalizedRadar('weather-radolan-ried', 0, now, 49.6425, 8.4552)
+        forecasts = [NormalizedForecast('dwd-mosmix-10729', now, temperature_c=15, precipitation_mm=0.4),
+                     NormalizedForecast('dwd-mosmix-10729', now + timedelta(hours=1))]
+        with patch.dict('os.environ', {'MEASUREMENT_WEATHER_WRITE_MODE': 'legacy'}):
+            result = await persist_environment_data(self.conn, [], [], now, payload=payload,
+                                                    radar=[radar], forecasts=forecasts)
+        self.assertEqual(result['radar_metrics'], 1)
+        self.assertEqual(result['forecast_metrics'], 2)
+        self.assertEqual(await self.scalar("SELECT item_count FROM collection_attempts WHERE source_id='environment-mosmix'"), 2)
+        self.assertEqual(await self.scalar("SELECT status FROM collection_attempts WHERE source_id='environment-radolan'"), 'success')
+        self.assertEqual(await self.scalar("SELECT value FROM sensor_data WHERE sensor_id='weather-radolan-ried'"), 0)
+        rows = await (await self.conn.execute("""SELECT d.metric,d.basis,d.semantics,r.value,r.period_start,r.period_end
+            FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id
+            WHERE d.source_id='environment-mosmix' ORDER BY d.metric""")).fetchall()
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0][:3], ('precipitation', 'model', 'period_total'))
+        self.assertEqual(float(rows[0][3]), 0.4)
+        self.assertEqual(rows[0][4:], (now - timedelta(hours=1), now))
+        self.assertEqual(rows[1][:4], ('temperature', 'model', 'instantaneous', 15))
+        with patch.dict('os.environ', {'MEASUREMENT_WEATHER_WRITE_MODE': 'legacy'}):
+            await persist_environment_data(self.conn, [], [], now, radar=[radar], forecasts=forecasts)
+        self.assertEqual(await self.scalar('SELECT COUNT(*) FROM readings'), 2)

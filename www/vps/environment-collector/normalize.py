@@ -2,6 +2,7 @@ import bz2
 import io
 import json
 import math
+import re
 import struct
 import xml.etree.ElementTree as ET
 import zipfile
@@ -90,7 +91,7 @@ def parse_radolan_rw(raw_bytes: bytes, target_lat: float, target_lon: float) -> 
     if raw_bytes[:3] == b"BZh":
         try:
             data = bz2.decompress(raw_bytes)
-        except (bz2.BZ2Error, OSError, ValueError):
+        except (EOFError, OSError, ValueError):
             return None
     else:
         data = raw_bytes
@@ -100,16 +101,20 @@ def parse_radolan_rw(raw_bytes: bytes, target_lat: float, target_lon: float) -> 
         return None
 
     header_str = data[:etx_idx].decode("latin1", errors="ignore")
-    now_utc = datetime.now(UTC)
+    if not header_str.startswith("RW") or not re.search(r"GP\s+900x\s*900(?:\s|[A-Z]|$)", header_str):
+        return None
+    precision = re.search(r"PR\s+E([+-]\d+)", header_str)
+    if precision is None:
+        return None
     try:
         day = int(header_str[2:4])
         hour = int(header_str[4:6])
         minute = int(header_str[6:8])
-        month = int(header_str[13:15]) if len(header_str) > 16 and header_str[13:15].isdigit() else now_utc.month
-        year = 2000 + int(header_str[15:17]) if len(header_str) > 16 and header_str[15:17].isdigit() else now_utc.year
+        month = int(header_str[13:15])
+        year = 2000 + int(header_str[15:17])
         dt = datetime(year, month, day, hour, minute, tzinfo=UTC)
     except (ValueError, IndexError):
-        dt = now_utc
+        return None
 
     # DWD polar stereographic projection (standard 900x900 national grid)
     phi_0 = math.radians(60.0)
@@ -134,10 +139,11 @@ def parse_radolan_rw(raw_bytes: bytes, target_lat: float, target_lon: float) -> 
         return None
 
     raw_val = struct.unpack("<H", data[offset : offset + 2])[0]
-    if raw_val >= 2500 or (raw_val & 0x1000):
-        precip_mm = 0.0
-    else:
-        precip_mm = round(raw_val * 0.1, 2)
+    # Bits 13–16 are flags, not precipitation. Missing/clutter/negative
+    # pixels must not become a fabricated dry observation.
+    if raw_val & 0xE000:
+        return None
+    precip_mm = round((raw_val & 0x0FFF) * 10 ** int(precision.group(1)), 3)
 
     return NormalizedRadar(
         sensor_id="weather-radolan-ried",
@@ -455,7 +461,8 @@ def normalize(payload: dict[str, Any], settings) -> NormalizedEnvironment:
     target_lat = getattr(settings, "ried_lat", 49.6425)
     target_lon = getattr(settings, "ried_lon", 8.4552)
     radius_km = getattr(settings, "blitzortung_radius_km", 25.0)
-    lightning_item = parse_blitzortung(blitz_raw, target_lat, target_lon, radius_km)
+    lightning_item = (parse_blitzortung(blitz_raw, target_lat, target_lon, radius_km)
+                      if "blitzortung" in payload else None)
 
     return NormalizedEnvironment(
         gauges, weather_list, radar_list, forecast_list, lightning_item

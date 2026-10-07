@@ -2,6 +2,7 @@
 
 import os
 from datetime import datetime, timedelta
+from math import isfinite
 
 from psycopg.types.json import Jsonb
 
@@ -128,7 +129,7 @@ async def persist_environment_data(
                     SELECT write_measurement(
                         'sensor:weather-radolan-ried', 'precipitation', 'mm', 'environment-radolan',
                         'observed', '{"product":"RW","interval":"60m"}'::jsonb,
-                        %s, %s, %s, %s, 'valid', %s - interval '1 hour', %s, 'period_total'
+                        %s, %s::numeric, %s, %s, 'valid', %s - interval '1 hour', %s, 'period_total'
                     )
                 """, (r.timestamp, r.precipitation_mm, fetched_at, provenance, r.timestamp, r.timestamp))
             await conn.execute("""
@@ -151,33 +152,39 @@ async def persist_environment_data(
             """, (r.sensor_id, r.timestamp, r.precipitation_mm))
             updated_radar += 1
 
+        # 4. MOSMIX is model data: always persist in the measurement core.
+        # The weather shadow-write switch only controls observed weather.
+        # Never count forecast objects without actually storing their values.
         # 4. Update MOSMIX Forecasts
         for f in forecast_items:
             provenance = Jsonb({"source": "dwd_mosmix", "station": f.station_id})
-            if mode == 'dual':
+            await conn.execute("""
+                INSERT INTO entities(id, name, entity_type, metadata)
+                VALUES (%s, 'DWD MOSMIX Station 10729', 'weather_station',
+                        '{"provider":"DWD","model":"MOSMIX_L"}')
+                ON CONFLICT(id) DO NOTHING
+            """, (f"sensor:{f.station_id}",))
+            for metric, unit, val in (
+                ("temperature", "°C", f.temperature_c),
+                ("dew_point", "°C", f.dew_point_c),
+                ("wind_speed", "m/s", f.wind_speed_ms),
+                ("precipitation_probability", "%", f.precipitation_prob),
+                ("precipitation", "mm", f.precipitation_mm),
+            ):
+                if val is None or not isfinite(val):
+                    continue
+                period_start = f.timestamp - timedelta(hours=1) if metric == "precipitation" else None
+                period_end = f.timestamp if metric == "precipitation" else None
+                semantics = "period_total" if metric == "precipitation" else "instantaneous"
                 await conn.execute("""
-                    INSERT INTO entities(id, name, entity_type, metadata)
-                    VALUES (%s, 'DWD MOSMIX Station 10729', 'weather_station',
-                            '{"provider":"DWD","model":"MOSMIX_L"}')
-                    ON CONFLICT(id) DO NOTHING
-                """, (f"sensor:{f.station_id}",))
-                for metric, unit, val in (
-                    ("temperature", "°C", f.temperature_c),
-                    ("dew_point", "°C", f.dew_point_c),
-                    ("wind_speed", "m/s", f.wind_speed_ms),
-                    ("precipitation_probability", "%", f.precipitation_prob),
-                    ("precipitation", "mm", f.precipitation_mm),
-                ):
-                    if val is None:
-                        continue
-                    await conn.execute("""
-                        SELECT write_measurement(
-                            %s, %s, %s, 'environment-mosmix',
-                            'model', '{"station":"10729"}'::jsonb,
-                            %s, %s, %s, %s, 'valid', NULL, NULL, 'instantaneous'
-                        )
-                    """, (f"sensor:{f.station_id}", metric, unit, f.timestamp, val, fetched_at, provenance))
-            updated_forecasts += 1
+                    SELECT write_measurement(
+                        %s, %s, %s, 'environment-mosmix',
+                        'model', '{"station":"10729"}'::jsonb,
+                        %s, %s::numeric, %s, %s, 'valid', %s, %s, %s
+                    )
+                """, (f"sensor:{f.station_id}", metric, unit, f.timestamp, val, fetched_at, provenance,
+                        period_start, period_end, semantics))
+                updated_forecasts += 1
 
         # 5. Update Blitzortung Lightning Observations
         if lightning_item is not None:
