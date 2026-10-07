@@ -5,6 +5,7 @@ from endpoints import (
     collected,
     data_exports,
     environment_measurements,
+    fuel,
     map_sensors,
     satellite,
     satellite_tracking,
@@ -35,3 +36,5 @@ api_router.include_router(street_closures.router)
 api_router.include_router(social_daily_life.router)
 api_router.include_router(social_daily_life.router, prefix="/v1")
 api_router.include_router(collected.legacy_router)
+
+api_router.include_router(fuel.router)

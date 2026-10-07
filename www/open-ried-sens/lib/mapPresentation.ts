@@ -13,6 +13,7 @@ export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color:
   train: { label: "Zug", symbol: "🚆", color: "#c084fc" },
   waste: { label: "Abfallsammlung", symbol: "🚛", color: "#fb923c" },
   stops: { label: "Haltestelle", symbol: "H", color: "#facc15" },
+  fuel: { label: "Tankstelle", symbol: "⛽", color: "#fbbf24" },
   charging: { label: "Ladestation", symbol: "⚡", color: "#34d399" },
   energy: { label: "Ökostrom / Solaranlage", symbol: "☀", color: "#fbbf24" },
   traffic: { label: "Verkehrsmeldung", symbol: "⚠", color: "#fb923c" },

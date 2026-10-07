@@ -76,6 +76,7 @@ export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
   // Neighborhood / Street (Zoom 14+)
   crossings: 14,
   charging: 14,
+  fuel: 12,
   wifi: 14,
   crops: 14,
   road: 14,
@@ -91,6 +92,7 @@ export function isLayerZoomRestricted(id: MapLayerId, zoom: number): boolean {
 }
 
 export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
+  fuel: { id: "fuel", label: "Tankstellen & Spritpreise", icon: "⛽", category: "mobility", description: "Super E5, E10 und Diesel · Tankerkönig / MTS-K", minZoom: LAYER_MIN_ZOOM.fuel },
   places: {
     id: "places",
     label: "Öffentliche Orte",
@@ -383,6 +385,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crops: false,
       floods: false,
       starkregen: false,
+      fuel: false,
       charging: false,
       energy: false,
       road: false,
@@ -419,6 +422,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crops: false,
       floods: false,
       starkregen: false,
+      fuel: true,
       charging: true,
       energy: false,
       road: true,
@@ -455,6 +459,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crops: true,
       floods: true,
       starkregen: true,
+      fuel: false,
       charging: false,
       energy: true,
       road: false,
@@ -491,6 +496,7 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
       crops: false,
       floods: false,
       starkregen: false,
+      fuel: false,
       charging: false,
       energy: false,
       road: false,

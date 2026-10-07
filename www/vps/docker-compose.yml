@@ -137,6 +137,31 @@ services:
       timescaledb:
         condition: service_healthy
 
+  fuel-collector:
+    build:
+      context: ./fuel-collector
+    image: ghcr.io/erik-metz/open-ried-sens-fuel-collector:latest
+    restart: unless-stopped
+    stop_grace_period: 60s
+    environment:
+      TANKERKOENIG_API_KEY: ${TANKERKOENIG_API_KEY:-}
+      FUEL_LATITUDE: ${FUEL_LATITUDE:-49.62}
+      FUEL_LONGITUDE: ${FUEL_LONGITUDE:-8.46}
+      FUEL_RADIUS_KM: ${FUEL_RADIUS_KM:-25}
+      FUEL_POLL_SECONDS: ${FUEL_POLL_SECONDS:-300}
+      DB_HOST: timescaledb
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - fuel_state:/data
+    depends_on:
+      backend-api:
+        condition: service_healthy
+      timescaledb:
+        condition: service_healthy
+
   traffic-collector:
     build:
       context: ./traffic-collector
@@ -473,6 +498,7 @@ volumes:
   archive_state:
   sync_state:
   smartcity_state:
+  fuel_state:
   nextbike_state:
   traffic_state:
   rast_state:

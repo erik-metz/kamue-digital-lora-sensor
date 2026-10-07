@@ -2,6 +2,7 @@
 
 import L from "leaflet";
 import { updateMarkerDialogs } from "@/lib/mapDialogs";
+import MapFuelLayer from "./MapFuelLayer";
 import MapSatelliteLayer from "./MapSatelliteLayer";
 import { metricLabel } from "@/lib/telemetryData";
 import "leaflet/dist/leaflet.css";
@@ -652,6 +653,7 @@ export default function MapComponent(props: MapProps) {
     )}
     <div className="space-y-2 text-xs text-slate-400" aria-label="Kartenlegende und Hinweise">
       {props.legend}
+      {ready && layers.fuel && mapInstance ? <MapFuelLayer map={mapInstance} clustered={clusteringReady} /> : null}
       {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} clustered={clusterVehicles} /> : null}
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
       <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr · 🛰 Satelliten</p>

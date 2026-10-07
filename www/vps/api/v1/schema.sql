@@ -1698,3 +1698,10 @@ INSERT INTO collection_sources(id,source_url,adapter,enabled,interval_seconds,de
 VALUES ('ogn-ried','https://www.glidernet.org/','ogn-aprs',true,30,
     'OGN regional live positions; current DDB tracking and identification opt-in; ODbL; no permanent archives')
 ON CONFLICT(id) DO NOTHING;
+
+-- Current regional snapshot only; integer prices in thousandths of EUR/litre.
+CREATE TABLE IF NOT EXISTS fuel_snapshot (
+    id integer PRIMARY KEY CHECK (id=1),
+    fetched_at timestamptz NOT NULL,
+    data jsonb NOT NULL
+);
