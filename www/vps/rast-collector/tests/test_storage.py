@@ -37,6 +37,11 @@ class RastStorageTests(DatabaseCase):
         )
         try:
             await self.conn.execute(
+                sql.SQL("CREATE TABLE {}.entities (id text, name text)").format(
+                    sql.Identifier(other_schema)
+                )
+            )
+            await self.conn.execute(
                 sql.SQL(
                     "CREATE FUNCTION {}.write_measurement() RETURNS integer LANGUAGE sql AS 'SELECT 1'"
                 ).format(sql.Identifier(other_schema))
@@ -53,6 +58,7 @@ class RastStorageTests(DatabaseCase):
                 ),
                 1,
             )
+            await self.test_persist_rast_sites_schema_and_metadata()
         finally:
             await self.conn.execute(
                 sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(other_schema))
@@ -99,7 +105,8 @@ class RastStorageTests(DatabaseCase):
         # Check entities table if present
         row = await (
             await self.conn.execute(
-                "SELECT 1 FROM information_schema.tables WHERE table_name = 'entities'"
+                """SELECT 1 FROM information_schema.tables
+                WHERE table_name = 'entities' AND table_schema = current_schema()"""
             )
         ).fetchone()
         if row:
