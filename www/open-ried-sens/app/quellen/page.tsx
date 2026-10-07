@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { proxyBackend } from "@/lib/collectedBackend";
-import SiteHeader from "../components/SiteHeader";
+import { Activity, Database, ExternalLink } from "lucide-react";
 import SiteFooter from "../components/SiteFooter";
+import SiteHeader from "../components/SiteHeader";
 import { SOURCE_INFO, type SourceItem } from "./sourceInfo";
 import { getSourceLogo } from "./SourceLogos";
-import { ExternalLink, Database, Activity } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -82,9 +81,9 @@ export default async function SourcesPage() {
             Datenquellen &amp; Erfassungsstatus
           </h1>
           <p className="text-slate-300 text-base sm:text-lg max-w-3xl leading-relaxed">
-            Woher stammen die Daten im Ried? Hier findest du die Originalquellen und ihren letzten erfolgreichen Abruf.
+            Woher stammen die Daten im Ried? Hier findest du die Originalquellen
+            und ihren letzten erfolgreichen Abruf.
           </p>
-          <Link href="/daten" className="inline-block text-sm text-emerald-300 hover:underline">Zu Downloads &amp; API →</Link>
         </div>
 
         {/* Error State if Backend Status Unavailable */}
@@ -95,7 +94,8 @@ export default async function SourcesPage() {
           >
             <Activity className="w-5 h-5 shrink-0 text-rose-400" />
             <span>
-              Der Erfassungsstatus ist momentan <strong>nicht erreichbar</strong>. Bitte später erneut versuchen.
+              Der Erfassungsstatus ist momentan{" "}
+              <strong>nicht erreichbar</strong>. Bitte später erneut versuchen.
             </span>
           </div>
         ) : sources.length === 0 ? (
@@ -103,13 +103,22 @@ export default async function SourcesPage() {
             Noch keine Erfassungen registriert.
           </div>
         ) : (
-          <section aria-labelledby="source-details-title" className="space-y-4 rounded-2xl border border-slate-800 p-5">
+          <section
+            aria-labelledby="source-details-title"
+            className="space-y-4 rounded-2xl border border-slate-800 p-5"
+          >
             <div className="space-y-1">
-              <h2 id="source-details-title" className="text-lg font-bold text-slate-200">
+              <h2
+                id="source-details-title"
+                className="text-lg font-bold text-slate-200"
+              >
                 Technische Übersicht der Datenquellen
               </h2>
               <p className="text-xs text-slate-400">
-                Anbieter, Themen, Aktivierung, Abrufintervalle und Zeitstempel je Quelle. Der Status beschreibt den letzten Abrufversuch; Fehlermeldungen stehen direkt bei der Quelle. Alle Zeiten gelten für Europe/Berlin.
+                Anbieter, Themen, Aktivierung, Abrufintervalle und Zeitstempel
+                je Quelle. Der Status beschreibt den letzten Abrufversuch;
+                Fehlermeldungen stehen direkt bei der Quelle. Alle Zeiten gelten
+                für Europe/Berlin.
               </p>
             </div>
 
@@ -145,16 +154,27 @@ export default async function SourcesPage() {
                               <ExternalLink className="w-3 h-3 text-slate-400" />
                             </a>
                           ) : (
-                            <span className="font-mono text-slate-300">{source.source_id}</span>
+                            <span className="font-mono text-slate-300">
+                              {source.source_id}
+                            </span>
                           )}
                         </div>
                         {SOURCE_INFO[source.source_id] && (
                           <div className="mt-2 space-y-1 text-xs pl-8">
-                            <p className="text-slate-200">{SOURCE_INFO[source.source_id].title}</p>
-                            <p className="text-slate-400">{SOURCE_INFO[source.source_id].provider} · {SOURCE_INFO[source.source_id].domain}</p>
+                            <p className="text-slate-200">
+                              {SOURCE_INFO[source.source_id].title}
+                            </p>
+                            <p className="text-slate-400">
+                              {SOURCE_INFO[source.source_id].provider} ·{" "}
+                              {SOURCE_INFO[source.source_id].domain}
+                            </p>
                           </div>
                         )}
-                        {!source.source_url && <p className="mt-1 pl-8 text-xs text-slate-500">Kein Quellenlink hinterlegt.</p>}
+                        {!source.source_url && (
+                          <p className="mt-1 pl-8 text-xs text-slate-500">
+                            Kein Quellenlink hinterlegt.
+                          </p>
+                        )}
                         {source.error && (
                           <div className="text-[11px] text-amber-400/90 mt-1 pl-8">
                             {source.error}
@@ -175,11 +195,17 @@ export default async function SourcesPage() {
                         </span>
                       </td>
                       <td className="p-3.5 whitespace-nowrap text-slate-300">
-                        {source.enabled === true ? "Aktiv" : source.enabled === false ? "Deaktiviert" : "Nicht hinterlegt"}
+                        {source.enabled === true
+                          ? "Aktiv"
+                          : source.enabled === false
+                          ? "Deaktiviert"
+                          : "Nicht hinterlegt"}
                       </td>
                       <td className="p-3.5 whitespace-nowrap text-slate-300">
                         {source.interval_seconds
-                          ? `${source.interval_seconds.toLocaleString("de-DE")} Sekunden`
+                          ? `${source.interval_seconds.toLocaleString(
+                              "de-DE"
+                            )} Sekunden`
                           : "–"}
                       </td>
                       <td className="p-3.5 whitespace-nowrap text-slate-400">
@@ -199,12 +225,15 @@ export default async function SourcesPage() {
         {/* Disclaimer / Notice */}
         <div className="p-4 rounded-xl bg-slate-900/40 border border-slate-800/80 text-xs text-slate-400 leading-relaxed space-y-1">
           <p>
-            <strong>Wichtiger Hinweis zur Datenaktualität:</strong> Der letzte erfolgreiche Abruf ist kein Nachweis für
-            eine aktuelle Messung. Maßgeblich sind Quellenzeit und Gültigkeit der einzelnen Veröffentlichung.
+            <strong>Wichtiger Hinweis zur Datenaktualität:</strong> Der letzte
+            erfolgreiche Abruf ist kein Nachweis für eine aktuelle Messung.
+            Maßgeblich sind Quellenzeit und Gültigkeit der einzelnen
+            Veröffentlichung.
           </p>
           <p>
-            Alle Schnittstellen unterliegen den Nutzungsbedingungen und Lizenzen der jeweiligen Urheber (Open Data
-            Commons, CC BY, GeoNutzV bzw. Datenlizenz Deutschland).
+            Alle Schnittstellen unterliegen den Nutzungsbedingungen und Lizenzen
+            der jeweiligen Urheber (Open Data Commons, CC BY, GeoNutzV bzw.
+            Datenlizenz Deutschland).
           </p>
         </div>
       </main>
