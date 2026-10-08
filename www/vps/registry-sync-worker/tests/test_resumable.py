@@ -2,6 +2,7 @@
 import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from urllib.parse import parse_qs
 
 import httpx
 
@@ -22,7 +23,13 @@ def response(request):
     if request.url.path == '/addresses':
         return httpx.Response(200,json={'elements':[{'lat':49.6,'lon':8.4,'tags':{
             'addr:city':'Biblis','addr:street':'Teststraße','addr:housenumber':'1'}}]})
-    return httpx.Response(200,content=ICAL if b'filedownload_ICAL' in request.content else FORM.encode())
+    fields = parse_qs(request.content.decode())
+    if fields.get('submitAction') == ['filedownload_ICAL']:
+        return httpx.Response(200, content=ICAL)
+    if fields.get('submitAction') == ['nextPage']:
+        street = fields['aos[Strasse]'][0]
+        return httpx.Response(200, text=FORM + f'<span id="Lageadresse">{street} 1, 68647 Biblis</span>')
+    return httpx.Response(200, text='<form id="athos-os-form"><input name="pageName" value="Lageadresse"><select name="aos[Ort]"><option selected value="Biblis">Biblis</option></select><select name="aos[Strasse]">' + ''.join(f'<option value="{s}">{s}</option>' for s in ['Teststraße','First','Second']) + '</select></form>')
 
 
 class ResumeTests(DatabaseCase):
@@ -147,3 +154,17 @@ class ResumeTests(DatabaseCase):
         self.assertEqual(await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'"),before)
         coverage=await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/coverage'")
         self.assertEqual(coverage['municipalities']['Biblis']['reused_calendars'],1)
+
+    async def test_legacy_calendar_is_withdrawn_until_identity_is_revalidated(self):
+        from publications import publish
+        digest = 'b' * 64
+        await self.conn.execute("INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,'legacy','application/json')", (digest,))
+        await publish(self.conn, SOURCE, 'waste/calendar', [{'street': 'unverified'}], digest, datetime.now(UTC))
+        await publish(self.conn, SOURCE, 'waste/coverage', {'coverage': 'representative_addresses_only'}, digest, datetime.now(UTC))
+        await self.conn.commit()
+        def unavailable(request):
+            return response(request) if request.url.path == '/addresses' else httpx.Response(503)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(unavailable)) as client:
+            self.assertEqual(await import_zakb(self.conn, client, SOURCE), 'failed')
+        self.assertIsNone(await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'"))
+        self.assertEqual(await self.scalar("SELECT data->>'validation_contract' FROM collected_datasets WHERE dataset='waste/coverage'"), 'zakb-address-v2')

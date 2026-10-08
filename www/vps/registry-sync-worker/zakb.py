@@ -8,6 +8,7 @@ No vehicle identity, license plate, load or actual completion is invented.
 import asyncio
 import hashlib
 import json
+import re
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
 from html.parser import HTMLParser
@@ -58,6 +59,49 @@ class CalendarForm(HTMLParser):
             self.select = None
         if tag == "form":
             self.enabled = False
+
+
+VALIDATION_CONTRACT = "zakb-address-v2"
+
+
+class MissingStreet(ValueError):
+    pass
+
+
+class AmbiguousStreet(ValueError):
+    pass
+
+
+class AddressMismatch(ValueError):
+    pass
+
+
+class ConfirmedAddress(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.capture = False
+        self.parts = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "span" and dict(attrs).get("id") == "Lageadresse":
+            self.capture = True
+
+    def handle_endtag(self, tag):
+        if tag == "span":
+            self.capture = False
+
+    def handle_data(self, data):
+        if self.capture:
+            self.parts.append(data)
+
+
+def verify_address(html, address, provider_city):
+    parsed = ConfirmedAddress()
+    parsed.feed(html)
+    text = " ".join(" ".join(parsed.parts).split())
+    match = re.fullmatch(r"(.+?)\s+(\d+),\s*\d{5}\s+(.+)", text)
+    if not match or match.groups() != (address["street"], address["house_number"], provider_city):
+        raise AddressMismatch("Calendar confirmed a different or missing address")
 
 
 def form(html):
@@ -166,12 +210,12 @@ def forecast_tours(events, now, start_hour=7, end_hour=17):
 
 def address_key(source, address):
     # Version the parser contract; changing a source URL also invalidates checkpoints.
-    identity = ["zakb-calendar-v1", source["url"], address["municipality"],
+    identity = [VALIDATION_CONTRACT, source["url"], address["municipality"],
                 address["street"], address["house_number"]]
     return hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
 
 
-async def calendar_for_address(conn, client, source, address, now):
+async def calendar_for_address(conn, client, source, address, now, locations=None):
     key = address_key(source, address)
     cursor = await conn.execute(
         """SELECT p.body,c.payload_sha256,c.fetched_at FROM collection_checkpoints c
@@ -191,15 +235,47 @@ async def calendar_for_address(conn, client, source, address, now):
         return await acquire(conn, client, source, form=fields)
 
     response, _, _ = await request()
-    fields = form(response.text)
-    fields.update({"aos[Ort]": address["municipality"], "submitAction": "CITYCHANGED"})
-    response, _, _ = await request(fields)
-    fields = form(response.text)
+    initial = CalendarForm()
+    initial.feed(response.text)
+    city = address["municipality"]
+    cities = [value for value in initial.options.get("aos[Ort]", [])
+              if value == city or value.startswith(city + "-")]
+    if not cities:
+        raise MissingStreet("Municipality not offered by calendar")
+    locations = {} if locations is None else locations
+    offered = {}
+    for provider_city in cities:
+        if provider_city not in locations:
+            fields = dict(initial.fields)
+            fields.update({"aos[Ort]": provider_city, "submitAction": "CITYCHANGED"})
+            city_response, _, _ = await request(fields)
+            parsed = CalendarForm()
+            parsed.feed(city_response.text)
+            if parsed.fields.get("aos[Ort]") != provider_city or not parsed.options.get("aos[Strasse]"):
+                raise AddressMismatch("Calendar did not confirm selected municipality")
+            locations[provider_city] = set(parsed.options["aos[Strasse]"])
+            offered[provider_city] = parsed.fields
+    matches = [candidate for candidate in cities if address["street"] in locations[candidate]]
+    if not matches:
+        raise MissingStreet("Street not offered in municipality or districts")
+    if len(matches) != 1:
+        raise AmbiguousStreet("Street occurs in multiple districts")
+    provider_city = matches[0]
+    if provider_city in offered:
+        fields = offered[provider_city]
+    else:
+        fields = dict(initial.fields)
+        fields.update({"aos[Ort]": provider_city, "submitAction": "CITYCHANGED"})
+        city_response, _, _ = await request(fields)
+        fields = form(city_response.text)
+        if fields.get("aos[Ort]") != provider_city:
+            raise AddressMismatch("Calendar did not confirm selected municipality")
     fields.update({"aos[Strasse]": address["street"], "aos[Hausnummer]": address["house_number"],
                    "submitAction": "nextPage"})
     response, _, _ = await request(fields)
     if "filedownload_ICAL" not in response.text:
         raise ValueError("Address not accepted by calendar")
+    verify_address(response.text, address, provider_city)
     fields = form(response.text)
     fields["submitAction"] = "filedownload_ICAL"
     response, digest, _ = await request(fields)
@@ -288,6 +364,15 @@ async def import_zakb(conn, client, source):
             addresses[key] = candidate
     if not addresses:
         raise ValueError("No representative addresses available")
+    # Old checkpoints cannot prove address identity; withdraw their public projections.
+    cursor = await conn.execute("SELECT data->>'validation_contract' FROM collected_datasets WHERE dataset='waste/coverage' AND source_id=%s", (source["id"],))
+    previous = await cursor.fetchone()
+    if previous and previous[0] != VALIDATION_CONTRACT:
+        await conn.execute("DELETE FROM collected_datasets WHERE dataset='waste/calendar' AND source_id=%s", (source["id"],))
+        await conn.execute("DELETE FROM movement_schedules WHERE source_id=%s", (source["id"],))
+        await conn.execute("DELETE FROM movement_latest WHERE basis='schedule_prediction' AND data->>'source_id'=%s", (source["id"],))
+    await conn.commit()
+    locations = {}
     events = []
     failures = []
     inputs = [geo_digest]
@@ -323,7 +408,7 @@ async def import_zakb(conn, client, source):
         try:
             timeout = 10 if address_key(source, address) in fresh_keys else min(120, deadline-loop.time())
             async with asyncio.timeout(timeout):
-                calendar_events, digest, fetched, reused = await calendar_for_address(conn, client, source, address, now)
+                calendar_events, digest, fetched, reused = await calendar_for_address(conn, client, source, address, now, locations)
             events.extend(calendar_events)
             inputs.append(digest)
             sampled_at.append(fetched)
@@ -339,12 +424,13 @@ async def import_zakb(conn, client, source):
             )
             await conn.commit()
             counts["failed_calendars"] += 1
-            failures.append({"municipality": address["municipality"], "street": address["street"]})
+            failures.append({"municipality": address["municipality"], "street": address["street"], "error": type(exc).__name__})
     remaining = sum(c["sampled_streets"]-c["attempted_calendars"] for c in coverage.values())
     incomplete = bool(failures) or remaining > 0 or any(c["sampled_streets"] == 0 for c in coverage.values())
     # Commit a reproducibility manifest linking every calendar and geometry input.
     manifest = json.dumps(
         {
+            "validation_contract": VALIDATION_CONTRACT,
             "inputs": inputs,
             "coverage": "representative_addresses_only",
             "failed_streets": failures,
