@@ -326,3 +326,35 @@ Datenbankintegration. Zehn neue Tests prüfen die vier Gruppen, Änderung und
 Doppelung, unabhängige Veröffentlichung, Archivierung beider Seiten sowie
 Erhalt bestehender Angebote bei fehlerhafter Aktualisierung. Ruff und
 Diff-Prüfung bestehen.
+
+### Veröffentlichungs- und produktiver Nachweis
+
+Implementierung `a37e93d9765af272a0608874777de49783dad9ac` auf `main` gepusht.
+[FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37849543784)
+ist für genau diesen Commit vollständig erfolgreich, einschließlich aller
+17 vorgesehenen Container-Builds und GHCR-Veröffentlichungen. Kein
+Frontend-CI-Lauf vorgesehen, da keine Frontenddatei geändert wurde.
+
+Nach erfolgreicher CI wurde das neue Worker-Image geladen. Vor dem Wechsel
+wurden der SHA-256 des eigenen Parsermoduls und die gesamte neue
+Quellenkonfiguration mit dem geprüften Repository-Stand abgeglichen.
+Alle Quellen-IDs des laufenden Vorgänger-Images sind auch im neuen Image
+vorhanden. Die vorherige produktive Konfiguration wurde unter
+`/root/docker-compose.invekos.yml.before-gymnastik-a37e93d` gesichert.
+Nur der Registry-Worker wurde mit den vorhandenen drei Compose-Dateien und
+`--no-deps --no-build` neu erstellt. Der festgelegte neue Image-Digest ist
+`sha256:2f283d8ba3078fb1deedbf07b4778a0493d0b04dd822919c8a03929499ee4a44`.
+
+Produktiver Gymnastik-Quellenstatus am **08.10.2026 21:58:35 UTC**:
+HTTP 200, Verarbeitung `success`, eine veröffentlichte Datenmenge.
+Auch die gewöhnliche öffentliche API-Adresse liefert jetzt **14 eindeutige
+regelmäßige Angebote**: vier Gymnastikgruppen, acht Tanzangebote und zwei
+Lauftreffs. Keine erfundenen datierten Kalenderereignisse.
+
+Die [öffentliche Terminseite](https://open-ried-sens.vercel.app/termine)
+wurde unter ihrer normalen Adresse geprüft: alle 14 Angebotstitel und bei
+allen vier neuen Gymnastikgruppen die veröffentlichten Anfangs-/Endzeiten,
+Räume und Teilnahmehinweise sind im ausgelieferten HTML sichtbar.
+Die eigene temporäre Integrationsdatenbank wurde entfernt.
+Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
+weitere CI aus.
