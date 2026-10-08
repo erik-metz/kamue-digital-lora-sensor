@@ -166,5 +166,5 @@ class ResumeTests(DatabaseCase):
             return response(request) if request.url.path == '/addresses' else httpx.Response(503)
         async with httpx.AsyncClient(transport=httpx.MockTransport(unavailable)) as client:
             self.assertEqual(await import_zakb(self.conn, client, SOURCE), 'failed')
-        self.assertIsNone(await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'"))
+        self.assertEqual(await self.scalar("SELECT count(*) FROM collected_datasets WHERE dataset='waste/calendar'"), 0)
         self.assertEqual(await self.scalar("SELECT data->>'validation_contract' FROM collected_datasets WHERE dataset='waste/coverage'"), 'zakb-address-v2')
