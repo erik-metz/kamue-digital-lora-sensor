@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+const EcostressMap = dynamic(() => import("./EcostressMap"), { ssr: false, loading: () => <p>Karte wird geladen …</p> });
 
 type Stats = { mean_celsius: number | null; p10_celsius: number | null; p90_celsius: number | null; valid_pixels: number; valid_fraction: number };
 type Scene = { id: string; acquired_at: string; tile: string; raster: { method: string; stats: Stats; archive_sha256: string } | null; raster_status?: string };
 const temperature = (value: number | null) => value === null ? "keine gültigen Pixel" : `${value.toLocaleString("de-DE", { maximumFractionDigits: 1 })} °C`;
 
 export default function EcostressSection() {
+  const [selectedId, setSelectedId] = useState("");
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [status, setStatus] = useState("ECOSTRESS-Aufnahmen werden geladen …");
   useEffect(() => {
@@ -20,11 +23,20 @@ export default function EcostressSection() {
     }).catch(() => { if (!controller.signal.aborted) setStatus("ECOSTRESS-Daten aktuell nicht verfügbar."); });
     return () => controller.abort();
   }, []);
+  const available = scenes.filter(scene => scene.raster?.method === "ecostress-v003-clear-land70-v1" && scene.raster.stats.valid_pixels > 0);
+  const activeId = available.some(scene => scene.id === selectedId) ? selectedId : available[0]?.id;
   return <section id="ecostress" className="space-y-4 scroll-mt-20">
     <h2 className="text-2xl font-bold">ECOSTRESS: Oberflächentemperatur</h2>
     <p className="text-slate-300 max-w-3xl">Die Aufnahme beschreibt die Temperatur der Oberfläche zum Überflugzeitpunkt. Ausgewertet werden wolkenfreie Landpixel mit guter Qualität auf dem ursprünglichen 70-Meter-Raster. Der rechteckige Ried-Ausschnitt kann je Kachel nur teilweise überdeckt sein.</p>
     <p className="text-sm text-slate-400">Aufnahmezeiten und gültige Flächen unterscheiden sich. Die Werte sind keine Lufttemperaturen; Tagesunterschiede allein belegen keinen Temperaturtrend.</p>
     {status ? <p role="status">{status}</p> : null}
+    {activeId ? <div className="space-y-3">
+      <label className="block" htmlFor="ecostress-scene">Aufnahme für die Temperaturkarte</label>
+      <select id="ecostress-scene" value={activeId} onChange={event => setSelectedId(event.target.value)} className="rounded border border-slate-600 bg-slate-900 p-2">
+        {available.map(scene => <option key={scene.id} value={scene.id}>{new Date(scene.acquired_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })} · {scene.tile}</option>)}
+      </select>
+      <EcostressMap key={activeId} sceneId={activeId} />
+    </div> : null}
     {scenes.map(scene => <article key={scene.id} className="rounded-xl border border-slate-700 p-5 space-y-2">
       <h3 className="font-semibold">{new Date(scene.acquired_at).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })} · Kachel {scene.tile}</h3>
       {scene.raster?.method === "ecostress-v003-clear-land70-v1" ? <>

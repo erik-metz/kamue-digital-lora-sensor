@@ -18,10 +18,10 @@ Gültige Landpixel: separate cloud=0 und water=0, Mandatory QA bits 0–1=0, Dat
 
 Das NPZ enthält Celsius, AOI/gültige Pixel, QC/cloud/water sowie CRS, Transform, Aufnahmezeit, Kalibrierung, Quellen-URLs, Input-Hashes und Auswerteprofil. Der Ausschnitt-Hash, erfolgreiche Archivbeleg und echte Aufnahmezeit sind mit Entity/Messwert verknüpft. Provider-Revisionen invalidieren den Cache; wiederholte identische Kacheln werden nicht neu heruntergeladen.
 
-API: `/api/v1/satellite/ecostress/scenes` und `/api/v1/satellite/ecostress/crop/{scene_id}.npz`. Der API-Download prüft Hash und erfolgreichen Collector-Beleg. Der Regionalatlas zeigt Aufnahmezeit, Kachel und Verfügbarkeit bzw. Temperaturstatistiken und Download. Eine interaktive Temperaturschicht mit Datumsauswahl/Legende ist noch offen, bis der echte Rastervertrag verifiziert ist.
+API: `/api/v1/satellite/ecostress/scenes` und `/api/v1/satellite/ecostress/crop/{scene_id}.npz`. Der API-Download prüft Hash und erfolgreichen Collector-Beleg. Der Regionalatlas zeigt Aufnahmezeit, Kachel und Verfügbarkeit bzw. Temperaturstatistiken und Download. Eine interaktive Temperaturschicht mit Aufnahmeauswahl und fester Legende erscheint nur für archivierte Raster mit gültigen Pixeln. Tiles werden aus demselben geprüften NPZ wie der Download berechnet; der Renderer hat keinen Providerzugang. Die echte Kartenabnahme bleibt bis zum authentifizierten Import offen.
 
 ## Stand der Abnahme
 
-Automatisierte Tests verwenden synthetische georeferenzierte TIFFs; sie sind keine NASA-Beobachtungen. Öffentliche Metadaten wurden live geprüft. Ein authentifizierter NASA-Import, echte gültige Pixel, Karte und vollständige Produktionsabnahme bleiben ohne Zugang offen. Schritt 2 des Gesamtplans ist deshalb noch nicht abgeschlossen.
+Automatisierte Tests verwenden synthetische georeferenzierte TIFFs; sie sind keine NASA-Beobachtungen. Öffentliche Metadaten wurden live geprüft. Ein authentifizierter NASA-Import, echte gültige Pixel, Kartenabnahme und vollständige Produktionsabnahme bleiben ohne Zugang offen. Schritt 2 des Gesamtplans ist deshalb noch nicht abgeschlossen.
 
 Primärquellen: [aktueller V003 User Guide](https://github.com/ECOSTRESS-Collection-3/ECOv003-L2-LSTE/blob/main/documentation/ECOL2_User_Guide_V3.md), [Produkt](https://doi.org/10.5067/ECOSTRESS/ECO_L2T_LSTE.003), [CMR API](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html).

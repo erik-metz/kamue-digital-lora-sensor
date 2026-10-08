@@ -135,6 +135,7 @@ class EcostressPersistenceTests(DatabaseCase):
             from endpoints.satellite import (
                 download_ecostress_crop,
                 get_ecostress_scenes,
+                get_ecostress_tile,
             )
             from fastapi import HTTPException
             from psycopg.rows import dict_row, tuple_row
@@ -149,6 +150,13 @@ class EcostressPersistenceTests(DatabaseCase):
                 assert data["scenes"][0]["raster"]["stats"]["valid_pixels"] == 2
                 response = await download_ecostress_crop(scene()["id"], Pool())
                 assert response.body == bytes(archived)
+                tile = await get_ecostress_tile(scene()["id"], 11, 1072, 697, Pool())
+                from PIL import Image
+                image = Image.open(io.BytesIO(tile.body))
+                assert image.size == (256, 256) and image.mode == "RGBA"
+                with pytest.raises(HTTPException) as invalid:
+                    await get_ecostress_tile(scene()["id"], 20, 0, 0, Pool())
+                assert invalid.value.status_code == 400
                 await self.conn.execute("UPDATE collection_attempts SET status='failed' WHERE source_id='nasa-ecostress:raster' AND status='success'")
                 with pytest.raises(HTTPException) as failure:
                     await download_ecostress_crop(scene()["id"], Pool())

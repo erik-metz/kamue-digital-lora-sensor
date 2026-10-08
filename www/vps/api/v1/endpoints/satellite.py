@@ -221,8 +221,7 @@ async def get_ecostress_scenes(pool: DbPool, limit: int = Query(default=20, ge=1
             "note": "Oberflächentemperatur der gültigen wolkenfreien Landpixel; einzelne Kacheln und Aufnahmezeiten."}
 
 
-@router.get("/ecostress/crop/{scene_id}.npz")
-async def download_ecostress_crop(scene_id: str, pool: DbPool):
+async def ecostress_crop_body(scene_id: str, pool: DbPool):
     async with pool.connection() as conn:
         row = await (await conn.execute(
             "SELECT metadata FROM entities WHERE id=%s AND entity_type='ecostress_scene' AND NOT is_hidden", (scene_id,)
@@ -236,6 +235,25 @@ async def download_ecostress_crop(scene_id: str, pool: DbPool):
         )).fetchone()
     if not payload or hashlib.sha256(bytes(payload["body"])).hexdigest() != sha:
         raise HTTPException(503, "ECOSTRESS archive evidence unavailable")
-    return Response(bytes(payload["body"]), media_type="application/octet-stream",
+    return bytes(payload["body"]), sha
+
+
+@router.get("/ecostress/crop/{scene_id}.npz")
+async def download_ecostress_crop(scene_id: str, pool: DbPool):
+    body, sha = await ecostress_crop_body(scene_id, pool)
+    return Response(body, media_type="application/octet-stream",
                     headers={"ETag": f'"{sha}"', "Content-Disposition": 'attachment; filename="ecostress-crop.npz"',
                              "Cache-Control": "public, max-age=300"})
+
+
+@router.get("/ecostress/tiles/{scene_id}/{z}/{x}/{y}.png")
+async def get_ecostress_tile(scene_id: str, z: int, x: int, y: int, pool: DbPool):
+    from ecostress_tiles import render_temperature_tile
+    if not 0 <= z <= 19 or not 0 <= x < 2**z or not 0 <= y < 2**z:
+        raise HTTPException(400, "Invalid tile coordinates")
+    body, sha = await ecostress_crop_body(scene_id, pool)
+    try:
+        png = await asyncio.to_thread(render_temperature_tile, body, z, x, y)
+    except (ValueError, KeyError, zipfile.BadZipFile):
+        raise HTTPException(503, "Invalid archived temperature raster") from None
+    return Response(png, media_type="image/png", headers={"ETag": f'"{sha}-{z}-{x}-{y}"', "Cache-Control": "public, max-age=300"})
