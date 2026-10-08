@@ -130,3 +130,80 @@ def rompin_stompin(html, source):
 
 async def import_rompin_stompin(conn, client, source):
     await import_regular_offers(conn, client, source, rompin_stompin)
+
+
+def tv_gymnastik(html, venue_html, source):
+    root = Document(html).root
+    if [n.text() for n in root.find(tag="h1")] != ["Gymnastikgruppen"]:
+        raise ValueError("Gymnastik page missing or ambiguous")
+    proof = (
+        "Ihr findet Infos zu den Gruppen unter den Abteilungsrubriken. "
+        "Bitte vorab Kontakt aufnehmen inwieweit eine Teilnahme möglich ist. "
+        "Das Training findet jeweils entweder in der Bürgerhalle oder im "
+        "Hallenanbau in der Jahnstraße statt."
+    )
+    if [n.text() for n in Document(venue_html).root.find(tag="p")].count(proof) != 1:
+        raise ValueError("Gymnastik venue or participation proof changed")
+    sections = []
+    weekday = None
+    current = None
+    for node in root.find():
+        if node.tag == "h3":
+            title = node.text()
+            if title in {"Montag", "Dienstag", "Donnerstag"}:
+                weekday = title
+            current = {"heading": title, "weekday": weekday, "paragraphs": []}
+            sections.append(current)
+        elif node.tag == "p" and current is not None:
+            current["paragraphs"].append(node.text())
+    offers = []
+    for verified in source["verified_courses"]:
+        matches = [s for s in sections if s["heading"] == verified["heading"]]
+        if len(matches) != 1:
+            raise ValueError("Gymnastik group missing or duplicated")
+        section = matches[0]
+        text = " ".join(
+            [section["weekday"] or "", section["heading"]]
+            + section["paragraphs"][: verified["paragraph_count"]]
+        )
+        if hashlib.sha256(text.encode()).hexdigest() != verified["section_sha256"]:
+            raise ValueError("Gymnastik schedule changed; verification required")
+        if verified["municipality"] != "Groß-Rohrheim":
+            raise ValueError("Gymnastik venue outside verified municipality")
+        offer = {
+            k: v
+            for k, v in verified.items()
+            if k not in {"section_sha256", "heading", "paragraph_count"}
+        }
+        offer.update(
+            organizer="TV Groß-Rohrheim",
+            timezone="Europe/Berlin",
+            source=source["id"],
+            source_url=source["url"],
+            description="Regelmäßige Gymnastikgruppe des TV Groß-Rohrheim. "
+            "Bitte vor der ersten Teilnahme beim Verein erfragen, ob eine Teilnahme "
+            "möglich ist (Turnen-tvg@tv-grossrohrheim.de). Kosten, Mitgliedschaft, "
+            "freie Plätze, Feiertage und Ausfälle bitte beim Verein klären.",
+        )
+        offers.append(offer)
+    return offers
+
+
+async def import_tv_gymnastik(conn, client, source):
+    response, digest, attempt = await acquire(conn, client, source)
+    venue, _, venue_attempt = await acquire(conn, client, source, source["venue_url"])
+    offers = tv_gymnastik(response.text, venue.text, source)
+    async with conn.transaction():
+        await publish(
+            conn,
+            source,
+            "social/regular-offers/" + source["id"],
+            offers,
+            digest,
+            datetime.now(UTC),
+        )
+        await conn.execute(
+            "UPDATE collection_attempts SET status='success' WHERE id IN (%s,%s)",
+            (attempt, venue_attempt),
+        )
+    await conn.commit()

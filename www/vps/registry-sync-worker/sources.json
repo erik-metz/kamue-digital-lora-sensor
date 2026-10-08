@@ -1,6 +1,67 @@
 {
   "sources": [
     {
+      "id": "tv-gross-rohrheim-gymnastik",
+      "group": "social",
+      "adapter": "tv-gymnastik",
+      "enabled": true,
+      "url": "https://tv-grossrohrheim.de/angebot/turnen-und-gymnastik/gymnastikgruppen/",
+      "venue_url": "https://tv-grossrohrheim.de/",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_courses": [
+        {
+          "section_sha256": "6c935f4b72ac1e3697d4d2c600e8996388006a1229416e163e9b40a9a741d910",
+          "id": "tv-gross-rohrheim-gymnastik-wirbelsaeule",
+          "title": "Wirbelsäulengymnastik (Frauen 60plus)",
+          "weekday": "Montag",
+          "start_local": "09:00",
+          "end_local": "10:00",
+          "municipality": "Groß-Rohrheim",
+          "venue_name": "Kleiner Hallenteil der Bürgerhalle, Jahnstraße, Groß-Rohrheim",
+          "heading": "Wirbelsäulengymnastik (Frauen 60plus)",
+          "paragraph_count": 1
+        },
+        {
+          "section_sha256": "b25b610a3ea8dc7cbde52020f953d5b78fb8b759605fdd849a85dfdf61f7173b",
+          "id": "tv-gross-rohrheim-gymnastik-frauen-55plus",
+          "title": "Frauen (55 plus)",
+          "weekday": "Dienstag",
+          "start_local": "18:30",
+          "end_local": "19:30",
+          "municipality": "Groß-Rohrheim",
+          "venue_name": "Hallenanbau, Jahnstraße, Groß-Rohrheim",
+          "heading": "Frauen (55 plus)",
+          "paragraph_count": 2
+        },
+        {
+          "section_sha256": "b4206c1617eeb692f0d9dccf82f78fb7ea4fc5d89373fe29a5de0c5d99d83c47",
+          "id": "tv-gross-rohrheim-gymnastik-stepp",
+          "title": "Stepp",
+          "weekday": "Dienstag",
+          "start_local": "19:30",
+          "end_local": "20:30",
+          "municipality": "Groß-Rohrheim",
+          "venue_name": "Hallenanbau, Jahnstraße, Groß-Rohrheim",
+          "heading": "Stepp",
+          "paragraph_count": 2
+        },
+        {
+          "section_sha256": "e79083e8e33a569e91b8c911e45eb344cb309567ae981f49bea755a7e9a74280",
+          "id": "tv-gross-rohrheim-gymnastik-fit-entspannt",
+          "title": "Fit und Entspannt (Frauen)",
+          "weekday": "Donnerstag",
+          "start_local": "20:00",
+          "end_local": "21:30",
+          "municipality": "Groß-Rohrheim",
+          "venue_name": "Hallenanbau, Jahnstraße, Groß-Rohrheim",
+          "heading": "Fit und Entspannt (Frauen)",
+          "paragraph_count": 2
+        }
+      ]
+    },
+    {
       "id": "rompin-stompin-regular-offers",
       "group": "social",
       "adapter": "rompin-stompin-offers",

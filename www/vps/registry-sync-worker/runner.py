@@ -22,10 +22,10 @@ from config import Settings
 from ecostress import import_ecostress
 from elections import import_elections
 from firms import import_firms
-from inaturalist import import_inaturalist
 from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
+from inaturalist import import_inaturalist
 from invekos import import_invekos
 from long_term_events import import_long_term_events
 from map_tiles import import_wms
@@ -37,6 +37,7 @@ from realtime import import_realtime
 from regular_offers import (
     import_buerstadt_lauftreff,
     import_rompin_stompin,
+    import_tv_gymnastik,
     import_tv_lauftreff,
 )
 from ris_boards import import_ris_boards
@@ -67,6 +68,7 @@ ADAPTERS = {
     "long-term-events": import_long_term_events,
     "verified-club-notice": import_verified_club_notice,
     "tv-lauftreff": import_tv_lauftreff,
+    "tv-gymnastik": import_tv_gymnastik,
     "buerstadt-lauftreff": import_buerstadt_lauftreff,
     "rompin-stompin-offers": import_rompin_stompin,
     "club-events": import_club_events,

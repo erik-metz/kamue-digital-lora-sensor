@@ -285,3 +285,44 @@ Es waren keine weiteren Codeänderungen oder Container-Builds nötig.
 Die zuvor dokumentierten erfolgreichen CI-/GHCR-Läufe für `745cc27`
 bleiben der Implementierungsnachweis. Dieser Dokumentationscommit
 löst aufgrund der Pfadfilter keine zusätzliche Frontend-/VPS-CI aus.
+
+## Umsetzung: vier Gymnastikgruppen des TV Groß-Rohrheim
+
+Am 08.10.2026 wurden die [Gymnastikgruppen](https://tv-grossrohrheim.de/angebot/turnen-und-gymnastik/gymnastikgruppen/)
+und die [Hallenzuordnung auf der Vereinsstartseite](https://tv-grossrohrheim.de/)
+erneut direkt geprüft. Quelle `tv-gross-rohrheim-gymnastik` übernimmt:
+
+- Montag 09:00–10:00: Wirbelsäulengymnastik für Frauen 60plus, kleiner Hallenteil.
+- Dienstag 18:30–19:30: Gymnastik für Frauen 55plus, Hallenanbau.
+- Dienstag 19:30–20:30: Stepp, Hallenanbau.
+- Donnerstag 20:00–21:30: Fit und Entspannt für Frauen, Hallenanbau.
+
+Die Vereinsstartseite ordnet die Trainingsräume der Bürgerhalle bzw. dem
+Hallenanbau in der Jahnstraße zu und verlangt vorherige Kontaktaufnahme
+zur Klärung der Teilnahmemöglichkeit. Dieser Hinweis wird ausdrücklich
+angezeigt; keine Zusage freier Plätze, kostenloser Teilnahme oder
+bestimmter Mitgliedschaftsbedingungen. Yoga und Zumba werden in diesem
+Schritt wegen gesonderter Kursbedingungen und nicht ausreichend belegter
+Kurslaufzeiten nicht aufgenommen.
+
+Die vier verifizierten Abschnitte werden einschließlich Wochentag,
+Zielgruppe, Trainingszeit, Raum, Übungsleitung und Beschreibung anhand
+normalisierter Text-Hashes geprüft. Fehlende oder doppelte Gruppen,
+geänderte Zeiten, Räume oder Hallenzuordnung stoppen die Veröffentlichung.
+Beide Originalantworten werden archiviert. Veröffentlichung erfolgt
+unabhängig von anderen Vereinsquellen unter
+`social/regular-offers/tv-gross-rohrheim-gymnastik`, Abruf alle sechs Stunden,
+Gültigkeit höchstens zwei Tage. Bei fehlgeschlagener Aktualisierung bleibt
+der letzte gültige Stand bis zu seinem eigenen Ablauf erhalten.
+Es werden keine einzelnen Kalendertermine oder ICS-Einträge erzeugt.
+
+Live-Abruf mit tatsächlichem Collector-User-Agent: beide Vereinsseiten
+HTTP 200, Parser liefert genau vier Angebote. Keine Frontendänderung nötig:
+die bestehende Ansicht zeigt Zielgruppe, Wochentag, Anfangs-/Endzeit,
+Treffpunkt, Teilnahmehinweis und Originalquelle bereits an.
+
+Prüfungen vor Veröffentlichung: **345 Worker-Tests bestanden**, einschließlich
+Datenbankintegration. Zehn neue Tests prüfen die vier Gruppen, Änderung und
+Doppelung, unabhängige Veröffentlichung, Archivierung beider Seiten sowie
+Erhalt bestehender Angebote bei fehlerhafter Aktualisierung. Ruff und
+Diff-Prüfung bestehen.
