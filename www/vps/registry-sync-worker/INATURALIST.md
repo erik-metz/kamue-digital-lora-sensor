@@ -20,7 +20,7 @@ API `/api/v1/environment/measurements/inaturalist`: `limit=1..200`, `offset=0..2
 
 ## Betriebsgrenzen
 
-Maximal 20 MiB dekodierte Antwort pro Seite, zehn Seiten und drei Versuche bei 429/5xx; keine Weiterleitungen. Mindestens 1,1 Sekunden zwischen Seiten, Retrywartezeiten 2/4 Sekunden, 60 Sekunden Requesttimeout. Eigener User-Agent. Regelbetrieb höchstens 30 Requests/Tag; manuelle Wiederholungen berücksichtigen die Anbieterquote. Erfolgsbelege im niedrigen KiB-Bereich pro Lauf; Quellantworten und historische Positionen werden nicht angesammelt.
+Maximal 20 MiB dekodierte Antwort pro Seite, zehn Seiten und drei Versuche bei 429/5xx; keine Weiterleitungen. Mindestens 1,1 Sekunden zwischen Seiten, Retrywartezeiten 2/4 Sekunden, 60 Sekunden Requesttimeout. Eigener User-Agent. Höchstens 30 Requests pro vollständigem Lauf; manuelle Wiederholungen berücksichtigen die Anbieterquote. Erfolgsbelege im niedrigen KiB-Bereich pro Lauf; Quellantworten und historische Positionen werden nicht angesammelt.
 
 Lokal: `PYTHONPATH=www/vps/registry-sync-worker:www/vps/tests COLLECTOR_TEST_DATABASE_URL=... pytest www/vps/registry-sync-worker/tests/test_inaturalist.py` gegen eine Wegwerfdatenbank. Produktiv: `docker compose exec -T registry-sync-worker python main.py --job inaturalist-ried`.
 
