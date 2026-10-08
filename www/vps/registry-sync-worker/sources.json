@@ -964,6 +964,17 @@
       "max_age_seconds": 63072000,
       "http_retries": 2,
       "partial_retry_seconds": 86400
+    },
+    {
+      "id": "nasa-ecostress",
+      "group": "environment",
+      "adapter": "ecostress",
+      "enabled": true,
+      "url": "https://cmr.earthdata.nasa.gov/search/granules.json",
+      "interval_seconds": 86400,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "reason": "Public V003 catalog; protected raster requires EARTHDATA_TOKEN and ECOSTRESS_RASTER_ENABLED=true."
     }
   ]
 }

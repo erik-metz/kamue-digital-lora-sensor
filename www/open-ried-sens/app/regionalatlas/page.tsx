@@ -24,6 +24,7 @@ import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import RegionalatlasTabs from "../components/RegionalatlasTabs";
 import SatelliteEarthObservationSection from "./SatelliteEarthObservationSection";
+import EcostressSection from "./EcostressSection";
 
 export const metadata: Metadata = {
   title: "Regionalatlas Ried | Kommunaldaten, Statistik & Bürgerinformationen",
@@ -356,6 +357,7 @@ export default function RegionalatlasOverviewPage() {
 
         {/* SATELLITE & EARTH OBSERVATION / DROUGHT MONITORING */}
         <SatelliteEarthObservationSection />
+        <EcostressSection />
 
         {/* REGIONAL COVERAGE / COMMUNES */}
         <section className="p-6 sm:p-8 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-6">

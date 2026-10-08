@@ -207,3 +207,35 @@ async def download_satellite_data(
             "Cache-Control": "no-store",
         },
     )
+
+
+@router.get("/ecostress/scenes")
+async def get_ecostress_scenes(pool: DbPool, limit: int = Query(default=20, ge=1, le=60)):
+    """Public catalog metadata can exist before an authenticated raster import."""
+    async with pool.connection() as conn:
+        rows = await (await conn.execute(
+            "SELECT metadata FROM entities WHERE entity_type='ecostress_scene' AND NOT is_hidden ORDER BY metadata->>'acquired_at' DESC LIMIT %s", (limit,)
+        )).fetchall()
+    scenes = [row["metadata"] for row in rows]
+    return {"scenes": scenes, "count": len(scenes), "source": "NASA ECOSTRESS ECO_L2T_LSTE.003",
+            "note": "Oberflächentemperatur der gültigen wolkenfreien Landpixel; einzelne Kacheln und Aufnahmezeiten."}
+
+
+@router.get("/ecostress/crop/{scene_id}.npz")
+async def download_ecostress_crop(scene_id: str, pool: DbPool):
+    async with pool.connection() as conn:
+        row = await (await conn.execute(
+            "SELECT metadata FROM entities WHERE id=%s AND entity_type='ecostress_scene' AND NOT is_hidden", (scene_id,)
+        )).fetchone()
+        raster = row["metadata"].get("raster") if row else None
+        if not raster or raster.get("method") != "ecostress-v003-clear-land70-v1":
+            raise HTTPException(404, "No ECOSTRESS temperature crop available")
+        sha = raster["archive_sha256"]
+        payload = await (await conn.execute(
+            "SELECT p.body FROM collected_payloads p JOIN collection_attempts a ON a.payload_sha256=p.sha256 WHERE p.sha256=%s AND p.content_type='application/x-npz' AND a.id=%s AND a.status='success' AND a.source_id='nasa-ecostress:raster'", (sha, raster["attempt_id"])
+        )).fetchone()
+    if not payload or hashlib.sha256(bytes(payload["body"])).hexdigest() != sha:
+        raise HTTPException(503, "ECOSTRESS archive evidence unavailable")
+    return Response(bytes(payload["body"]), media_type="application/octet-stream",
+                    headers={"ETag": f'"{sha}"', "Content-Disposition": 'attachment; filename="ecostress-crop.npz"',
+                             "Cache-Control": "public, max-age=300"})

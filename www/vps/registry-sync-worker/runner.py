@@ -19,6 +19,7 @@ from budgets import import_biblis_budget
 from chargers import import_chargers
 from club_events import import_club_events
 from config import Settings
+from ecostress import import_ecostress
 from elections import import_elections
 from groundwater import import_groundwater
 from gtfs import import_gtfs
@@ -63,6 +64,7 @@ ADAPTERS = {
     "hlnug-groundwater": import_groundwater,
     "invekos": import_invekos,
     "sentinel-satellite": import_satellite,
+    "ecostress": import_ecostress,
 }
 
 

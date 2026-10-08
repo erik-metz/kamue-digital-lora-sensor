@@ -7,7 +7,7 @@ Stand: 8. Oktober 2026. Umfang: ECOSTRESS, NASA FIRMS, iNaturalist und SolarEdge
 | Schritt | Ergebnis | Status |
 | --- | --- | --- |
 | 1 | Verfügbarkeit, Gebiet, Zugänge und Datenverträge prüfen | Abgeschlossen für öffentliche Vorprüfung; authentifizierte Daten offen |
-| 2 | ECOSTRESS: Oberflächentemperatur als echte Rasterdaten | Offen |
+| 2 | ECOSTRESS: Oberflächentemperatur als echte Rasterdaten | In Umsetzung: Collector, API und Verfügbarkeitsanzeige; echter Import und Karte offen |
 | 3 | FIRMS: satellitengestützte thermische Anomalien | Offen |
 | 4 | iNaturalist: zusätzliche Artenbeobachtungen | Offen |
 | 5 | SolarEdge: tatsächliche Erzeugung teilnehmender PV-Anlagen | Offen, Anlagenzugang erforderlich |
