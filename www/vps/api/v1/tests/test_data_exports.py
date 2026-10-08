@@ -54,12 +54,12 @@ class ExportDatabaseTests(DatabaseCase):
         self.pool = Pool()
 
     async def reading(self, entity, metric='temperature', value='12.1234567890123456789',
-                      hidden=False, kind='environmental_sensor', basis='observed'):
+                      hidden=False, kind='environmental_sensor', basis='observed', dimensions=None):
         await self.conn.execute('INSERT INTO entities(id,name,entity_type,is_hidden) VALUES (%s,%s,%s,%s)',
                                 (entity, entity, kind, hidden))
         await self.conn.execute("""SELECT write_measurement(%s,%s,'°C','export-test',%s,
-            '{}'::jsonb,'2030-01-15T12:00:00Z',%s::numeric,'2030-01-15T12:01:00Z','{}'::jsonb)""",
-                                (entity, metric, basis, value))
+            %s::jsonb,'2030-01-15T12:00:00Z',%s::numeric,'2030-01-15T12:01:00Z','{}'::jsonb)""",
+                                (entity, metric, basis, json.dumps(dimensions or {}), value))
 
     async def unzip(self, response):
         data = response.body if hasattr(response, "body") else b"".join([chunk async for chunk in response.body_iterator])
@@ -93,6 +93,23 @@ class ExportDatabaseTests(DatabaseCase):
         self.assertEqual({r['id'] for r in tables['entities.csv']}, {'a', 'b'})
         self.assertEqual({r['basis'] for r in tables['measurement_definitions.csv']}, {'model', 'observed'})
         self.assertEqual(manifest['end_exclusive'], '2030-02-01T00:00:00+00:00')
+
+    async def test_inaturalist_cannot_bypass_current_publication_rules(self):
+        from endpoints.environment_measurements import environment_measurements
+
+        await self.reading('ordinary', dimensions={'contract': 'environment-v1'})
+        await self.reading('inat', kind='inaturalist_observation', dimensions={'contract': 'environment-v1'})
+        for sample in (True, False):
+            tables, _ = await self.unzip(await download_data(topic='all', sample=sample,
+                start=date(2030,1,1), end=date(2030,1,31), pool=self.pool))
+            self.assertEqual([r['id'] for r in tables['entities.csv']], ['ordinary'])
+            self.assertEqual(len(tables['measurement_definitions.csv']), 1)
+            self.assertEqual(len(tables['readings.csv']), 1)
+        for entity, expected in [('ordinary', 1), ('inat', 0)]:
+            result = await environment_measurements(entity_id=entity,
+                start=datetime(2030,1,1,tzinfo=UTC), end=datetime(2030,2,1,tzinfo=UTC),
+                kind=None, metric=None, limit=100, pool=self.pool)
+            self.assertEqual(len(result['items']), expected)
 
     async def test_mobility_includes_service_trips_and_traffic_metrics(self):
         await self.reading('trip', metric='latitude', kind='service_trip', basis='schedule_prediction')

@@ -18,6 +18,7 @@ SAMPLE_SIZE = 300
 
 # A hidden/deleted legacy sensor must stay hidden even during the core migration.
 PUBLIC = """NOT e.is_hidden AND e.metadata->>'legacy_deleted' IS DISTINCT FROM 'true'
+    AND e.entity_type <> 'inaturalist_observation'
     AND (e.id NOT LIKE 'sensor:%%' OR EXISTS (
         SELECT 1 FROM sensor_metadata s WHERE s.id=substr(e.id,8) AND NOT s.is_hidden))"""
 MOBILITY = """(e.entity_type IN ('movement','corridor','road_segment','truck_parking',

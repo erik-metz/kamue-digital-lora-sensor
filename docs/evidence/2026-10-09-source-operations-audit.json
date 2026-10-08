@@ -1,0 +1,399 @@
+{
+  "checked_at": "2026-10-08T22:11:22.379336+00:00",
+  "sources": {
+    "nasa-ecostress": {
+      "statuses": [
+        [
+          "received",
+          1,
+          "2026-10-08 06:54:01.722866+00:00"
+        ],
+        [
+          "failed",
+          2,
+          "2026-10-08 11:36:10.641349+00:00"
+        ],
+        [
+          "success",
+          51,
+          "2026-10-08 22:00:37.311745+00:00"
+        ]
+      ],
+      "latest": [
+        [
+          247753,
+          "success",
+          "2026-10-08 22:00:37.311745+00:00",
+          "2026-10-08 22:00:37.311745+00:00",
+          "2026-10-08 22:00:52.885478+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          247751,
+          "success",
+          "2026-10-08 22:00:37.056073+00:00",
+          "2026-10-08 22:00:37.056073+00:00",
+          "2026-10-08 22:00:52.884401+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          247750,
+          "success",
+          "2026-10-08 22:00:36.778594+00:00",
+          "2026-10-08 22:00:36.778594+00:00",
+          "2026-10-08 22:00:52.882875+00:00",
+          null,
+          null,
+          null
+        ]
+      ],
+      "unique_payloads_and_bytes": [
+        52,
+        47132627
+      ]
+    },
+    "nasa-ecostress:raster": {
+      "statuses": [
+        [
+          "not_configured",
+          5,
+          "2026-10-08 11:18:10.662823+00:00"
+        ],
+        [
+          "failed",
+          7,
+          "2026-10-08 11:25:43.658463+00:00"
+        ],
+        [
+          "success",
+          17,
+          "2026-10-08 22:00:45.702699+00:00"
+        ]
+      ],
+      "latest": [
+        [
+          247804,
+          "success",
+          "2026-10-08 22:00:45.702699+00:00",
+          "2026-10-08 22:00:45.702699+00:00",
+          "2026-10-08 22:00:52.815714+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          247771,
+          "success",
+          "2026-10-08 22:00:37.341238+00:00",
+          "2026-10-08 22:00:37.341238+00:00",
+          "2026-10-08 22:00:52.813033+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          246577,
+          "success",
+          "2026-10-08 21:43:41.971114+00:00",
+          "2026-10-08 21:43:41.971114+00:00",
+          "2026-10-08 21:43:49.556838+00:00",
+          null,
+          null,
+          null
+        ]
+      ],
+      "unique_payloads_and_bytes": [
+        17,
+        1051434
+      ]
+    },
+    "nasa-firms": {
+      "statuses": [
+        [
+          "success",
+          12,
+          "2026-10-08 22:00:53.574161+00:00"
+        ]
+      ],
+      "latest": [
+        [
+          247806,
+          "success",
+          "2026-10-08 22:00:53.574161+00:00",
+          "2026-10-08 22:00:53.574161+00:00",
+          "2026-10-08 22:00:53.613671+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          246579,
+          "success",
+          "2026-10-08 21:43:50.430183+00:00",
+          "2026-10-08 21:43:50.430183+00:00",
+          "2026-10-08 21:43:50.547426+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          245261,
+          "success",
+          "2026-10-08 21:26:09.268105+00:00",
+          "2026-10-08 21:26:09.268105+00:00",
+          "2026-10-08 21:26:09.302163+00:00",
+          null,
+          null,
+          null
+        ]
+      ],
+      "unique_payloads_and_bytes": [
+        1,
+        122
+      ]
+    },
+    "inaturalist-ried": {
+      "statuses": [
+        [
+          "success",
+          3,
+          "2026-10-08 22:01:32.663427+00:00"
+        ]
+      ],
+      "latest": [
+        [
+          247914,
+          "success",
+          "2026-10-08 22:01:32.663427+00:00",
+          "2026-10-08 22:01:32.663427+00:00",
+          "2026-10-08 22:01:36.955312+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          246728,
+          "success",
+          "2026-10-08 21:44:33.445027+00:00",
+          "2026-10-08 21:44:33.445027+00:00",
+          "2026-10-08 21:44:35.949980+00:00",
+          null,
+          null,
+          null
+        ],
+        [
+          246178,
+          "success",
+          "2026-10-08 21:42:08.222684+00:00",
+          "2026-10-08 21:42:08.222684+00:00",
+          "2026-10-08 21:42:10.303336+00:00",
+          null,
+          null,
+          null
+        ]
+      ],
+      "unique_payloads_and_bytes": [
+        3,
+        3237
+      ]
+    },
+    "energy-meter-feed": {
+      "statuses": [
+        [
+          "not_configured",
+          9916,
+          "2026-10-08 22:10:43.127564+00:00"
+        ]
+      ],
+      "latest": [
+        [
+          248295,
+          "not_configured",
+          "2026-10-08 22:10:43.127564+00:00",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          248253,
+          "not_configured",
+          "2026-10-08 22:09:41.288462+00:00",
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        [
+          248210,
+          "not_configured",
+          "2026-10-08 22:08:43.306317+00:00",
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "unique_payloads_and_bytes": [
+        0,
+        0
+      ]
+    }
+  },
+  "datasets": [
+    [
+      "environment/ecostress/scenes",
+      "nasa-ecostress",
+      "2026-10-08 22:00:52.847238+00:00",
+      "2026-10-08 22:00:36.456243+00:00",
+      "2026-10-10 22:00:36.456243+00:00",
+      102465
+    ],
+    [
+      "environment/firms/anomalies",
+      "nasa-firms",
+      "2026-10-08 22:00:53.603488+00:00",
+      "2026-10-08 22:00:52.963030+00:00",
+      "2026-10-09 00:00:52.963030+00:00",
+      409
+    ],
+    [
+      "environment/inaturalist/observations",
+      "inaturalist-ried",
+      "2026-10-08 22:03:25.360715+00:00",
+      "2026-10-08 22:00:53.692731+00:00",
+      "2026-10-10 10:00:53.692731+00:00",
+      1255787
+    ]
+  ],
+  "storage_bytes": [
+    14176517143,
+    6188867584,
+    69869568
+  ],
+  "inaturalist_current_versions": 1,
+  "public_http": {
+    "/satellite/ecostress/scenes": {
+      "http": 200,
+      "cache_control": null,
+      "status": null,
+      "keys": [
+        "scenes",
+        "count",
+        "source",
+        "note"
+      ],
+      "count": 20,
+      "records": 20
+    },
+    "/satellite/firms": {
+      "http": 200,
+      "cache_control": "public, max-age=30",
+      "status": "success",
+      "keys": [
+        "note",
+        "count",
+        "status",
+        "product",
+        "detections",
+        "fetched_at",
+        "window_days",
+        "bbox_lon_lat",
+        "window_start",
+        "archive_sha256",
+        "display_days",
+        "last_successful_fetch_at"
+      ],
+      "count": 0,
+      "records": 0
+    },
+    "/satellite/firms/download": {
+      "http": 200,
+      "cache_control": "public, max-age=30",
+      "status": "success",
+      "keys": [
+        "note",
+        "count",
+        "status",
+        "product",
+        "detections",
+        "fetched_at",
+        "window_days",
+        "bbox_lon_lat",
+        "window_start",
+        "archive_sha256",
+        "display_days",
+        "last_successful_fetch_at"
+      ],
+      "count": 0,
+      "records": 0
+    },
+    "/environment/measurements/inaturalist": {
+      "http": 200,
+      "cache_control": "no-store",
+      "status": "success",
+      "keys": [
+        "note",
+        "count",
+        "status",
+        "matched",
+        "scanned",
+        "rejected",
+        "truncated",
+        "fetched_at",
+        "bbox_lon_lat",
+        "deduplication",
+        "additional_count",
+        "gbif_overlap_count",
+        "observations",
+        "filtered_count",
+        "offset",
+        "limit",
+        "include_duplicates",
+        "has_more"
+      ],
+      "count": 1726,
+      "records": 100
+    },
+    "/environment/measurements/inaturalist/download": {
+      "http": 200,
+      "cache_control": "no-store",
+      "status": "success",
+      "keys": [
+        "note",
+        "count",
+        "status",
+        "matched",
+        "scanned",
+        "rejected",
+        "truncated",
+        "fetched_at",
+        "bbox_lon_lat",
+        "deduplication",
+        "additional_count",
+        "gbif_overlap_count",
+        "observations",
+        "filtered_count",
+        "offset",
+        "limit",
+        "include_duplicates",
+        "has_more"
+      ],
+      "count": 1726,
+      "records": 1679
+    }
+  },
+  "local_validation": {
+    "collector_tests": 62,
+    "export_tests": 11,
+    "export_subtests": 4,
+    "ruff": "passed"
+  }
+}

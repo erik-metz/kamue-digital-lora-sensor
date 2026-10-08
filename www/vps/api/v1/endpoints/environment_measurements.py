@@ -38,7 +38,8 @@ async def environment_measurements(
             r.period_start,r.period_end,r.value,r.quality,r.collected_at,r.provenance,r.revision
             FROM measurement_definitions d JOIN entities e ON e.id=d.entity_id
             JOIN readings r ON r.measurement_id=d.id
-            WHERE NOT e.is_hidden AND d.entity_id=%s AND d.dimensions->>'contract'='environment-v1'
+            WHERE NOT e.is_hidden AND e.entity_type <> 'inaturalist_observation'
+                AND d.entity_id=%s AND d.dimensions->>'contract'='environment-v1'
                 AND (%s::text IS NULL OR d.dimensions->>'data_kind'=%s)
                 AND (%s::text IS NULL OR d.metric=%s)
                 AND r.observed_at>=%s AND r.observed_at<%s
