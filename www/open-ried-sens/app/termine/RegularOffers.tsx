@@ -12,7 +12,7 @@ export default function RegularOffers({ offers, unavailable }: { offers: Regular
           {offers.map((offer) => (
             <li key={offer.id} className="rounded-xl border border-slate-700 p-4 space-y-2">
               <h3 className="font-semibold text-emerald-300">{offer.title}</h3>
-              <p className="font-medium">{offer.weekday}, {offer.start_local} Uhr</p>
+              <p className="font-medium">{offer.weekday}, {offer.start_local}{offer.end_local ? `–${offer.end_local}` : ""} Uhr</p>
               <p className="text-sm text-slate-300">Treffpunkt: {offer.venue_name}</p>
               <p className="text-sm text-slate-400">{offer.organizer} · {offer.municipality}</p>
               <p className="text-sm text-slate-300">{offer.description}</p>

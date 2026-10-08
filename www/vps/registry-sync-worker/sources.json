@@ -1,6 +1,101 @@
 {
   "sources": [
     {
+      "id": "rompin-stompin-regular-offers",
+      "group": "social",
+      "adapter": "rompin-stompin-offers",
+      "enabled": true,
+      "url": "https://www.rompinstompin.de/unserkursangebot",
+      "headers": {
+        "User-Agent": "Mozilla/5.0"
+      },
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_courses": [
+        {
+          "card_sha256": "74b179d79a506a858dc308b92ea23b95c0085e03a01b8f20af7e2cd58be1bf5f",
+          "id": "rompin-stompin-biblis-einstieg",
+          "title": "Line Dance – Einstieg (Heidi)",
+          "weekday": "Montag",
+          "start_local": "10:00",
+          "end_local": "11:00",
+          "municipality": "Biblis",
+          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
+        },
+        {
+          "card_sha256": "30680f7c0e1d4eeee22d3e67809795eb23403c0ca6367d9a55f0ab71a0d40d1e",
+          "id": "rompin-stompin-biblis-aufbau",
+          "title": "Line Dance – Aufbau (Britta)",
+          "weekday": "Montag",
+          "start_local": "18:00",
+          "end_local": "19:00",
+          "municipality": "Biblis",
+          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
+        },
+        {
+          "card_sha256": "5d38fa395eb7e0fffbb660dce1bae19a832eae813c480439e498ece80426dd5a",
+          "id": "rompin-stompin-biblis-fortgeschritten",
+          "title": "Line Dance – Fortgeschrittene (Britta)",
+          "weekday": "Montag",
+          "start_local": "19:00",
+          "end_local": "20:00",
+          "municipality": "Biblis",
+          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
+        },
+        {
+          "card_sha256": "eb93779bb854cb7316f14710b977796f35f76a72fafb7895deca3749b720ed14",
+          "id": "rompin-stompin-biblis-erfahren",
+          "title": "Line Dance – Erfahrene (Britta)",
+          "weekday": "Montag",
+          "start_local": "20:00",
+          "end_local": "21:00",
+          "municipality": "Biblis",
+          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
+        },
+        {
+          "card_sha256": "888564bb03683bd811efadc12b91eeed36cf814eb5f2c99f8068e0fe087e4fe5",
+          "id": "rompin-stompin-buerstadt-aufbau",
+          "title": "Line Dance – Aufbau (Yvonne)",
+          "weekday": "Montag",
+          "start_local": "18:30",
+          "end_local": "19:30",
+          "municipality": "Bürstadt",
+          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
+        },
+        {
+          "card_sha256": "ea7d9356cb0e2165da25170dae026d7c11f4f163a9c7cf6d757af6f411192be2",
+          "id": "rompin-stompin-buerstadt-fortgeschritten",
+          "title": "Line Dance – Fortgeschrittene (Yvonne)",
+          "weekday": "Montag",
+          "start_local": "19:30",
+          "end_local": "20:30",
+          "municipality": "Bürstadt",
+          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
+        },
+        {
+          "card_sha256": "9a958065b1b701439fe535f71ec996ddfa8efe151abb3f288e815a15d4dea1a3",
+          "id": "rompin-stompin-buerstadt-partnertanz",
+          "title": "Partnertanz (Heidi)",
+          "weekday": "Donnerstag",
+          "start_local": "18:00",
+          "end_local": "19:00",
+          "municipality": "Bürstadt",
+          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
+        },
+        {
+          "card_sha256": "749589b80008840b56b12168910cbe57879931b8c638137c1c5f089ae6b9a899",
+          "id": "rompin-stompin-buerstadt-erfahren",
+          "title": "Line Dance – Erfahrene (Heidi)",
+          "weekday": "Donnerstag",
+          "start_local": "19:00",
+          "end_local": "21:00",
+          "municipality": "Bürstadt",
+          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
+        }
+      ]
+    },
+    {
       "id": "tv-buerstadt-lauftreff",
       "group": "social",
       "adapter": "buerstadt-lauftreff",

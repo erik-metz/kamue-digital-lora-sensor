@@ -192,3 +192,36 @@ Angebote wurden in diesem Umsetzungsschritt nicht hinzugefügt.
 
 Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
 weitere Frontend-/VPS-CI aus.
+
+## Umsetzung: regelmäßige Tanzangebote in Biblis und Bürstadt
+
+Die acht Kurse aus der Rechercheliste wurden am 08.10.2026 erneut direkt
+geprüft und als Quelle `rompin-stompin-regular-offers` umgesetzt: vier
+Montagskurse im Bürgerzentrum Biblis und vier Angebote in der Tanzschule
+Kohler, Bürstadt. Die veröffentlichte Anfangs- und Enduhrzeit wird angezeigt;
+bei den bestehenden Lauftreffs bleibt die Endzeit unbekannt.
+
+Der zusätzliche Montags-Eintrag 20:30–21:00 bezeichnet seinen Raum abweichend
+als „Tanzschule Kohle“ und bleibt bis zur eindeutigen Zuordnung zurückgestellt.
+Der Zweiwochenkurs wird nicht als wöchentliches Angebot ausgegeben, Einhausen
+liegt außerhalb des vereinbarten Gebiets. Keine angenommenen einzelnen
+Kalenderdaten, keine Zusage freier Plätze oder kostenloser Teilnahme.
+
+Der Import kontrolliert die acht verifizierten Kurskarten anhand ihres
+normalisierten Text-SHA-256 und prüft die konkreten veröffentlichten
+Raumadressen. Änderungen und doppelte Karten stoppen die Übernahme vor der
+Veröffentlichung. Andere Vereinsquellen bleiben unabhängig erhalten.
+Originalantworten werden archiviert; Abruf alle sechs Stunden und höchstens
+zwei Tage gültige Veröffentlichung. Für diese Quelle wird ein kompatibler
+HTTP-User-Agent gesetzt: Standard-httpx und benannte Collector-Agents werden
+mit 403 abgewiesen, die konfigurierte Anfrage liefert die öffentliche
+Kursübersicht mit HTTP 200.
+
+Prüfungen vor Veröffentlichung: **295 Worker-Tests** mit Datenbankintegration
+bestanden; nach der Header-Konfiguration zusätzlich alle **neun neuen
+Importtests** bestanden. **21 Frontend-Terminprüfungen**, ESLint der
+betroffenen Dateien, Ruff, Diff-Prüfung und Next.js-Produktions-Build
+bestehen. Der lokale Build benötigte Netzwerkzugriff für Google Fonts.
+Live-Abruf aller drei Vereinsquellen bis zur kombinierten API-Antwort in
+einem eigenen Testschema: **zehn eindeutige regelmäßige Angebote**, davon
+acht Tanzangebote mit Enduhrzeiten; null erfundene datierte Events.

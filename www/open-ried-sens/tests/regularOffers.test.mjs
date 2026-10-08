@@ -29,3 +29,10 @@ test("unavailable publication displays status instead of a fallback offer", () =
   assert.match(html, /derzeit nicht abrufbar/);
   assert.doesNotMatch(html, /TV-Lauftreff|keine regelmäßigen Angebote/);
 });
+
+test("published course end times are shown while running offers retain unknown ends", () => {
+  const html = renderToStaticMarkup(RegularOffers({ offers: [{ ...offer, id: "dance", title: "Line Dance", start_local: "18:30", end_local: "19:30" }, offer], unavailable: false }));
+  assert.match(html, /18:30–19:30 Uhr/);
+  assert.match(html, /Mittwoch, 19:00 Uhr/);
+  assert.doesNotMatch(html, /19:00–/);
+});

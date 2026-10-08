@@ -5,6 +5,7 @@ export interface RegularOffer {
   municipality: string;
   weekday: string;
   start_local: string;
+  end_local?: string;
   timezone: string;
   venue_name: string;
   description: string;

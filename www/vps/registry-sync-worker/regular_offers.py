@@ -93,3 +93,40 @@ async def import_tv_lauftreff(conn, client, source):
 
 async def import_buerstadt_lauftreff(conn, client, source):
     await import_regular_offers(conn, client, source, buerstadt_lauftreff)
+
+
+def rompin_stompin(html, source):
+    root = Document(html).root
+    if "Unser Kursangebot" not in [n.text() for n in root.find(tag="h1")]:
+        raise ValueError("Line dance course overview missing")
+    for proof in [
+        "Darmstädter Straße 4-6 68647 Biblis",
+        "Mainstraße 44 68642 Bürstadt",
+    ]:
+        if proof not in root.text():
+            raise ValueError("Verified dance venue address changed")
+    hashes = [
+        hashlib.sha256(n.text().encode()).hexdigest() for n in root.find(cls="listText")
+    ]
+    offers = []
+    for verified in source["verified_courses"]:
+        if hashes.count(verified["card_sha256"]) != 1:
+            raise ValueError("Dance course changed or ambiguous; verification required")
+        if verified["municipality"] not in {"Biblis", "Bürstadt"}:
+            raise ValueError("Dance venue outside agreed Ried area")
+        offer = {k: v for k, v in verified.items() if k != "card_sha256"}
+        offer.update(
+            organizer="Rompin Stompin Line Dancer Biblis e.V.",
+            timezone="Europe/Berlin",
+            source=source["id"],
+            source_url=source["url"],
+            description="Tanzangebot des Vereins. "
+            "Kosten, Anmeldung und freie Plätze bitte beim Verein erfragen. "
+            "Feiertage und Ausfälle sind nicht als einzelne Termine veröffentlicht.",
+        )
+        offers.append(offer)
+    return offers
+
+
+async def import_rompin_stompin(conn, client, source):
+    await import_regular_offers(conn, client, source, rompin_stompin)
