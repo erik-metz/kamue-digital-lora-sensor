@@ -1,6 +1,6 @@
 # NASA ECOSTRESS V003
 
-Der Adapter `ecostress` fragt täglich den öffentlichen NASA-CMR-Katalog ab: Collection `C3998139651-LPCLOUD`, 90 Tage, maximal drei Seiten mit je 20 Einträgen, WGS84 West/Süd/Ost/Nord `[8.33,49.54,8.58,49.75]`. Rohantworten werden mit SHA-256 archiviert. Kacheln sind keine unabhängigen Überflüge. Die Suche ist kein vollständiger historischer Backfill.
+Der Adapter `ecostress` fragt täglich den öffentlichen NASA-CMR-Katalog ab: Collection `C3998139651-LPCLOUD`, 90 Tage, maximal drei Seiten mit je 20 Einträgen, WGS84 West/Süd/Ost/Nord `[8.33,49.54,8.58,49.75]`. Rohantworten werden mit SHA-256 archiviert. Kacheln sind keine unabhängigen Überflüge. CMR kann aufgrund nahezu globaler Bounding Boxes von Kacheln an der Datumsgrenze falsche Gebietstreffer liefern. Der Parser akzeptiert deshalb zusätzlich nur 32UMA und 32UMV; entfernte Kacheln werden vor der Asset-Verarbeitung ausgeschlossen. Die Suche ist kein vollständiger historischer Backfill.
 
 ## Rasterzugang
 

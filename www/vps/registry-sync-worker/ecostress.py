@@ -13,7 +13,7 @@ from psycopg.types.json import Jsonb
 from publications import acquire, acquisition_error, publish
 
 COLLECTION = "C3998139651-LPCLOUD"
-ID = re.compile(r"^ECOv003_L2T_LSTE_\d+_\d+_(32UMA|32UMV)_\d{8}T\d{6}_\d+$")
+ID = re.compile(r"^ECOv003_L2T_LSTE_\d+_\d+_(\d{2}[C-X][A-Z]{2})_\d{8}T\d{6}_\d+$")
 
 
 def parse_granules(body, now=None):
@@ -26,6 +26,9 @@ def parse_granules(body, now=None):
         gid = entry.get("producer_granule_id", "")
         if not ID.fullmatch(gid):
             raise ValueError("Unexpected V003 granule identifier")
+        # Dateline tiles can have almost global CMR boxes and match the AOI spuriously.
+        if ID.fullmatch(gid)[1] not in {"32UMA", "32UMV"}:
+            continue
         stamp = datetime.fromisoformat(entry["time_start"])
         if stamp.tzinfo is None or stamp > now:
             raise ValueError("Invalid ECOSTRESS acquisition time")

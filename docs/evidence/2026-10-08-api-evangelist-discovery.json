@@ -109,6 +109,7 @@
     "Metadata intersection is not proof of valid or cloud-free raster pixels.",
     "Granule counts are not unique overpass counts.",
     "iNaturalist total_results is a filtered API count; only one record was sampled, and GBIF duplication was not assessed.",
-    "No authenticated raster, FIRMS or SolarEdge data retrieved."
+    "No authenticated raster, FIRMS or SolarEdge data retrieved.",
+    "Full-page follow-up found antimeridian tile false positives in the bounding-box query. Catalog hits are not a pure count of Ried tiles; the collector additionally filters tile IDs 32UMA/32UMV."
   ]
 }

@@ -172,3 +172,15 @@ def test_cloud_only_temperature_tile_remains_transparent():
     body = read_crop(scene(), rasters(cloudy=True))[1]
     image = Image.open(io.BytesIO(render_temperature_tile(body, 14, 8573, 5581)))
     assert image.getchannel("A").getbbox() is None
+
+
+def test_cmr_dateline_false_positive_is_excluded_before_asset_download():
+    data = catalog()
+    entry = data["feed"]["entry"][0]
+    distant = json.loads(json.dumps(entry))
+    distant["producer_granule_id"] = "ECOv003_L2T_LSTE_46790_013_01UBR_20261006T004351_02"
+    distant["boxes"] = ["49.4908693 -179.6840982 50.521347 178.8567195"]
+    distant["links"] = []
+    data["feed"]["entry"].append(distant)
+    scenes = parse_granules(json.dumps(data))
+    assert len(scenes) == 1 and scenes[0]["tile"] == "32UMA"
