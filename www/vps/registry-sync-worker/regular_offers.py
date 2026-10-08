@@ -1,5 +1,6 @@
 """Verified weekly club offers, without fabricated calendar occurrences."""
 
+import hashlib
 from datetime import UTC, datetime
 
 from municipal_events import Document
@@ -39,13 +40,56 @@ def tv_lauftreff(html, source):
     ]
 
 
-async def import_tv_lauftreff(conn, client, source):
+def buerstadt_lauftreff(html, source):
+    root = Document(html).root
+    if "Trainingszeiten Lauftreff" not in [n.text() for n in root.find(tag="h1")]:
+        raise ValueError("Bürstadt training page missing")
+    paragraphs = [n.text() for n in root.find(tag="p")]
+    for digest in source["verified_paragraph_sha256"]:
+        if (
+            sum(hashlib.sha256(p.encode()).hexdigest() == digest for p in paragraphs)
+            != 1
+        ):
+            raise ValueError(
+                "Bürstadt schedule or participation changed; verification required"
+            )
+    return [
+        {
+            "id": "tv-buerstadt-lauftreff-dienstag",
+            "title": "TV Bürstadt – Dienstags-Lauftreff",
+            "organizer": "TV 1891 Bürstadt",
+            "municipality": "Bürstadt",
+            "weekday": "Dienstag",
+            "start_local": "18:00",
+            "timezone": "Europe/Berlin",
+            "venue_name": "TV-Heim, Wasserwerkstraße, Bürstadt",
+            "description": "Auch für Einsteiger. Der Verein bittet darum, die erste Teilnahme "
+            "vorher beim Lauftreff anzukündigen (lauftreff-buerstadt@gmx.de). "
+            "Endzeit, Kosten und konkrete Ausfalltermine sind nicht veröffentlicht. "
+            "Bitte aktuelle Angaben beim Verein prüfen.",
+            "source": source["id"],
+            "source_url": source["url"],
+        }
+    ]
+
+
+async def import_regular_offers(conn, client, source, parser):
     response, digest, attempt = await acquire(conn, client, source)
-    offers = tv_lauftreff(response.text, source)
+    offers = parser(response.text, source)
     now = datetime.now(UTC)
     async with conn.transaction():
-        await publish(conn, source, "social/regular-offers", offers, digest, now)
+        await publish(
+            conn, source, "social/regular-offers/" + source["id"], offers, digest, now
+        )
         await conn.execute(
             "UPDATE collection_attempts SET status='success' WHERE id=%s", (attempt,)
         )
     await conn.commit()
+
+
+async def import_tv_lauftreff(conn, client, source):
+    await import_regular_offers(conn, client, source, tv_lauftreff)
+
+
+async def import_buerstadt_lauftreff(conn, client, source):
+    await import_regular_offers(conn, client, source, buerstadt_lauftreff)

@@ -23,7 +23,9 @@ export async function collectedFetch(input: URL | string, _init?: RequestInit) {
 
 export async function readCollected<T>(dataset: string, seconds = 300): Promise<T> {
   const response = await fetch(new URL(`/api/v1/collected/${dataset}`, env.BACKEND_API_URL), {
-    next: { revalidate: seconds }, signal: AbortSignal.timeout(10000),
+    // The combined offers can change as an individual source expires.
+    ...(dataset === "social/regular-offers" ? { cache: "no-store" as const } : { next: { revalidate: seconds } }),
+    signal: AbortSignal.timeout(10000),
   });
   if (!response.ok || !unexpired(response)) throw new Error("Collected data unavailable");
   return response.json() as Promise<T>;

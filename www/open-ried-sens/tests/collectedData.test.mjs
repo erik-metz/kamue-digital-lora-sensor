@@ -13,6 +13,16 @@ function load(path, modules={}, extra={}) {
 }
 const env={env:{BACKEND_API_URL:'https://vps.example'}};
 
+test('regular offers reread the combined publication instead of caching a mixed source batch', async () => {
+ let seen;
+ const lib=load('../lib/collectedBackend.ts',{'@/env':env},{fetch:async(url,init)=>{seen=init;return Response.json([]);}});
+ await lib.readCollected('social/regular-offers');
+ assert.equal(seen.cache,'no-store');
+ assert.equal(seen.next,undefined);
+ await lib.readCollected('example');
+ assert.equal(seen.next.revalidate,300);
+});
+
 test('all domain fetchers reject backend failures instead of returning baselines',async()=>{
  const modules={'@/env':env,'./collectedBackend':{collectedFetch:async()=>new Response(null,{status:503})}};
  for (const [file,functions] of Object.entries({

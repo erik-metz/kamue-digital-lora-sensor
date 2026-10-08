@@ -42,7 +42,7 @@ class RegularOffersDatabaseTests(DatabaseCase):
             await import_tv_lauftreff(self.conn, client, SOURCE)
             await import_tv_lauftreff(self.conn, client, SOURCE)
         data = await self.scalar(
-            "SELECT data FROM collected_datasets WHERE dataset='social/regular-offers'"
+            "SELECT data FROM collected_datasets WHERE dataset='social/regular-offers/tv-gross-rohrheim-lauftreff'"
         )
         self.assertEqual(len(data), 1)
         self.assertEqual(await self.scalar("SELECT count(*) FROM cultural_events"), 0)
@@ -54,7 +54,7 @@ class RegularOffersDatabaseTests(DatabaseCase):
         )
         self.assertEqual(
             await self.scalar(
-                "SELECT convert_from(p.body,'UTF8') FROM collected_payloads p JOIN collected_datasets d ON d.payload_sha256=p.sha256 WHERE d.dataset='social/regular-offers'"
+                "SELECT convert_from(p.body,'UTF8') FROM collected_payloads p JOIN collected_datasets d ON d.payload_sha256=p.sha256 WHERE d.dataset='social/regular-offers/tv-gross-rohrheim-lauftreff'"
             ),
             BODY,
         )
@@ -67,7 +67,7 @@ class RegularOffersDatabaseTests(DatabaseCase):
                 await import_tv_lauftreff(self.conn, client, SOURCE)
         self.assertEqual(
             await self.scalar(
-                "SELECT data FROM collected_datasets WHERE dataset='social/regular-offers'"
+                "SELECT data FROM collected_datasets WHERE dataset='social/regular-offers/tv-gross-rohrheim-lauftreff'"
             ),
             data,
         )

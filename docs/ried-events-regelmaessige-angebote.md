@@ -127,3 +127,42 @@ im produktiven Collector und keine neue Prüfung vor der Implementierung.
 | TVL Nordic Walking | `15cb89329e0e7a996fc9ad75787532783de5699b91d20b5d92bfe35e3017677c` |
 | TV Groß-Rohrheim Radfahren | `6f37a3e4da99a717a59a233e7bc230ca26de61d0892129d8ca6e9c1b6f721cf1` |
 | TV Groß-Rohrheim Gymnastik | `825fd6f7aef9e1c76eaea6754a79727e1b89ac55006e774471589108e4567a1d` |
+
+## Umsetzung: TV Bürstadt, Dienstags-Lauftreff
+
+Die beauftragte Quelle `tv-buerstadt-lauftreff` wurde erneut direkt geprüft:
+Dienstag 18:00 Uhr, TV-Heim in der Wasserwerkstraße, Bürstadt. Erste Teilnahme
+vorher beim Lauftreff ankündigen. Endzeit und Kosten bleiben unbekannt. Nur
+dieser Treff wird übernommen; Sonntag und Sommerfreitag bleiben wegen des
+ungenauen Parkplatzes zurückgestellt. Keine individuellen Kalenderdaten,
+keine erfundene Hausnummer am Treffpunkt und keine berechnete Laufroute.
+
+Der Import prüft Überschrift sowie SHA-256 des veröffentlichten Zeit-/Orts-
+und Teilnahmeabsatzes. Bei Änderungen bleibt die vorherige Veröffentlichung
+bis zu ihrem eigenen Ablauf erhalten; eine erneute Prüfung ist nötig.
+Originalantworten werden vor dem Parsen archiviert. Abruf alle sechs Stunden,
+Veröffentlichung höchstens zwei Tage gültig.
+
+Beide Lauftreffs veröffentlichen nun getrennt unter
+`social/regular-offers/<source_id>`. Die öffentliche API
+`social/regular-offers` kombiniert ausschließlich gültige Quellenstände.
+Der alte Einzelquellen-Datensatz wird für den Übergang berücksichtigt und
+von einem neuen Datensatz derselben Quelle ersetzt, ohne Dubletten oder
+Wiederbelebung eines abgelaufenen neuen Stands. Ein Ausfall oder Ablauf einer
+Quelle blendet die andere nicht aus. Der Cache endet spätestens mit dem
+frühesten Ablauf der enthaltenen Quellen. Die vorhandene Terminseite kann
+diese gemeinsame API unverändert verwenden.
+
+Die Terminseite liest diese kombinierte Veröffentlichung ohne zusätzlichen
+Next.js-Datencache, damit das Ablaufen einer einzelnen Quelle die verbleibende
+gültige Quelle nicht durch einen alten gemeinsamen Cacheeintrag verdeckt.
+Der API-Cache bleibt an die Ablaufzeiten gebunden.
+
+Vor Veröffentlichung bestanden: 264 Tests des aktuellen Worker-Stands mit
+Datenbankintegration, 12 betroffene API-Tests und 13 betroffene Frontend-Tests.
+Der Next.js-Produktions-Build einschließlich TypeScript-Prüfung sowie Ruff
+und Diff-Prüfung sind erfolgreich. ESLint meldet keine Fehler, lediglich die
+bereits vorhandene Warnung zum unbenutzten `_init` im gemeinsamen Fetcher.
+Beide aktuellen Originalseiten wurden zusätzlich in einem eigenen Testschema
+bis zur kombinierten API-Antwort geprüft: zwei archivierte Quellen, beide
+korrekten Wochenangebote, null datierte Kalenderereignisse.

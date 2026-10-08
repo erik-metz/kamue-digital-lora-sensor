@@ -85,12 +85,51 @@ def cached_response(data, request, seconds, headers=None):
     return Response(body, media_type="application/json", headers=response_headers)
 
 
+async def regular_offers_publication(request, pool):
+    """Combine independently expiring club publications, including the legacy row."""
+    async with pool.connection() as conn:
+        cursor = await conn.execute(
+            "SELECT * FROM collected_datasets WHERE dataset=%s OR dataset LIKE %s",
+            ("social/regular-offers", "social/regular-offers/%"),
+        )
+        rows = await cursor.fetchall()
+    # A new source-specific row supersedes its legacy publication even when expired.
+    sources = {}
+    for row in sorted(rows, key=lambda r: r["dataset"]):
+        sources[row["source_id"]] = row
+    now = datetime.now(UTC)
+    fresh = [row for row in sources.values() if row["expires_at"] > now]
+    if not fresh:
+        raise HTTPException(
+            503, "Regular offers unavailable", headers={"Cache-Control": "no-store"}
+        )
+    expires = min(row["expires_at"] for row in fresh)
+    data = sorted(
+        [offer for row in fresh for offer in row["data"]], key=lambda offer: offer["id"]
+    )
+    return cached_response(
+        filtered(data, dict(request.query_params)),
+        request,
+        max(0, min(300, int((expires - now).total_seconds()))),
+        {
+            "X-Data-Expires-At": expires.isoformat(),
+            "X-Source-Updated-At": min(
+                r["source_updated_at"] for r in fresh
+            ).isoformat(),
+            "X-Collected-At": max(r["fetched_at"] for r in fresh).isoformat(),
+            "X-Data-Source": ",".join(sorted(r["source_id"] for r in fresh)),
+        },
+    )
+
+
 @router.get("/collected/{dataset:path}")
 async def dataset_publication(
     dataset: str, request: Request, pool=Depends(get_db_pool)
 ):
     if dataset == "infrastructure/emf":
         return cached_response(await get_emf_sites(pool), request, 300)
+    if dataset == "social/regular-offers":
+        return await regular_offers_publication(request, pool)
     municipality = None
     parts = dataset.split("/")
     if len(parts) == 3 and parts[0] == "demographics" and parts[2] == "commuters":

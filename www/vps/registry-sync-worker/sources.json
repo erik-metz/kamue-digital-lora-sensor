@@ -1,6 +1,20 @@
 {
   "sources": [
     {
+      "id": "tv-buerstadt-lauftreff",
+      "group": "social",
+      "adapter": "buerstadt-lauftreff",
+      "enabled": true,
+      "url": "https://www.xn--tvbrstadt-s9a.de/abteilungen-des-tv-1891-buerstadt/lauftreff/trainingszeiten-lauftreff/",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_paragraph_sha256": [
+        "a507c9c2c97989f9af1ee70be3a9013398b7d41d57c4893a98a1ddc3ed9c1189",
+        "8b41a6e96ca6b10e1646d433f2d7335b54ef31dc17b15d1bf95c12022c4dedcc"
+      ]
+    },
+    {
       "id": "tv-gross-rohrheim-lauftreff",
       "group": "social",
       "adapter": "tv-lauftreff",
