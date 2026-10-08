@@ -1,5 +1,6 @@
 // Match the public three-table download contract, independent of API read cutover.
-export const PUBLIC = `NOT e.is_hidden AND e.metadata->>'legacy_deleted' IS DISTINCT FROM 'true'
+// iNaturalist revalidation can withdraw public positions: no immutable monthly copy.
+export const PUBLIC = `e.entity_type <> 'inaturalist_observation' AND NOT e.is_hidden AND e.metadata->>'legacy_deleted' IS DISTINCT FROM 'true'
   AND (e.id NOT LIKE 'sensor:%' OR EXISTS (SELECT 1 FROM sensor_metadata s
     WHERE s.id=substr(e.id,8) AND NOT s.is_hidden))`;
 

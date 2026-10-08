@@ -136,6 +136,16 @@ test('core export reads canonical values and still honours station visibility', 
     assert.match(csv, /-1\.234567890123456789/);
     assert.match(csv, /00:00:00\.123456Z/);
     assert.equal(Number((await client.query('SELECT reading_count FROM data_archives')).rows[0].reading_count), 2);
+    // A currently public iNaturalist observation must never enter a durable ZIP.
+    await client.query(`INSERT INTO entities(id,name,entity_type,metadata)
+      VALUES('inaturalist:123','Observation','inaturalist_observation','{"latitude":49.6,"attribution":"excluded-observer"}');
+      SELECT write_measurement('inaturalist:123','occurrence_presence','count','inaturalist-ried','observed','{}',
+        '2025-01-03',1,'2025-01-04','{"latitude":49.6,"attribution":"excluded-observer"}','valid',NULL,NULL,'reference');`);
+    await runArchives({ storage, dbConfig, requestedMonth: '2025-01', refresh: true });
+    const archive = (await client.query('SELECT * FROM data_archives')).rows[0];
+    assert.equal(Number(archive.reading_count), 2);
+    assert.ok(!archive.entity_ids.includes('inaturalist:123'));
+    assert.doesNotMatch(csv, /excluded-observer|49\.6/);
     await client.query("UPDATE entities SET is_hidden=true WHERE id='model:test'");
     // A now-hidden canonical-only entity must invalidate the completed archive.
     await runArchives({ storage, dbConfig, requestedMonth: '2025-01' });
