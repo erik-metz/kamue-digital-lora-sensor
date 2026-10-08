@@ -358,3 +358,46 @@ Räume und Teilnahmehinweise sind im ausgelieferten HTML sichtbar.
 Die eigene temporäre Integrationsdatenbank wurde entfernt.
 Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
 weitere CI aus.
+
+## Umsetzung: drei Triathlon-Sportangebote in Lampertheim
+
+Am 09.10.2026 wurde die [TVL-Trainingsübersicht](https://www.tv-lampertheim.de/pages/trainingszeiten-tvl-triathlon)
+erneut direkt abgerufen. Quelle `tvl-triathlon-regular-offers` übernimmt:
+
+- Freitag 18:30–20:00: koordinatives Zirkeltraining, Gymnastikraum der Goetheschule-Sporthalle, Lampertheim.
+- Freitag 20:00–21:00: Rumpfstabilisation, gleicher Gymnastikraum, ausdrücklich Oktober–März.
+- Samstag 10:45: Laufschule mit Lauf-ABC, Parkplatz vor dem Hallenbadeingang der Biedensand Bäder, Lampertheim; ausdrücklich Oktober–März, Dauer 60–90 Minuten ohne angenommene feste Endzeit.
+
+Die zwei Freitagsangebote sind ausdrücklich für Vereinsmitglieder,
+unabhängig vom Leistungsstand. Für Interesse an der Teilnahme verweist die
+Quelle auf `triathlon@tv-lampertheim.de`; dieser Kontakt wird angezeigt.
+Kosten, freie Plätze, Feiertage und Ausfälle sind beim Verein zu klären.
+Das Zirkeltraining steht im Wintertrainingsplan, während im Sommerplan
+Freitagsradausfahrten genannt sind. Eine ganzjährige Durchführung wird
+nicht zugesagt; Durchführung außerhalb des Winterplans bitte erfragen.
+Die ausdrücklich saisonalen Angebote tragen Oktober–März bereits im Titel.
+
+Schwimmen wird wegen widersprüchlicher veröffentlichter Montagzeiten und
+abweichendem Wochenplan nicht aufgenommen. Radausfahrten haben einen
+unzureichend konkreten Treffpunkt; ein vollständig im Ried liegender
+Routenverlauf ist nicht belegt. Keine angenommenen Kalenderdaten, keine
+berechnete Endzeit des Lauf-ABC und keine angenommene kostenlose Teilnahme.
+
+Der Import prüft die belegten Absätze einschließlich Zeit, Ort, Saison,
+Mitgliedschaft und Kontakt per normalisierten Text-Hashes. Der Freitagseintrag
+des Winter-/Sommerplans wird zusätzlich geprüft. Änderungen oder doppelte
+Absätze stoppen die Übernahme; andere Vereinsquellen bleiben unabhängig.
+Originalantworten werden archiviert. Abruf alle sechs Stunden, Veröffentlichung
+höchstens zwei Tage gültig unter
+`social/regular-offers/tvl-triathlon-regular-offers`. Letzter gültiger Stand
+bleibt bei fehlerhaften Aktualisierungen bis zu seinem eigenen Ablauf erhalten.
+
+Live-Abruf mit tatsächlichem Collector-User-Agent: HTTP 200 und genau drei
+Angebote. Keine Frontendänderung erforderlich; Saison und Teilnahmebedingungen
+erscheinen in Titel und Beschreibung der vorhandenen Angebotsansicht.
+
+Prüfungen vor Veröffentlichung: **357 Worker-Tests bestanden**, einschließlich
+Datenbankintegration. Zwölf neue Tests decken die verifizierten Zeiten,
+Saison, Mitgliedschaft, unbekannte Endzeit, geänderte Belege, Dubletten,
+Archivierung und Erhalt unabhängiger Vereinsangebote ab. Ruff und
+Diff-Prüfung bestehen.

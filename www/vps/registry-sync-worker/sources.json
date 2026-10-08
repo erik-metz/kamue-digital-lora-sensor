@@ -1,6 +1,62 @@
 {
   "sources": [
     {
+      "id": "tvl-triathlon-regular-offers",
+      "group": "social",
+      "adapter": "tvl-triathlon-offers",
+      "enabled": true,
+      "url": "https://www.tv-lampertheim.de/pages/trainingszeiten-tvl-triathlon",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_paragraph_sha256": [
+        "26d38a003d98891e8c4776e2d603b3540b22c5e589f685091b40e7dce4a77c31",
+        "8975c43982d62db21a355cb5651a46dc742240de473436ab9c3da61bff542668",
+        "2feffc9da6f81b91dd3d06ed75be24e997347f540a301be61f2433810bfd2635",
+        "fdd2af6e78a199d7b290f963789b84db21dfcd224e348e1aef677b0b8b4158d8",
+        "bae563ad0f15b438b9a181a1847ab8efb2a0dbb7141475119e29ae7e9c6149a8",
+        "957537ebf6ff6f698b52239d1d8b9773be556a20376813514161e84a412ad28f",
+        "2d5b6d08ab20e105bc9a763a7653aabf2aa10a0af3784d8509bc42ee9e948fdb",
+        "4e12c37efc86e45b8b977999b87aec028459507cfa6218c16db33e826df78413",
+        "728683b46f6ab057a4d081ede50a7fbe5da7bad0373301e0befe0dd725d30448",
+        "95a2c0498168cc7689c6d805f533f555e2d35d3abded28628c13492436c32791",
+        "8248780c75c976bddda1228781b6791b382326a0e57937cd58def7a8c90e36ad",
+        "d7387391ff3c293ff94e8480d25de236e77871df1e8c3ace0bdf49978af12d60"
+      ],
+      "verified_plan_row_sha256": "365c05998c6f7a0aed0ab079a5a1093024f65d8ff2b0c499beb8fb9206348264",
+      "verified_offers": [
+        {
+          "id": "tvl-triathlon-zirkeltraining",
+          "title": "Koordinatives Zirkeltraining",
+          "weekday": "Freitag",
+          "start_local": "18:30",
+          "end_local": "20:00",
+          "venue_name": "Gymnastikraum der Goetheschule-Sporthalle, Lampertheim",
+          "description": "Für alle Vereinsmitglieder, unabhängig vom Leistungsstand. Im Wintertrainingsplan geführt; Durchführung außerhalb des Winterplans beim Verein erfragen. Interesse an der Teilnahme bitte vorab mit triathlon@tv-lampertheim.de klären. Kosten, freie Plätze, Feiertage und Ausfälle beim Verein erfragen.",
+          "municipality": "Lampertheim"
+        },
+        {
+          "id": "tvl-triathlon-rumpfstabilisation",
+          "title": "Rumpfstabilisation (Oktober–März)",
+          "weekday": "Freitag",
+          "start_local": "20:00",
+          "end_local": "21:00",
+          "venue_name": "Gymnastikraum der Goetheschule-Sporthalle, Lampertheim",
+          "description": "Nur im Winterhalbjahr Oktober–März, für alle Vereinsmitglieder unabhängig vom Leistungsstand. Interesse an der Teilnahme bitte vorab mit triathlon@tv-lampertheim.de klären. Kosten, freie Plätze, Feiertage und Ausfälle beim Verein erfragen.",
+          "municipality": "Lampertheim"
+        },
+        {
+          "id": "tvl-triathlon-lauf-abc",
+          "title": "Laufschule mit Lauf-ABC (Oktober–März)",
+          "weekday": "Samstag",
+          "start_local": "10:45",
+          "venue_name": "Parkplatz vor dem Hallenbadeingang der Biedensand Bäder, Lampertheim",
+          "description": "Nur im Winterhalbjahr Oktober–März. Veröffentlichte Dauer: 60–90 Minuten; keine feste Enduhrzeit angegeben. Interesse an der Teilnahme bitte vorab mit triathlon@tv-lampertheim.de klären. Kosten, freie Plätze, Feiertage und Ausfälle beim Verein erfragen.",
+          "municipality": "Lampertheim"
+        }
+      ]
+    },
+    {
       "id": "tv-gross-rohrheim-gymnastik",
       "group": "social",
       "adapter": "tv-gymnastik",

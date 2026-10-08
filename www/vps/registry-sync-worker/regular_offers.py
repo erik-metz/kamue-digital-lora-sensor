@@ -207,3 +207,41 @@ async def import_tv_gymnastik(conn, client, source):
             (attempt, venue_attempt),
         )
     await conn.commit()
+
+
+def tvl_triathlon(html, source):
+    root = Document(html).root
+    paragraphs = [n.text() for n in root.find(tag="p")]
+    for digest in source["verified_paragraph_sha256"]:
+        if (
+            sum(hashlib.sha256(p.encode()).hexdigest() == digest for p in paragraphs)
+            != 1
+        ):
+            raise ValueError("TVL schedule, venue, season or participation changed")
+    rows = [n.text() for n in root.find(cls="feature-chart__table-row")]
+    if (
+        sum(
+            hashlib.sha256(r.encode()).hexdigest() == source["verified_plan_row_sha256"]
+            for r in rows
+        )
+        != 1
+    ):
+        raise ValueError("TVL winter/summer training plan changed")
+    offers = []
+    for verified in source["verified_offers"]:
+        if verified["municipality"] != "Lampertheim":
+            raise ValueError("TVL venue outside verified municipality")
+        offers.append(
+            verified
+            | {
+                "organizer": "TV 1883 Lampertheim – Triathlon",
+                "timezone": "Europe/Berlin",
+                "source": source["id"],
+                "source_url": source["url"],
+            }
+        )
+    return offers
+
+
+async def import_tvl_triathlon(conn, client, source):
+    await import_regular_offers(conn, client, source, tvl_triathlon)

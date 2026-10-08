@@ -39,6 +39,7 @@ from regular_offers import (
     import_rompin_stompin,
     import_tv_gymnastik,
     import_tv_lauftreff,
+    import_tvl_triathlon,
 )
 from ris_boards import import_ris_boards
 from satellite import import_satellite
@@ -69,6 +70,7 @@ ADAPTERS = {
     "verified-club-notice": import_verified_club_notice,
     "tv-lauftreff": import_tv_lauftreff,
     "tv-gymnastik": import_tv_gymnastik,
+    "tvl-triathlon-offers": import_tvl_triathlon,
     "buerstadt-lauftreff": import_buerstadt_lauftreff,
     "rompin-stompin-offers": import_rompin_stompin,
     "club-events": import_club_events,
