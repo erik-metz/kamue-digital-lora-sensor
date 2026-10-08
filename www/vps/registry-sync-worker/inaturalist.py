@@ -107,8 +107,18 @@ async def gbif_index(conn):
     receipts = await (await conn.execute("""SELECT payload_sha256 FROM collection_attempts
         WHERE source_id='environment-gbif' AND status='success' AND http_status=200
         ORDER BY id DESC LIMIT 10""")).fetchall()
+    # GBIF's snapshot hash is the hash of page hashes in acquisition order.
+    # Match an exact recent receipt prefix; older pages with the same GBIF ID
+    # cannot prove that its origin link still belongs to the current snapshot.
+    pages = []
+    for length in range(1, len(receipts) + 1):
+        candidate = list(reversed(receipts[:length]))
+        fingerprint = hashlib.sha256(''.join(r[0] for r in candidate).encode()).hexdigest()
+        if fingerprint == metadata['snapshot_sha256']:
+            pages = candidate
+            break
     index, inspected = {}, set()
-    for digest, in receipts:
+    for digest, in pages:
         row = await (await conn.execute('SELECT body FROM collected_payloads WHERE sha256=%s AND octet_length(body)<=20971520', (digest,))).fetchone()
         if not row:
             continue

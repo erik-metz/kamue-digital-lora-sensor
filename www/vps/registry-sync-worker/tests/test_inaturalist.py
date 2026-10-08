@@ -1,5 +1,6 @@
 """Provider fixtures and real PostgreSQL privacy/withdrawal contracts."""
 
+import hashlib
 import json
 import sys
 from contextlib import asynccontextmanager
@@ -159,13 +160,18 @@ class InaturalistPersistenceTests(DatabaseCase):
 
     async def test_bounded_pagination_exact_overlap_and_export(self):
         # Normalized GBIF lacks origin links: use current archived public records.
-        await self.conn.execute("INSERT INTO entities(id,name,entity_type,metadata) VALUES ('environment:gbif:ried','GBIF','monitoring_area',%s)", (Jsonb({'snapshot_sha256': 'fixture'}),))
-        await self.conn.execute("INSERT INTO entities(id,name,entity_type,metadata) VALUES ('environment:gbif:987','GBIF','biodiversity_occurrence',%s)", (Jsonb({'gbif_id': 987}),))
-        await self.conn.execute("SELECT write_measurement('environment:gbif:987','occurrence_presence','count','environment-gbif','observed',%s,NOW(),1,NOW(),'{}','valid',NULL,NULL,'reference')", (Jsonb({'snapshot_sha256': 'fixture'}),))
         raw = json.dumps({'results': [{'key': 987, 'occurrenceID': 'https://www.inaturalist.org/observations/123'}, {'key': 999, 'occurrenceID': 'https://www.inaturalist.org/observations/124'}]}).encode()
-        await self.conn.execute("INSERT INTO collected_payloads(sha256,body,content_type) VALUES ('gbif-fixture',%s,'application/json')", (raw,))
-        await self.conn.execute("INSERT INTO collection_attempts(source_id,status,http_status,payload_sha256) VALUES ('environment-gbif','success',200,'gbif-fixture')")
+        digest = hashlib.sha256(raw).hexdigest()
+        snapshot = hashlib.sha256(digest.encode()).hexdigest()
+        await self.conn.execute("INSERT INTO entities(id,name,entity_type,metadata) VALUES ('environment:gbif:ried','GBIF','monitoring_area',%s)", (Jsonb({'snapshot_sha256': snapshot}),))
+        await self.conn.execute("INSERT INTO entities(id,name,entity_type,metadata) VALUES ('environment:gbif:987','GBIF','biodiversity_occurrence',%s)", (Jsonb({'gbif_id': 987}),))
+        await self.conn.execute("SELECT write_measurement('environment:gbif:987','occurrence_presence','count','environment-gbif','observed',%s,NOW(),1,NOW(),'{}','valid',NULL,NULL,'reference')", (Jsonb({'snapshot_sha256': snapshot}),))
+        await self.conn.execute("INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,'application/json')", (digest, raw))
+        await self.conn.execute("INSERT INTO collection_attempts(source_id,status,http_status,payload_sha256) VALUES ('environment-gbif','success',200,%s)", (digest,))
         assert (await gbif_index(self.conn))[0] == {123: [987]}
+        await self.conn.execute("UPDATE entities SET metadata=%s WHERE id='environment:gbif:ried'", (Jsonb({'snapshot_sha256': 'different-current-snapshot'}),))
+        assert (await gbif_index(self.conn))[0] == {}  # old links cannot prove current overlap
+        await self.conn.execute("UPDATE entities SET metadata=%s WHERE id='environment:gbif:ried'", (Jsonb({'snapshot_sha256': snapshot}),))
         pages = []
         def handler(req):
             page = int(req.url.params['page']); pages.append(page)
