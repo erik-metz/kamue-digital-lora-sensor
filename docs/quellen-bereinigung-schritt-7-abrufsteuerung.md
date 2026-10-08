@@ -29,3 +29,20 @@ Netzwerkverzicht bei explizitem Replay. Bestehende Adapter- und Datenbanktests
 prüfen die Speicherseite.
 
 Produktionsnachweis und CI-Ergebnis werden nach Veröffentlichung ergänzt.
+
+## Zusätzlicher Befund im ersten produktiven Zyklus
+
+Der erste Live-Zyklus mit korrigierter Steuerung schrieb tatsächlich 8.064 neue
+Bodenwerte und 2.880 Pollenwerte; auch GBIF und Abfluss wurden aktualisiert.
+Die bisherige globale Laufzeitgrenze von 50 Sekunden brach danach die laufenden
+ENTSO-E-Schreibtransaktionen ab. Deshalb wird ausschließlich beim
+Environment-Collector ein konfigurierbares, begrenztes Zyklusbudget von 180
+Sekunden verwendet (`ENVIRONMENT_CYCLE_TIMEOUT_SECONDS`, positive Zahl bis
+3600). Abrufintervalle und Healthcheck-Aktualitätsgrenzen bleiben unverändert.
+Die Grenze wird weiterhin durch `asyncio.timeout` erzwungen; Timeout-Tests
+prüfen, dass ein abgebrochener Lauf keinen falschen Gesundheitsstatus erzeugt.
+
+Die bereits erfolgreich heruntergeladenen ENTSO-E-Antworten werden aus den
+archivierten HTTP-200-Belegen mit den bestehenden Validierungs- und
+Idempotenzregeln fertig verarbeitet, statt erneut Daten abzurufen oder
+historische Zeitstempel zu verändern.

@@ -55,7 +55,7 @@ async def run(settings, cycle, service, *, once=False, dry_run=False, input_file
                     raw = (
                         json.loads(Path(input_file).read_text()) if input_file else None
                     )
-                    async with asyncio.timeout(50):
+                    async with asyncio.timeout(settings.cycle_timeout_seconds):
                         details = await cycle(
                             client, settings, raw=raw, dry_run=dry_run
                         )

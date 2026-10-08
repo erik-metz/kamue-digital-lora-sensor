@@ -9,6 +9,7 @@ from pathlib import Path
 class Settings:
     db: dict[str, str | int]
     poll_seconds: int = 300
+    cycle_timeout_seconds: float = 180.0
     state_dir: Path = Path("/data")
     pegelonline_url: str = "https://pegelonline.wsv.de/webservices/rest-api/v2/stations/WORMS.json?includeTimeseries=true&includeCurrentMeasurement=true"
     weather_url: str = "https://api.open-meteo.com/v1/dwd-icon?latitude=49.6425&longitude=8.4552&current=temperature_2m,relative_humidity_2m,precipitation&timezone=UTC"
@@ -49,6 +50,9 @@ class Settings:
             "connect_timeout": 10,
         }
         poll_seconds = int(os.getenv("ENVIRONMENT_POLL_SECONDS", "300"))
+        cycle_timeout_seconds = float(os.getenv("ENVIRONMENT_CYCLE_TIMEOUT_SECONDS", "180"))
+        if not 0 < cycle_timeout_seconds <= 3600:
+            raise ValueError("ENVIRONMENT_CYCLE_TIMEOUT_SECONDS must be positive and at most 3600")
         state_dir = Path(os.getenv("ENVIRONMENT_STATE_DIR", "/data"))
         enable_radolan = os.getenv("ENABLE_DWD_RADOLAN", "true").lower() in ("1", "true", "yes")
         enable_mosmix = os.getenv("ENABLE_DWD_MOSMIX", "true").lower() in ("1", "true", "yes")
@@ -87,6 +91,7 @@ class Settings:
             enable_soil=os.getenv("ENABLE_SOIL_FORECAST", "false").lower() in ("1", "true", "yes"),
             soil_poll_seconds=soil_poll_seconds,
             poll_seconds=poll_seconds,
+            cycle_timeout_seconds=cycle_timeout_seconds,
             state_dir=state_dir,
             pegelonline_url=os.getenv(
                 "PEGELONLINE_URL",
