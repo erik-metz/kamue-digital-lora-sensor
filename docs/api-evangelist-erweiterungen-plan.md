@@ -10,7 +10,7 @@ Stand: 8. Oktober 2026. Umfang: ECOSTRESS, NASA FIRMS, iNaturalist und SolarEdge
 | 2 | ECOSTRESS: Oberflächentemperatur als echte Rasterdaten | Abgeschlossen: authentifizierter Rasterimport, Kalibrierung, API, Karte und Export produktiv geprüft |
 | 3 | FIRMS: satellitengestützte thermische Anomalien | Abgeschlossen: authentifizierter regionaler Abruf, leerer Befund, API/UI und Download produktiv geprüft |
 | 4 | iNaturalist: zusätzliche Artenbeobachtungen | Abgeschlossen, produktiv abgenommen |
-| 5 | SolarEdge: tatsächliche Erzeugung teilnehmender PV-Anlagen | Offen, Anlagenzugang erforderlich |
+| 5 | SolarEdge: tatsächliche Erzeugung teilnehmender PV-Anlagen | Begonnen; Anlage, Freigabe und aktueller Zugang zu klären |
 | 6 | Gemeinsame Betriebsprüfung und Dokumentation | Offen |
 
 Ein Quellenschritt umfasst Collector, Archivierung, API, verständliche Anzeige, passende Tests und Veröffentlichung. Fehlende Zugangsdaten werden als konkrete Blockade dokumentiert; eine vorbereitete Integration zählt nicht als produktiv verfügbare Datenquelle.
@@ -80,6 +80,8 @@ API, vollständige JSON-Downloads, Seitenfolge, HTTP-Cache-Verzicht und Frontend
 37 iNaturalist-Tests, 17 FIRMS-Regressionsprüfungen, neun Archivtests (einschließlich echter Datenbanktests) und 220 Frontend-Tests bestehen; Lint, TypeScript und Produktionsbuild ebenfalls. [Frontend CI für 528b559](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37847044564) ist erfolgreich. [Abschließende Backend CI für 13dc42a](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37848560316) ist erfolgreich: 16 Jobs und alle 17 vorgesehenen GHCR-Veröffentlichungen. Die nach der funktionalen Abnahme gepushte Dokumentationskorrektur verändert keine Laufzeitlogik. [Maschinenlesbare Abnahme](evidence/2026-10-08-inaturalist-production-import.json), [Betriebsdetails](../www/vps/registry-sync-worker/INATURALIST.md). Schritt 4 ist abgeschlossen; Schritt 5 benötigt die nächste Zustimmung des Nutzers.
 
 ## Schritt 5: SolarEdge
+
+Vorbereitung am 8. Oktober 2026: Das aktuelle [API-Portal](https://api-docs.solaredge.com/) kündigt Monitoring V1 für den 1. November 2026 ab. Für neue Arbeiten ist deshalb V2 mit OAuth vorgesehen; konkrete Endpunkte und Quoten werden erst anhand des verfügbaren Anlagenzugangs festgelegt. Die vorhandene Energie-Publikation kann Leistung und Ertrag getrennt aufnehmen. `energy-meter-feed` bleibt deaktiviert. Betreiberfreigabe und Zugangsart wurden beim Nutzer angefragt. [Anlagenzugang und Umsetzungsvoraussetzungen](solaredge-anlagenzugang.md), [maschinelle Prüfevidenz](evidence/2026-10-08-solaredge-preparation.json). Schritt 5 ist nicht produktiv abgeschlossen.
 
 1. Zuerst eine teilnehmende Anlage, Zustimmung zur öffentlichen Darstellung und Site-Zugang erhalten. Mit dem Anlagenbetreiber klären, welche aktuelle API und Zugriffsrechte tatsächlich verfügbar sind. Den Vertrag anhand der aktuellen Anbieterunterlagen verifizieren, bevor Endpunkte festgelegt werden.
 2. Nur freigegebene Erzeugungsdaten abfragen. Leistung W/kW und Energie Wh/kWh getrennt normalisieren; Zeitzone, Messintervalle, kumulative Zähler und Datenlücken berücksichtigen. Stromverbrauch, Geräteinformationen und genaue private Standortdaten standardmäßig nicht veröffentlichen.

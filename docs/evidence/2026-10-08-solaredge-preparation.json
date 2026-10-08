@@ -1,0 +1,43 @@
+{
+  "checked_at": "2026-10-08T21:56:54.700967+00:00",
+  "step": 5,
+  "status": "preparation_complete_access_pending",
+  "official_sources": [
+    {
+      "url": "https://developer.solaredge.com/",
+      "verified_in_browser": true,
+      "observations": [
+        "API V2 and OAuth 2.0",
+        "Application with Client ID and secret; authorize owned or granted sites"
+      ]
+    },
+    {
+      "url": "https://api-docs.solaredge.com/",
+      "verified_in_browser": true,
+      "observations": [
+        "Monitoring API V1 will be deprecated on November 1, 2026",
+        "OAuth scopes and revocable grants",
+        "Tier-dependent monthly credits and per-minute call ceilings"
+      ]
+    }
+  ],
+  "repository_findings": {
+    "existing_source": "energy-meter-feed",
+    "enabled": false,
+    "url_configured": false,
+    "energy_publication_contract_version": 1,
+    "power_units": [
+      "kW",
+      "MW"
+    ],
+    "daily_energy_unit": "kWh"
+  },
+  "provider_requests_to_site_endpoints": 0,
+  "production_source_activated": false,
+  "missing_information": [
+    "Participating site and owner publication consent",
+    "Public facility label and municipality or explicitly permitted location detail",
+    "Actual V2 authorization and API contract available to the account"
+  ],
+  "note": "No account created, credentials collected, endpoint contract assumed or live plant measurements claimed."
+}
