@@ -1,0 +1,129 @@
+# Weitere regelmäßige Vereinsangebote im Ried
+
+Recherche vom **08.10.2026**, nächster einzelner Schritt nach dem produktiv
+übernommenen TV-Lauftreff Groß-Rohrheim. Ergebnis: **16 weitere Angebote** mit
+veröffentlichten Wochenzeiten, dazu zurückgestellte Hinweise. Dies ist eine
+Rechercheliste; die folgenden Angebote wurden noch nicht importiert.
+
+Einbezogen werden ausschließlich Bürstadt, Lampertheim, Biblis und
+Groß-Rohrheim einschließlich ihrer vereinbarten Ortsteile. Der konkrete
+Treffpunkt bzw. die Trainingsstätte entscheidet. Bei Laufangeboten belegt
+ein Treffpunkt im Ried nicht automatisch eine vollständig im Ried verlaufende
+Strecke. Keine ungeprüften Routen darstellen.
+
+Die unten verwendeten Originalseiten wurden direkt mit HTTP 200 abgerufen.
+Ein erfolgreicher Abruf bestätigt die derzeit veröffentlichten Angaben,
+nicht einzelne Durchführungstage oder freie Plätze. Aus Wochenzeiten werden
+keine datierten Kalenderereignisse erzeugt. Unbekannte Kosten, Mitgliedschaft,
+Anmeldung und Ausnahmen bleiben ausdrücklich unbekannt.
+
+## Bürstadt: Laufangebot
+
+Quelle: [Trainingszeiten des TV 1891 Bürstadt](https://www.xn--tvbrstadt-s9a.de/abteilungen-des-tv-1891-buerstadt/lauftreff/trainingszeiten-lauftreff/).
+
+| Nr. | Angebot | Veröffentlichte Zeit | Treffpunkt | Teilnahme / offene Punkte |
+| --- | --- | --- | --- | --- |
+| 1 | TV Bürstadt, gemeinsames Lauftraining | Dienstag, 18:00 | TV-Heim, Wasserwerkstraße, Bürstadt | Erste Teilnahme möglichst vorher beim Lauftreff ankündigen; Endzeit und Kosten fehlen. |
+
+Die Angebotsseite nennt das TV-Heim ausdrücklich als Treffpunkt und eine
+übliche Runde nach Riedrode. Das
+[Vereinsimpressum](https://www.xn--tvbrstadt-s9a.de/impressum-datenschutzerklaerung/)
+belegt Wasserwerkstraße 4, 68642 Bürstadt. Diese Hausnummer ist zunächst der
+Vereinsadressbeleg; der Trainings-Treffpunkt bleibt in der Übernahme so
+benannt wie auf der Angebotsseite. Kein frei erfundener GPS-Punkt.
+
+## Biblis und Bürstadt: Line Dance
+
+Quelle: [Kursübersicht von Rompin Stompin Line Dancer Biblis](https://www.rompinstompin.de/unserkursangebot).
+
+| Nr. | Gemeinde | Angebot / Zielgruppe | Zeit | Konkreter Veranstaltungsort |
+| --- | --- | --- | --- | --- |
+| 2 | Biblis | Line Dance, Einstieg (Heidi) | Montag, 10:00–11:00 | Bürgerzentrum |
+| 3 | Biblis | Line Dance, Aufbau (Britta) | Montag, 18:00–19:00 | Bürgerzentrum |
+| 4 | Biblis | Line Dance, Fortgeschrittene (Britta) | Montag, 19:00–20:00 | Bürgerzentrum |
+| 5 | Biblis | Line Dance, erfahrene Tänzer (Britta) | Montag, 20:00–21:00 | Bürgerzentrum |
+| 6 | Bürstadt | Line Dance, Aufbau (Yvonne) | Montag, 18:30–19:30 | Tanzschule Kohler |
+| 7 | Bürstadt | Line Dance, Fortgeschrittene (Yvonne) | Montag, 19:30–20:30 | Tanzschule Kohler |
+| 8 | Bürstadt | Partnertanz (Heidi) | Donnerstag, 18:00–19:00 | Tanzschule Kohler |
+| 9 | Bürstadt | Line Dance, erfahrene Tänzer (Heidi) | Donnerstag, 19:00–21:00 | Tanzschule Kohler |
+
+Die Originalseite ordnet Bürgerzentrum: Darmstädter Straße 4–6, Biblis,
+und Tanzschule Kohler: Mainstraße 44, Bürstadt, eindeutig zu. Gebühren,
+Anmeldung und freie Plätze vor Übernahme prüfen. Der direkt abgerufene Stand
+weicht vom Web-Werkzeug-/Indexstand bei Montagstrainerin und Beginn der
+Aufbaukurse ab; die Tabelle verwendet ausschließlich den direkten Abruf.
+
+## Lampertheim: Bewegung und Lauftechnik
+
+Quelle: [TVL-Triathlon-Trainingsübersicht](https://www.tv-lampertheim.de/pages/trainingszeiten-tvl-triathlon).
+
+| Nr. | Angebot | Veröffentlichte Zeit | Ort / Einschränkung |
+| --- | --- | --- | --- |
+| 10 | Zirkeltraining zur Unterstützung des Laufens | Freitag, 18:30–20:00 | Gymnastikraum Goetheschule-Sporthalle, Lampertheim; für Mitglieder, unterschiedliche Leistungsstände. |
+| 11 | Rumpf- und Stabilisierungstraining | Freitag, 20:00–21:00 | Gleicher Gymnastikraum; nur Oktober–März, für Mitglieder. |
+| 12 | Laufschule mit Technikübungen | Samstag, 10:45; Dauer 60–90 Minuten | Parkplatz vor dem Hallenbadeingang der Biedensand Bäder, Lampertheim; Oktober–März. |
+
+Keine pauschale öffentliche oder kostenlose Teilnahme annehmen. Für Angebot
+12 nennt die Seite keine ebenso eindeutige Teilnahmebedingung wie für 10/11;
+vor Teilnahme Vereinskontakt nutzen. Saison als Monatsbereich speichern,
+keine erfundene erste/letzte Kurswoche oder Enduhrzeit berechnen.
+
+## Groß-Rohrheim: Gymnastik
+
+Quellen: [Gymnastikübersicht](https://tv-grossrohrheim.de/angebot/turnen-und-gymnastik/gymnastikgruppen/)
+und [Zuordnung der Trainingsstätten auf der Vereinsstartseite](https://tv-grossrohrheim.de/).
+
+| Nr. | Angebot | Zeit | Veröffentlichter Hallenbereich |
+| --- | --- | --- | --- |
+| 13 | Rückengymnastik für Frauen ab 60 | Montag, 09:00–10:00 | Kleiner Hallenteil; genaue Hallenzuordnung vor Import prüfen. |
+| 14 | Gymnastik für Frauen ab 55 | Dienstag, 18:30–19:30 | Hallenanbau |
+| 15 | Step-Training | Dienstag, 19:30–20:30 | Hallenanbau |
+| 16 | Fitness und Entspannung für Frauen | Donnerstag, 20:00–21:30 | Hallenanbau |
+
+Die Vereinsstartseite verortet das Training in Bürgerhalle bzw. Hallenanbau
+in der Jahnstraße, Groß-Rohrheim. Vor erster Teilnahme soll die jeweilige
+Gruppe kontaktiert werden. Die Übersicht enthält keine belastbaren Angaben
+zu freien Plätzen oder individuellen Gebühren für diese vier Übungsstunden.
+
+## Zurückgestellt oder ausgeschlossen
+
+| Hinweis | Rechercheergebnis / Grund |
+| --- | --- |
+| TG Biblis, drei Lauftreffgruppen | [Index-/Web-Ansicht](https://www.tg-biblis.de/sportgruppen/lauftreff/) nennt Donnerstag 18:15 an der Jahnturnhalle, Samstag 14:00 am Knupfer, Sonntag 14:00 am Mersweg. Direkte Abrufe liefern jedoch 403/404; Startseite 500. Aktuellen Originalstand und konkrete Treffpunkte erst wieder prüfen; nicht als live bestätigt übernehmen. |
+| TV Bürstadt, Sonntag und Sommerfreitag | Originalseite nennt Sonntag 09:00 sowie im Sommer Freitag 18:00 ab Waldparkplatz. Der konkrete Parkplatz fehlt. Kein unbestätigter Ortsalias und keine geratenen Sommermonate. |
+| TVL Nordic Walking | [Vereinsseite](https://www.tv-lampertheim.de/pages/nordic-walking-tvl): Dienstag/Freitag 09:00 am Parkplatz Waldesruh, Anfänger willkommen. Direkt erreichbar, aber ausdrücklich Stand Juni 2024. Aktuelle Durchführung 2026 gesondert bestätigen. |
+| TVL Schwimmen | Trainingsübersicht enthält mehrere unterschiedlich angesetzte Montagszeiten, während der Wochenplan drei Einheiten an anderen Wochentagen nahelegt. Keine automatische Zuordnung. |
+| TVL sonntägliche Radausfahrt | 10:00 am Ortsausgang Richtung Neuschloß, aber Treffpunkt ungenau und Verabredung im Schwimmtraining. Route könnte das Ried verlassen. |
+| TV Groß-Rohrheim, Mittwochsradler | [Originalseite](https://tv-grossrohrheim.de/angebot/wandern-und-radfahren/): April–Oktober, ungefähr 17:00 am Bahnhofsvorplatz/Allee, Gäste ohne Anmeldung. Uhrzeit ausdrücklich ungefähr, Touren in die Umgebung; keinen vollständig im Ried liegenden Verlauf behaupten. |
+| TV Groß-Rohrheim, Donnerstagsradler | Gleiche Quelle: 14:00, aber kein konkreter Treffpunkt. |
+| TV Groß-Rohrheim, Yoga / Zumba | Begrenzte Kurse mit Anmeldung. Yoga: kein aktueller Kursbeginn; Zumba: widersprüchliche Anzahl der Einheiten, siehe bereits vorhandene TC74-/TV-Recherche. Nicht als unbegrenzt laufende Wochenangebote behandeln. |
+| Rompin Stompin, Dienstag alle zwei Wochen | 19:00–21:00 in Bürstadt; für einzelne Termine fehlt der Startanker des Zweiwochenrhythmus. |
+| Rompin Stompin, Mittwoch in Einhausen | Liegt außerhalb der vereinbarten Gemeinden, ausgeschlossen trotz Bibliser Vereinsname. |
+
+## Vorschlag für den nächsten Umsetzungsschritt
+
+Zuerst **Angebot 1: TV-Bürstadt-Lauftreff am Dienstag** übernehmen. Originalseite
+ist direkt abrufbar, Zeitpunkt und konkreter Treffpunkt sind veröffentlicht,
+Neulinge ausdrücklich angesprochen. Originalquelle und Teilnahmehinweis
+anzeigen; keine kostenlose Teilnahme oder datierten Einzeltermine erfinden.
+
+Technische Voraussetzung: Regelmäßige Angebote brauchen vor der zweiten
+Quelle eine Veröffentlichung aus mehreren Quellen, die den vorhandenen
+Groß-Rohrheimer Lauftreff erhält. Getrennte Quellenstände, Ablaufzeiten und
+Fehler dürfen sich nicht gegenseitig überschreiben. Danach weitere Vereine
+jeweils als eigenen Schritt prüfen und übernehmen.
+
+## Abrufbelege
+
+SHA-256 der direkt gespeicherten HTML-Antworten vom 08.10.2026. Diese Belege
+identifizieren den Rechercheabruf; sie ersetzen keine spätere Archivierung
+im produktiven Collector und keine neue Prüfung vor der Implementierung.
+
+| Quelle | SHA-256 |
+| --- | --- |
+| TV Bürstadt Trainingszeiten | `9d280ab96d97387b8b91a1f9b8ce217b0bd50f6694f9c1a5174c3da9720945f0` |
+| Rompin Stompin Kursangebot | `22a7d1ff1d9419704c6b121108b2a3edf9fa4c67a1b42fbfe41a530f90fb93ab` |
+| TVL Triathlon | `dfcc8a45c12f281ae8d50d63c58f628cc67aedbafb6876428812577a0e033f60` |
+| TVL Nordic Walking | `15cb89329e0e7a996fc9ad75787532783de5699b91d20b5d92bfe35e3017677c` |
+| TV Groß-Rohrheim Radfahren | `6f37a3e4da99a717a59a233e7bc230ca26de61d0892129d8ca6e9c1b6f721cf1` |
+| TV Groß-Rohrheim Gymnastik | `825fd6f7aef9e1c76eaea6754a79727e1b89ac55006e774471589108e4567a1d` |
