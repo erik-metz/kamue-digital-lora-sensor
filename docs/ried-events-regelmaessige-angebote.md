@@ -225,3 +225,27 @@ bestehen. Der lokale Build benötigte Netzwerkzugriff für Google Fonts.
 Live-Abruf aller drei Vereinsquellen bis zur kombinierten API-Antwort in
 einem eigenen Testschema: **zehn eindeutige regelmäßige Angebote**, davon
 acht Tanzangebote mit Enduhrzeiten; null erfundene datierte Events.
+
+### Veröffentlichungsprüfung und produktive Blockade
+
+Implementierung `745cc27932ed8a53c18b28b84597f8c562955a5f` auf `main` gepusht.
+[Frontend CI](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37807112989)
+und [FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37807113195)
+sind für genau diesen Commit vollständig erfolgreich, einschließlich aller
+17 vorgesehenen Container-Builds und Veröffentlichungen auf GHCR.
+
+Die produktive Übernahme ist am 08.10.2026 noch blockiert: Der laufende
+Registry-Worker ist über `/root/docker-compose.invekos.yml` auf den Digest
+`sha256:8f63542ddea2f7f5b88c7625340caba11b95f373ea92891a2ff656a661b62699`
+festgelegt. Sein Quellenmanifest enthält die neue Tanzquelle nicht. Das
+verfügbare `latest`-Image hat dagegen Digest
+`sha256:61515b9736d6c5a6f75a0e503edc43af5974f4f56e7f3ce65a56c8ff3238f656`.
+Watchtower kann die festgelegte Image-Version nicht automatisch ersetzen.
+Die öffentliche API liefert weiterhin die zwei bestehenden Lauftreffs;
+die acht Tanzangebote sind noch nicht produktiv nachgewiesen.
+
+Die gesonderte Serverkonfiguration einer anderen Aufgabe wurde nicht
+überschrieben. Vor Freischaltung ist der Versionskonflikt mit dieser
+Konfiguration aufzulösen und anschließend Quellenstatus, kombinierte
+API-Antwort und öffentliche Terminseite erneut zu prüfen. Dieser reine
+Dokumentationscommit löst gemäß Pfadfiltern keine zusätzliche CI aus.
