@@ -27,18 +27,23 @@ async def test_district_lookup_and_download_gate(ambiguous, substituted):
         return cursor
     conn.execute = AsyncMock(side_effect=execute); conn.commit = AsyncMock()
     downloads = []
+    selected_city = 'Biblis'
     def provider(request):
+        nonlocal selected_city
         fields = parse_qs(request.content.decode())
         action = fields.get('submitAction', [''])[0]
         city = fields.get('aos[Ort]', ['Biblis'])[0]
         if action == 'filedownload_ICAL':
             downloads.append(True)
             return httpx.Response(200, content=b'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n')
+        if action == 'CITYCHANGED':
+            selected_city = city
         if action == 'nextPage':
+            city = selected_city
             street = 'Altrheinstraße' if substituted else 'Domstiftstraße'
             return httpx.Response(200, text=f'<span id="Lageadresse">{street} 1, 68647 {city}</span><form id="athos-os-form"><input name="pageName" value="Terminliste">filedownload_ICAL</form>')
-        street = 'Domstiftstraße' if city == 'Biblis-Nordheim' or ambiguous else 'Andere Straße'
-        return httpx.Response(200, text=f'<form id="athos-os-form"><select name="aos[Ort]"><option value="Biblis" {"selected" if city == "Biblis" else ""}></option><option value="Biblis-Nordheim" {"selected" if city == "Biblis-Nordheim" else ""}></option></select><select name="aos[Strasse]"><option value="{street}"></option></select><input name="pageName" value="Lageadresse"></form>')
+        street = 'Domstiftstraße' if city == 'Biblis-Nordheim' or (ambiguous and city == 'Biblis') else 'Andere Straße'
+        return httpx.Response(200, text=f'<form id="athos-os-form"><select name="aos[Ort]"><option value="Biblis" {"selected" if city == "Biblis" else ""}></option><option value="Biblis-Nordheim" {"selected" if city == "Biblis-Nordheim" else ""}></option><option value="Biblis-Wattenheim" {"selected" if city == "Biblis-Wattenheim" else ""}></option></select><select name="aos[Strasse]"><option value="{street}"></option></select><input name="pageName" value="Lageadresse"></form>')
     async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
         call = calendar_for_address(conn, client, {'id': 'test', 'url': 'https://example.org/calendar', 'interval_seconds': 86400, 'request_spacing_seconds': 0}, ADDRESS, datetime.now(UTC))
         if ambiguous or substituted:

@@ -261,7 +261,7 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
     if len(matches) != 1:
         raise AmbiguousStreet("Street occurs in multiple districts")
     provider_city = matches[0]
-    if provider_city in offered:
+    if provider_city in offered and provider_city == cities[-1]:
         fields = offered[provider_city]
     else:
         fields = dict(initial.fields)
