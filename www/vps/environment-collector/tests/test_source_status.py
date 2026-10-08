@@ -91,3 +91,37 @@ class SourceStatusTests(DatabaseCase):
         self.assertEqual(row[:2], ("failed", "processing"))
         self.assertIsNotNone(row[2])
         self.assertIsNone(row[3])
+
+    async def test_xweather_empty_window_and_secret_redaction(self):
+        import sys
+        from pathlib import Path
+        sys.path.append(str(Path(__file__).resolve().parents[2] / "api" / "v1"))
+        from measurement_migration import install
+        await install(self.conn, shadow=True)
+        from datetime import UTC, datetime
+
+        from normalize import normalize
+        from storage import persist_environment_data
+        settings = Settings(db={}, enable_xweather=True, enable_blitzortung=False,
+                            enable_radolan=False, enable_mosmix=False,
+                            xweather_client_id='private-id', xweather_client_secret='private-secret')
+
+        def handler(request):
+            if request.url.path.endswith('/closest'):
+                self.assertEqual(request.url.params['limit'], '1000')
+                self.assertEqual(request.url.params['client_secret'], 'private-secret')
+                return httpx.Response(200, json={'success': True, 'error': {'code': 'warn_no_data'},
+                                               'response': [], 'echo': 'private-secret'})
+            return httpx.Response(200, json={})
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            payload = await fetch(client, settings, self.conn)
+        lightning = normalize(payload, settings).lightning
+        await persist_environment_data(self.conn, [], [], datetime.now(UTC), lightning=lightning, payload=payload)
+        row = await (await self.conn.execute("SELECT status,item_count FROM collection_attempts WHERE source_id='environment-xweather'")).fetchone()
+        self.assertEqual(row, ('success', 1))
+        body = await self.scalar("SELECT body FROM collected_payloads WHERE sha256=%s", (payload['xweather_sha256'],))
+        self.assertNotIn(b'private-secret', bytes(body))
+        row = await (await self.conn.execute("SELECT d.source_id,r.value,r.period_end-r.period_start FROM readings r JOIN measurement_definitions d ON d.id=r.measurement_id WHERE d.source_id='environment-xweather' AND d.metric='lightning_strikes_count'")).fetchone()
+        from datetime import timedelta
+        self.assertEqual(row, ('environment-xweather', 0, timedelta(minutes=5)))

@@ -1,6 +1,9 @@
 """Acquire and archive source responses before parsing, including failed HTTP responses."""
 
 import hashlib
+import json
+import logging
+from datetime import UTC, datetime, timedelta
 from urllib.parse import urlsplit, urlunsplit
 
 
@@ -13,6 +16,7 @@ async def fetch(client, settings, conn=None):
         ('mosmix', getattr(settings, 'mosmix_url', None), False, getattr(settings, 'enable_mosmix', False)),
         ('blitzortung', getattr(settings, 'blitzortung_url', None), False, getattr(settings, 'enable_blitzortung', False)),
     ]
+    endpoints.append(('xweather', 'https://data.api.xweather.com/lightning/closest', False, getattr(settings, 'enable_xweather', False)))
     if conn:
         for name, url, _, enabled in endpoints:
             parts = urlsplit(url or '')
@@ -30,7 +34,17 @@ async def fetch(client, settings, conn=None):
         if not enabled or not url:
             continue
         try:
-            response = await client.get(url, timeout=settings.request_timeout)
+            params = None
+            if name == 'xweather':
+                logging.getLogger('httpx').setLevel(logging.WARNING)
+                if not settings.xweather_client_id or not settings.xweather_client_secret:
+                    raise ValueError('Missing Xweather credentials')
+                window_end = datetime.now(UTC).replace(microsecond=0)
+                window_start = window_end - timedelta(minutes=5)
+                params = {'client_id': settings.xweather_client_id, 'client_secret': settings.xweather_client_secret,
+                          'p': f'{settings.ried_lat},{settings.ried_lon}', 'radius': f'{settings.blitzortung_radius_km}km',
+                          'from': int(window_start.timestamp()), 'to': int(window_end.timestamp()), 'limit': 1000}
+            response = await client.get(url, params=params, timeout=settings.request_timeout)
         except Exception as exc:
             if conn:
                 await conn.execute(
@@ -43,7 +57,11 @@ async def fetch(client, settings, conn=None):
                 raise
             continue
 
-        digest = hashlib.sha256(response.content).hexdigest()
+        body = response.content
+        if name == 'xweather':
+            for secret in (settings.xweather_client_id, settings.xweather_client_secret):
+                body = body.replace(secret.encode(), b'[redacted]')
+        digest = hashlib.sha256(body).hexdigest()
         content_type = response.headers.get(
             "content-type",
             "application/octet-stream" if name in ("radolan", "mosmix") else "application/json",
@@ -54,7 +72,7 @@ async def fetch(client, settings, conn=None):
                 ON CONFLICT DO NOTHING""",
                 (
                     digest,
-                    response.content,
+                    body,
                     content_type,
                 ),
             )
@@ -85,8 +103,13 @@ async def fetch(client, settings, conn=None):
             elif name == "blitzortung":
                 payload[name] = response.text
             else:
-                payload[name] = response.json()
+                payload[name] = json.loads(body)
+                if name == 'xweather':
+                    from xweather import validate_response
+                    validate_response(payload[name])
+                    payload['xweather_window_end'] = window_end.isoformat()
         except ValueError as exc:
+            payload.pop(name, None)
             if conn:
                 await conn.execute(
                     """UPDATE collection_attempts SET status='failed',error=%s,error_stage='processing'

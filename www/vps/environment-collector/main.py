@@ -70,7 +70,7 @@ async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_starte
     if forecast_list:
         coverage.append("dwd_mosmix")
     if lightning_item:
-        coverage.append("blitzortung")
+        coverage.append(lightning_item.source)
     summary = {
         "fetched_at": fetched_at.isoformat(),
         "accepted": (

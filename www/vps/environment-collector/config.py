@@ -15,6 +15,9 @@ class Settings:
     radolan_url: str = "https://opendata.dwd.de/weather/radar/radolan/rw/raa01-rw_10000-latest-dwd---bin.bz2"
     mosmix_url: str = "https://opendata.dwd.de/weather/local_forecasts/mos/MOSMIX_L/single_stations/10729/kml/MOSMIX_L_LATEST_10729.kmz"
     blitzortung_url: str = "https://data.blitzortung.org/Data/Protected/last_strikes.php"
+    enable_xweather: bool = False
+    xweather_client_id: str = field(default="", repr=False)
+    xweather_client_secret: str = field(default="", repr=False)
     enable_radolan: bool = True
     enable_mosmix: bool = True
     enable_blitzortung: bool = True
@@ -69,6 +72,9 @@ class Settings:
             raise ValueError("ENVIRONMENT_POLL_SECONDS must be positive")
         return cls(
             db=db,
+            enable_xweather=os.getenv("ENABLE_XWEATHER", "false").lower() in ("1", "true", "yes"),
+            xweather_client_id=os.getenv("XWEATHER_CLIENT_ID", "").strip(),
+            xweather_client_secret=os.getenv("XWEATHER_CLIENT_SECRET", "").strip(),
             enable_entsoe=os.getenv("ENABLE_ENTSOE", "false").lower() in ("1", "true", "yes"),
             entsoe_poll_seconds=entsoe_poll_seconds,
             entsoe_token=os.getenv("ENTSOE_API_TOKEN", "").strip(),

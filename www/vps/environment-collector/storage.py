@@ -188,8 +188,10 @@ async def persist_environment_data(
 
         # 5. Update Blitzortung Lightning Observations
         if lightning_item is not None:
-            provenance = Jsonb({"source": "blitzortung", "radius_km": lightning_item.radius_km})
-            if mode == 'dual':
+            if lightning_item.source not in {'blitzortung', 'xweather'}:
+                raise ValueError('Unknown lightning provider')
+            provenance = Jsonb({"source": lightning_item.source, "radius_km": lightning_item.radius_km})
+            if mode == 'dual' or lightning_item.source == 'xweather':
                 await conn.execute("""
                     INSERT INTO entities(id, name, entity_type, metadata)
                     VALUES (%s, 'Blitzüberwachungszone Ried (25 km Radius Bürstadt)', 'monitoring_area',
@@ -204,15 +206,15 @@ async def persist_environment_data(
                         "center_lat": lightning_item.center_lat,
                         "center_lon": lightning_item.center_lon,
                         "radius_km": lightning_item.radius_km,
-                        "provider": "Blitzortung.org",
+                        "provider": "Vaisala Xweather" if lightning_item.source == "xweather" else "Blitzortung.org",
                     }),
                 ))
-                # Strikes count (period_total over 15m)
-                await conn.execute("""
+                # Pulses counted over the provider request window.
+                await conn.execute(f"""
                     SELECT write_measurement(
-                        %s, 'lightning_strikes_count', 'count', 'environment-blitzortung',
-                        'observed', '{"radius_km": 25, "interval": "15m"}'::jsonb,
-                        %s, %s, %s, %s, 'valid', %s - interval '15 minutes', %s, 'period_total'
+                        %s, 'lightning_strikes_count', 'count', 'environment-{lightning_item.source}',
+                        'observed', '{{"radius_km": {lightning_item.radius_km}, "interval_seconds": {lightning_item.period_seconds}}}'::jsonb,
+                        %s, %s::numeric, %s, %s, 'valid', %s - interval '{lightning_item.period_seconds} seconds', %s, 'period_total'
                     )
                 """, (
                     lightning_item.zone_id,
@@ -225,11 +227,11 @@ async def persist_environment_data(
                 ))
                 # Distance min (km) if strikes occurred
                 if lightning_item.distance_min_km is not None:
-                    await conn.execute("""
+                    await conn.execute(f"""
                         SELECT write_measurement(
-                            %s, 'lightning_distance_min', 'km', 'environment-blitzortung',
-                            'observed', '{"radius_km": 25}'::jsonb,
-                            %s, %s, %s, %s, 'valid', NULL, NULL, 'instantaneous'
+                            %s, 'lightning_distance_min', 'km', 'environment-{lightning_item.source}',
+                            'observed', '{{"radius_km": {lightning_item.radius_km}}}'::jsonb,
+                            %s, %s::numeric, %s, %s, 'valid', NULL, NULL, 'instantaneous'
                         )
                     """, (
                         lightning_item.zone_id,
@@ -240,11 +242,11 @@ async def persist_environment_data(
                     ))
                 # Peak current max (kA) if available
                 if lightning_item.peak_current_max_ka is not None:
-                    await conn.execute("""
+                    await conn.execute(f"""
                         SELECT write_measurement(
-                            %s, 'lightning_peak_current', 'kA', 'environment-blitzortung',
-                            'observed', '{"radius_km": 25}'::jsonb,
-                            %s, %s, %s, %s, 'valid', NULL, NULL, 'instantaneous'
+                            %s, 'lightning_peak_current', 'kA', 'environment-{lightning_item.source}',
+                            'observed', '{{"radius_km": {lightning_item.radius_km}}}'::jsonb,
+                            %s, %s::numeric, %s, %s, 'valid', NULL, NULL, 'instantaneous'
                         )
                     """, (
                         lightning_item.zone_id,
@@ -254,16 +256,16 @@ async def persist_environment_data(
                         provenance,
                     ))
                 # Center coordinates as reference
-                await conn.execute("""
+                await conn.execute(f"""
                     SELECT write_measurement(
-                        %s, 'latitude', 'degrees', 'environment-blitzortung', 'reported',
-                        '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s, 'valid', NULL, NULL, 'reference'
+                        %s, 'latitude', 'degrees', 'environment-{lightning_item.source}', 'reported',
+                        '{{"crs": "EPSG:4326"}}'::jsonb, %s, %s::numeric, %s, %s, 'valid', NULL, NULL, 'reference'
                     )
                 """, (lightning_item.zone_id, lightning_item.timestamp, lightning_item.center_lat, fetched_at, provenance))
-                await conn.execute("""
+                await conn.execute(f"""
                     SELECT write_measurement(
-                        %s, 'longitude', 'degrees', 'environment-blitzortung', 'reported',
-                        '{"crs": "EPSG:4326"}'::jsonb, %s, %s, %s, %s, 'valid', NULL, NULL, 'reference'
+                        %s, 'longitude', 'degrees', 'environment-{lightning_item.source}', 'reported',
+                        '{{"crs": "EPSG:4326"}}'::jsonb, %s, %s::numeric, %s, %s, 'valid', NULL, NULL, 'reference'
                     )
                 """, (lightning_item.zone_id, lightning_item.timestamp, lightning_item.center_lon, fetched_at, provenance))
 
@@ -364,7 +366,8 @@ async def persist_environment_data(
                 'weather': (updated_weather, 'metrics'),
                 'radolan': (updated_radar, 'metrics'),
                 'mosmix': (updated_forecasts, 'metrics'),
-                'blitzortung': (updated_lightning, 'observations'),
+                'blitzortung': (updated_lightning if lightning_item and lightning_item.source == 'blitzortung' else 0, 'observations'),
+                'xweather': (updated_lightning if lightning_item and lightning_item.source == 'xweather' else 0, 'observations'),
             }
             for name, (count, unit) in counts.items():
                 attempt_id = payload.get(name + '_attempt_id')

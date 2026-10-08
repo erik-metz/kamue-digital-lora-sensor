@@ -113,6 +113,11 @@ export const SOURCE_INFO: Record<
     domain: "Mobilität & ÖPNV",
     provider: "Die Autobahn & TomTom Flow / Korridor-Modell",
   },
+  "environment-xweather": {
+    title: "Blitzortung Blitzimpulse im Ried (5 Minuten)",
+    domain: "Umwelt & Wetter",
+    provider: "Vaisala Xweather Lightning Network",
+  },
   "environment-blitzortung": {
     title: "Blitzortung Live-Gewitterüberwachung",
     domain: "Umwelt & Wetter",

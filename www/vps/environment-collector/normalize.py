@@ -67,6 +67,8 @@ class NormalizedLightning:
     center_lon: float
     radius_km: float
     raw_strikes: list[dict[str, Any]]
+    source: str = "blitzortung"
+    period_seconds: int = 900
 
 
 class NormalizedEnvironment(tuple):
@@ -463,6 +465,11 @@ def normalize(payload: dict[str, Any], settings) -> NormalizedEnvironment:
     radius_km = getattr(settings, "blitzortung_radius_km", 25.0)
     lightning_item = (parse_blitzortung(blitz_raw, target_lat, target_lon, radius_km)
                       if "blitzortung" in payload else None)
+
+    if 'xweather' in payload:
+        from xweather import normalize_lightning
+        lightning_item = normalize_lightning(payload['xweather'], payload['xweather_window_end'],
+                                            target_lat, target_lon, radius_km)
 
     return NormalizedEnvironment(
         gauges, weather_list, radar_list, forecast_list, lightning_item
