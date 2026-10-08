@@ -32,6 +32,7 @@ from osm_addresses import import_addresses
 from prediction import predict_tick
 from publications import acquisition_error, import_json, public_url
 from realtime import import_realtime
+from regular_offers import import_tv_lauftreff
 from ris_boards import import_ris_boards
 from satellite import import_satellite
 from verified_club_notice import import_verified_club_notice
@@ -59,6 +60,7 @@ ADAPTERS = {
     "municipal-notice-events": import_municipal_notice_events,
     "long-term-events": import_long_term_events,
     "verified-club-notice": import_verified_club_notice,
+    "tv-lauftreff": import_tv_lauftreff,
     "club-events": import_club_events,
     "tiles": import_tiles,
     "gtfs-rt": import_realtime,

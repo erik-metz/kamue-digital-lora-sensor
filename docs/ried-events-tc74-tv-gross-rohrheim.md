@@ -124,3 +124,34 @@ Quellenherkunft und unverändert unbekannter Endzeit. Beisammensein ab 12:30
 Uhr und Kinderprogramm stehen im veröffentlichten Beschreibungstext.
 Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
 weitere CI aus.
+
+## Umsetzung: regelmäßiger TV-Lauftreff
+
+Die am 08.10.2026 erneut direkt abgerufene
+[Vereinsseite](https://tv-grossrohrheim.de/angebot/lauftreff/) bestätigt
+**mittwochs um 19:00 Uhr**, Treffpunkt **Eingang Bürgerhalle,
+Groß-Rohrheim**, für Laufende und Interessierte. Sichtbare Kleidung und eine
+vorhandene Stirnlampe werden empfohlen. Endzeit, Kosten, Gültigkeitsende und
+konkrete Ausfälle sind nicht veröffentlicht.
+
+Die neue Quelle `tv-gross-rohrheim-lauftreff` veröffentlicht deshalb einen
+separaten Datensatz `social/regular-offers`. Sie erzeugt keine datierten
+Termine, keinen Kalenderexport und keine angenommene kostenlose Teilnahme.
+Der Import archiviert die Originalantwort und kontrolliert Überschrift,
+veröffentlichten Zeit-/Treffpunkt-/Kontaktabsatz sowie den Kleidungshinweis.
+Geänderte Angaben erfordern eine erneute Prüfung. Abruf alle sechs Stunden,
+Veröffentlichung höchstens zwei Tage gültig.
+
+Auf `/termine` erscheint ein eigener Abschnitt „Regelmäßige Angebote im Ried“
+mit Originalquelle und Hinweis auf mögliche Ausfälle. Die Daten stammen aus
+der gespeicherten VPS-Veröffentlichung. Bei fehlenden oder abgelaufenen
+Daten erscheint eine Verfügbarkeitsmeldung. Die Filter des datierten
+Veranstaltungskalenders betreffen diesen getrennten Abschnitt nicht.
+Zumba und weitere Vereinsangebote bleiben spätere einzelne Schritte.
+
+Vor Veröffentlichung geprüft: **255 Worker-Tests** einschließlich
+Datenbankintegration bestanden; **215 bisherige Frontend-Tests und zwei neue
+Anzeigetests** bestanden, ebenso ESLint der betroffenen Komponenten, Ruff und
+der vollständige Next.js-Produktions-Build. Der erneute Live-Abruf wurde in
+einem eigenen Testschema bis zur Veröffentlichung geprüft: ein regelmäßiges
+Angebot mit archivierter Originalantwort, null datierte Kalenderereignisse.

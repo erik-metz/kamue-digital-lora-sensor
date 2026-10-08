@@ -1,6 +1,16 @@
 {
   "sources": [
     {
+      "id": "tv-gross-rohrheim-lauftreff",
+      "group": "social",
+      "adapter": "tv-lauftreff",
+      "enabled": true,
+      "url": "https://tv-grossrohrheim.de/angebot/lauftreff/",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2
+    },
+    {
       "id": "db-openstation-netex",
       "group": "transport",
       "adapter": "db-netex",

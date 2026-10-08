@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/eventCalendar.test.mjs tests/dischargeForecasts.test.mjs tests/pollenForecasts.test.mjs tests/soilForecasts.test.mjs tests/dataDownloads.test.mjs tests/mapMotion.test.mjs tests/mapDialogs.test.mjs tests/map.test.mjs tests/mobilityData.test.mjs tests/mobility.test.mjs tests/wasteTruck.test.mjs tests/busMobility.test.mjs tests/security.test.mjs tests/streetClosures.test.mjs tests/environment.test.mjs tests/regionalStats.test.mjs tests/regionalEvents.test.mjs tests/realestate.test.mjs tests/sources.test.mjs tests/urlState.test.mjs tests/collectedData.test.mjs tests/budgetPublication.test.mjs tests/mapPresets.test.mjs tests/satelliteData.test.mjs tests/pitchDecks.test.mjs tests/pitchWindow.test.mjs tests/bahnData.test.mjs tests/fuelData.test.mjs",
+    "test": "node --test tests/eventCalendar.test.mjs tests/dischargeForecasts.test.mjs tests/pollenForecasts.test.mjs tests/soilForecasts.test.mjs tests/dataDownloads.test.mjs tests/mapMotion.test.mjs tests/mapDialogs.test.mjs tests/map.test.mjs tests/mobilityData.test.mjs tests/mobility.test.mjs tests/wasteTruck.test.mjs tests/busMobility.test.mjs tests/security.test.mjs tests/streetClosures.test.mjs tests/environment.test.mjs tests/regionalStats.test.mjs tests/regionalEvents.test.mjs tests/regularOffers.test.mjs tests/realestate.test.mjs tests/sources.test.mjs tests/urlState.test.mjs tests/collectedData.test.mjs tests/budgetPublication.test.mjs tests/mapPresets.test.mjs tests/satelliteData.test.mjs tests/pitchDecks.test.mjs tests/pitchWindow.test.mjs tests/bahnData.test.mjs tests/fuelData.test.mjs",
     "test:urlState": "node --test tests/urlState.test.mjs",
     "test:security": "node --test tests/security.test.mjs tests/bahnData.test.mjs",
     "test:map": "node --test tests/mapMotion.test.mjs tests/mapDialogs.test.mjs tests/map.test.mjs tests/mobilityData.test.mjs tests/fuelData.test.mjs",
@@ -17,7 +17,7 @@
     "test:closures": "node --test tests/streetClosures.test.mjs",
     "test:environment": "node --test tests/environment.test.mjs",
     "test:regional": "node --test tests/regionalStats.test.mjs",
-    "test:events": "node --test tests/eventCalendar.test.mjs tests/regionalEvents.test.mjs",
+    "test:events": "node --test tests/eventCalendar.test.mjs tests/regionalEvents.test.mjs tests/regularOffers.test.mjs",
     "test:realestate": "node --test tests/realestate.test.mjs",
     "test:sources": "node --test tests/sources.test.mjs"
   },
