@@ -1,0 +1,59 @@
+{
+  "publication": {
+    "note": "Thermische Anomalien, keine bestätigten Brände und keine Warnfunktion.",
+    "count": 0,
+    "status": "success",
+    "product": "VIIRS_NOAA20_NRT",
+    "detections": [],
+    "fetched_at": "2026-10-08T16:02:12.395178+00:00",
+    "window_days": 3,
+    "bbox_lon_lat": [
+      8.33,
+      49.54,
+      8.58,
+      49.75
+    ],
+    "window_start": "2026-10-06T00:00:00+00:00",
+    "archive_sha256": "2b11a44667d05367ecf77651b95fd3d34c545c7ec154856094b91245e41ae697",
+    "display_days": 3,
+    "last_successful_fetch_at": "2026-10-08T16:02:12.395178+00:00"
+  },
+  "download_matches_publication": true,
+  "time_filters_verified": [
+    1,
+    2,
+    3
+  ],
+  "ui_empty_success_verified": true,
+  "provider": "NASA LANCE FIRMS",
+  "verified_date": "2026-10-08",
+  "http_status": 200,
+  "raw_csv_bytes": 122,
+  "raw_csv_data_rows": 0,
+  "archive_sha256_verified": true,
+  "repeated_import_status": "success",
+  "unique_successful_payloads_after_repeat": 1,
+  "anomaly_entities_after_repeat": 0,
+  "secret_present_in_archive": false,
+  "secret_present_in_worker_logs": false,
+  "production_map_points_verified": false,
+  "production_map_note": "No regional detections returned; production acceptance verifies the successful empty state. Point rendering awaits actual detections; fixtures are never published as live observations.",
+  "tests": {
+    "firms_database_and_parser": 17,
+    "frontend_tests_at_implementation": 219,
+    "frontend_build": "success",
+    "ruff": "success",
+    "typescript": "success"
+  },
+  "implementation_commit": "6f6f7582a7abbdacb631fc21ee868bd91db85adb",
+  "archive_budget_commit": "37ab7dd9d1d7b93d96ec6bab96b09ddce2f1d576",
+  "frontend_ci": "https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37772790022",
+  "backend_ci": "https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37805448499",
+  "backend_ci_status": "success",
+  "backend_required_jobs_success": 16,
+  "ghcr_builds_published": 17,
+  "frontend_ci_status": "success",
+  "regular_worker_import_after_final_deploy": "success",
+  "deployed_firms_sha256": "b8d2abeea0be9b899dc2ec41a92a414b7a4efdf77d03005fcbcdaa62dc0a6271",
+  "deployed_archive_budget_bytes": 52428800
+}
