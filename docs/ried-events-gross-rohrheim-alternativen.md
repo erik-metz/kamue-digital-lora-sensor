@@ -151,3 +151,32 @@ Die gespeicherten UTC-Zeiten 29.10.2026, 16:00 und 01.11.2026, 09:30
 entsprechen 17:00 und 10:30 Uhr in Deutschland. Beide Veranstaltungsorte
 liegen in Groß-Rohrheim, Endzeiten bleiben leer. Die Dokumentation dieses
 Nachweises allein löst gemäß den Workflow-Pfadfiltern keine weitere CI aus.
+
+## Langfristige Festtermine 2027
+
+Erneuter direkter Abgleich am 08.10.2026: Die [offizielle langfristige
+Terminübersicht](https://www.gross-rohrheim.de/freizeit-kultur/veranstaltungen/veranstaltungskalender/langfristige-termine)
+bestätigt Maimarkt am 22.–23.05.2027 und Kirchweih am 21.08.2027.
+Beide waren im produktiven Groß-Rohrheimer Eventbestand noch nicht vorhanden.
+Die [Kerb-Seite](https://www.gross-rohrheim.de/freizeit-kultur/veranstaltungen/kirchweih)
+beschreibt weiterhin das Programm 2026. Ältere Programme belegen daher
+keinen Veranstaltungsplatz, Eintrittspreis oder Ablauf für 2027.
+
+Die neue Quelle `gross-rohrheim-long-term-events` übernimmt ausschließlich
+diese beiden lokalen Festreihen und das ausdrücklich konfigurierte Jahr 2027.
+Pfingsten, Konfirmation, ältere Jahre und unbestätigte weitere Kerbtage werden
+nicht importiert. Groß-Rohrheim ist als Ort der beiden gemeindlichen Feste
+bestätigt; der genaue Veranstaltungsplatz bleibt ausdrücklich offen.
+Das Ortsfeld lautet deshalb „Groß-Rohrheim – genauer Veranstaltungsort noch
+nicht veröffentlicht“. Es wird insbesondere keine Bürgerhalle aus alten
+Programmen übernommen. Diese Datumshinweise sind keine vollständigen
+Programme. Die Beschreibung benennt die fehlenden Uhrzeiten, Plätze,
+Eintrittspreise und Programmdetails.
+
+Für die Kalenderdarstellung verwendet der Import die vorhandene Konvention
+für Datumshinweise: lokale Tagesgrenzen 00:00–23:59:59. Diese sind keine
+behaupteten Öffnungszeiten. Maimarkt umfasst nur die beiden publizierten
+Tage, Kirchweih nur den einzelnen publizierten Tag. Der Abruf erfolgt alle
+sechs Stunden; stabile Kennungen verhindern Duplikate bei erneutem Abruf.
+Fehlende, widersprüchliche oder unlesbare Angaben werden abgelehnt, bevor
+eine gute Veröffentlichung verändert wird.

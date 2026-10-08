@@ -566,6 +566,20 @@
       "http_retries": 2
     },
     {
+      "id": "gross-rohrheim-long-term-events",
+      "group": "social",
+      "adapter": "long-term-events",
+      "enabled": true,
+      "url": "https://www.gross-rohrheim.de/freizeit-kultur/veranstaltungen/veranstaltungskalender/langfristige-termine",
+      "years": [
+        2027
+      ],
+      "description": "Offizielle Datumshinweise zu Maimarkt und Kirchweih 2027 in Groß-Rohrheim; genaue Veranstaltungsplätze und Uhrzeiten noch offen.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2
+    },
+    {
       "id": "demographics-published-source",
       "group": "demographics",
       "adapter": "json",

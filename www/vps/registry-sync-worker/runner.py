@@ -24,6 +24,7 @@ from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
 from invekos import import_invekos
+from long_term_events import import_long_term_events
 from map_tiles import import_wms
 from municipal_notice_events import import_municipal_notice_events
 from osm_addresses import import_addresses
@@ -54,6 +55,7 @@ ADAPTERS = {
     "biblis-events": import_biblis_events,
     "tribe-events": import_biblis_events,
     "municipal-notice-events": import_municipal_notice_events,
+    "long-term-events": import_long_term_events,
     "club-events": import_club_events,
     "tiles": import_tiles,
     "gtfs-rt": import_realtime,
