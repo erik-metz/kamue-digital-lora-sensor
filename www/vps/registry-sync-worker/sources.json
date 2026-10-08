@@ -540,6 +540,32 @@
       "http_retries": 2
     },
     {
+      "id": "gross-rohrheim-community-notice-events",
+      "group": "social",
+      "adapter": "municipal-notice-events",
+      "enabled": true,
+      "url": "https://gross-rohrheim.orts.app/-arbeitsgruppen-bei-der-gemeinde-gross-rohrheim_LN6I/nHDc",
+      "headline": "Arbeitsgruppen bei der Gemeinde Groß-Rohrheim",
+      "event_titles": {
+        "AG Senioren": "Arbeitsgruppe Senioren",
+        "Vereinsfrühschoppen": "Vereinsfrühschoppen"
+      },
+      "verified_venues": {
+        "Rathaussitzungssaal": {
+          "venue_name": "Rathaussitzungssaal Groß-Rohrheim",
+          "municipality": "Groß-Rohrheim"
+        },
+        "Bürgerhallen-Gaststätte bei „Eule Andrea“": {
+          "venue_name": "Bürgerhallen-Gaststätte bei „Eule Andrea“, Groß-Rohrheim",
+          "municipality": "Groß-Rohrheim"
+        }
+      },
+      "description": "Zwei ausdrücklich datierte Gemeindetermine aus der offiziellen Mitteilung; einzeln belegte lokale Veranstaltungsorte.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2
+    },
+    {
       "id": "demographics-published-source",
       "group": "demographics",
       "adapter": "json",

@@ -117,3 +117,21 @@ Abende am 03.11.2026 und 01.12.2026 sind jeweils mit 20:00–22:00 Ortszeit,
 Groß-Rohrheim, Rubrik `concert` und kostenlosem Eintritt enthalten.
 Die Veröffentlichung wurde nach der automatischen Image-Übernahme überprüft;
 erfolgreiche Tests allein wurden nicht als produktiver Importnachweis gewertet.
+
+## Gemeindemitteilung mit zwei zusätzlichen Terminen
+
+Die offizielle [Gemeindemitteilung](https://gross-rohrheim.orts.app/-arbeitsgruppen-bei-der-gemeinde-gross-rohrheim_LN6I/nHDc)
+ist am 08.10.2026 erneut abgerufen und mit dem neuen Parser geprüft worden:
+
+- Arbeitsgruppe Senioren: 29.10.2026, 17:00 Uhr, Rathaussitzungssaal Groß-Rohrheim.
+- Vereinsfrühschoppen: 01.11.2026, 10:30 Uhr, Bürgerhallen-Gaststätte bei „Eule Andrea“, Groß-Rohrheim.
+
+Die Quelle `gross-rohrheim-community-notice-events` wird alle sechs Stunden
+geprüft. Nur die beiden ausdrücklich ausgewählten Termine und überprüften
+Veranstaltungsorte werden übernommen. Endzeiten und Eintrittspreise sind
+nicht veröffentlicht; Endzeiten bleiben leer, kostenloser Eintritt wird
+nicht behauptet. Die veröffentlichte Einladung wird im Beschreibungstext
+beibehalten. Eine unvollständige oder geänderte Mitteilung wird abgelehnt,
+bevor bestehende Termine verändert werden. Tests prüfen den originalen
+Quelltext, fremde Orte, veränderte Daten sowie Archivierung, Veröffentlichung
+und wiederholten Import mit echten Datenbank-Fremdschlüsseln.
