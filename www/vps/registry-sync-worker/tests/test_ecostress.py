@@ -150,10 +150,11 @@ class EcostressPersistenceTests(DatabaseCase):
                 assert data["scenes"][0]["raster"]["stats"]["valid_pixels"] == 2
                 response = await download_ecostress_crop(scene()["id"], Pool())
                 assert response.body == bytes(archived)
-                tile = await get_ecostress_tile(scene()["id"], 11, 1072, 697, Pool())
+                tile = await get_ecostress_tile(scene()["id"], 14, 8573, 5581, Pool())
                 from PIL import Image
                 image = Image.open(io.BytesIO(tile.body))
                 assert image.size == (256, 256) and image.mode == "RGBA"
+                assert image.getchannel("A").getbbox() is not None
                 with pytest.raises(HTTPException) as invalid:
                     await get_ecostress_tile(scene()["id"], 20, 0, 0, Pool())
                 assert invalid.value.status_code == 400
@@ -163,3 +164,11 @@ class EcostressPersistenceTests(DatabaseCase):
                 assert failure.value.status_code == 503
             finally:
                 self.conn.row_factory = tuple_row
+
+
+def test_cloud_only_temperature_tile_remains_transparent():
+    from ecostress_tiles import render_temperature_tile
+    from PIL import Image
+    body = read_crop(scene(), rasters(cloudy=True))[1]
+    image = Image.open(io.BytesIO(render_temperature_tile(body, 14, 8573, 5581)))
+    assert image.getchannel("A").getbbox() is None

@@ -102,6 +102,8 @@ def read_crop(scene, files):
             str(src.crs) != "EPSG:32632"
             or src.count != 1
             or not all(math.isclose(v, 70, abs_tol=0.05) for v in src.res)
+            or src.transform.a <= 0
+            or src.transform.e >= 0
             or src.transform.b != 0
             or src.transform.d != 0
         ):
