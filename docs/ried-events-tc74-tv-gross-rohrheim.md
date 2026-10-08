@@ -155,3 +155,25 @@ Anzeigetests** bestanden, ebenso ESLint der betroffenen Komponenten, Ruff und
 der vollständige Next.js-Produktions-Build. Der erneute Live-Abruf wurde in
 einem eigenen Testschema bis zur Veröffentlichung geprüft: ein regelmäßiges
 Angebot mit archivierter Originalantwort, null datierte Kalenderereignisse.
+
+### Produktiver Abschluss des Lauftreff-Schritts
+
+Implementierung `7d3d690ce6632e7877b276081168b1f9b6b443c3` ist auf `main`
+committed und gepusht. Die beiden Läufe für genau diesen Commit sind
+vollständig erfolgreich:
+
+- [Frontend CI](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37768425130)
+- [FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37768424982), einschließlich aller 17 Container-Builds und GHCR-Veröffentlichungen.
+
+Die produktive Quellen-API bestätigt `tv-gross-rohrheim-lauftreff` mit
+`success`, HTTP 200 und Abrufzeit **08.10.2026, 11:22:20 UTC**. Der öffentliche
+Datensatz `social/regular-offers` enthält genau das geprüfte Angebot,
+Mittwoch 19:00 Uhr, Eingang Bürgerhalle Groß-Rohrheim, Originalquelle und
+Hinweise auf unbekannte Endzeit, Kosten und Ausfälle.
+
+Die [öffentliche Terminseite](https://open-ried-sens.vercel.app/termine) wurde
+nach der produktiven Übernahme erneut abgerufen: Der neue Abschnitt enthält
+TV-Lauftreff, Mittwoch, 19:00, Treffpunkt und den Original-Vereinslink;
+die Verfügbarkeitsmeldung ist verschwunden. Es werden keine erfundenen
+Einzeldaten veröffentlicht. Der abschließende Dokumentationscommit löst
+wegen der Workflow-Pfadfilter keine weitere CI aus.
