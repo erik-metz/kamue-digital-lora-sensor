@@ -29,6 +29,7 @@ interface MapProps {
   nodes: SensorNode[];
   selectedNodeId: string | undefined;
   onSelectNode: (id: string) => void;
+  onSelectFuel?: (id: string, fuel: import("@/lib/fuelData").Fuel) => void;
   onMobilityNodesChange?: (nodes: StationNode[]) => void;
   categories: Category[];
   mode: MapMode;
@@ -196,6 +197,7 @@ export default function MapComponent(props: MapProps) {
     }
     const points: { lat: number; lng: number; temp: number }[] = [];
     for (const node of props.nodes) {
+      if (node.id.startsWith("fuel-")) continue;
       const category = markerCategory(node, props.categories);
       if (!category || !props.categories.includes(category)) continue;
       const reading = primaryReading(node, category, props.mode);
@@ -653,7 +655,7 @@ export default function MapComponent(props: MapProps) {
     )}
     <div className="space-y-2 text-xs text-slate-400" aria-label="Kartenlegende und Hinweise">
       {props.legend}
-      {ready && layers.fuel && mapInstance ? <MapFuelLayer map={mapInstance} clustered={clusteringReady} /> : null}
+      {ready && layers.fuel && mapInstance ? <MapFuelLayer map={mapInstance} clustered={clusteringReady} onSelectStation={(id, fuel) => { callbacks.current.onSelectFuel?.(id, fuel); }} /> : null}
       {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} clustered={clusterVehicles} /> : null}
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>
       <p className="mt-1">🚌 Bus · 🚆 Zug · 🚛 Abfallsammlung · 🚢 Schiff · ✈ Flugverkehr · 🛰 Satelliten</p>

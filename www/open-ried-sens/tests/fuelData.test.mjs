@@ -8,6 +8,18 @@ vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/fuelData.t
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText, context);
 const { decodeFuel, fuelFresh, compareFuel, formatFuelPrice } = context.exports;
+const telemetry = { exports: {} };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/telemetryData.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, telemetry);
+test("shared measurement selector names fuel types and retains price units", () => {
+  for (const [fuel, label] of [["e5", "Super E5"], ["e10", "Super E10"], ["diesel", "Diesel"]]) {
+    const reading = { metric: `fuel_${fuel}`, unit: "€/l" };
+    assert.equal(telemetry.exports.metricLabel(reading), label);
+    assert.equal(telemetry.exports.unitLabel(reading.unit), "€/l");
+    assert.equal(telemetry.exports.seriesKey(reading), JSON.stringify([`fuel_${fuel}`, "€/l"]));
+  }
+});
 const station = { id: "a", name: "A", brand: "", street: "", houseNumber: "", postCode: "", place: "", latitude: 49.62, longitude: 8.46, is_open: true, e5: 1789, e10: null, diesel: 1699 };
 const snapshot = { stations: [station], center: [49.62, 8.46], radius_km: 25, fetched_at: "2026-10-07T10:00:00Z" };
 test("freshness uses acquisition time and excludes future timestamps", () => {

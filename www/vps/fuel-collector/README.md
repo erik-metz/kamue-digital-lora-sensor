@@ -4,7 +4,13 @@ One Tankerkönig `list.php?type=all` request every 300 seconds for a 25 km circl
 around 49.62, 8.46. No national crawling or per-browser provider calls.
 Prices are integer thousandths of EUR/litre, missing prices are null. A validated
 complete snapshot replaces the previous snapshot atomically; failures preserve it.
-Only the latest snapshot is stored (no price history). Acquisition time is explicitly
+The current snapshot also feeds shared `sensor_metadata`/`sensor_data` telemetry
+(station ID `fuel-<provider UUID>`, metrics `fuel_e5`, `fuel_e10`, `fuel_diesel`,
+unit `€/l`). Where installed, shadow triggers retain canonical core compatibility.
+Price changes and unchanged-price heartbeats every 15 minutes are stored atomically
+with the snapshot; replayed snapshots do not write telemetry. Missing prices are
+not written as zero. Existing admin metadata survives. History starts at deployment;
+no earlier prices are invented. Acquisition time is explicitly
 not a provider price-change timestamp. Data expires for comparisons/opening filters
 after 15 minutes; old values remain labelled stale.
 

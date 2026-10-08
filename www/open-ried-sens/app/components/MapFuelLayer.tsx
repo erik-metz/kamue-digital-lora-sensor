@@ -1,10 +1,12 @@
 "use client";
 import L from "leaflet";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { detailCard, placeMarker } from "@/lib/mapPresentation";
 import { compareFuel, decodeFuel, formatFuelPrice, fuelDistance, fuelFresh, FUEL_LABELS, type Fuel, type FuelSnapshot } from "@/lib/fuelData";
 
-export default function MapFuelLayer({ map, clustered }: { map: L.Map; clustered: boolean }) {
+export default function MapFuelLayer({ map, clustered, onSelectStation }: { map: L.Map; clustered: boolean; onSelectStation: (id: string, fuel: Fuel) => void }) {
+  const selection = useRef(onSelectStation);
+  useEffect(() => { selection.current = onSelectStation; }, [onSelectStation]);
   const [snapshot, setSnapshot] = useState<FuelSnapshot | null>(null);
   const [failed, setFailed] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -54,6 +56,7 @@ export default function MapFuelLayer({ map, clustered }: { map: L.Map; clustered
           "Quelle: Tankerkönig / MTS-K · CC BY 4.0",
         ]));
       marker.on("add", () => marker.getElement()?.setAttribute("aria-label", `${s.name} · ${status} · ${FUEL_LABELS[fuel]}: ${formatFuelPrice(s[fuel])}`));
+      marker.on("click", () => selection.current(`fuel-${s.id}`, fuel));
       marker.addTo(group);
     }
     return () => { group.remove(); };
@@ -78,7 +81,7 @@ export default function MapFuelLayer({ map, clustered }: { map: L.Map; clustered
       <div className="max-h-80 overflow-auto"><table className="mt-2 w-full text-left"><caption className="sr-only">Preise für {FUEL_LABELS[fuel]}; Entfernungen als Luftlinie zur Kartenmitte</caption>
         <thead><tr><th scope="col">Tankstelle</th><th scope="col">Preis</th><th scope="col">Entfernung</th><th scope="col">Status</th></tr></thead>
         <tbody>{ranked.map(s => <tr key={s.id} className="border-t border-slate-800">
-          <td className="py-2"><button className="text-sky-300 underline" onClick={() => map.setView([s.latitude, s.longitude], 16)}>{s.name}</button><br />{s.place}</td>
+          <td className="py-2"><button className="text-sky-300 underline" onClick={() => { selection.current(`fuel-${s.id}`, fuel); map.setView([s.latitude, s.longitude], 16); }}>{s.name}</button><br />{s.place}</td>
           <td>{formatFuelPrice(s[fuel])}{fresh ? "" : " · alt"}</td><td>{fuelDistance(s, center).toLocaleString("de-DE", { maximumFractionDigits: 1 })} km</td>
           <td>{fresh ? s.is_open ? "Geöffnet" : "Geschlossen" : "Unbekannt"}</td>
         </tr>)}</tbody>

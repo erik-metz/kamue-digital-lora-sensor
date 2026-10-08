@@ -2,6 +2,7 @@ import type { Reading } from "./mapData";
 
 export const seriesKey = (reading: { metric: string; unit: string }) => JSON.stringify([reading.metric, reading.unit]);
 const LABELS: Record<string, string> = {
+  fuel_e5: "Super E5", fuel_e10: "Super E10", fuel_diesel: "Diesel",
   pgv: "Peak-Vibration (PGV)", rms: "RMS-Tremor", waveform: "Wellenform", temperature: "Temperatur",
   humidity: "Luftfeuchtigkeit", relative_humidity: "Luftfeuchtigkeit", precipitation: "Niederschlag",
   soil_temperature: "Bodentemperatur", soil_moisture: "Bodenfeuchte", soil_moisture_nfk: "Bodenfeuchte (Quellenangabe nFK)",

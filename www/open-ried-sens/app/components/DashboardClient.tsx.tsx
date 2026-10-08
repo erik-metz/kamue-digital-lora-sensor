@@ -287,6 +287,7 @@ export default function DashboardClient({ nodes: initialNodes, loadFailed = fals
         now={now}
         selectedNodeId={selected?.id}
         onSelectNode={setSelectedNodeId}
+        onSelectFuel={(id, fuel) => { setSelectedNodeId(id); setSelectedMetric(JSON.stringify([`fuel_${fuel}`, "€/l"])); }}
         onMobilityNodesChange={incoming => setMobility(previous => {
           const selected = previous.find(n => n.id === selectedNodeId);
           return selected && !incoming.some(n => n.id === selected.id) ? [...incoming, { ...selected, readings: [] }] : incoming;

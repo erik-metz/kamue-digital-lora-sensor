@@ -21,6 +21,18 @@ jobs:
   validate-fuel-collector:
     name: Fuel collector tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -29,6 +41,8 @@ jobs:
       - run: pip install -r www/vps/fuel-collector/requirements.txt ruff pytest
       - run: ruff check --config www/vps/pyproject.toml www/vps/fuel-collector
       - run: PYTHONPATH=www/vps/fuel-collector python -m pytest -q www/vps/fuel-collector/tests
+        env:
+          FUEL_TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/postgres
 
   validate-api-code:
     name: Code Validation & Linting
