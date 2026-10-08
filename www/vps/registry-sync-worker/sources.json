@@ -580,6 +580,37 @@
       "http_retries": 2
     },
     {
+      "id": "tc74-saisonabschluss-2026",
+      "group": "social",
+      "adapter": "verified-club-notice",
+      "enabled": true,
+      "url": "https://gross-rohrheim.orts.app/-saisonabschluss-11-10-2026-beim-tc_15XI",
+      "headline": "Saisonabschluss 11.10.2026 beim TC",
+      "notice_text_sha256": "00aea6cdd57460263dd496fd951d63cb3ef03542e54f2b7cc41437d0d77f0195",
+      "poster_url": "https://cdn-io-hwemfka5facrcffz.z03.azurefd.net/endpoint/images/ac3529fc-45a2-4722-a3e9-ef74b7858964",
+      "poster_sha256": "20971af36d07e7f252f7a81a867ca615d8e4dac99fc06e4dbbdf8e941436580c",
+      "venue_url": "https://tc74.de/",
+      "venue_proof": "Platzadresse: TC 74 Groß-Rohrheim An Der Fohlenweide 68649 Gross-Rohrheim",
+      "verified_event": {
+        "id": "tc74-saisonabschluss-2026-10-11",
+        "title": "TC74-Saisonabschluss mit Schleifchenturnier und Familienfest",
+        "organizer": "TC 74 Groß-Rohrheim e.V.",
+        "venue_name": "Tennisanlage TC74, An der Fohlenweide, Groß-Rohrheim",
+        "municipality": "Groß-Rohrheim",
+        "street_address": "An der Fohlenweide",
+        "postal_code": "68649",
+        "start_time": "2026-10-11T10:00:00+02:00",
+        "end_time": null,
+        "category": "festival",
+        "is_free": false,
+        "description": "Schleifchenturnier der Aktiven ab 10:00 Uhr; gemeinsames Beisammensein ab 12:30 Uhr mit Getränken und Grillangebot. Für Kinder: Hüpfburg und Bastelwettbewerb. Mitglieder, Familien, Freunde und Tennisfans sind willkommen. Endzeit und Eintrittspreise nicht angegeben; siehe Originalmeldung und Plakat."
+      },
+      "description": "Einzelne Einladung mit manuell geprüftem Originalplakat und konkretem Veranstaltungsort; Änderungen erfordern erneute Prüfung.",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2
+    },
+    {
       "id": "demographics-published-source",
       "group": "demographics",
       "adapter": "json",

@@ -79,3 +79,28 @@ ab 12:30 Uhr und unbekannter Endzeit. Originalmeldung und unveränderten,
 manuell geprüften Plakatstand gemeinsam archivieren und als Herkunft erhalten.
 Danach regelmäßige Sportangebote gesondert erschließen, ohne unbestätigte
 Kursenden, Ferienausnahmen oder unbegrenzte Terminreihen zu erfinden.
+
+## Umsetzung: TC74-Saisonabschluss
+
+Die beauftragte Importquelle `tc74-saisonabschluss-2026` übernimmt genau
+**einen** Eintrag am 11.10.2026, 10:00 Uhr: TC74-Saisonabschluss mit
+Schleifchenturnier und Familienfest auf der Tennisanlage An der Fohlenweide,
+68649 Groß-Rohrheim. Das Beisammensein ab 12:30 Uhr und das Kinderprogramm
+stehen im Beschreibungstext. Endzeit bleibt leer, kostenloser Eintritt wird
+nicht behauptet.
+
+Meldung, unbeschnittenes Originalplakat und konkreter Ortsbeleg sind am
+08.10.2026 erneut direkt geprüft worden. Der Import kontrolliert den exakten
+Einladungstext, den verlinkten Plakatstand und dessen SHA-256 sowie die
+konkrete Platzadresse. Bei Änderungen wird keine ungeprüfte neue Auslegung
+veröffentlicht. Die Prüfung dieser einen Einladung dient nicht als pauschale
+Ortsannahme für andere TC74-Veranstaltungen.
+
+Alle drei Originalantworten werden archiviert. Ein zusätzlich archivierter
+JSON-Beleg enthält ihre Prüfsummen und die manuell verifizierte Zuordnung.
+Die Veröffentlichung verweist auf dessen tatsächlich gespeicherte Bytes;
+damit bleibt auch die Verbindung zwischen Plakat und Kalenderdaten prüfbar.
+Der Abruf erfolgt alle sechs Stunden, die Kennung bleibt bei Wiederholungen
+gleich. Geänderte oder nicht erreichbare Quellen verändern keine bestehende
+gute Veröffentlichung. TV-Kurse und regelmäßige Angebote bleiben separate
+weitere Umsetzungsschritte.
