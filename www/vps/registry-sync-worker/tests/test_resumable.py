@@ -28,7 +28,7 @@ def response(request):
         return httpx.Response(200, content=ICAL)
     if fields.get('submitAction') == ['nextPage']:
         street = fields['aos[Strasse]'][0]
-        return httpx.Response(200, text=FORM + f'<span id="Lageadresse">{street} 1, 68647 Biblis</span>')
+        return httpx.Response(200, text=FORM + f'<span id="Lageadresse">{street} {fields["aos[Hausnummer]"][0]}, 68647 Biblis</span>')
     return httpx.Response(200, text='<form id="athos-os-form"><input name="pageName" value="Lageadresse"><select name="aos[Ort]"><option selected value="Biblis">Biblis</option></select><select name="aos[Strasse]">' + ''.join(f'<option value="{s}">{s}</option>' for s in ['Teststraße','First','Second']) + '</select></form>')
 
 
@@ -168,3 +168,45 @@ class ResumeTests(DatabaseCase):
             self.assertEqual(await import_zakb(self.conn, client, SOURCE), 'failed')
         self.assertEqual(await self.scalar("SELECT count(*) FROM collected_datasets WHERE dataset='waste/calendar'"), 0)
         self.assertEqual(await self.scalar("SELECT data->>'validation_contract' FROM collected_datasets WHERE dataset='waste/coverage'"), 'zakb-address-v2')
+
+
+    async def test_rejected_house_uses_real_alternative_and_reuses_its_checkpoint(self):
+        submitted = []
+        def provider(request):
+            if request.url.path == '/addresses':
+                return httpx.Response(200, json={'elements': [
+                    {'lat': 49.6, 'lon': 8.4, 'tags': {'addr:city': 'Biblis', 'addr:street': 'Teststraße', 'addr:housenumber': '1'}},
+                    {'lat': 49.62, 'lon': 8.42, 'tags': {'addr:city': 'Biblis', 'addr:street': 'Teststraße', 'addr:housenumber': '2'}}]})
+            fields = parse_qs(request.content.decode())
+            if fields.get('submitAction') == ['nextPage']:
+                submitted.append(fields['aos[Hausnummer]'][0])
+                if fields['aos[Hausnummer]'] == ['1']:
+                    return httpx.Response(200, text='<form id="athos-os-form"><input name="pageName" value="Lageadresse"></form>')
+            return response(request)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            await import_zakb(self.conn, client, SOURCE)
+            events = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'")
+            self.assertEqual(events[0]['house_number'], '2')
+            self.assertEqual((events[0]['latitude'], events[0]['longitude']), (49.62, 8.42))
+            await import_zakb(self.conn, client, SOURCE)
+        self.assertEqual(submitted, ['1', '2'])
+        coverage = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/coverage'")
+        self.assertEqual(coverage['municipalities']['Biblis']['successful_calendars'], 1)
+        self.assertEqual(coverage['municipalities']['Biblis']['reused_calendars'], 1)
+
+    async def test_house_fallback_is_bounded_and_never_publishes_rejected_addresses(self):
+        submitted = []
+        def provider(request):
+            if request.url.path == '/addresses':
+                return httpx.Response(200, json={'elements': [
+                    {'lat': 49.6, 'lon': 8.4, 'tags': {'addr:city': 'Biblis', 'addr:street': 'Teststraße', 'addr:housenumber': str(n)}}
+                    for n in range(1, 5)]})
+            fields = parse_qs(request.content.decode())
+            if fields.get('submitAction') == ['nextPage']:
+                submitted.append(fields['aos[Hausnummer]'][0])
+                return httpx.Response(200, text='<form id="athos-os-form"><input name="pageName" value="Lageadresse"></form>')
+            return response(request)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            self.assertEqual(await import_zakb(self.conn, client, SOURCE), 'failed')
+        self.assertEqual(submitted, ['1', '2', '3'])
+        self.assertEqual(await self.scalar("SELECT count(*) FROM collected_datasets WHERE dataset='waste/calendar'"), 0)

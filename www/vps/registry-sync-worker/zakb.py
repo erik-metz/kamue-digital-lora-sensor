@@ -64,6 +64,10 @@ class CalendarForm(HTMLParser):
 VALIDATION_CONTRACT = "zakb-address-v2"
 
 
+class AddressNotAccepted(ValueError):
+    pass
+
+
 class MissingStreet(ValueError):
     pass
 
@@ -274,7 +278,7 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
                    "submitAction": "nextPage"})
     response, _, _ = await request(fields)
     if "filedownload_ICAL" not in response.text:
-        raise ValueError("Address not accepted by calendar")
+        raise AddressNotAccepted("Address not accepted by calendar")
     verify_address(response.text, address, provider_city)
     fields = form(response.text)
     fields["submitAction"] = "filedownload_ICAL"
@@ -338,6 +342,7 @@ async def import_zakb(conn, client, source):
             )
             await conn.commit()
     addresses = {}
+    candidates = defaultdict(dict)
     for item in inventory["elements"]:
         tags = item["tags"]
         city = tags.get("addr:city")
@@ -360,6 +365,7 @@ async def import_zakb(conn, client, source):
             "latitude": center["lat"],
             "longitude": center["lon"],
         }
+        candidates[key].setdefault(number, candidate)
         if key not in addresses or int(number) < int(addresses[key]["house_number"]):
             addresses[key] = candidate
     if not addresses:
@@ -391,6 +397,16 @@ async def import_zakb(conn, client, source):
     )
     fresh_keys = {row[0] for row in await cursor.fetchall()}
     await conn.commit()
+    # Prefer a previously verified actual house; otherwise probe at most three
+    # real inventory addresses. A different house never inherits the first house's coordinates.
+    probes = {}
+    for key, choices in candidates.items():
+        ordered_choices = sorted(choices.values(), key=lambda a: int(a["house_number"]))
+        verified = [a for a in ordered_choices if address_key(source, a) in fresh_keys]
+        selected = verified[:1] or ordered_choices[:3]
+        eligible = [a for a in selected if address_key(source, a) not in deferred]
+        probes[key] = eligible or selected[:1]
+        addresses[key] = probes[key][0]
     # Include every valid saved calendar before spending the network budget.
     # Then alternate municipalities so a slow city cannot starve the others.
     groups = [sorted((a for a in addresses.values() if a["municipality"] == city),
@@ -406,9 +422,17 @@ async def import_zakb(conn, client, source):
             continue
         counts["attempted_calendars"] += 1
         try:
+            street_probes = probes[(address["municipality"], address["street"])]
             timeout = 10 if address_key(source, address) in fresh_keys else min(120, deadline-loop.time())
             async with asyncio.timeout(timeout):
-                calendar_events, digest, fetched, reused = await calendar_for_address(conn, client, source, address, now, locations)
+                for index, candidate in enumerate(street_probes):
+                    try:
+                        calendar_events, digest, fetched, reused = await calendar_for_address(conn, client, source, candidate, now, locations)
+                        address = candidate
+                        break
+                    except (AddressNotAccepted, AddressMismatch):
+                        if index + 1 == len(street_probes):
+                            raise
             events.extend(calendar_events)
             inputs.append(digest)
             sampled_at.append(fetched)
