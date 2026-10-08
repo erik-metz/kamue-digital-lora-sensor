@@ -1,4 +1,5 @@
 import Link from "next/link";
+import InaturalistSection, { loadInaturalist } from "./InaturalistSection";
 import { env } from "@/env";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
@@ -13,10 +14,14 @@ type Occurrence = { entity_id: string; event_day: string; provenance: {
 type Data = { items: Occurrence[]; stored_records: number; stored_species: number; has_more: boolean; as_of: string;
   snapshot: null | { last_checked_at: string; matched: number; scanned: number; skipped: number; source_truncated: boolean; query: { year: string } } };
 
-export default async function BiodiversityPage({ searchParams }: { searchParams: Promise<{ offset?: string }> }) {
+export default async function BiodiversityPage({ searchParams }: { searchParams: Promise<{ offset?: string; inat_offset?: string; inat_duplicates?: string }> }) {
   const params = await searchParams;
   const requested = Number(params.offset ?? 0);
   const offset = Number.isInteger(requested) && requested >= 0 && requested <= 3000 ? requested : 0;
+  const inatRequested = Number(params.inat_offset ?? 0);
+  const inatOffset = Number.isInteger(inatRequested) && inatRequested >= 0 && inatRequested <= 2000 ? inatRequested : 0;
+  const inatDuplicates = params.inat_duplicates === "1";
+  const inatPromise = loadInaturalist(inatOffset, inatDuplicates);
   let data: Data | null = null;
   try {
     const url = new URL("/api/v1/environment/measurements/biodiversity", env.BACKEND_API_URL);
@@ -63,5 +68,6 @@ export default async function BiodiversityPage({ searchParams }: { searchParams:
     </>}
     <p className="text-sm text-slate-400">Quelle: <a className="underline" href="https://www.gbif.org">GBIF und die verlinkten Datenherausgeber</a>.
       Jede Meldung behält ihre eigene Lizenz. Bilder und Namen meldender Personen werden nicht in dieser Übersicht angezeigt.</p>
+    <InaturalistSection dataPromise={inatPromise} offset={inatOffset} includeDuplicates={inatDuplicates} />
   </main><SiteFooter /></div>;
 }

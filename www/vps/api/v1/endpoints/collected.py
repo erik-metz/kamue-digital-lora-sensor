@@ -126,6 +126,9 @@ async def regular_offers_publication(request, pool):
 async def dataset_publication(
     dataset: str, request: Request, pool=Depends(get_db_pool)
 ):
+    if dataset == "environment/inaturalist/observations":
+        from inaturalist_publication import inaturalist_data, inaturalist_response
+        return inaturalist_response(await inaturalist_data(pool, 2000, 0, True))
     if dataset == "infrastructure/emf":
         return cached_response(await get_emf_sites(pool), request, 300)
     if dataset == "social/regular-offers":

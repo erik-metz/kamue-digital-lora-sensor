@@ -190,3 +190,16 @@ async def energy_market_intervals(
     return jsonable_encoder({'product':product,'items':rows[:limit],'stored_intervals':count,'has_more':len(rows)>limit,
         'offset':offset,'snapshot_sha256':snapshot['payload_sha256'] if snapshot else None,
         'last_checked_at':snapshot['received_at'] if snapshot else None,'as_of':datetime.now(UTC)})
+
+
+@router.get('/inaturalist')
+async def inaturalist_observations(pool=Depends(get_db_pool), limit: int = Query(100, ge=1, le=200),
+                                  offset: int = Query(0, ge=0, le=2000), include_duplicates: bool = False):
+    from inaturalist_publication import inaturalist_data, inaturalist_response
+    return inaturalist_response(await inaturalist_data(pool, limit, offset, include_duplicates))
+
+
+@router.get('/inaturalist/download')
+async def download_inaturalist(pool=Depends(get_db_pool), include_duplicates: bool = False):
+    from inaturalist_publication import inaturalist_data, inaturalist_response
+    return inaturalist_response(await inaturalist_data(pool, 2000, 0, include_duplicates), download=True)

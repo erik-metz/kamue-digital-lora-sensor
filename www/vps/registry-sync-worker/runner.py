@@ -22,6 +22,7 @@ from config import Settings
 from ecostress import import_ecostress
 from elections import import_elections
 from firms import import_firms
+from inaturalist import import_inaturalist
 from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
@@ -77,6 +78,7 @@ ADAPTERS = {
     "sentinel-satellite": import_satellite,
     "ecostress": import_ecostress,
     "firms": import_firms,
+    "inaturalist": import_inaturalist,
 }
 
 

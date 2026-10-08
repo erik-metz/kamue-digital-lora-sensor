@@ -1135,6 +1135,16 @@
       "interval_seconds": 3600,
       "max_age_seconds": 7200,
       "reason": "Requires separate FIRMS_MAP_KEY; NOAA20 VIIRS anomalies are not confirmed fires."
+    },
+    {
+      "id": "inaturalist-ried",
+      "group": "environment",
+      "adapter": "inaturalist",
+      "enabled": true,
+      "url": "https://api.inaturalist.org/v1/observations",
+      "interval_seconds": 86400,
+      "max_age_seconds": 129600,
+      "reason": "Unauthenticated public observations; bounded daily privacy/license revalidation; no photos."
     }
   ]
 }
