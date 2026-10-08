@@ -1,0 +1,114 @@
+{
+  "checked_at": "2026-10-08T06:08:44.016056+00:00",
+  "bbox_lon_lat": [
+    8.33,
+    49.54,
+    8.58,
+    49.75
+  ],
+  "temporal": "2026-06-01T00:00:00Z,2026-10-08T23:59:59Z",
+  "ecostress": [
+    {
+      "version": "002",
+      "collections": [
+        {
+          "concept_id": "C2076090826-LPCLOUD",
+          "short_name": "ECO_L2T_LSTE",
+          "version": "002"
+        }
+      ],
+      "collection_query": "https://cmr.earthdata.nasa.gov/search/collections.json?short_name=ECO_L2T_LSTE&version=002&page_size=2",
+      "granule_query": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L2T_LSTE&version=002&page_size=2&bounding_box=8.33%2C49.54%2C8.58%2C49.75&temporal=2026-06-01T00%3A00%3A00Z%2C2026-10-08T23%3A59%3A59Z&sort_key=-start_date",
+      "catalog_hits": 273,
+      "examples": [
+        {
+          "concept_id": "G4346923677-LPCLOUD",
+          "granule_id": "ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02",
+          "start": "2026-10-06T13:11:00.533Z",
+          "end": "2026-10-06T13:11:52.502Z",
+          "boxes_lat_lon": [
+            "49.5568475 7.5880861 50.5522113 9.1372051"
+          ],
+          "assets": [
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02_water.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02_cloud.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02_QC.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMA_20261006T131100_0713_02_LST.tif"
+          ]
+        },
+        {
+          "concept_id": "G4346930085-LPCLOUD",
+          "granule_id": "ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02",
+          "start": "2026-10-06T13:11:00.533Z",
+          "end": "2026-10-06T13:11:52.502Z",
+          "boxes_lat_lon": [
+            "48.6573805 7.6142724 49.6526445 9.1346594"
+          ],
+          "assets": [
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02_water.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02_cloud.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02_QC.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.002/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02/ECOv002_L2T_LSTE_46799_011_32UMV_20261006T131100_0713_02_LST.tif"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "003",
+      "collections": [
+        {
+          "concept_id": "C3998139651-LPCLOUD",
+          "short_name": "ECO_L2T_LSTE",
+          "version": "003"
+        }
+      ],
+      "collection_query": "https://cmr.earthdata.nasa.gov/search/collections.json?short_name=ECO_L2T_LSTE&version=003&page_size=2",
+      "granule_query": "https://cmr.earthdata.nasa.gov/search/granules.json?short_name=ECO_L2T_LSTE&version=003&page_size=2&bounding_box=8.33%2C49.54%2C8.58%2C49.75&temporal=2026-06-01T00%3A00%3A00Z%2C2026-10-08T23%3A59%3A59Z&sort_key=-start_date",
+      "catalog_hits": 370,
+      "examples": [
+        {
+          "concept_id": "G4346703828-LPCLOUD",
+          "granule_id": "ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01",
+          "start": "2026-10-06T13:11:00.533Z",
+          "end": "2026-10-06T13:11:52.502Z",
+          "boxes_lat_lon": [
+            "49.5568475 7.5880861 50.5522113 9.1372051"
+          ],
+          "assets": [
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01_cloud.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01_LST.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01_QC.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMA_20261006T131100_01_water.tif"
+          ]
+        },
+        {
+          "concept_id": "G4346716098-LPCLOUD",
+          "granule_id": "ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01",
+          "start": "2026-10-06T13:11:00.533Z",
+          "end": "2026-10-06T13:11:52.502Z",
+          "boxes_lat_lon": [
+            "48.6573805 7.6142724 49.6526445 9.1346594"
+          ],
+          "assets": [
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01_cloud.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01_LST.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01_QC.tif",
+            "https://data.lpdaac.earthdatacloud.nasa.gov/lp-prod-protected/ECO_L2T_LSTE.003/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01/ECOv003_L2T_LSTE_46799_011_32UMV_20261006T131100_01_water.tif"
+          ]
+        }
+      ]
+    }
+  ],
+  "inaturalist": {
+    "query": "https://api.inaturalist.org/v1/observations?nelat=49.75&nelng=8.58&swlat=49.54&swlng=8.33&per_page=1&license=cc0%2Ccc-by%2Ccc-by-sa&geo=true&geoprivacy=open&taxon_geoprivacy=open",
+    "total_results": 1728,
+    "checked_records": 1,
+    "scope": "public unobscured, licensed observations; no observer details archived"
+  },
+  "limitations": [
+    "Metadata intersection is not proof of valid or cloud-free raster pixels.",
+    "Granule counts are not unique overpass counts.",
+    "iNaturalist total_results is a filtered API count; only one record was sampled, and GBIF duplication was not assessed.",
+    "No authenticated raster, FIRMS or SolarEdge data retrieved."
+  ]
+}
