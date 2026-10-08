@@ -104,3 +104,23 @@ Der Abruf erfolgt alle sechs Stunden, die Kennung bleibt bei Wiederholungen
 gleich. Geänderte oder nicht erreichbare Quellen verändern keine bestehende
 gute Veröffentlichung. TV-Kurse und regelmäßige Angebote bleiben separate
 weitere Umsetzungsschritte.
+
+### Produktiver Abschluss des TC74-Imports
+
+Implementierung `9b5682450a88a2d1ec0a63a23c8a63e2fbbf8bf7` ist auf `main`
+committed und gepusht. **249 Worker-Tests bestanden**, einschließlich der
+Datenbanktests; Ruff und Diff-Prüfung sind erfolgreich. Der Live-Abruf der
+Originalquellen wurde zusätzlich bis zur Veröffentlichung in einem eigenen
+Testschema geprüft: ein Termin, drei archivierte Originalantworten und ein
+archivierter Zuordnungsbeleg.
+
+Der [CI-Lauf für genau diesen Commit](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37741715342)
+ist vollständig erfolgreich, einschließlich aller 17 Container-Builds und
+GHCR-Veröffentlichungen. Die öffentliche Quellen-API meldet `success` mit
+Abrufzeit 08.10.2026, 07:26:56 UTC. Der produktive Eventbestand bestätigt
+`tc74-saisonabschluss-2026-10-11` mit Beginn 11.10.2026, 08:00 UTC
+(**10:00 Uhr Ortszeit**), Tennisanlage An der Fohlenweide, Groß-Rohrheim,
+Quellenherkunft und unverändert unbekannter Endzeit. Beisammensein ab 12:30
+Uhr und Kinderprogramm stehen im veröffentlichten Beschreibungstext.
+Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
+weitere CI aus.
