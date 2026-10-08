@@ -123,7 +123,11 @@ class DischargeStorageTests(DatabaseCase):
 
     async def test_tampering_is_rejected_and_acquisition_is_archived(self):
         client=AsyncMock()
-        client.get.return_value=httpx.Response(200,content=json.dumps(bundle()['data']).encode(),request=httpx.Request('GET','https://flood-api.open-meteo.com'))
+        data=bundle()['data']
+        # Acquisition records the real receipt time; keep the mocked forecast current.
+        today=datetime.now(UTC).date()
+        data['daily']['time']=[(today+timedelta(days=i)).isoformat() for i in range(14)]
+        client.get.return_value=httpx.Response(200,content=json.dumps(data).encode(),request=httpx.Request('GET','https://flood-api.open-meteo.com'))
         sample=await acquire(client,Settings(db={}),self.conn)
         self.assertEqual(await self.scalar('SELECT COUNT(*) FROM collected_payloads'),1)
         tampered=deepcopy(sample);tampered['data']['daily']['river_discharge'][0]+=1
