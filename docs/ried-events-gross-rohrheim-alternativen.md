@@ -135,3 +135,19 @@ beibehalten. Eine unvollständige oder geänderte Mitteilung wird abgelehnt,
 bevor bestehende Termine verändert werden. Tests prüfen den originalen
 Quelltext, fremde Orte, veränderte Daten sowie Archivierung, Veröffentlichung
 und wiederholten Import mit echten Datenbank-Fremdschlüsseln.
+
+### Veröffentlichung und produktiver Nachweis
+
+Implementierung: `425478807c1a098f7f879f3347f550ac7eb70e12`; gezielte
+Korrektur eines datumsabhängigen Abfluss-Tests:
+`792971a6cd8f75cac5589c791406be3906a78821`.
+Lokal: 225 Worker-Tests und acht Abfluss-Tests erfolgreich, Ruff erfolgreich.
+Der [CI-Lauf für den abschließenden Code-Commit](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37735354692)
+ist vollständig erfolgreich, einschließlich aller 17 GHCR-Veröffentlichungen.
+
+Die öffentliche API bestätigt am 08.10.2026 den erfolgreichen Quellenabruf
+um 06:15:41 UTC und genau beide zusätzlichen Termine mit Herkunftsnachweisen.
+Die gespeicherten UTC-Zeiten 29.10.2026, 16:00 und 01.11.2026, 09:30
+entsprechen 17:00 und 10:30 Uhr in Deutschland. Beide Veranstaltungsorte
+liegen in Groß-Rohrheim, Endzeiten bleiben leer. Die Dokumentation dieses
+Nachweises allein löst gemäß den Workflow-Pfadfiltern keine weitere CI aus.
