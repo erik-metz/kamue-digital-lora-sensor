@@ -1,0 +1,298 @@
+{
+  "checked_at": "2026-10-08T21:50:29.290563+00:00",
+  "step": 4,
+  "source": "inaturalist-ried",
+  "status": "accepted",
+  "production_import": {
+    "note": "Fundmeldungen sind keine repräsentativen Bestandszählungen.",
+    "count": 1726,
+    "status": "success",
+    "matched": 1727,
+    "scanned": 1727,
+    "rejected": {
+      "fields": 1
+    },
+    "truncated": false,
+    "fetched_at": "2026-10-08T21:41:28.185881+00:00",
+    "bbox_lon_lat": [
+      8.33,
+      49.54,
+      8.58,
+      49.75
+    ],
+    "deduplication": {
+      "note": "Nur eindeutige Herkunftslinks im gespeicherten GBIF-Ausschnitt; unterschiedliche Suchgebiete und Abrufgrenzen.",
+      "status": "checked",
+      "gbif_records": 2941,
+      "gbif_checked_at": "2026-10-08T10:58:20.246415+00:00",
+      "gbif_snapshot_sha256": "d6a248918961ceb4ff7dcfd23398041f285ada4056362e2edbdb85d43ee5fa93",
+      "origin_records_inspected": 2941
+    },
+    "additional_count": 1679,
+    "gbif_overlap_count": 47,
+    "sample_records": [
+      {
+        "id": 406688952,
+        "source_url": "https://www.inaturalist.org/observations/406688952",
+        "scientific_name": "Tringa erythropus",
+        "quality_grade": "research",
+        "license": "cc-by",
+        "gbif_ids": []
+      },
+      {
+        "id": 405454008,
+        "source_url": "https://www.inaturalist.org/observations/405454008",
+        "scientific_name": "Dreissena bugensis",
+        "quality_grade": "needs_id",
+        "license": "cc0",
+        "gbif_ids": []
+      },
+      {
+        "id": 405453716,
+        "source_url": "https://www.inaturalist.org/observations/405453716",
+        "scientific_name": "Fontinalis antipyretica",
+        "quality_grade": "research",
+        "license": "cc0",
+        "gbif_ids": []
+      }
+    ],
+    "overlap_samples": [
+      {
+        "id": 341899572,
+        "source_url": "https://www.inaturalist.org/observations/341899572",
+        "gbif_ids": [
+          6178798459
+        ]
+      },
+      {
+        "id": 341899571,
+        "source_url": "https://www.inaturalist.org/observations/341899571",
+        "gbif_ids": [
+          6178703581
+        ]
+      },
+      {
+        "id": 341899570,
+        "source_url": "https://www.inaturalist.org/observations/341899570",
+        "gbif_ids": [
+          6179095699
+        ]
+      }
+    ],
+    "database_counts": {
+      "entities": 1726,
+      "readings": 1726,
+      "dataset_versions": 1,
+      "gbif_readings": 5882
+    },
+    "audit_sha256_matches": true,
+    "audit_has_no_positions_or_attribution": true,
+    "audit_bytes": 1079,
+    "collector_sha256": "e3e83fe0f95ca80a3f3c55989aef0107be8f9dbaf9d65838ca4a7823d8ab60e6"
+  },
+  "http_acceptance": {
+    "checks": {
+      "backend_default": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 73820,
+        "sha256": "903b47ceddfff7ef9b0ba2c5933531a179c0be588030fa2c72afdbf714ee6bb6"
+      },
+      "backend_all_download": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": "attachment; filename=\"inaturalist-ried-observations.json\"",
+        "bytes": 1255886,
+        "sha256": "73c6605a8d4abf4e39a86b2eeca7555304ea56dae0e2656e39f7f2af566cc59d"
+      },
+      "backend_default_download": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": "attachment; filename=\"inaturalist-ried-observations.json\"",
+        "bytes": 1221350,
+        "sha256": "6a5b5739923d719f68abc04c8f138d12c2fd2bd5586cb253cea47e5937a6dbef"
+      },
+      "frontend_default": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 73820,
+        "sha256": "903b47ceddfff7ef9b0ba2c5933531a179c0be588030fa2c72afdbf714ee6bb6"
+      },
+      "frontend_all_download": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": "attachment; filename=\"inaturalist-ried-observations.json\"",
+        "bytes": 1255886,
+        "sha256": "73c6605a8d4abf4e39a86b2eeca7555304ea56dae0e2656e39f7f2af566cc59d"
+      },
+      "frontend_default_download": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": "attachment; filename=\"inaturalist-ried-observations.json\"",
+        "bytes": 1221350,
+        "sha256": "6a5b5739923d719f68abc04c8f138d12c2fd2bd5586cb253cea47e5937a6dbef"
+      },
+      "backend_generic_publication": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 1255886,
+        "sha256": "73c6605a8d4abf4e39a86b2eeca7555304ea56dae0e2656e39f7f2af566cc59d"
+      },
+      "page_0": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 146278,
+        "sha256": "18c02b38a3f442d37c7c51ab00d2a3a8bb4d994a2fad6c821b78f30047c180ab"
+      },
+      "page_200": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 146239,
+        "sha256": "3acddda82836f6359a52742fbe1d8911f06b16be3cdde534008db8c93e573b1c"
+      },
+      "page_400": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 146640,
+        "sha256": "c4d8b60f92224a9b758ad9942c7fe59f479a373c585239eae093f7a00217c63a"
+      },
+      "page_600": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 146279,
+        "sha256": "179a52b49bb8fc1816ecc40cd1afdbdadaf36a3af526d60ac0ebc9709fe463d0"
+      },
+      "page_800": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 145889,
+        "sha256": "3ba1dff453ee849b2a207f377b9ca1d31b3381699bb5d41f991e95075b4e0687"
+      },
+      "page_1000": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 145975,
+        "sha256": "6de9a1a07f7b9263b5bcc2cb8b69a359306df35269c4c8c4bee71361823d5600"
+      },
+      "page_1200": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 145907,
+        "sha256": "b019393af0999b9b98e57c0c96b812edf2b5e0d14b553dca3b357861ce4c66d4"
+      },
+      "page_1400": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 145984,
+        "sha256": "a5c3536abedd0e690ec264230d9b52c07fb780491c95c97ff6c37e56c179392d"
+      },
+      "page_1600": {
+        "http_status": 200,
+        "cache_control": "no-store",
+        "content_disposition": null,
+        "bytes": 58714,
+        "sha256": "b7012d6500c7c991fdfd1661e2869b7af23551d2847fdfeffeda8df8d7ee1fee"
+      },
+      "backend_invalid_offset": {
+        "http_status": 422
+      },
+      "frontend_invalid_offset": {
+        "http_status": 400
+      }
+    },
+    "all_records": 1726,
+    "without_proven_gbif_overlap": 1679,
+    "gbif_overlap": 47,
+    "frontend_backend_download_equal": true,
+    "default_excludes_proven_overlaps": true,
+    "pagination_matches_export": true,
+    "public_projection_checks": true
+  },
+  "archive_acceptance": {
+    "inaturalist_rows_eligible_for_monthly_archive": 0,
+    "canonical_sha256": "daa32b4ffce806ad6ac0da275f6292712090ecb977f1772a460f7006192fd24e"
+  },
+  "deployed_images_verified": {
+    "archive-worker": {
+      "image": "ghcr.io/erik-metz/open-ried-sens-archive-worker@sha256:fb3b12aff42cd0aadbe2b2cbb2141ee3c8738c9250965dfc8772a872cafa6374",
+      "file_sha256": "daa32b4ffce806ad6ac0da275f6292712090ecb977f1772a460f7006192fd24e"
+    },
+    "backend-api": {
+      "image": "ghcr.io/erik-metz/open-ried-sens-api@sha256:f8ae7549b240e9f4c2882175c0f4a2318235f64251f6932331f8451b3e98bcfb",
+      "file_sha256": "ae2490ea71e7efacf09b635f8bbb31158ff5bac5f4887fe03231d503d47763d7"
+    },
+    "registry-sync-worker": {
+      "image": "ghcr.io/erik-metz/open-ried-sens-registry-sync-worker@sha256:c31016992c09851a50af70a2c334709e72ac0d409211eb07642dc1a13261f4fd",
+      "file_sha256": "e3e83fe0f95ca80a3f3c55989aef0107be8f9dbaf9d65838ca4a7823d8ab60e6"
+    }
+  },
+  "deployment_code_commit": "4f03ee64f69bdbf085be6993e2fa86a99439fa50",
+  "note": "The later 13dc42a commit changes only collector documentation; deployed functional file hashes match. No observer names, individual coordinates or provider responses are archived in this acceptance evidence.",
+  "daily_source": {
+    "enabled": true,
+    "interval_seconds": 86400,
+    "max_age_seconds": 129600,
+    "regular_worker_running": true
+  },
+  "ui_acceptance": {
+    "url": "https://open-ried-sens.vercel.app/umwelt/biodiversitaet#inaturalist",
+    "default_table_rows": 100,
+    "displayed_accepted_count": 1726,
+    "displayed_proven_gbif_overlap": 47,
+    "displayed_without_proven_gbif_overlap": 1679,
+    "default_download_excludes_proven_overlaps": true,
+    "include_duplicates_toggle_verified": true,
+    "pagination_offset_100_verified": true,
+    "visible_gbif_links_on_offset_100": 22,
+    "source_and_quality_display_verified": true
+  },
+  "validation": {
+    "inaturalist_tests_passed": 37,
+    "firms_regression_tests_passed": 17,
+    "archive_tests_passed": 9,
+    "archive_database_tests_skipped": 0,
+    "frontend_tests_passed": 220,
+    "frontend_lint": "passed",
+    "typescript": "passed",
+    "production_build": "passed"
+  },
+  "ci": {
+    "frontend": {
+      "sha": "528b559fe4797148277b00ee087d625c42f2d8fa",
+      "workflow": "Frontend CI",
+      "run_id": 37847044564,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37847044564"
+    },
+    "backend_latest": {
+      "sha": "13dc42a8f55cd90cdc2b52aae81d22f23b3e2d4a",
+      "workflow": "FastAPI & Docker CI/CD",
+      "run_id": 37848560316,
+      "status": "completed",
+      "conclusion": "success",
+      "successful_jobs": 16,
+      "total_jobs": 16,
+      "successful_container_publications": 17,
+      "intended_container_publications": 17,
+      "url": "https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37848560316"
+    }
+  },
+  "limits": [
+    "At most 2,000 public observations per complete refresh; larger datasets require exports and a separate follow-up design.",
+    "Deduplication covers only the stored current GBIF snapshot; absent links do not prove worldwide uniqueness.",
+    "Daily provider revalidation is not immediate withdrawal; dedicated API hides publications older than 36 hours.",
+    "Provider media is never collected; observation licenses do not authorize photos or sounds."
+  ]
+}
