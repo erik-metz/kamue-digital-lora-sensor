@@ -382,6 +382,7 @@ services:
       DB_API_KEY: ${DB_API_KEY:-}
       RIS_TRIP_CROSSWALK_FILE: ${RIS_TRIP_CROSSWALK_FILE:-}
       EARTHDATA_TOKEN: ${EARTHDATA_TOKEN:-}
+      FIRMS_MAP_KEY: ${FIRMS_MAP_KEY:-}
       ECOSTRESS_RASTER_ENABLED: ${ECOSTRESS_RASTER_ENABLED:-false}
     depends_on:
       timescaledb:

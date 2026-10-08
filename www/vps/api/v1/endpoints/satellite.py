@@ -257,3 +257,15 @@ async def get_ecostress_tile(scene_id: str, z: int, x: int, y: int, pool: DbPool
     except (ValueError, KeyError, zipfile.BadZipFile):
         raise HTTPException(503, "Invalid archived temperature raster") from None
     return Response(png, media_type="image/png", headers={"ETag": f'"{sha}-{z}-{x}-{y}"', "Cache-Control": "public, max-age=300"})
+
+
+@router.get('/firms')
+async def get_firms(pool: DbPool, days: int = Query(3, ge=1, le=3)):
+    from firms_publication import firms_data, firms_response
+    return firms_response(await firms_data(pool, days))
+
+
+@router.get('/firms/download')
+async def download_firms(pool: DbPool, days: int = Query(3, ge=1, le=3)):
+    from firms_publication import firms_data, firms_response
+    return firms_response(await firms_data(pool, days), download=True)

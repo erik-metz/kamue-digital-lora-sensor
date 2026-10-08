@@ -21,6 +21,7 @@ from club_events import import_club_events
 from config import Settings
 from ecostress import import_ecostress
 from elections import import_elections
+from firms import import_firms
 from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
@@ -70,6 +71,7 @@ ADAPTERS = {
     "invekos": import_invekos,
     "sentinel-satellite": import_satellite,
     "ecostress": import_ecostress,
+    "firms": import_firms,
 }
 
 
