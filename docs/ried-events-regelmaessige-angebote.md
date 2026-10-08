@@ -249,3 +249,39 @@ Die gesonderte Serverkonfiguration einer anderen Aufgabe wurde nicht
 Konfiguration aufzulösen und anschließend Quellenstatus, kombinierte
 API-Antwort und öffentliche Terminseite erneut zu prüfen. Dieser reine
 Dokumentationscommit löst gemäß Pfadfiltern keine zusätzliche CI aus.
+
+### Freischaltung nach Auflösung des Versionskonflikts
+
+Am 08.10.2026 hat der Nutzer ausdrücklich die Auflösung des produktiven
+Versionskonflikts autorisiert. Die bisherige Serverkonfiguration wurde
+unter `/root/docker-compose.invekos.yml.before-dance-745cc27` gesichert.
+Ausschließlich der Registry-Worker wurde mit den vorhandenen drei
+Compose-Dateien und `--no-deps --no-build` neu erstellt.
+
+Das zunächst lokal gespeicherte `latest`-Image war ebenfalls veraltet.
+Nach erneutem Pull wurde der tatsächliche aktuelle Digest
+`sha256:bd27d32df22bd01dcb340c9f22785515b1e2579ceb46e1c376fba2b527e76d05`
+verwendet. Vor diesem abschließenden Wechsel wurden Tanzquelle,
+INVEKOS-Quelle und INVEKOS-Modul im Image ohne Netzwerk geprüft.
+Die separate Compose-Datei bleibt auf einen konkreten Digest festgelegt;
+es wurde ausschließlich ihre Image-Version geändert.
+
+Produktiver Quellenstatus der Tanzangebote: HTTP 200 und `success`,
+Abruf **08.10.2026 21:18:41 UTC**, Verarbeitung 21:18:41 UTC, eine
+veröffentlichte Datenmenge. Nach regulärem Ablauf des fünfminütigen
+Zwischenspeichers liefert auch die gewöhnliche öffentliche API-URL
+**zehn eindeutige Angebote: acht Tanzangebote und zwei Lauftreffs**.
+Je vier Tanzangebote liegen in Biblis und Bürstadt. Keine angenommenen
+Kalenderdaten und keine doppelten IDs.
+
+Die [öffentliche Terminseite](https://open-ried-sens.vercel.app/termine)
+wurde unter ihrer gewöhnlichen Adresse geprüft: alle zehn Titel sowie
+die veröffentlichten Anfangs- und Enduhrzeiten aller acht Tanzangebote
+sind im ausgelieferten HTML sichtbar. Der INVEKOS-Quellenstatus behält
+seine erfolgreiche Veröffentlichung mit 4.766 Flächen und zwei
+Datenmengen; dies ist kein Nachweis eines neuen INVEKOS-Abrufs.
+
+Es waren keine weiteren Codeänderungen oder Container-Builds nötig.
+Die zuvor dokumentierten erfolgreichen CI-/GHCR-Läufe für `745cc27`
+bleiben der Implementierungsnachweis. Dieser Dokumentationscommit
+löst aufgrund der Pfadfilter keine zusätzliche Frontend-/VPS-CI aus.
