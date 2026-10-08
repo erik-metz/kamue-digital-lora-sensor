@@ -28,7 +28,7 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
             payload = await fetch(client, settings, archive_conn)
     try:
         return await _poll_cycle(client, settings, raw=payload, dry_run=dry_run,
-                                 cycle_started=cycle_started)
+                                 cycle_started=cycle_started, replay=raw is not None)
     except Exception as exc:
         if not dry_run and payload:
             ids = [value for key, value in payload.items() if key.endswith('_attempt_id')]
@@ -43,7 +43,7 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
         raise
 
 
-async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_started=None):
+async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_started=None, replay=False):
     started = cycle_started if cycle_started is not None else monotonic()
     if dry_run and raw is None:
         raise ValueError(
@@ -118,7 +118,7 @@ async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_starte
     if settings.enable_soil:
         try:
             async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
-                bundle = payload.get("soil") if raw is not None else await soil.acquire(client, settings, conn)
+                bundle = payload.get("soil") if replay else await soil.acquire(client, settings, conn)
                 if bundle is not None:
                     points = soil.normalize(bundle)
                     count = await soil.persist(conn, bundle, points)
@@ -140,7 +140,7 @@ async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_starte
     if settings.enable_pollen:
         try:
             async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
-                bundle = payload.get("pollen") if raw is not None else await pollen.acquire(client, settings, conn)
+                bundle = payload.get("pollen") if replay else await pollen.acquire(client, settings, conn)
                 if bundle is not None:
                     points = pollen.normalize(bundle)
                     count = await pollen.persist(conn, bundle, points)
@@ -162,7 +162,7 @@ async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_starte
     if settings.enable_gbif:
         try:
             async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
-                bundle = payload.get("gbif") if raw is not None else await gbif.acquire(client, settings, conn)
+                bundle = payload.get("gbif") if replay else await gbif.acquire(client, settings, conn)
                 if bundle is not None:
                     normalized_gbif = gbif.normalize(bundle)
                     count = await gbif.persist(conn, bundle, normalized_gbif)
@@ -185,7 +185,7 @@ async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_starte
     if settings.enable_discharge:
         try:
             async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
-                bundle = payload.get("discharge") if raw is not None else await discharge.acquire(client, settings, conn)
+                bundle = payload.get("discharge") if replay else await discharge.acquire(client, settings, conn)
                 if bundle is not None:
                     point = discharge.normalize(bundle)
                     count = await discharge.persist(conn, bundle, point)
@@ -208,7 +208,7 @@ async def _poll_cycle(client, settings, *, raw=None, dry_run=False, cycle_starte
         async def collect_product(product):
             try:
                 async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
-                    bundle = payload.get("entsoe", {}).get(product) if raw is not None else await entsoe.acquire(client, settings, conn, product)
+                    bundle = payload.get("entsoe", {}).get(product) if replay else await entsoe.acquire(client, settings, conn, product)
                     if bundle is not None:
                         rows = entsoe.normalize(bundle)
                         count = await entsoe.persist(conn, bundle, rows)
