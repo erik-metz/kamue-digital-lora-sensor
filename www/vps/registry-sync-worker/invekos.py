@@ -6,6 +6,7 @@ and Groß-Rohrheim.
 """
 
 import json
+import math
 from datetime import UTC, datetime
 from typing import Any
 
@@ -39,7 +40,11 @@ def parse_invekos_parcels(
 ) -> tuple[datetime, list[dict[str, Any]], dict[str, Any], dict[str, Any]]:
     """Parse WFS GeoJSON into structured agricultural parcels."""
     data = json.loads(body.decode("utf-8"))
-    features = data.get("features", [])
+    if not isinstance(data, dict) or data.get('type') != 'FeatureCollection' or not isinstance(data.get('features'), list):
+        raise ValueError('INVEKOS response must be a GeoJSON FeatureCollection')
+    features = data['features']
+    if isinstance(data.get('numberMatched'), int) and data['numberMatched'] > len(features):
+        raise ValueError('INVEKOS response is truncated')
 
     south, west, north, east = (
         bbox if bbox and len(bbox) == 4 else (-90.0, -180.0, 90.0, 180.0)
@@ -77,11 +82,12 @@ def parse_invekos_parcels(
             continue
         flik_str = str(flik)
 
-        raw_area = props.get("declaredArea") or props.get("area") or 0.0
-        try:
-            area_ha = float(raw_area)
-        except (ValueError, TypeError):
-            area_ha = 0.0
+        raw_area = props.get('declaredArea', props.get('area'))
+        area_ha = float(raw_area) if raw_area is not None else None
+        if area_ha is not None and (isinstance(raw_area, bool) or not math.isfinite(area_ha) or area_ha < 0):
+            raise ValueError('Invalid INVEKOS area')
+        if area_ha is not None and props.get('declaredArea_uom', 'ha') != 'ha':
+            raise ValueError('INVEKOS area unit must be hectares')
 
         crop_code = str(props.get("mainCrop") or "")
         crop_name = (
@@ -93,7 +99,15 @@ def parse_invekos_parcels(
         valid_from = props.get("validFrom")
         valid_to = props.get("validTo")
         organic = props.get("organicFarming")
-        is_organic = bool(organic) if organic is not None else False
+        is_organic = organic if isinstance(organic, bool) else None
+        reference_year = None
+        if valid_from:
+            for pattern in ("%d.%m.%Y", "%Y-%m-%d"):
+                try:
+                    reference_year = datetime.strptime(valid_from, pattern).replace(tzinfo=UTC).year
+                    break
+                except ValueError:
+                    continue
 
         parcel_id = f"invekos-{flik_str.lower().replace('.', '-').replace(':', '-')}"
 
@@ -102,21 +116,23 @@ def parse_invekos_parcels(
             "flik": flik_str,
             "cropCode": crop_code,
             "cropName": crop_name,
-            "areaHa": round(area_ha, 4),
+            "areaHa": round(area_ha, 4) if area_ha is not None else None,
             "lat": round(lat, 6),
             "lng": round(lon, 6),
             "validFrom": valid_from,
             "validTo": valid_to,
             "organicFarming": is_organic,
             "source": "INVEKOS Hessen",
-            "sourceUpdatedAt": now.isoformat(),
+            "sourceUpdatedAt": None,
+            "snapshotAt": now.isoformat(),
+            "referenceYear": reference_year,
         }
         parcels.append(parcel_dict)
 
-        total_area_ha += area_ha
+        total_area_ha += area_ha if area_ha is not None else 0
         crop_counts[crop_name] = crop_counts.get(crop_name, 0) + 1
         crop_areas[crop_name] = round(
-            crop_areas.get(crop_name, 0.0) + area_ha, 4
+            crop_areas.get(crop_name, 0.0) + (area_ha if area_ha is not None else 0), 4
         )
 
         geojson_features.append(
@@ -128,9 +144,12 @@ def parse_invekos_parcels(
                     "flik": flik_str,
                     "cropCode": crop_code,
                     "cropName": crop_name,
-                    "areaHa": round(area_ha, 4),
+                    "areaHa": round(area_ha, 4) if area_ha is not None else None,
                     "organicFarming": is_organic,
                     "source": "INVEKOS Hessen",
+                    "referenceYear": reference_year,
+                    "validFrom": valid_from,
+                    "validTo": valid_to,
                 },
             }
         )
@@ -145,7 +164,12 @@ def parse_invekos_parcels(
         "total_area_ha": round(total_area_ha, 2),
         "crop_counts": crop_counts,
         "crop_areas": crop_areas,
-        "organic_count": sum(1 for p in parcels if p["organicFarming"]),
+        "organic_count": sum(1 for p in parcels if p["organicFarming"] is True),
+        "organic_unknown_count": sum(1 for p in parcels if p["organicFarming"] is None),
+        "area_unknown_count": sum(1 for p in parcels if p["areaHa"] is None),
+        "reference_years": sorted({p['referenceYear'] for p in parcels if p['referenceYear'] is not None}),
+        "source_time_semantics": "acquisition_snapshot",
+        "provider_issue_time": None,
     }
 
     return now, parcels, geojson_collection, summary_stats
@@ -193,6 +217,7 @@ async def import_invekos(conn, client, source):
                 "valid_from": p["validFrom"],
                 "valid_to": p["validTo"],
                 "organic_farming": p["organicFarming"],
+                "reference_year": p["referenceYear"],
             }
             await conn.execute(
                 """INSERT INTO entities (id, name, entity_type, metadata)
@@ -213,8 +238,8 @@ async def import_invekos(conn, client, source):
                 """SELECT write_measurement(
                     %s, 'area', 'ha', %s, 'reported',
                     '{"source": "INVEKOS"}'::jsonb,
-                    %s, %s, %s,
-                    %s::jsonb, 'valid', NULL, NULL, 'reference'
+                    %s, %s::numeric, %s,
+                    %s::jsonb, %s, NULL, NULL, 'reference'
                 )""",
                 (
                     entity_key,
@@ -222,7 +247,8 @@ async def import_invekos(conn, client, source):
                     source_time,
                     p["areaHa"],
                     source_time,
-                    json.dumps({"payload_sha256": digest, "flik": p["flik"]}),
+                    json.dumps({"payload_sha256": digest, "flik": p["flik"], "reference_year": p["referenceYear"], "source_time_semantics": "acquisition_snapshot"}),
+                    "missing" if p["areaHa"] is None else "valid",
                 ),
             )
 
@@ -232,7 +258,7 @@ async def import_invekos(conn, client, source):
                     """SELECT write_measurement(
                         %s, %s, 'degrees', %s, 'reported',
                         '{"crs": "EPSG:4326"}'::jsonb,
-                        %s, %s, %s,
+                        %s, %s::numeric, %s,
                         %s::jsonb, 'valid', NULL, NULL, 'reference'
                     )""",
                     (
@@ -247,7 +273,7 @@ async def import_invekos(conn, client, source):
                 )
 
         await conn.execute(
-            "UPDATE collection_attempts SET status='success' WHERE id=%s",
-            (attempt_id,),
+            "UPDATE collection_attempts SET status='success',item_count=%s,item_count_unit='parcels' WHERE id=%s",
+            (len(parcels), attempt_id),
         )
     await conn.commit()
