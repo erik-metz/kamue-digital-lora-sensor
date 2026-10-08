@@ -19,6 +19,7 @@ PRODUCT = 'VIIRS_NOAA20_NRT'
 DATASET = 'environment/firms/anomalies'
 MAX_BYTES = 1024 * 1024
 MAX_ROWS = 5000
+ARCHIVE_BUDGET = 50 * 1024 * 1024
 COLUMNS = ('latitude', 'longitude', 'bright_ti4', 'scan', 'track', 'acq_date',
            'acq_time', 'satellite', 'instrument', 'confidence', 'version',
            'bright_ti5', 'frp', 'daynight')
@@ -82,6 +83,14 @@ def parse_csv(body, now=None):
 
 async def archive(conn, source, body, status, http_status=None, error=None, content_type="text/csv"):
     digest = hashlib.sha256(body).hexdigest()
+    usage = await (await conn.execute(
+        "SELECT COALESCE(sum(octet_length(body)),0) FROM collected_payloads WHERE sha256 IN (SELECT payload_sha256 FROM collection_attempts WHERE source_id=%s)",
+        (source['id'],))).fetchone()
+    referenced = await (await conn.execute(
+        'SELECT 1 FROM collection_attempts WHERE source_id=%s AND payload_sha256=%s LIMIT 1',
+        (source['id'], digest))).fetchone()
+    if not referenced and usage[0] + len(body) > ARCHIVE_BUDGET:
+        raise ValueError('FIRMS archive budget reached')
     async with conn.transaction():
         await conn.execute("INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,%s) ON CONFLICT DO NOTHING", (digest, body, content_type))
         row = await (await conn.execute(
@@ -129,9 +138,6 @@ async def import_firms(conn, client, source):
         return 'not_configured'
     if not re.fullmatch(r'[A-Za-z0-9_-]{16,128}', key):
         raise ValueError('Invalid FIRMS_MAP_KEY format')
-    size = await (await conn.execute("SELECT COALESCE(sum(octet_length(body)),0) FROM collected_payloads WHERE sha256 IN (SELECT payload_sha256 FROM collection_attempts WHERE source_id=%s)", (source['id'],))).fetchone()
-    if size[0] + MAX_BYTES > 50 * 1024 * 1024:
-        raise ValueError('FIRMS archive budget reached')
     body, digest, attempt = await fetch_csv(conn, client, source, key)
     try:
         detections = parse_csv(body, now)

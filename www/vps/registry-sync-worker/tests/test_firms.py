@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'api/v1'))
 import httpx
 import pytest
 from db_support import DatabaseCase
-from firms import COLUMNS, MAX_BYTES, fetch_csv, import_firms, parse_csv
+from firms import COLUMNS, MAX_BYTES, archive, fetch_csv, import_firms, parse_csv
 from firms_publication import firms_data, firms_response
 from measurement_migration import install
 from psycopg.rows import dict_row, tuple_row
@@ -107,6 +107,14 @@ class FirmsPersistenceTests(DatabaseCase):
                 assert (await firms_data(Pool(), 3))['status'] == 'stale'
             finally:
                 conn.row_factory = tuple_row
+
+    async def test_archive_capacity_includes_retry_bodies_but_not_repeats(self):
+        with patch('firms.ARCHIVE_BUDGET', 10):
+            await archive(self.conn, SOURCE, b'123456', 'failed')
+            await archive(self.conn, SOURCE, b'123456', 'failed')
+            with pytest.raises(ValueError, match='budget'):
+                await archive(self.conn, SOURCE, b'abcdef', 'failed')
+        assert await self.scalar('SELECT count(*) FROM collected_payloads') == 1
 
     async def test_no_redirect_or_secret_archival(self):
         captured = io.StringIO()
