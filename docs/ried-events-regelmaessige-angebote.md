@@ -166,3 +166,29 @@ bereits vorhandene Warnung zum unbenutzten `_init` im gemeinsamen Fetcher.
 Beide aktuellen Originalseiten wurden zusätzlich in einem eigenen Testschema
 bis zur kombinierten API-Antwort geprüft: zwei archivierte Quellen, beide
 korrekten Wochenangebote, null datierte Kalenderereignisse.
+
+### Produktiver Abschluss des Bürstädter Lauftreffs
+
+Implementierung `6c7273d9dc4e386092149927cb46a8f4c3ba22b7` ist auf `main`
+committed und gepusht. Die beiden CI-Läufe für genau diesen Commit sind
+vollständig erfolgreich:
+
+- [Frontend CI](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37771655533)
+- [FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37771655489), einschließlich aller 17 Container-Builds und GHCR-Veröffentlichungen.
+
+Der aktuelle GHCR-Registry-Container und anschließend das laufende
+VPS-Manifest wurden auf beide Lauftreff-Quellen geprüft. Die produktive
+Quellen-API bestätigt beide mit `success`: Groß-Rohrheim am 08.10.2026 um
+16:02:12 UTC, Bürstadt um 16:02:15 UTC. Die gemeinsame Veröffentlichung liefert
+**genau zwei Angebote**, ohne Dubletten und ohne `start_time`/`end_time`:
+Bürstadt dienstags 18:00 am TV-Heim in der Wasserwerkstraße, Groß-Rohrheim
+mittwochs 19:00 am Eingang der Bürgerhalle.
+
+Auch die [öffentliche Terminseite](https://open-ried-sens.vercel.app/termine)
+wurde nach der Übernahme geprüft: Beide Vereinsnamen, Wochentage, Uhrzeiten
+und Treffpunkte werden angezeigt, ohne Verfügbarkeitsfehler. Der vorherige
+Groß-Rohrheimer Lauftreff ist erhalten geblieben. Weitere recherchierte
+Angebote wurden in diesem Umsetzungsschritt nicht hinzugefügt.
+
+Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
+weitere Frontend-/VPS-CI aus.
