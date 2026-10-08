@@ -7,7 +7,7 @@ Stand: 8. Oktober 2026. Umfang: ECOSTRESS, NASA FIRMS, iNaturalist und SolarEdge
 | Schritt | Ergebnis | Status |
 | --- | --- | --- |
 | 1 | Verfügbarkeit, Gebiet, Zugänge und Datenverträge prüfen | Abgeschlossen für öffentliche Vorprüfung; authentifizierte Daten offen |
-| 2 | ECOSTRESS: Oberflächentemperatur als echte Rasterdaten | In Umsetzung: Collector, API, Karte und Anzeige vorbereitet; echter Import und Produktionsabnahme offen |
+| 2 | ECOSTRESS: Oberflächentemperatur als echte Rasterdaten | In Umsetzung: Katalogimport und Anzeige produktiv; Raster/API/Karte vorbereitet; echter Rasterimport und dessen Abnahme offen |
 | 3 | FIRMS: satellitengestützte thermische Anomalien | Offen |
 | 4 | iNaturalist: zusätzliche Artenbeobachtungen | Offen |
 | 5 | SolarEdge: tatsächliche Erzeugung teilnehmender PV-Anlagen | Offen, Anlagenzugang erforderlich |
@@ -34,6 +34,14 @@ FIRMS und SolarEdge wurden anhand der Anbieterunterlagen eingeordnet. Für FIRMS
 5. Zunächst höchstens zwei Szenen je Lauf verarbeiten; bestehende Größen- und Pixelgrenzen überprüfen. Große Quelldateien über begrenzte Downloads bzw. geeignete Rasterfenster behandeln. Metadaten täglich aktualisieren, Raster nur bei neuen Szenen importieren. Archivaufbewahrung und Gesamtspeicherbudget vor Aktivierung festlegen.
 
 Abnahme: Tests für Skalierung, Masken, NoData, Grenzen, Wiederholung und fehlenden Zugang; mindestens ein echter authentifizierter Import mit nachvollziehbaren gültigen Pixeln; API, Karte und Export beziehen sich auf dieselbe Aufnahme. Bei vollständig maskierter Szene wird der leere Befund korrekt angezeigt. Relevante Backend-/Frontend-Prüfungen, CI und bei VPS-Änderungen GHCR-Veröffentlichung erfolgreich; anschließend Produktionsprüfung.
+
+### Umsetzungsstand am 8. Oktober 2026
+
+Collector, begrenzter authentifizierter Rasterdownload, native Temperatur-/Qualitätsauswertung, Archiv, API, Download und Temperaturrenderer mit Aufnahmeauswahl und Legende sind implementiert. API und Registry-Worker sind auf der VPS aktualisiert; ihre ECOSTRESS-Dateihashes stimmen mit dem geprüften Code überein. Der echte öffentliche Import hat 48 lokale Kacheleinträge aus den ersten 60 CMR-Treffern gespeichert. Die öffentliche API und der Regionalatlas zeigen die 20 neuesten Einträge. Der Rasterstatus ist ausdrücklich `not_configured`; bislang wurden keine echten NASA-Temperaturpixel importiert.
+
+13 Raster-/Datenbanktests einschließlich sichtbarer Pixel, Transparenz, Archivdownload und Datumsgrenzen-Filter bestehen; 215 Frontend-Tests, Lint, TypeScript und Frontend-Build ebenfalls. [Frontend CI für den Karten-Commit 6cef01f](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37738667014) ist erfolgreich. [Backend CI für den Korrekturcommit fa5daaf](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37739797636) ist erfolgreich: 16 Jobs einschließlich aller 17 vorgesehenen GHCR-Container-Builds und Veröffentlichungen.
+
+Offen bleibt der Earthdata-Zugang, danach ein echter Rasterimport mit Prüfung der V003-Kalibrierung, gültigen Pixeln, Ressourcenverbrauch, Karte und Export. Dieser Zugangsschritt ist Teil von Schritt 2. Schritt 3 wurde nicht begonnen. Betriebsdetails: [ECOSTRESS.md](../www/vps/registry-sync-worker/ECOSTRESS.md).
 
 ## Schritt 3: NASA FIRMS
 
