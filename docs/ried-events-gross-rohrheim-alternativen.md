@@ -180,3 +180,22 @@ Tage, Kirchweih nur den einzelnen publizierten Tag. Der Abruf erfolgt alle
 sechs Stunden; stabile Kennungen verhindern Duplikate bei erneutem Abruf.
 Fehlende, widersprüchliche oder unlesbare Angaben werden abgelehnt, bevor
 eine gute Veröffentlichung verändert wird.
+
+### Produktiver Nachweis der Festtermine
+
+Implementierung `9fcb0f84919dfe232bc88f95f6b67ef96d38425e` ist auf `main`
+committed und gepusht. Die gesamte Worker-Suite wurde wegen paralleler
+unabhängiger Arbeiten zusätzlich in einem isolierten Stand ausschließlich
+dieser Änderungen geprüft: **235 bestanden**, einschließlich der echten
+Datenbanktests. Ruff und Diff-Prüfung sind erfolgreich.
+
+Der [CI-Lauf für genau diesen Commit](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37737882421)
+ist vollständig erfolgreich, einschließlich aller 17 Container-Builds und
+GHCR-Veröffentlichungen. Die öffentliche Quellen-API bestätigt `success`
+mit Abrufzeit 08.10.2026, 06:46:23 UTC. Die öffentliche Event-API bestätigt
+beide Datumshinweise mit Quellenherkunft, richtigen lokalen Datumsgrenzen
+und ausdrücklichem Hinweis auf die noch nicht veröffentlichten Festplätze.
+Ein älterer zwischengespeicherter Gesamtbestand wurde nicht als Gegenbeleg
+gewertet; die aktuelle Groß-Rohrheim-Abfrage enthält beide Veranstaltungen.
+Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
+weitere CI aus.
