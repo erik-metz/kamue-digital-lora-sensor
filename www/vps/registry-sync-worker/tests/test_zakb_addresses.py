@@ -18,8 +18,9 @@ def test_confirmation_requires_exact_address():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('ambiguous,substituted', [(False, False), (True, False), (False, True)])
-async def test_district_lookup_and_download_gate(ambiguous, substituted):
+@pytest.mark.parametrize('ambiguous,substituted,spelling', [(False, False, False), (True, False, False), (False, True, False), (False, False, True)])
+async def test_district_lookup_and_download_gate(ambiguous, substituted, spelling):
+    address = {**ADDRESS, "street": "Domstiftstrasse"} if spelling else ADDRESS
     conn = MagicMock()
     cursor = MagicMock(); cursor.fetchone = AsyncMock(return_value=None)
     async def execute(query, params=None):
@@ -40,12 +41,13 @@ async def test_district_lookup_and_download_gate(ambiguous, substituted):
             selected_city = city
         if action == 'nextPage':
             city = selected_city
+            assert fields['aos[Strasse]'] == ['Domstiftstraße']
             street = 'Altrheinstraße' if substituted else 'Domstiftstraße'
             return httpx.Response(200, text=f'<span id="Lageadresse">{street} 1, 68647 {city}</span><form id="athos-os-form"><input name="pageName" value="Terminliste">filedownload_ICAL</form>')
         street = 'Domstiftstraße' if city == 'Biblis-Nordheim' or (ambiguous and city == 'Biblis') else 'Andere Straße'
         return httpx.Response(200, text=f'<form id="athos-os-form"><select name="aos[Ort]"><option value="Biblis" {"selected" if city == "Biblis" else ""}></option><option value="Biblis-Nordheim" {"selected" if city == "Biblis-Nordheim" else ""}></option><option value="Biblis-Wattenheim" {"selected" if city == "Biblis-Wattenheim" else ""}></option></select><select name="aos[Strasse]"><option value="{street}"></option></select><input name="pageName" value="Lageadresse"></form>')
     async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
-        call = calendar_for_address(conn, client, {'id': 'test', 'url': 'https://example.org/calendar', 'interval_seconds': 86400, 'request_spacing_seconds': 0}, ADDRESS, datetime.now(UTC))
+        call = calendar_for_address(conn, client, {'id': 'test', 'url': 'https://example.org/calendar', 'interval_seconds': 86400, 'request_spacing_seconds': 0}, address, datetime.now(UTC))
         if ambiguous or substituted:
             with pytest.raises(AmbiguousStreet if ambiguous else AddressMismatch):
                 await call

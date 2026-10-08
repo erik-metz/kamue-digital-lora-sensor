@@ -9,6 +9,7 @@ import asyncio
 import hashlib
 import json
 import re
+import unicodedata
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
 from html.parser import HTMLParser
@@ -97,6 +98,11 @@ class ConfirmedAddress(HTMLParser):
     def handle_data(self, data):
         if self.capture:
             self.parts.append(data)
+
+
+def street_identity(value):
+    """Only orthographic equivalence; never fuzzy-match another street."""
+    return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
 
 
 def verify_address(html, address, provider_city):
@@ -259,12 +265,13 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
                 raise AddressMismatch("Calendar did not confirm selected municipality")
             locations[provider_city] = set(parsed.options["aos[Strasse]"])
             offered[provider_city] = parsed.fields
-    matches = [candidate for candidate in cities if address["street"] in locations[candidate]]
+    matches = [(candidate, value) for candidate in cities for value in locations[candidate]
+               if street_identity(value) == street_identity(address["street"])]
     if not matches:
         raise MissingStreet("Street not offered in municipality or districts")
     if len(matches) != 1:
         raise AmbiguousStreet("Street occurs in multiple districts")
-    provider_city = matches[0]
+    provider_city, provider_street = matches[0]
     if provider_city in offered and provider_city == cities[-1]:
         fields = offered[provider_city]
     else:
@@ -274,12 +281,12 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
         fields = form(city_response.text)
         if fields.get("aos[Ort]") != provider_city:
             raise AddressMismatch("Calendar did not confirm selected municipality")
-    fields.update({"aos[Strasse]": address["street"], "aos[Hausnummer]": address["house_number"],
+    fields.update({"aos[Strasse]": provider_street, "aos[Hausnummer]": address["house_number"],
                    "submitAction": "nextPage"})
     response, _, _ = await request(fields)
     if "filedownload_ICAL" not in response.text:
         raise AddressNotAccepted("Address not accepted by calendar")
-    verify_address(response.text, address, provider_city)
+    verify_address(response.text, {**address, "street": provider_street}, provider_city)
     fields = form(response.text)
     fields["submitAction"] = "filedownload_ICAL"
     response, digest, _ = await request(fields)
