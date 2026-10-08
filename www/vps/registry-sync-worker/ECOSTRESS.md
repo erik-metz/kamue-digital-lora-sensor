@@ -6,7 +6,7 @@ Der Adapter `ecostress` fragt täglich den öffentlichen NASA-CMR-Katalog ab: Co
 
 Standardmäßig werden ausschließlich Katalogdaten importiert. Geschützte Raster benötigen einen gültigen NASA-Earthdata-User-Token (`EARTHDATA_TOKEN`) und `ECOSTRESS_RASTER_ENABLED=true` im serverseitigen Compose-Environment. Konto: https://urs.earthdata.nasa.gov/users/new ; Tokenverwaltung: https://urs.earthdata.nasa.gov/profile . Ein vorhandener anderer Anbieter-API-Key ersetzt diesen Zugang nicht. Der Betreiber hinterlegt den Token in `/root/.env` mit restriktiven Dateirechten; keine Geheimnisse committen oder in Chat/Logs ausgeben. Nach Änderung nur den Registry-Worker neu erstellen.
 
-Der Download sendet den Bearer-Token ausschließlich an den fest vorgegebenen LP-DAAC-Datenhost, folgt keinen Weiterleitungen und akzeptiert nur TIFFs. Fehler enthalten Typ/Host/HTTP-Status, keine Header oder vollständigen URLs. Ein abgelaufener bzw. ungeeigneter Token führt zu einem dokumentierten Importfehler. NASA-Freigaben bzw. Nutzungsbedingungen sind im Konto gegebenenfalls zuerst zu bestätigen.
+Der Download sendet den Bearer-Token ausschließlich an den fest vorgegebenen LP-DAAC-Datenhost, akzeptiert genau eine HTTP-303-Weiterleitung zum fest geprüften NASA-CloudFront-Host und passenden Produktpfad und akzeptiert nur TIFFs. Fehler enthalten Typ/Host/HTTP-Status, keine Header oder vollständigen URLs. Die signierte Download-Adresse erhält weder Bearer-Header noch Client-Cookies; ihre HTTPX-Logs werden unterdrückt. Weitere oder fremde Weiterleitungen werden abgewiesen. Ein abgelaufener bzw. ungeeigneter Token führt zu einem dokumentierten Importfehler. NASA-Freigaben bzw. Nutzungsbedingungen sind im Konto gegebenenfalls zuerst zu bestätigen.
 
 ## Auswertung
 
@@ -22,6 +22,6 @@ API: `/api/v1/satellite/ecostress/scenes` und `/api/v1/satellite/ecostress/crop/
 
 ## Stand der Abnahme
 
-Automatisierte Tests verwenden synthetische georeferenzierte TIFFs; sie sind keine NASA-Beobachtungen. Öffentliche Metadaten wurden live geprüft. Ein authentifizierter NASA-Import, echte gültige Pixel, Kartenabnahme und vollständige Produktionsabnahme bleiben ohne Zugang offen. Schritt 2 des Gesamtplans ist deshalb noch nicht abgeschlossen.
+Automatisierte Tests verwenden synthetische georeferenzierte TIFFs; sie sind keine NASA-Beobachtungen. Öffentliche Metadaten wurden live geprüft. Am 8. Oktober 2026 wurde der Earthdata-Token serverseitig hinterlegt und ein echter Rasterimport durchgeführt. Die NASA-Downloads verwenden nun eine geprüfte signierte CloudFront-Weiterleitung. Der erste Ausschnitt wurde archiviert; eine zweite Kachel lieferte zeitweise HTTP 502. Karten-/Exportabnahme und Ressourcenprüfung werden im Gesamtplan dokumentiert.
 
 Primärquellen: [aktueller V003 User Guide](https://github.com/ECOSTRESS-Collection-3/ECOv003-L2-LSTE/blob/main/documentation/ECOL2_User_Guide_V3.md), [Produkt](https://doi.org/10.5067/ECOSTRESS/ECO_L2T_LSTE.003), [CMR API](https://cmr.earthdata.nasa.gov/search/site/docs/search/api.html).

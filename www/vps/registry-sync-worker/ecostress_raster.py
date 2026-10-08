@@ -3,11 +3,14 @@
 import hashlib
 import io
 import json
+import logging
 import math
-from contextlib import ExitStack
+import re
+from contextlib import ExitStack, asynccontextmanager
 from pathlib import PurePosixPath
 from urllib.parse import urlsplit
 
+import httpx
 import numpy as np
 from rasterio.io import MemoryFile
 from rasterio.warp import transform, transform_bounds
@@ -38,20 +41,55 @@ def asset_url(url, granule_id, layer):
     return url
 
 
+DOWNLOAD_HOST = "d1nklfio7vscoe.cloudfront.net"
+
+
+class SignedDownloadLogFilter(logging.Filter):
+    def filter(self, record):
+        return DOWNLOAD_HOST not in record.getMessage()
+
+
+# Signed URL query parameters are credentials too; never emit the HTTPX request log.
+logging.getLogger("httpx").addFilter(SignedDownloadLogFilter())
+
+
+@asynccontextmanager
+async def raster_response(client, url, token):
+    async with client.stream(
+        "GET", url, headers={"Authorization": f"Bearer {token}"},
+        follow_redirects=False, timeout=60,
+    ) as response:
+        if response.status_code != 303:
+            yield response
+            return
+        location = response.headers.get("location", "")
+        parts = urlsplit(location)
+        suffix = urlsplit(url).path.removeprefix("/lp-prod-protected/")
+        expected = r"/s3-[0-9a-f]{32}/lp-prod-protected\.s3\.us-west-2\.amazonaws\.com/" + re.escape(suffix)
+        if (parts.scheme != "https" or parts.netloc != DOWNLOAD_HOST
+                or parts.fragment or not parts.query
+                or not re.fullmatch(expected, parts.path)):
+            response.raise_for_status()
+            raise ValueError("Unsupported NASA download redirect")
+        # A fresh Request carries neither the Bearer token nor client cookies.
+        request = httpx.Request("GET", location, extensions={
+            "timeout": {k: 60 for k in ("connect", "read", "write", "pool")},
+        })
+        redirected = await client.send(request, stream=True, follow_redirects=False)
+        try:
+            yield redirected
+        finally:
+            await redirected.aclose()
+
+
 async def download_assets(client, scene, token):
-    """No redirects or cookie auth; Bearer token goes to the pinned data host only."""
+    """One pinned signed download hop; Bearer stays on the NASA data host."""
     if not token or "\n" in token or "\r" in token:
         raise ValueError("Earthdata token unavailable")
     files = {}
     for layer in LAYERS:
         url = asset_url(scene["assets"][layer], scene["granule_id"], layer)
-        async with client.stream(
-            "GET",
-            url,
-            headers={"Authorization": f"Bearer {token}"},
-            follow_redirects=False,
-            timeout=60,
-        ) as response:
+        async with raster_response(client, url, token) as response:
             response.raise_for_status()
             if response.status_code != 200:
                 raise ValueError("Unexpected raster response")

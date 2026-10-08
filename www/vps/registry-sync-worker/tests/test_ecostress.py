@@ -184,3 +184,24 @@ def test_cmr_dateline_false_positive_is_excluded_before_asset_download():
     data["feed"]["entry"].append(distant)
     scenes = parse_granules(json.dumps(data))
     assert len(scenes) == 1 and scenes[0]["tile"] == "32UMA"
+
+
+@pytest.mark.asyncio
+async def test_signed_nasa_redirect_strips_credentials_and_logs(caplog):
+    import logging
+
+    from ecostress_raster import DOWNLOAD_HOST
+    requests = []
+    def serve(request):
+        requests.append(request)
+        if request.url.host == HOST:
+            suffix = request.url.path.removeprefix("/lp-prod-protected/")
+            location = f"https://{DOWNLOAD_HOST}/s3-{'a' * 32}/lp-prod-protected.s3.us-west-2.amazonaws.com/{suffix}?Signature=signed-secret"
+            return httpx.Response(303, headers={"location": location})
+        assert "authorization" not in request.headers and "cookie" not in request.headers
+        return httpx.Response(200, content=b"II*\x00test")
+    with caplog.at_level(logging.INFO, logger="httpx"):
+        async with httpx.AsyncClient(transport=httpx.MockTransport(serve), cookies={"session": "private-cookie"}) as client:
+            assert set(await download_assets(client, scene(), "test-secret")) == set(LAYERS)
+    assert len(requests) == 8
+    assert "signed-secret" not in caplog.text and "test-secret" not in caplog.text
