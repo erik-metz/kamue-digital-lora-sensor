@@ -31,7 +31,7 @@ test('partial failures preserve actual zero raw values and query window', async 
   assert.equal(response.status, 200); assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.equal(body.count, 1); assert.equal(body.samples[0].value, 0);
   assert.equal(body.stations.find(s => s.id === 'b').unavailable, true);
-  assert.equal(urls[0].searchParams.get('start_time'), start);
+  assert.equal(urls.find(url => url.pathname === '/api/v1/telemetry/raw').searchParams.get('start_time'), start);
 });
 test('malformed or unavailable responses produce errors, never a fake zero', async () => {
   for (const payload of [{ error: 'unavailable' }, [{ sensor_id: 'wrong' }]]) {
@@ -51,4 +51,40 @@ test('invalid start and oversized selection never request raw data', async () =>
   assert.equal((await GET(request('start=invalid'))).status, 400);
   assert.equal((await GET(request(`start=${encodeURIComponent(start)}&stations=a,b,c,d,e,f,g,h,i`))).status, 400);
   assert.equal(calls, 0);
+});
+
+
+test('everyday categories get their own station despite faster seismic readings', () => {
+  const station = (id, category, timestamp = start) => ({ id, name: id, categories: [category], readings: [{ timestamp }] });
+  const inventory = [station('shake-fast', 'seismic', new Date(now).toISOString()),
+    ...Array.from({length: 12}, (_, i) => station(`weather-${i}`, 'weather')),
+    station('parking', 'parking'), station('bikes', 'bikes'), station('air', 'air'), station('water', 'water'),
+    station('forecast-weather', 'weather'), station('bu-test', 'traffic')];
+  const selected = helpers.selectPitchStations(inventory);
+  assert.equal(selected.length, 8);
+  assert.deepEqual(new Set(selected.map(helpers.pitchStationCategory)), new Set(['weather', 'parking', 'bikes', 'air', 'water']));
+  assert.ok(selected.every(s => !/shake|forecast|bu-test/.test(s.id)));
+});
+
+test('six categories remain visible even without new raw rows', async () => {
+  const body = await (await route(async () => Response.json([]))(request())).json();
+  assert.deepEqual(body.categories.map(c => c.id), ['crossings', 'parking', 'bikes', 'weather', 'air', 'water']);
+  assert.equal(body.categories.find(c => c.id === 'weather').count, 0);
+  assert.equal(body.categories.find(c => c.id === 'weather').unavailable, false);
+  assert.equal(body.categories.find(c => c.id === 'parking').unavailable, true);
+});
+
+test('crossing estimates are labelled and excluded from raw totals', async () => {
+  const crossing = { entity_id: 'crossing:test', name: 'Mainstraße', basis: 'model', status: 'closed',
+    timestamp: new Date(now - 1000).toISOString(), valid_until: new Date(now + 60000).toISOString() };
+  const GET = route(async url => url.pathname === '/api/v1/movements/latest'
+    ? Response.json({crossings_available: true, crossings: [crossing]}) : Response.json([]));
+  const body = await (await GET(request())).json();
+  const category = body.categories[0];
+  assert.equal(category.model, true); assert.equal(category.count, null);
+  assert.equal(category.sample.value, 2); assert.equal(category.sample.station, 'Mainstraße');
+  assert.equal(body.count, 0); assert.equal(body.samples.length, 0);
+  for (const change of [{basis: 'observed'}, {status: 'unknown'}, {valid_until: start}, {timestamp: start}]) {
+    assert.equal(helpers.pitchCrossingCategory({crossings_available: true, crossings: [{...crossing, ...change}]}, Date.parse(start), now).sample, undefined);
+  }
 });
