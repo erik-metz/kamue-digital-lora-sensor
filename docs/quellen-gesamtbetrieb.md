@@ -26,7 +26,7 @@ Die vorhandene Repository-Vorgabe behält historische öffentliche Quelldaten un
 
 iNaturalist ist wegen veränderlicher Freigaben eine bereits vereinbarte Ausnahme: nur die aktuelle Positionspublikation und eine Dataset-Version; historische Auditbelege enthalten ausschließlich Summen, Query und Hashes. Die aktuelle JSON-Publikation belegt rund 1,26 MB. Erfolgreiche Aktualisierungen ersetzen die eigenen Kernwerte und entfernen verschwundene, verdeckte oder nicht mehr zulässig lizenzierte Meldungen. Fehlgeschlagene Überprüfungen sperren und entfernen die bisherige Publikation. Ablauf nach 36 Stunden liefert keine Positionen mehr. Monatsarchive enthalten keine iNaturalist-Kernwerte.
 
-Die gesamte gemeinsam genutzte Datenbank belegt rund 14,18 GB; `collected_payloads` einschließlich Indizes/TOAST rund 6,19 GB und Abrufbelege rund 69,9 MB. Diese Gesamtwerte gehören überwiegend anderen Quellen. Sie sind weder Backupgröße noch freier Plattenplatz. Die Energiequelle hat 9.916 kleine `not_configured`-Belege: der allgemeine Scheduler dokumentiert auch deaktivierte Quellen. Keine fremden Belege wurden gelöscht. Neuveröffentlichungen und Worker-Neustarts können zusätzliche Abrufe auslösen; daraus ist keine verlässliche tägliche Wachstumsrate ableitbar.
+Die gesamte gemeinsam genutzte Datenbank belegt rund 14,18 GB; `collected_payloads` einschließlich Indizes/TOAST rund 6,19 GB und Abrufbelege rund 69,9 MB. Auf dem gemeinsamen Dateisystem sind bei der Prüfung rund 62,98 GB frei (39 % belegt). Diese Gesamtwerte gehören überwiegend anderen Quellen. Sie sind weder Backupgröße noch freier Plattenplatz. Die Energiequelle hat 9.916 kleine `not_configured`-Belege: der allgemeine Scheduler dokumentiert auch deaktivierte Quellen. Keine fremden Belege wurden gelöscht. Neuveröffentlichungen und Worker-Neustarts können zusätzliche Abrufe auslösen; daraus ist keine verlässliche tägliche Wachstumsrate ableitbar.
 
 ## Datenschutz, Herkunft und Export
 
@@ -35,3 +35,11 @@ Nur offene und passend lizenzierte iNaturalist-Meldungen werden veröffentlicht.
 Bei der Betriebsprüfung wurde eine Umgehung über allgemeine Messwert-/ZIP-Endpunkte gefunden. iNaturalist wird dort nun vollständig ausgeschlossen, auch aus Stichproben und verknüpften Definitionen/Entitäten. Der eigene aktuelle JSON-Download bleibt verfügbar und prüft Ablauf sowie letzten Abruffehler ohne HTTP-Cache. Der neue Regressionstest prüft diese Sperre mit echten SQL-Abfragen und erhält normale Quellen im Export.
 
 62 Collectorprüfungen (ECOSTRESS, FIRMS, iNaturalist), elf API-Exporttests mit vier Subtests und Ruff bestehen lokal. Produktive HTTP-Antworten und Downloadstatus wurden geprüft. Die bisherige Darstellung wurde bereits bei den einzelnen Quellenschritten abgenommen; diese Änderung betrifft keine Frontenddateien. SolarEdge-Widerruf und Vergleich mit einer Betreiberanzeige bleiben mangels freigegebener Anlage unprüfbar.
+
+## Veröffentlichung und produktive Nachprüfung
+
+Implementierungscommit `f14668c11a69bc236fbeee413c1e0bbe3e7c9542` ist auf `main` gepusht. [FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37852178584) ist erfolgreich: alle 16 Jobs und alle 17 vorgesehenen Build-/Push-Schritte auf GHCR. Keine Frontendänderung, daher kein Frontend-CI-Lauf vorgesehen.
+
+Das veröffentlichte API-Image wurde vor und nach dem Start über die SHA-256-Hashes beider geänderten Dateien geprüft. Die vorhandenen drei Compose-Dateien wurden beibehalten; nur die API wurde aktualisiert. Der eigene iNaturalist-Download liefert produktiv weiter 1.679 Meldungen, die allgemeine Messwertabfrage derselben öffentlichen Beobachtung keine. Die öffentliche ZIP-Stichprobe enthält 298 Entitäten und keine iNaturalist-Entität. FIRMS-Abfrage und Download stimmen überein. Ein echter ECOSTRESS-Crop-Download stimmt mit dem archivierten Hash überein und führt die Einheit `degC`; sein vollständig maskierter Ausschnitt hat keinen Temperaturmittelwert.
+
+Schritt 6 ist für die vorhandenen Quellen abgeschlossen. Schritt 5 bleibt offen: Ohne teilnehmenden SolarEdge-Betreiber sind Freigabe, Zugriff und Widerruf einer Anlage nicht prüfbar.

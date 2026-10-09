@@ -395,5 +395,47 @@
     "export_tests": 11,
     "export_subtests": 4,
     "ruff": "passed"
+  },
+  "deployment": {
+    "files": {
+      "/app/v1/endpoints/data_exports.py": "e2619b25ce730020de37e33eff61b54f522aa00b34a382a5ce681d8db2e11e14",
+      "/app/v1/endpoints/environment_measurements.py": "5019ad9eb3944e7b02fb4ee3abcc266de5d20d53a3a7a2ef342a199ada2c1670"
+    },
+    "image_id": "sha256:f63c1f3e25bbb432e7bd2ab7d78057a62a36db68a83504256d47cb47bfed5d0c"
+  },
+  "postdeployment_public_checks": {
+    "inaturalist_status": "success",
+    "inaturalist_total": 1726,
+    "dedicated_export_records": 1679,
+    "generic_measurements_for_public_observation": 0,
+    "firms_status": "success",
+    "firms_count": 0,
+    "firms_export_matches": true,
+    "public_zip_sample": {
+      "bytes": 45849,
+      "entities": 298,
+      "inaturalist_entities": 0
+    }
+  },
+  "ci": {
+    "commit": "f14668c11a69bc236fbeee413c1e0bbe3e7c9542",
+    "url": "https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37852178584",
+    "status": "completed",
+    "conclusion": "success",
+    "jobs": 16,
+    "ghcr_publications": 17
+  },
+  "disk_space_bytes": {
+    "filesystem_total": 102888095744,
+    "used": 39893889024,
+    "available": 62977429504
+  },
+  "ecostress_crop_check": {
+    "hash_matches": true,
+    "bytes": 18710,
+    "unit": "degC",
+    "acquired_at": "2026-10-07T12:23:26.323000+00:00",
+    "valid_pixels": 0,
+    "temperature_statistics": null
   }
 }
