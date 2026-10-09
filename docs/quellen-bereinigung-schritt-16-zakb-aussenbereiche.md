@@ -2,7 +2,7 @@
 
 ## Umfang und Befunde
 
-Ausgangspunkt: 810 von 844 repräsentativen Straßenproben bestätigt, 34 offen. Untersucht werden die 25 im gezielten Lauf von Schritt 15 als `MissingStreet` gemeldeten Straßen. Die aktuellen Provider-Auswahllisten wurden erneut abgerufen und Ortsteile mit einbezogen. 21 dieser Namen fehlen unverändert als exakter Auswahlwert; für drei bestehen belegte alternative Bezeichnungen. Finkenstraße ist vorhanden: Die vorige Fehlermeldung ließ sich in einer frischen Sitzung nicht bestätigen. Ihre Ursache ist bisher nicht reproduziert, deshalb wird kein vermuteter Sitzungsfehler als behoben ausgegeben.
+Ausgangspunkt: 810 von 844 repräsentativen Straßenproben bestätigt, 34 offen. Untersucht werden die 25 im gezielten Lauf von Schritt 15 als `MissingStreet` gemeldeten Straßen. Die aktuellen Provider-Auswahllisten wurden erneut abgerufen und Ortsteile mit einbezogen. 21 dieser Namen fehlen unverändert als exakter Auswahlwert; für drei bestehen belegte alternative Bezeichnungen. Finkenstraße ist vorhanden: Die vorige Fehlermeldung ließ sich in einer frischen Sitzung nicht bestätigen. Die archivierten Antworten vom 9. Oktober, 07:43 UTC (unter anderem Abruf-IDs 263762 bis 263770), enthalten für mehrere GET-Antworten kein Auswahlformular und keine Gemeindeliste. Ein solches Ergebnis wurde bisher fälschlich als `MissingStreet` klassifiziert. Es wird nun gesondert als `CalendarUnavailable` ausgewiesen; ein Kalenderdownload findet dabei nicht statt. Das behebt die Einordnung, nicht die zeitweise unvollständige Provider-Antwort selbst.
 
 ## Belegte Zuordnungen
 
@@ -44,6 +44,6 @@ Die [amtliche Bürstädter Planung](https://www.buerstadt.de/de/rathaus-politik/
 
 ## Validierung und Veröffentlichung
 
-29 Formular- und Adressvertragsprüfungen erfolgreich, darunter sechs neue Fälle für die drei Außenbereichszuordnungen mit korrekter und absichtlich falscher Bestätigung. Ruff für die beiden eigenen Python-Dateien und `git diff --check` erfolgreich. Der bestehende Ablauf für Cache, Adressauswahl, Wiederholungsfristen und Veröffentlichung bleibt unverändert. CI, GHCR und tatsächliche Live-Veröffentlichung werden nach Abschluss ergänzt.
+30 Formular- und Adressvertragsprüfungen erfolgreich, darunter eine Prüfung für ein fehlendes Provider-Formular und sechs neue Fälle für die drei Außenbereichszuordnungen mit korrekter und absichtlich falscher Bestätigung. Ruff für die beiden eigenen Python-Dateien und `git diff --check` erfolgreich. Der bestehende Ablauf für Cache, Adressauswahl, Wiederholungsfristen und Veröffentlichung bleibt unverändert. CI, GHCR und tatsächliche Live-Veröffentlichung werden nach Abschluss ergänzt.
 
 Deutsche-Bahn-Quellen bleiben übersprungen.

@@ -111,3 +111,20 @@ async def test_reviewed_names_and_districts_still_require_exact_confirmation(cit
         else:
             await calendar_for_address(conn,client,source,address,datetime.now(UTC))
             assert downloads == [True]
+
+
+@pytest.mark.asyncio
+async def test_missing_provider_form_is_not_a_missing_street():
+    from zakb import CalendarUnavailable
+    conn = MagicMock()
+    cursor = MagicMock(); cursor.fetchone = AsyncMock(return_value=None)
+    conn.execute = AsyncMock(return_value=cursor); conn.commit = AsyncMock()
+    requests = []
+    def provider(request):
+        requests.append(request.method)
+        return httpx.Response(200, text='<html>Calendar temporarily unavailable</html>')
+    source = {'id': 'test', 'url': 'https://example.org/calendar', 'interval_seconds': 86400, 'request_spacing_seconds': 0}
+    async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+        with pytest.raises(CalendarUnavailable):
+            await calendar_for_address(conn, client, source, ADDRESS, datetime.now(UTC))
+    assert requests == ['GET']

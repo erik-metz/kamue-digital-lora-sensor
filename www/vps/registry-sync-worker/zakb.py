@@ -83,6 +83,10 @@ class AddressNotAccepted(ValueError):
     pass
 
 
+class CalendarUnavailable(ValueError):
+    """The provider response lacks the required selection form."""
+
+
 class MissingStreet(ValueError):
     pass
 
@@ -262,6 +266,8 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
     response, _, _ = await request()
     initial = CalendarForm()
     initial.feed(response.text)
+    if not initial.options.get("aos[Ort]"):
+        raise CalendarUnavailable("Calendar municipality selector missing from response")
     city = address["municipality"]
     cities = [value for value in initial.options.get("aos[Ort]", [])
               if value == city or value.startswith(city + "-")]
