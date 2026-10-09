@@ -62,6 +62,13 @@ class CalendarForm(HTMLParser):
 
 
 VALIDATION_CONTRACT = "zakb-address-v2"
+RANGE_VALIDATION_CONTRACT = "zakb-reviewed-ranges-v1"
+# Actual provider confirmations, not a general interpretation of house-number ranges.
+# Each calendar remains bound to the single real address submitted in that request.
+REVIEWED_HOUSE_RANGES = {
+    ("Lampertheim", "Georg-Tyczka-Straße"): {(2, 4)},
+    ("Lampertheim", "Habichtsweg"): {(1, 13), (15, 19)},
+}
 
 # Reviewed municipality-specific spellings; see docs/quellen-bereinigung-schritt-15-zakb-adressen.md.
 STREET_ALIASES = {
@@ -128,9 +135,18 @@ def verify_address(html, address, provider_city):
     parsed = ConfirmedAddress()
     parsed.feed(html)
     text = " ".join(" ".join(parsed.parts).split())
-    match = re.fullmatch(r"(.+?)\s+(\d+),\s*\d{5}\s+(.+)", text)
-    if not match or match.groups() != (address["street"], address["house_number"], provider_city):
-        raise AddressMismatch("Calendar confirmed a different or missing address")
+    match = re.fullmatch(r"(.+?)\s+([0-9]+(?:\s*-\s*[0-9]+)?),\s*[0-9]{5}\s+(.+)", text)
+    if match and (match[1], match[3]) == (address["street"], provider_city):
+        if match[2] == address["house_number"]:
+            return
+        bounds = re.fullmatch(r"([0-9]+)\s*-\s*([0-9]+)", match[2])
+        number = address["house_number"]
+        if bounds and re.fullmatch(r"[1-9][0-9]*", number):
+            limits = tuple(map(int, bounds.groups()))
+            if (limits in REVIEWED_HOUSE_RANGES.get((provider_city, address["street"]), set())
+                    and limits[0] <= int(number) <= limits[1]):
+                return
+    raise AddressMismatch("Calendar confirmed a different or missing address")
 
 
 def form(html):
@@ -239,7 +255,9 @@ def forecast_tours(events, now, start_hour=7, end_hour=17):
 
 def address_key(source, address):
     # Version the parser contract; changing a source URL also invalidates checkpoints.
-    identity = [VALIDATION_CONTRACT, source["url"], address["municipality"],
+    contract = (RANGE_VALIDATION_CONTRACT if (address["municipality"], address["street"]) in REVIEWED_HOUSE_RANGES
+                else VALIDATION_CONTRACT)
+    identity = [contract, source["url"], address["municipality"],
                 address["street"], address["house_number"]]
     return hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
 
@@ -531,6 +549,7 @@ async def import_zakb(conn, client, source):
     manifest = json.dumps(
         {
             "validation_contract": VALIDATION_CONTRACT,
+            "reviewed_range_contract": RANGE_VALIDATION_CONTRACT,
             "inputs": inputs,
             "coverage": "representative_addresses_only",
             "failed_streets": failures,

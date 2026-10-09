@@ -131,3 +131,77 @@ async def test_missing_provider_form_is_not_a_missing_street():
         with pytest.raises(CalendarUnavailable):
             await calendar_for_address(conn, client, source, ADDRESS, datetime.now(UTC))
     assert requests == ['GET']
+
+
+@pytest.mark.parametrize('street,number,confirmed,city,accepted', [
+    ('Georg-Tyczka-Straße','4','Georg-Tyczka-Straße 2 -4','Lampertheim',True),
+    ('Georg-Tyczka-Straße','5','Georg-Tyczka-Straße 2 -4','Lampertheim',False),
+    ('Georg-Tyczka-Straße','4','Georg-Tyczka-Straße 2 -6','Lampertheim',False),
+    ('Georg-Tyczka-Straße','4','Georg-Tyczka-Straße 4 -2','Lampertheim',False),
+    ('Georg-Tyczka-Straße','4','Georg-Tyczka-Straße 2 -4','Biblis',False),
+    ('Andere Straße','4','Andere Straße 2 -4','Lampertheim',False),
+    ('Habichtsweg','1','Habichtsweg 1 -13','Lampertheim',True),
+    ('Habichtsweg','4','Habichtsweg 1 -13','Lampertheim',True),
+    ('Habichtsweg','6','Habichtsweg 1 -13','Lampertheim',True),
+    ('Habichtsweg','13','Habichtsweg 1 -13','Lampertheim',True),
+    ('Habichtsweg','14','Habichtsweg 1 -13','Lampertheim',False),
+    ('Habichtsweg','15','Habichtsweg 15 -19','Lampertheim',True),
+    ('Habichtsweg','19','Habichtsweg 15 -19','Lampertheim',True),
+    ('Habichtsweg','20','Habichtsweg 15 -19','Lampertheim',False),
+    ('Habichtsweg','6a','Habichtsweg 1 -13','Lampertheim',False),
+    ('Habichtsweg','06','Habichtsweg 1 -13','Lampertheim',False),
+    ('Habichtsweg','6','Andere Straße 1 -13','Lampertheim',False),
+])
+def test_only_reviewed_ranges_containing_the_requested_house_are_accepted(street,number,confirmed,city,accepted):
+    address = {'street':street,'house_number':number}
+    html = f'<span id="Lageadresse">{confirmed}, 68623 {city}</span>'
+    if accepted:
+        verify_address(html,address,'Lampertheim')
+    else:
+        with pytest.raises(AddressMismatch):
+            verify_address(html,address,'Lampertheim')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('number,accepted',[('4',True),('5',False)])
+async def test_reviewed_range_download_uses_only_the_requested_real_house(number,accepted):
+    conn = MagicMock()
+    cursor = MagicMock(); cursor.fetchone = AsyncMock(return_value=None)
+    async def execute(query, params=None):
+        cursor.fetchone.return_value = None if query.lstrip().startswith('SELECT') else (1,)
+        return cursor
+    conn.execute = AsyncMock(side_effect=execute); conn.commit = AsyncMock()
+    downloads = []
+    def provider(request):
+        fields = parse_qs(request.content.decode())
+        action = fields.get('submitAction',[''])[0]
+        if action == 'nextPage':
+            assert fields['aos[Hausnummer]'] == [number]
+            return httpx.Response(200,text='<span id="Lageadresse">Georg-Tyczka-Straße 2 -4, 68623 Lampertheim</span><form id="athos-os-form"><input name="pageName" value="Terminliste">filedownload_ICAL</form>')
+        if action == 'filedownload_ICAL':
+            downloads.append(True)
+            return httpx.Response(200,content=b'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n')
+        return httpx.Response(200,text='<form id="athos-os-form"><select name="aos[Ort]"><option value="Lampertheim" selected></option></select><select name="aos[Strasse]"><option value="Georg-Tyczka-Straße"></option></select></form>')
+    source = {'id':'test','url':'https://example.org/calendar','interval_seconds':86400,'request_spacing_seconds':0}
+    address = {'municipality':'Lampertheim','street':'Georg-Tyczka-Straße','house_number':number}
+    async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+        if accepted:
+            await calendar_for_address(conn,client,source,address,datetime.now(UTC))
+            assert downloads == [True]
+        else:
+            with pytest.raises(AddressMismatch):
+                await calendar_for_address(conn,client,source,address,datetime.now(UTC))
+            assert downloads == []
+
+
+def test_range_checkpoint_contract_is_separate_and_house_specific():
+    import hashlib
+    import json
+
+    from zakb import RANGE_VALIDATION_CONTRACT, VALIDATION_CONTRACT, address_key
+    source = {'url':'https://example.org/calendar'}
+    for street,contract in [('Habichtsweg',RANGE_VALIDATION_CONTRACT),('Andere Straße',VALIDATION_CONTRACT)]:
+        address = {'municipality':'Lampertheim','street':street,'house_number':'4'}
+        expected = hashlib.sha256(json.dumps([contract,source['url'],'Lampertheim',street,'4'],ensure_ascii=False).encode()).hexdigest()
+        assert address_key(source,address) == expected
+        assert address_key(source,address) != address_key(source,{**address,'house_number':'6'})
