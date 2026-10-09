@@ -1,6 +1,55 @@
 {
   "sources": [
     {
+      "id": "hcv-buerstadt-campaign",
+      "group": "social",
+      "adapter": "verified-hcv-campaign",
+      "enabled": true,
+      "url": "https://hcv-buerstadt.de/",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "description": "Sechs verifizierte HCV-Termine der Kampagne 2026/2027 in Bürstadt; keine Jahresfortschreibung.",
+      "verified_fragment_sha256": "b205bb425b45be1bfefa9653ec81334afecc1a87228feaa07421aee7eee1151d",
+      "verified_events": [
+        {
+          "datum": "07.11.2026",
+          "event": "HCV Schlachtfest",
+          "uhrzeit": "18:00 Uhr",
+          "ort": "Die Lächner 9"
+        },
+        {
+          "datum": "08.01.2027",
+          "event": "1. Prunksitzung",
+          "uhrzeit": "19:31 Uhr",
+          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
+        },
+        {
+          "datum": "09.01.2027",
+          "event": "2. Prunksitzung",
+          "uhrzeit": "19:11 Uhr",
+          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
+        },
+        {
+          "datum": "15.01.2027",
+          "event": "3. Prunksitzung",
+          "uhrzeit": "19:31 Uhr",
+          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
+        },
+        {
+          "datum": "16.01.2027",
+          "event": "4. Prunksitzung",
+          "uhrzeit": "19:11 Uhr",
+          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
+        },
+        {
+          "datum": "05.02.2027",
+          "event": "HCV Frauensitzung",
+          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
+        }
+      ]
+    },
+    {
       "id": "lampertheim-wanderung-festival-notice",
       "group": "social",
       "adapter": "municipal-festival-notice",

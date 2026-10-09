@@ -45,6 +45,7 @@ from regular_offers import (
 from ris_boards import import_ris_boards
 from satellite import import_satellite
 from verified_club_notice import import_verified_club_notice
+from verified_hcv_campaign import import_hcv_campaign
 from zakb import import_zakb
 
 LOG = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ ADAPTERS = {
     "long-term-events": import_long_term_events,
     "municipal-festival-notice": import_municipal_festival_notice,
     "verified-club-notice": import_verified_club_notice,
+    "verified-hcv-campaign": import_hcv_campaign,
     "tv-lauftreff": import_tv_lauftreff,
     "tv-gymnastik": import_tv_gymnastik,
     "tvl-triathlon-offers": import_tvl_triathlon,
