@@ -50,3 +50,39 @@ Lokale vollständige Worker-Suite mit separater TimescaleDB: 413 Tests
 erfolgreich (einschließlich 14 neuer HCV-Prüfungen und parallel vorhandener
 ZAKB-Testergänzungen, die nicht Bestandteil dieses Commits sind).
 Ruff und `git diff --check` erfolgreich.
+
+## Veröffentlichung und produktiver Nachweis
+
+Implementierung `840c889434dbf3868101002c0016b222dabf7c5c` auf main
+committet und gepusht. Der [zugehörige CI-Lauf](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37899334478)
+ist für genau diesen Commit vollständig erfolgreich abgeschlossen,
+einschließlich aller 17 Container-Builds und GHCR-Veröffentlichungen.
+Keine Frontenddatei geändert; kein Frontend-CI-Lauf vorgesehen.
+
+Während der vorbereiteten VPS-Prüfung wurde der reguläre Worker durch
+den parallelen ZAKB-Auftrag bereits auf ein neueres Image aktualisiert.
+Der eigene Aktivierungslauf brach vor einer Konfigurationsänderung ab,
+weil der vorherige Container gerade beendet wurde. Deshalb kein
+Zurücksetzen auf das ältere HCV-Image und keine erneute Änderung der
+parallel aktualisierten Compose-Konfiguration.
+
+Tatsächlich laufendes und konfiguriertes Image:
+`sha256:899042b67f575ac23755a04332b5eafb3062104d36f7b28a4b9037f7713be06c`.
+Der reguläre Worker läuft seit 09.10.2026 07:39:04 UTC mit RestartCount=0.
+Direkt im laufenden Container stimmen HCV-Parser-Hash und HCV-
+Quellkonfiguration exakt mit der geprüften Implementierung überein.
+Alle aktuellen 56 Quell-IDs sind enthalten.
+
+Produktiver HCV-Abruf 07:39:08 UTC: success, HTTP 200. Die öffentliche
+API enthält genau die sechs oben angegebenen HCV-Termine. Gesamtstand
+341 Ereignisse; weitere zwischenzeitliche Aktualisierungen anderer
+Quellen sind darin enthalten. Alle vier Lampertheimer Festquellen und
+alle 17 regelmäßigen Angebote bleiben erhalten.
+
+Im produktiven Browserkalender wurde die Listenansicht auf Bürstadt
+und HCV gefiltert: alle sechs Termine erscheinen genau einmal mit den
+oben genannten Tagen, Anfangszeiten und Veranstaltungsorten. Die
+Frauensitzung zeigt „Ganztägig / Uhrzeit siehe Quelle“ sowie ausdrücklich
+„Beginn unbekannt“. Damit sind Speicherung, regulärer Worker und
+Anzeige geprüft. Dieser Abschluss ändert ausschließlich Dokumentation;
+dafür ist nach Workflow-Pfadfiltern kein neuer CI-Lauf vorgesehen.
