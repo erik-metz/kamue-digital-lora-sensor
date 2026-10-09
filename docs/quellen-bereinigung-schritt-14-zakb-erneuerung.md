@@ -26,13 +26,22 @@ Commit `1a1f3a8fe09e1cfcdac1e585fa00983abdcb4d57` ist auf `main` gepusht. [FastA
 
 Registry-Image für das gezielte Deployment: `ghcr.io/erik-metz/open-ried-sens-registry-sync-worker@sha256:10863e3dbc2e8db4be7ee59a6e37a80bcb22c8ad9ce2948fa14d780f7f49684f`. Code-SHA-256 der neuen `zakb.py`: `8968e61c373d721a073e45b46496c470c3973749204b0d24ea4077ec706c54a4`.
 
-## Deployment-Stand
+## Deployment und produktive Prüfung
 
-SSH zu `169.58.102.132:22` ist derzeit bei mehreren Versuchen in einen Verbindungs-Timeout gelaufen. Die öffentliche HTTPS-API antwortet weiterhin, und der Hostname löst auf dieselbe IP auf. Die genaue Ursache des SSH-Ausfalls ist unbekannt. Ohne SSH-Zugriff kann das Registry-Image nicht gezielt eingespielt und dessen Laufzeitverhalten auf dem VPS nicht überprüft werden. Deshalb ist noch kein erfolgreicher Produktiveinsatz der Änderung nachgewiesen.
+Am 9. Oktober 2026 ist der SSH-Zugriff wieder verfügbar. Der vorherige Verbindungs-Timeout ist damit kein aktueller Deployment-Blocker mehr.
 
+Vor dem Wechsel wurden die aktiven Compose-Dateien und die Laufzeitdateien verglichen. Zwischen dem laufenden Image und dem vorbereiteten Image unterschieden sich nur `/app/zakb.py` und `/app/sources.json`. Die aktive Compose-Kombination `/root/docker-compose.yml`, `/root/docker-compose.override.yml` und `/root/docker-compose.invekos.yml` wurde beibehalten. Nur das Registry-Image wurde aktualisiert; der bisherige Pin ist in `/root/docker-compose.zakb-pre-renewal.yml` gesichert.
 
-## Offener Abschluss
+Der reguläre Registry-Worker läuft mit dem oben dokumentierten Image. Die Code-Prüfsumme stimmt exakt mit `8968e61c373d721a073e45b46496c470c3973749204b0d24ea4077ec706c54a4` überein. Die geladenen Einstellungen sind 3.600 Sekunden regulärer Prüfrhythmus, 86.400 Sekunden Cache-Frische und 43.200 Sekunden Erneuerungsschwelle.
 
-Nach Wiederherstellung des SSH-Zugriffs zunächst die aktiven Compose-Dateien und das aktuell laufende Image prüfen, dann ausschließlich den Registry-Worker auf das oben veröffentlichte Image aktualisieren. Andere parallel veröffentlichte Änderungen dürfen nicht zurückgesetzt werden. Anschließend den geladenen Code und die Quelleneinstellungen prüfen sowie anhand der tatsächlichen Checkpoint-Zeitpunkte belegen, dass die ältesten bekannten Kalender erneuert werden. Die öffentliche Coverage muss die getrennten Erneuerungszähler und das unveränderte 24-Stunden-Frischefenster enthalten.
+Ein begrenzter tatsächlicher ZAKB-Prüflauf mit 120 Sekunden Netzwerkbudget bestätigt:
 
-Dieser Dokumentationscommit löst wegen der Workflow-Pfadfilter keinen zusätzlichen CI-/GHCR-Lauf aus. Das Deployment und die produktive Verifikation bleiben wegen des tatsächlichen SSH-Verbindungsfehlers offen.
+- Zwölf gespeicherte Kalender wurden tatsächlich neu abgerufen. Ihre vorherigen Zeitpunkte lagen am 8. Oktober zwischen 16:01 und 16:04 UTC, die neuen Zeitpunkte am 9. Oktober zwischen 07:14 und 07:15 UTC. Die neuen Zeitpunkte stammen aus den tatsächlichen Provider-Abrufen.
+- 793 von 844 Straßenproben bleiben bestätigt; 14.348 Kalenderereignisse sind veröffentlicht. Die Erneuerung hat noch frische Kalender nicht entfernt.
+- 130 bekannte Kalender sind noch zur Erneuerung vorgemerkt. Der reguläre Worker ist wieder gestartet und setzt diese Arbeit mit der neuen Reihenfolge fort.
+- Am Ende des begrenzten Budgets entstand ein Erneuerungs-Timeout für die Bahnhofstraße in Groß-Rohrheim. Ihr noch frischer bestätigter Kalender blieb veröffentlicht; der Fehler steht getrennt unter `refresh_failed_streets`.
+- Die gesamte Quelle bleibt korrekt `partial`: 51 Straßen haben weiterhin keine gültige veröffentlichte Probe. Diese Anbieter- und Adressfälle sind von den noch ausstehenden Erneuerungen zu unterscheiden.
+
+Die öffentlichen Coverage- und Kalender-Endpunkte wurden unabhängig abgefragt: Adressvertrag `zakb-address-v2`, Frischegrenze 86.400 Sekunden, Erneuerungsschwelle 43.200 Sekunden, zwölf Erneuerungen, 793 bestätigte Straßen und 14.348 Ereignisse. Der erste Live-Prüfversuch wurde noch korrekt mit `already_running` abgewiesen, solange der alte Worker stoppte; für die Erfolgsmeldung wurde ausschließlich der danach abgeschlossene echte Lauf verwendet.
+
+Deutsche-Bahn-Quellen bleiben übersprungen. Das Deployment und die produktive Verifikation dieses Schritts sind abgeschlossen. Dieser reine Dokumentationscommit benötigt wegen der Workflow-Pfadfilter keinen zusätzlichen CI-/GHCR-Lauf; der nachgewiesene erfolgreiche Lauf für die implementierte Änderung bleibt der oben verlinkte exakte Code-Commit.
