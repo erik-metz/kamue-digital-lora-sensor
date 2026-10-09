@@ -34,3 +34,17 @@ Der allgemeine kommunale Import übernimmt diese drei Vorkommen nicht erneut. Na
 Die Tests prüfen die exakten sechs neuen Tagesfenster und Veranstaltungsorte, die unveränderten drei bisherigen Kennungen, Änderungen an Jahr/Datum/Zeit/Ort, doppelte und fehlende Abschnitte sowie die Unabhängigkeit vom Footer. Datenbanktests prüfen die gezielte Ersetzung, Wiederholungsimporte und den Erhalt anderer Quellen, Jahre und Veranstaltungen. Ein erneuter kommunaler Import wird zweimal geprüft und darf die ersetzten Vorkommen nicht erneut veröffentlichen.
 
 Vollständiger Worker-Testlauf mit temporärer TimescaleDB: **459 Tests bestanden** (61,50 Sekunden). Die Lint-Prüfung aller geänderten Python-Dateien und `git diff --check` waren erfolgreich. Der Parser wurde zusätzlich gegen die frisch abgerufene vollständige Stadtmarketing-Seite geprüft. CI, GHCR und produktiver Nachweis werden nach Abschluss ergänzt.
+
+## Veröffentlichung und produktiver Nachweis
+
+- Implementierungscommit `1975a78c34c4df37068c571e1a0e30903830fe8a` auf `main` gepusht.
+- [FastAPI & Docker CI/CD, Lauf 37931491568](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37931491568) für genau diesen Commit vollständig erfolgreich. Job „Build & Push Docker Image to GHCR“ sowie alle 17 vorgesehenen Container-Builds und Veröffentlichungen erfolgreich. Kein Frontend-Workflow erforderlich.
+- Produktives Worker-Image: `sha256:ec6619c7ec4c6bc50ef53751feb19a6917cf11126ff0839951f24a4b6de44361`. Inhalte aller drei geänderten Module und der eigenen Quellkonfiguration vor Aktivierung exakt abgeglichen; übrige Quellkonfigurationen unverändert übernommen.
+- Compose-Sicherung: `/root/docker-compose.invekos.yml.before-christmas-correction-20261009`. Ausschließlich Registry-Sync-Worker neu gestartet.
+- Worker-Start: 09.10.2026, 12:49:18 UTC. Anschließend `running`, Neustartzähler 0.
+- Weihnachtsmarkt-Quelle um 12:49:21 UTC erfolgreich mit HTTP 200 erfasst und verarbeitet.
+- Öffentliche API nach Aktivierung: neun bestätigte Tagesfenster, keine der drei ersetzten kommunalen Vorkommen; Gesamtdatensatz zu diesem Zeitpunkt 348 Ereignisse. API-Zeitangaben nach Europe/Berlin umgerechnet und mit der Tabelle abgeglichen.
+- Öffentlicher Kalender im Browser: Lampertheim, Listenansicht, Suche „Weihnachtsmarkt“. Hauptmarkt an allen vier Tagen mit Schillerplatz/Kaiserstraße und korrekten Uhrzeiten sichtbar; Schlosshofzauber an beiden Tagen mit Schloßhof Neuschloß und Sonntagsschluss 19 Uhr sichtbar. Hofheim und Hüttenfeld weiterhin mit ihren bestätigten täglichen Zeiten sichtbar.
+- Zusätzlicher produktiver Kontrollimport: `python /app/main.py --job lampertheim-events` im laufenden Worker, erfolgreich abgeschlossen um 12:54:05 UTC mit HTTP 200. Öffentliche API anschließend erneut geprüft: weiterhin neun bestätigte Markt-Tagesfenster und kein einziges der drei ersetzten Originale; Gesamtdatensatz weiterhin 348 Ereignisse. Damit ist der Schutz gegen Wiederimport auch produktiv nachgewiesen.
+
+Die abschließende Nachweisdokumentation betrifft ausschließlich `docs/`; hierfür sehen die CI-Pfadfilter keinen weiteren Lauf vor.
