@@ -70,6 +70,10 @@ STREET_ALIASES = {
     ("Bürstadt", "Sofienstraße"): "Sophienstraße",
     ("Bürstadt", "Vinzenzstraße"): "Vincenzstraße",
     ("Lampertheim", "Wilhelm-von-Ketteler-Straße"): "Wilhelm-v.-Ketteler-Straße",
+    # Reviewed exterior addresses; see docs/quellen-bereinigung-schritt-16-zakb-aussenbereiche.md.
+    ("Lampertheim", "Wildbahn"): "Außerhalb Wildbahn",
+    ("Lampertheim", "Am Küblinger Damm"): "Außerhalb Am Küblinger Damm",
+    ("Lampertheim", "Außerhalb Ost"): "Außerhalb-Ost",
 }
 # Biblis municipal street lists, annexes 1 and 2, resolve these duplicate provider options.
 PROVIDER_CITIES = {("Biblis", "Bachgasse"): "Biblis", ("Biblis", "Enggasse"): "Biblis-Nordheim"}

@@ -66,6 +66,9 @@ async def test_district_lookup_and_download_gate(ambiguous, substituted, spellin
     ('Bürstadt','Sofienstraße','Sophienstraße','Bürstadt',False),
     ('Bürstadt','Sofienstraße','Sofienstraße','Bürstadt',False),
     ('Bürstadt','Vinzenzstraße','Vincenzstraße','Bürstadt',False),
+    ('Lampertheim','Wildbahn','Außerhalb Wildbahn','Lampertheim',False),
+    ('Lampertheim','Am Küblinger Damm','Außerhalb Am Küblinger Damm','Lampertheim',False),
+    ('Lampertheim','Außerhalb Ost','Außerhalb-Ost','Lampertheim',False),
     ('Lampertheim','Albert-Schweitzer-Straße','Albert-Schweitzer-Str.','Lampertheim',False),
     ('Lampertheim','Wilhelm-von-Ketteler-Straße','Wilhelm-v.-Ketteler-Straße','Lampertheim',False),
 ])
