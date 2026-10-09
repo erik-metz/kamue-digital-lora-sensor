@@ -1,6 +1,21 @@
 {
   "sources": [
     {
+      "id": "lampertheim-district-christmas-markets",
+      "group": "social",
+      "adapter": "verified-christmas-markets",
+      "enabled": true,
+      "url": "https://www.stadtmarketing-lampertheim.de/stadtmarketing/events/Weihnachtsmaerkte.php",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "description": "Zwei verifizierte Ortsteil-Weihnachtsmärkte 2026 mit drei täglichen Öffnungsfenstern; keine Jahresfortschreibung.",
+      "verified_section_sha256": {
+        "Hofheimer Weihnachtsmarkt": "50bfc4da040e78d4008b56621692905700680a010160b6e1be2f618b732e0d33",
+        "Hüttenfelder Weihnachtsmarkt": "c4b213d8882517d6ac5d00e61fc8ab7adf35ac7d73250737ac1cec9a148a4192"
+      }
+    },
+    {
       "id": "hcv-buerstadt-campaign",
       "group": "social",
       "adapter": "verified-hcv-campaign",
