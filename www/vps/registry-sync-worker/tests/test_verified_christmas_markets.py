@@ -18,13 +18,15 @@ NOW = datetime(2026, 10, 9, tzinfo=UTC)
 
 
 def test_daily_openings_do_not_include_overnight_closure():
-    events = christmas_markets(HTML, SOURCE, NOW)
+    all_events = christmas_markets(HTML, SOURCE, NOW)
+    events = [e for e in all_events if 'kernstadt-' not in e['id'] and 'neuschloss-' not in e['id']]
     assert [(e['start_time'], e['end_time']) for e in events] == [
         ('2026-12-05T16:00:00+01:00', '2026-12-05T21:00:00+01:00'),
         ('2026-12-06T15:00:00+01:00', '2026-12-06T19:00:00+01:00'),
         ('2026-12-12T15:00:00+01:00', '2026-12-12T21:00:00+01:00'),
     ]
-    assert len({e['id'] for e in events}) == 3
+    assert len({e['id'] for e in all_events}) == 9
+    assert [e['id'] for e in events] == [SOURCE_ID+'-'+d for d in ('2026-12-05','2026-12-06','2026-12-12')]
     assert all(e['municipality'] == 'Lampertheim' and not e['is_free'] for e in events)
     assert [e['venue_name'] for e in events] == [
         'Rund ums Bürgerhaus Hofheim, Lampertheim-Hofheim',
@@ -55,7 +57,7 @@ def test_missing_duplicate_and_unexpected_sources_are_rejected():
 
 
 def test_unrelated_market_changes_do_not_import_other_markets():
-    assert christmas_markets(HTML.replace('Keine Übernahme', 'Neue Angaben'), SOURCE, NOW) == christmas_markets(HTML, SOURCE, NOW)
+    assert christmas_markets(HTML.replace('<p>Footer</p>', '<p>Neuer Footer</p>'), SOURCE, NOW) == christmas_markets(HTML, SOURCE, NOW)
 
 
 class ChristmasDatabaseTests(DatabaseCase):
@@ -64,12 +66,39 @@ class ChristmasDatabaseTests(DatabaseCase):
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, text=html))) as client:
             for _ in range(2):
                 await import_christmas_markets(self.conn, client, SOURCE)
-            self.assertEqual(await self.scalar('SELECT count(*) FROM cultural_events'), 3)
+            self.assertEqual(await self.scalar('SELECT count(*) FROM cultural_events'), 9)
             data = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='social/events'")
-            self.assertEqual(len(data), 3)
+            self.assertEqual(len(data), 9)
             self.assertEqual(await self.scalar('SELECT count(*) FROM collection_attempts WHERE status=\'success\''), 2)
             self.assertEqual(await self.scalar("SELECT convert_from(body,'UTF8') FROM collected_payloads LIMIT 1"), HTML)
             html = HTML.replace('2026:', '2027:')
             with self.assertRaises(ValueError):
                 await import_christmas_markets(self.conn, client, SOURCE)
             self.assertEqual(await self.scalar("SELECT data FROM collected_datasets WHERE dataset='social/events'"), data)
+
+
+def test_main_market_and_schlosshof_have_exact_daily_windows_and_places():
+    events = christmas_markets(HTML, SOURCE, NOW)
+    main = [e for e in events if 'kernstadt-' in e['id']]
+    castle = [e for e in events if 'neuschloss-' in e['id']]
+    assert [(e['start_time'], e['end_time']) for e in main] == [
+        ('2026-12-03T17:00:00+01:00', '2026-12-03T22:00:00+01:00'),
+        ('2026-12-04T17:00:00+01:00', '2026-12-04T22:00:00+01:00'),
+        ('2026-12-05T14:00:00+01:00', '2026-12-05T22:00:00+01:00'),
+        ('2026-12-06T14:00:00+01:00', '2026-12-06T20:00:00+01:00'),
+    ]
+    assert [(e['start_time'], e['end_time']) for e in castle] == [
+        ('2026-11-28T15:00:00+01:00', '2026-11-28T22:00:00+01:00'),
+        ('2026-11-29T13:00:00+01:00', '2026-11-29T19:00:00+01:00'),
+    ]
+    assert all('Schillerplatz und Kaiserstraße ab Hausnummer 21' in e['venue_name'] for e in main)
+    assert all('Schloßhof Neuschloß' in e['venue_name'] for e in castle)
+
+
+@pytest.mark.parametrize('old,new', [
+    ('17 -22 Uhr', '18 -22 Uhr'), ('13-19 Uhr', '13-22 Uhr'),
+    ('Schillerplatz stehen', 'Domplatz stehen'), ('im Schloßhof', 'im Bürgerhaus'),
+])
+def test_changed_main_or_castle_market_requires_review(old, new):
+    with pytest.raises(ValueError):
+        christmas_markets(HTML.replace(old, new), SOURCE, NOW)

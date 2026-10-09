@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from urllib.parse import urlencode, urlsplit
 
 from event_policy import aggregate_events, event_status
+from event_replacements import superseded_occurrence
 from municipal_events import (
     BERLIN,
     calendar_page,
@@ -225,6 +226,8 @@ async def import_lampertheim_events(conn, client, source):
         receipts.append(attempt)
         page_events, next_url = calendar_page(response.text, url, source["id"], now)
         for event in page_events:
+            if superseded_occurrence(event):
+                continue
             if event["id"] in seen_events:
                 continue
             seen_events.add(event["id"])

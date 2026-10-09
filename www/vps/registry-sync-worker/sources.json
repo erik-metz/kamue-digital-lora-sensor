@@ -9,10 +9,12 @@
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2,
-      "description": "Zwei verifizierte Ortsteil-Weihnachtsmärkte 2026 mit drei täglichen Öffnungsfenstern; keine Jahresfortschreibung.",
+      "description": "Vier verifizierte Lampertheimer Weihnachtsmärkte 2026 mit neun täglichen Öffnungsfenstern; ersetzt drei widersprüchliche kommunale Einträge ausschließlich für 2026.",
       "verified_section_sha256": {
+        "Lampertheimer Weihnachtsmarkt": "5eba3e1dce49f399f0f01d8ac2846f861101e494496a2f13bb7549b91dd3481a",
         "Hofheimer Weihnachtsmarkt": "50bfc4da040e78d4008b56621692905700680a010160b6e1be2f618b732e0d33",
-        "Hüttenfelder Weihnachtsmarkt": "c4b213d8882517d6ac5d00e61fc8ab7adf35ac7d73250737ac1cec9a148a4192"
+        "Hüttenfelder Weihnachtsmarkt": "c4b213d8882517d6ac5d00e61fc8ab7adf35ac7d73250737ac1cec9a148a4192",
+        "Neuschlosser Weihnachtsmarkt": "eb7cbbf326e3e72b2d51fa5aa8481c617b3d210fe407e47cc24f95060cf27a84"
       }
     },
     {

@@ -1,16 +1,23 @@
-"""Two reviewed 2026 district markets, with separate daily opening windows."""
+"""Four reviewed 2026 markets, replacing conflicting municipal occurrences."""
 
 import hashlib
 import re
 from datetime import UTC, datetime
 
 from adapters import sync_cultural_events_to_db_and_publish
-from municipal_events import Document, event_period
+from event_replacements import REPLACED_SOURCE, REPLACED_URLS
+from municipal_events import BERLIN, Document, event_period
 from publications import acquire
 
 SOURCE_ID = "lampertheim-district-christmas-markets"
 URL = "https://www.stadtmarketing-lampertheim.de/stadtmarketing/events/Weihnachtsmaerkte.php"
 MARKETS = {
+    "Lampertheimer Weihnachtsmarkt": (
+        "Lampertheimer Weihnachtsmarkt", "Schillerplatz und Kaiserstraße ab Hausnummer 21, Lampertheim",
+        "Stadt Lampertheim",
+        [("2026-12-03", "17:00", "22:00"), ("2026-12-04", "17:00", "22:00"),
+         ("2026-12-05", "14:00", "22:00"), ("2026-12-06", "14:00", "20:00")],
+    ),
     "Hofheimer Weihnachtsmarkt": (
         "Howwemer Weihnachtsmarkt", "Rund ums Bürgerhaus Hofheim, Lampertheim-Hofheim",
         "Arbeitskreis Hofheimer Vereine und Stadtmarketing Lampertheim",
@@ -19,6 +26,11 @@ MARKETS = {
     "Hüttenfelder Weihnachtsmarkt": (
         "Hüttenfelder Weihnachtsmarkt", "Rund ums Bürgerhaus Hüttenfeld, Lampertheim-Hüttenfeld",
         "Pro Hüttenfeld", [("2026-12-12", "15:00", "21:00")],
+    ),
+    "Neuschlosser Weihnachtsmarkt": (
+        "Schlosshofzauber / Neuschlosser Weihnachtsmarkt", "Schloßhof Neuschloß, Lampertheim-Neuschloß",
+        "Ortsbeirat Neuschloß / Die Meute e.V.",
+        [("2026-11-28", "15:00", "22:00"), ("2026-11-29", "13:00", "19:00")],
     ),
 }
 
@@ -30,7 +42,7 @@ def market_sections(html):
         if heading in MARKETS:
             if heading in result:
                 raise ValueError("Ambiguous district market section")
-            result[heading] = " ".join(n.text() for n in Document(body).root.find(tag="p") if n.text())
+            result[heading] = " ".join(n.text() for n in Document(body.split("<!--CONTENT:STOP-->", 1)[0]).root.find(tag="p") if n.text())
     if result.keys() != MARKETS.keys():
         raise ValueError("Expected district market sections missing")
     return result
@@ -48,7 +60,10 @@ def christmas_markets(html, source, now):
         for day, opening, closing in days:
             start, end = event_period(day, opening, end_time=closing)
             events.append({
-                "id": SOURCE_ID + "-" + day,
+                "id": SOURCE_ID + "-" + (
+                    "kernstadt-" if title == "Lampertheimer Weihnachtsmarkt"
+                    else "neuschloss-" if title.startswith("Schlosshofzauber") else ""
+                ) + day,
                 "title": title, "municipality": "Lampertheim",
                 "venue_name": venue, "organizer": organizer,
                 "start_time": start.isoformat(), "end_time": end.isoformat(),
@@ -66,6 +81,14 @@ async def import_christmas_markets(conn, client, source):
     now = datetime.now(UTC)
     events = christmas_markets(response.text, source, now)
     async with conn.transaction():
+        # Remove only the three reviewed 2026 originals, atomically with their
+        # validated replacements. Other sources and years remain untouched.
+        await conn.execute(
+            """DELETE FROM cultural_events WHERE source=%s AND event_url = ANY(%s)
+               AND start_time >= %s AND start_time < %s""",
+            (REPLACED_SOURCE, list(REPLACED_URLS),
+             datetime(2026, 1, 1, tzinfo=BERLIN), datetime(2027, 1, 1, tzinfo=BERLIN)),
+        )
         await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         await conn.execute("UPDATE collection_attempts SET status='success' WHERE id=%s", (attempt,))
     await conn.commit()
