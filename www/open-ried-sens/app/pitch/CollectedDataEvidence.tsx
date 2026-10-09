@@ -42,24 +42,22 @@ export default function CollectedDataEvidence({ startedAt }: { startedAt: number
       {error && <button type="button" onClick={() => setRevision((value) => value + 1)} className="mt-4 rounded-lg border border-slate-600 px-3 py-2 text-sm">Erneut laden</button>}
     </div> : <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 lg:col-span-3">
-          <div className="flex items-center justify-between gap-3"><h3 className="text-xl font-semibold">Bahnübergänge</h3><span className="rounded-xl bg-orange-400/10 p-3 text-orange-400"><PanelTopClose className="h-7 w-7" aria-hidden="true" /></span></div>
-          <p className="mt-1 text-sm text-slate-400">Seit Vortragsbeginn</p>
-          <div className="mt-4 grid grid-cols-2 gap-4"><div><p className="text-5xl font-bold text-emerald-400">{number(crossings?.available ? crossings.opened : null)}</p><p className="mt-2 text-lg text-slate-300">geöffnet</p></div><div><p className="text-5xl font-bold text-orange-400">{number(crossings?.available ? crossings.closed : null)}</p><p className="mt-2 text-lg text-slate-300">geschlossen</p></div></div>
-          <p className="mt-5 text-sm text-slate-500">{crossings?.available ? `Modellierte Wechsel${crossings.partial ? " · Teilzeitraum" : ""}` : "Historie momentan nicht verfügbar"}</p>
+        <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:col-span-3">
+          <div className="flex items-center justify-between gap-3"><h3 className="text-xl font-semibold">Bahnübergänge</h3><span className="rounded-xl bg-orange-400/10 p-2 text-orange-400"><PanelTopClose className="h-7 w-7" aria-hidden="true" /></span></div>
+          <div className="mt-3 grid grid-cols-2 gap-4"><div><p className="text-5xl font-bold text-emerald-400">{number(crossings?.available ? crossings.opened : null)}</p><p className="mt-1 text-lg text-slate-300">geöffnet</p></div><div><p className="text-5xl font-bold text-orange-400">{number(crossings?.available ? crossings.closed : null)}</p><p className="mt-1 text-lg text-slate-300">geschlossen</p></div></div>
+          <p className="mt-3 text-sm text-slate-400">{crossings?.available ? `Seit Vortragsbeginn · modelliert${crossings.partial ? " · Teilzeitraum" : ""}` : "Historie momentan nicht verfügbar"}</p>
         </article>
-        <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 lg:col-span-3" title="Aus Änderungen der Stationsbestände abgeleitet. Gleichzeitige Fahrten können unentdeckt bleiben; Umverteilungen können ebenfalls enthalten sein.">
-          <div className="flex items-center justify-between gap-3"><h3 className="text-xl font-semibold">Leihräder</h3><span className="rounded-xl bg-teal-400/10 p-3 text-teal-400"><Bike className="h-7 w-7" aria-hidden="true" /></span></div>
-          <p className="mt-1 text-sm text-slate-400">Seit Vortragsbeginn</p>
-          <div className="mt-4 grid grid-cols-2 gap-4"><div><p className="text-5xl font-bold text-teal-400">{number(bikes?.available ? bikes.removed : null)}</p><p className="mt-2 text-lg text-slate-300">entnommen</p></div><div><p className="text-5xl font-bold text-sky-400">{number(bikes?.available ? bikes.returned : null)}</p><p className="mt-2 text-lg text-slate-300">zurückgestellt</p></div></div>
-          <p className="mt-5 text-sm text-slate-500">{bikes?.available ? `Aus Stationsbeständen abgeleitet${bikes.partial ? " · Teilzeitraum" : ""}` : "Stationshistorie momentan nicht verfügbar"}</p>
+        <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:col-span-3" title="Aus Änderungen der Stationsbestände abgeleitet. Gleichzeitige Fahrten können unentdeckt bleiben; Umverteilungen können ebenfalls enthalten sein.">
+          <div className="flex items-center justify-between gap-3"><h3 className="text-xl font-semibold">Leihräder</h3><span className="rounded-xl bg-teal-400/10 p-2 text-teal-400"><Bike className="h-7 w-7" aria-hidden="true" /></span></div>
+          <div className="mt-3 grid grid-cols-2 gap-4"><div><p className="text-5xl font-bold text-teal-400">{number(bikes?.available ? bikes.removed : null)}</p><p className="mt-1 text-lg text-slate-300">entnommen</p></div><div><p className="text-5xl font-bold text-sky-400">{number(bikes?.available ? bikes.returned : null)}</p><p className="mt-1 text-lg text-slate-300">zurückgestellt</p></div></div>
+          <p className="mt-3 text-sm text-slate-400">{bikes?.available ? `Seit Vortragsbeginn · aus Stationsbeständen abgeleitet${bikes.partial ? " · Teilzeitraum" : ""}` : "Stationshistorie momentan nicht verfügbar"}</p>
         </article>
         {traffic.map(({ id, title, icon: Icon, color, background }) => {
           const activity = data.moving?.[id];
-          return <article key={id} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 lg:col-span-2">
-            <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-semibold">{title}</h3><span className={`rounded-xl p-3 ${background} ${color}`}><Icon className="h-6 w-6" aria-hidden="true" /></span></div>
-            <p className={`mt-5 text-5xl font-bold ${color}`}>{number(activity?.count)}</p>
-            <p className="mt-3 text-sm text-slate-400">{!activity?.available ? "Quelle momentan nicht verfügbar" : id === "ship" ? "Aktuell in Fahrt · AIS-Positionen" : activity.estimated > 0 ? `Aktuell im Ried · ${activity.estimated} laut Fahrplan` : "Aktuell in Fahrt · erfasste Positionen"}</p>
+          return <article key={id} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5 lg:col-span-2">
+            <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-semibold">{title}</h3><span className={`rounded-xl p-2 ${background} ${color}`}><Icon className="h-6 w-6" aria-hidden="true" /></span></div>
+            <p className={`mt-3 text-5xl font-bold ${color}`}>{number(activity?.count)}</p>
+            <p className="mt-2 text-sm text-slate-400">{!activity?.available ? "Quelle momentan nicht verfügbar" : id === "ship" ? "Aktuell in Fahrt · AIS-Positionen" : activity.estimated > 0 ? `Aktuell im Ried · ${activity.estimated} laut Fahrplan` : "Aktuell in Fahrt · erfasste Positionen"}</p>
           </article>;
         })}
       </div>

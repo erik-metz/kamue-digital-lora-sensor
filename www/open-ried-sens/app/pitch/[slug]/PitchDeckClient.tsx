@@ -107,7 +107,7 @@ export default function PitchDeckClient({ deck }: { deck: PitchDeck }) {
       </section>)}</div> : <section key={slide.id} className="space-y-5">
         <div className="flex justify-between gap-4 text-sm text-emerald-400"><span>{slide.stepLabel} · {deck.badge}</span><span className="text-slate-400">Folie {index + 1} / {deck.slides.length}</span></div>
         <h2 className={`text-3xl md:text-4xl ${slide.layout === "collected-evidence" ? "lg:text-4xl" : "lg:text-5xl"} font-bold leading-tight`}>{slide.title}</h2>
-        <p className="max-w-6xl text-lg leading-relaxed text-slate-300">{slide.lead}</p>
+        {slide.lead && <p className="max-w-6xl text-lg leading-relaxed text-slate-300">{slide.lead}</p>}
         <SlideBody slide={slide} startedAt={startedAt} />
       </section>}
     </main>
