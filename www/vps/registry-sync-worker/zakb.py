@@ -63,6 +63,17 @@ class CalendarForm(HTMLParser):
 
 VALIDATION_CONTRACT = "zakb-address-v2"
 
+# Reviewed municipality-specific spellings; see docs/quellen-bereinigung-schritt-15-zakb-adressen.md.
+STREET_ALIASES = {
+    ("Biblis", "Friedensstraße"): "Friedenstraße",
+    ("Biblis", "Neuländer Pfad"): "Neuländerpfad",
+    ("Bürstadt", "Sofienstraße"): "Sophienstraße",
+    ("Bürstadt", "Vinzenzstraße"): "Vincenzstraße",
+    ("Lampertheim", "Wilhelm-von-Ketteler-Straße"): "Wilhelm-v.-Ketteler-Straße",
+}
+# Biblis municipal street lists, annexes 1 and 2, resolve these duplicate provider options.
+PROVIDER_CITIES = {("Biblis", "Bachgasse"): "Biblis", ("Biblis", "Enggasse"): "Biblis-Nordheim"}
+
 
 class AddressNotAccepted(ValueError):
     pass
@@ -101,7 +112,8 @@ class ConfirmedAddress(HTMLParser):
 
 def street_identity(value):
     """Only orthographic equivalence; never fuzzy-match another street."""
-    return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
+    value = " ".join(unicodedata.normalize("NFKC", value).casefold().split())
+    return re.sub(r"str\.$", "strasse", value)
 
 
 def verify_address(html, address, provider_city):
@@ -264,8 +276,14 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
                 raise AddressMismatch("Calendar did not confirm selected municipality")
             locations[provider_city] = set(parsed.options["aos[Strasse]"])
             offered[provider_city] = parsed.fields
+    expected_city = PROVIDER_CITIES.get((city, address["street"]))
     matches = [(candidate, value) for candidate in cities for value in locations[candidate]
                if street_identity(value) == street_identity(address["street"])]
+    if not matches and (city, address["street"]) in STREET_ALIASES:
+        matches = [(candidate, value) for candidate in cities for value in locations[candidate]
+                   if street_identity(value) == street_identity(STREET_ALIASES[(city, address["street"])])]
+    if expected_city is not None:
+        matches = [(candidate, value) for candidate, value in matches if candidate == expected_city]
     if not matches:
         raise MissingStreet("Street not offered in municipality or districts")
     if len(matches) != 1:
@@ -390,9 +408,10 @@ async def import_zakb(conn, client, source):
     inputs = [geo_digest]
     sampled_at = []
     cursor = await conn.execute(
-        "SELECT item_key FROM collection_item_failures WHERE source_id=%s AND retry_after>NOW()", (source["id"],)
+        "SELECT item_key,retry_after FROM collection_item_failures WHERE source_id=%s", (source["id"],)
     )
-    deferred = {row[0] for row in await cursor.fetchall()}
+    past_failures = dict(await cursor.fetchall())
+    deferred = {key for key, retry in past_failures.items() if retry > now}
     await conn.commit()
     coverage = {city: {"sampled_streets": sum(a["municipality"] == city for a in addresses.values()),
                        "attempted_calendars": 0, "successful_calendars": 0,
@@ -410,13 +429,15 @@ async def import_zakb(conn, client, source):
     probes = {}
     saved_at = {}
     for key, choices in candidates.items():
-        ordered_choices = sorted(choices.values(), key=lambda a: int(a["house_number"]))
+        ordered_choices = sorted(choices.values(), key=lambda a: (
+            address_key(source, a) in past_failures,
+            past_failures.get(address_key(source, a), now), int(a["house_number"])))
         verified = sorted((a for a in ordered_choices if address_key(source, a) in saved),
                           key=lambda a: saved[address_key(source, a)], reverse=True)
-        selected = ([verified[0]] + [a for a in ordered_choices if a != verified[0]])[:3] if verified else ordered_choices[:3]
+        selected = ([verified[0]] + [a for a in ordered_choices if a != verified[0]]) if verified else ordered_choices
         saved_at[key] = saved.get(address_key(source, selected[0]))
         eligible = [a for a in selected if address_key(source, a) not in deferred]
-        probes[key] = eligible or selected[:1]
+        probes[key] = eligible[:3] or selected[:1]
         addresses[key] = selected[0] if address_key(source, selected[0]) in fresh_keys else probes[key][0]
     calendars = {}
     refresh_failures = []
@@ -448,15 +469,26 @@ async def import_zakb(conn, client, source):
             break
         counts["attempted_calendars"] += int(not cached)
         counts["refresh_attempted_calendars"] = counts.get("refresh_attempted_calendars", 0) + int(cached)
+        failed_address = address
         try:
             timeout = min(120, deadline-loop.time())
             async with asyncio.timeout(timeout):
                 for index, candidate in enumerate(probes[key]):
+                    failed_address = candidate
                     try:
                         result = await calendar_for_address(conn, client, source, candidate, now, locations, refresh=True)
                         break
-                    except (AddressNotAccepted, AddressMismatch):
-                        if index + 1 == len(probes[key]):
+                    except (httpx.HTTPError, ValueError, TypeError, KeyError, TimeoutError) as exc:
+                        failed_address = candidate
+                        await conn.rollback()
+                        await conn.execute(
+                            """INSERT INTO collection_item_failures(source_id,item_key,retry_after,error)
+                            VALUES (%s,%s,NOW()+INTERVAL '30 minutes',%s) ON CONFLICT(source_id,item_key)
+                            DO UPDATE SET retry_after=EXCLUDED.retry_after,error=EXCLUDED.error""",
+                            (source["id"], address_key(source, candidate), type(exc).__name__),
+                        )
+                        await conn.commit()
+                        if not isinstance(exc, (AddressNotAccepted, AddressMismatch)) or index + 1 == len(probes[key]):
                             raise
             calendars[key] = result
             counts["successful_calendars"] += int(not cached)
@@ -468,7 +500,7 @@ async def import_zakb(conn, client, source):
                 """INSERT INTO collection_item_failures(source_id,item_key,retry_after,error)
                 VALUES (%s,%s,NOW()+INTERVAL '30 minutes',%s) ON CONFLICT(source_id,item_key)
                 DO UPDATE SET retry_after=EXCLUDED.retry_after,error=EXCLUDED.error""",
-                (source["id"],address_key(source,address),type(exc).__name__),
+                (source["id"],address_key(source,failed_address),type(exc).__name__),
             )
             await conn.commit()
             failure = {"municipality": address["municipality"], "street": address["street"], "error": type(exc).__name__}

@@ -55,3 +55,56 @@ async def test_district_lookup_and_download_gate(ambiguous, substituted, spellin
         else:
             await call
             assert downloads == [True]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('city,street,canonical,expected_city,duplicate', [
+    ('Biblis','Enggasse','Enggasse','Biblis-Nordheim',True),
+    ('Biblis','Bachgasse','Bachgasse','Biblis',True),
+    ('Biblis','Neuländer Pfad','Neuländerpfad','Biblis-Wattenheim',False),
+    ('Biblis','Friedensstraße','Friedenstraße','Biblis',False),
+    ('Bürstadt','Sofienstraße','Sophienstraße','Bürstadt',False),
+    ('Bürstadt','Sofienstraße','Sofienstraße','Bürstadt',False),
+    ('Bürstadt','Vinzenzstraße','Vincenzstraße','Bürstadt',False),
+    ('Lampertheim','Albert-Schweitzer-Straße','Albert-Schweitzer-Str.','Lampertheim',False),
+    ('Lampertheim','Wilhelm-von-Ketteler-Straße','Wilhelm-v.-Ketteler-Straße','Lampertheim',False),
+])
+@pytest.mark.parametrize('substituted',[False,True])
+async def test_reviewed_names_and_districts_still_require_exact_confirmation(city,street,canonical,expected_city,duplicate,substituted):
+    conn = MagicMock()
+    cursor = MagicMock(); cursor.fetchone = AsyncMock(return_value=None)
+    async def execute(query, params=None):
+        cursor.fetchone.return_value = None if query.lstrip().startswith('SELECT') else (1,)
+        return cursor
+    conn.execute = AsyncMock(side_effect=execute); conn.commit = AsyncMock()
+    selected = city
+    downloads = []
+    cities = list(dict.fromkeys([city, expected_city, city+'-Nordheim'] if city=='Biblis' else [city]))
+    def provider(request):
+        nonlocal selected
+        fields = parse_qs(request.content.decode())
+        action = fields.get('submitAction',[''])[0]
+        if action == 'CITYCHANGED':
+            selected = fields['aos[Ort]'][0]
+        if action == 'nextPage':
+            assert fields['aos[Strasse]'] == [canonical]
+            assert selected == expected_city
+            name = 'Andere Straße' if substituted else canonical
+            return httpx.Response(200,text=f'<span id="Lageadresse">{name} 1, 68647 {selected}</span><form id="athos-os-form"><input name="pageName" value="Terminliste">filedownload_ICAL</form>')
+        if action == 'filedownload_ICAL':
+            downloads.append(True)
+            return httpx.Response(200,content=b'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n')
+        options=''.join(f'<option value="{c}" {"selected" if c==selected else ""}></option>' for c in cities)
+        offered=canonical if duplicate or selected==expected_city else 'Andere Straße'
+        extra='<option value="Sophienstraße"></option>' if street==canonical=='Sofienstraße' else ''
+        return httpx.Response(200,text=f'<form id="athos-os-form"><input name="pageName" value="Lageadresse"><select name="aos[Ort]">{options}</select><select name="aos[Strasse]"><option value="{offered}"></option>{extra}</select></form>')
+    address={'municipality':city,'street':street,'house_number':'1'}
+    source={'id':'test','url':'https://example.org/calendar','interval_seconds':86400,'request_spacing_seconds':0}
+    async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+        if substituted:
+            with pytest.raises(AddressMismatch):
+                await calendar_for_address(conn,client,source,address,datetime.now(UTC))
+            assert downloads == []
+        else:
+            await calendar_for_address(conn,client,source,address,datetime.now(UTC))
+            assert downloads == [True]

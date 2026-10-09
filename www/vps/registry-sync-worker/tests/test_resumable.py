@@ -207,12 +207,23 @@ class ResumeTests(DatabaseCase):
             fields = parse_qs(request.content.decode())
             if fields.get('submitAction') == ['nextPage']:
                 submitted.append(fields['aos[Hausnummer]'][0])
+                if fields['aos[Hausnummer]'] == ['4']:
+                    return response(request)
                 return httpx.Response(200, text='<form id="athos-os-form"><input name="pageName" value="Lageadresse"></form>')
             return response(request)
         async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
             self.assertEqual(await import_zakb(self.conn, client, SOURCE), 'failed')
         self.assertEqual(submitted, ['1', '2', '3'])
         self.assertEqual(await self.scalar("SELECT count(*) FROM collected_datasets WHERE dataset='waste/calendar'"), 0)
+
+        # Even after the backoff expires, untried real houses precede old failures.
+        await self.conn.execute("UPDATE collection_item_failures SET retry_after=NOW()-INTERVAL '1 hour' WHERE source_id=%s", (SOURCE['id'],))
+        await self.conn.commit()
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            await import_zakb(self.conn, client, SOURCE)
+        self.assertEqual(submitted, ['1', '2', '3', '4'])
+        events = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'")
+        self.assertEqual(events[0]['house_number'], '4')
 
     async def test_early_renewal_keeps_fresh_calendar_when_provider_fails(self):
         from zakb import address_key
