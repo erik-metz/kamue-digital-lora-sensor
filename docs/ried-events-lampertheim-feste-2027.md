@@ -113,3 +113,32 @@ Datei und der eigene Einzelcontainer wurden danach entfernt.
 Der Nutzer wurde um Abstimmung zur anschließenden Wiederaktivierung
 des geprüften regulären Workers gebeten. Veröffentlichung und Anzeige
 sind belegt; fortlaufender automatischer Abruf ist noch nicht abgesichert.
+
+## Regulärer Worker wieder aktiviert
+
+Auf ausdrücklichen Nutzerauftrag wurde nach Abschluss des parallelen
+Einzelauftrags das geprüfte Image
+`sha256:3800f3e87b024affccc2b979a0ad58569db4f87eb3627182436b9bac4bea5a89`
+wieder für den regulären Worker aktiviert. Vorher wurden nicht nur die
+Quell-IDs, sondern sämtliche bisherigen Quellkonfigurationen gegen das
+neue Image verglichen: alle sind unverändert enthalten. Parser-Hash
+und alle vier Festquellen stimmen mit der geprüften Implementierung überein.
+Die vorherige Konfiguration ist zusätzlich unter
+`/root/docker-compose.invekos.yml.before-lampertheim-festivals-reactivation-9c1fde2`
+gesichert; nur der registry-sync-worker wurde gezielt aktualisiert.
+
+Containerprüfung: running, Start 09.10.2026 um 07:20:25 UTC,
+RestartCount=0, Image entspricht dem obigen Digest. Alle vier Festquellen
+wurden danach erneut erfolgreich mit HTTP 200 verarbeitet:
+Spargelfest 07:20:29 UTC, Spargelwanderung und Howwemer Kerb 07:20:30 UTC,
+Lampertheimer Kerwe 07:20:32 UTC. Die öffentliche API enthält weiterhin
+334 Ereignisse mit genau vier neuen Festterminen sowie alle 17
+regelmäßigen Angebote. Damit ist die zuvor offene Wiederaktivierung
+abgeschlossen; die vier Quellen laufen wieder im regulären
+Sechs-Stunden-Abruf des Workers.
+
+Keine neue Backend-Implementierung in diesem Abschlussschritt. Die
+383 erfolgreichen Tests und der vollständig erfolgreiche CI-/GHCR-Lauf
+für Implementierung 9c1fde2 bleiben die zugehörigen Prüfbelege.
+Der Abschlusscommit ändert ausschließlich diese Dokumentation; die
+Workflow-Pfadfilter sehen dafür keinen neuen CI-Lauf vor.
