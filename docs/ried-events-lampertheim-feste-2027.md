@@ -57,3 +57,26 @@ Keine Frontendänderung erforderlich.
 Tests zu Datumsspannen, veränderten Belegen, Archivierung, wiederholtem
 Import und Zusammenführung identischer Veranstaltungen verschiedener Quellen.
 Ruff und `git diff --check` erfolgreich.
+
+## Veröffentlichung und konkrete Live-Blockade
+
+Implementierung `9c1fde2596f4c4b2d675c6ad16c07bb88eb9177e` auf `main`
+committet und gepusht. Der [zugehörige Backend-CI-Lauf](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37892965299)
+ist für genau diesen Commit vollständig erfolgreich abgeschlossen,
+einschließlich aller 17 vorgesehenen Container-Builds und GHCR-Veröffentlichungen.
+Keine Frontenddatei geändert; kein Frontend-CI-Lauf vorgesehen.
+
+Die produktive Aktivierung ist noch offen: drei unabhängige SSH-Versuche
+zum bekannten Server `169.58.102.132:22` mit dem vorhandenen Zugang
+endeten jeweils mit `Operation timed out`. Die aktuelle DNS-Auflösung
+bestätigt diese Serveradresse; die öffentliche HTTPS-API ist erreichbar.
+Es wurde keine produktive Compose-Konfiguration geändert und kein
+produktiver Container neu gestartet.
+
+Abschließender öffentlicher API-Abruf am 09.10.2026: weiterhin 330
+Ereignisse, keine der vier neuen `festival-notice`-Quellen enthalten.
+Daher noch kein Nachweis der Anzeige im produktiven Kalender.
+Sobald SSH wieder erreichbar ist, muss das veröffentlichte Worker-Image
+mit Parser-Hash, vier Quellkonfigurationen und vollständigem Erhalt aller
+bestehenden Quellen geprüft, gezielt aktiviert und anschließend in API
+und Kalender verifiziert werden. Erst dann ist dieser Schritt live abgeschlossen.
