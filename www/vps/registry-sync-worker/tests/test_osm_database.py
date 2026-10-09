@@ -18,7 +18,7 @@ class AddressDatabaseTests(DatabaseCase):
             path = Path(directory) / 'test.osm.pbf'
             with osmium.SimpleWriter(str(path)) as writer:
                 writer.add_node(osmium.osm.mutable.Node(id=1, location=(8.4,49.6), tags={
-                    'addr:city':'Biblis','addr:street':'Teststraße','addr:housenumber':'1'}))
+                    'addr:city':'Biblis','addr:street':'Teststraße','addr:housenumber':'8A'}))
             body = path.read_bytes()
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200,content=body))) as client:
             await import_addresses(self.conn, client, source)
@@ -30,6 +30,18 @@ class AddressDatabaseTests(DatabaseCase):
         self.assertEqual(await self.scalar('SELECT status FROM collection_attempts'), 'success')
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: self.fail('Fresh inventory must survive worker restart without another download'))) as client:
             await import_addresses(self.conn, client, source)
+        # A fresh numeric-only inventory must be refreshed after the parser upgrade.
+        await self.conn.execute("UPDATE collected_datasets SET data=data-'address_inventory_version' WHERE dataset='waste/address-inventory'")
+        downloads = []
+        def updated_extract(request):
+            downloads.append(True)
+            return httpx.Response(200, content=body)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(updated_extract)) as client:
+            await import_addresses(self.conn, client, source)
+        self.assertEqual(downloads, [True])
+        before = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/address-inventory'")
+        self.assertEqual(before['address_inventory_version'], 2)
+        self.assertEqual(before['elements'][0]['tags']['addr:housenumber'], '8A')
         await self.conn.execute("UPDATE collected_datasets SET fetched_at=NOW()-INTERVAL '8 days'")
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(200,content=b'broken'))) as client:
             with self.assertRaises(RuntimeError):

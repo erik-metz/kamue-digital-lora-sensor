@@ -17,6 +17,7 @@ from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
 import httpx
+from house_numbers import house_number_identity, house_number_parts, house_number_sort
 from icalendar import Calendar
 from psycopg.types.json import Jsonb
 from publications import acquire, publish
@@ -63,6 +64,7 @@ class CalendarForm(HTMLParser):
 
 VALIDATION_CONTRACT = "zakb-address-v2"
 RANGE_VALIDATION_CONTRACT = "zakb-reviewed-ranges-v1"
+SUFFIX_VALIDATION_CONTRACT = "zakb-house-suffix-v1"
 # Actual provider confirmations, not a general interpretation of house-number ranges.
 # Each calendar remains bound to the single real address submitted in that request.
 REVIEWED_HOUSE_RANGES = {
@@ -135,9 +137,10 @@ def verify_address(html, address, provider_city):
     parsed = ConfirmedAddress()
     parsed.feed(html)
     text = " ".join(" ".join(parsed.parts).split())
-    match = re.fullmatch(r"(.+?)\s+([0-9]+(?:\s*-\s*[0-9]+)?),\s*[0-9]{5}\s+(.+)", text)
+    match = re.fullmatch(r"(.+?)\s+([0-9]+(?:\s*[A-Za-z]|\s*-\s*[0-9]+)?),\s*[0-9]{5}\s+(.+)", text)
     if match and (match[1], match[3]) == (address["street"], provider_city):
-        if match[2] == address["house_number"]:
+        if (house_number_parts(match[2]) is not None
+                and house_number_parts(match[2]) == house_number_parts(address["house_number"])):
             return
         bounds = re.fullmatch(r"([0-9]+)\s*-\s*([0-9]+)", match[2])
         number = address["house_number"]
@@ -257,8 +260,11 @@ def address_key(source, address):
     # Version the parser contract; changing a source URL also invalidates checkpoints.
     contract = (RANGE_VALIDATION_CONTRACT if (address["municipality"], address["street"]) in REVIEWED_HOUSE_RANGES
                 else VALIDATION_CONTRACT)
+    number = house_number_identity(address["house_number"])
+    if house_number_parts(number)[1]:
+        contract = SUFFIX_VALIDATION_CONTRACT
     identity = [contract, source["url"], address["municipality"],
-                address["street"], address["house_number"]]
+                address["street"], number]
     return hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -326,7 +332,10 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
         fields = form(city_response.text)
         if fields.get("aos[Ort]") != provider_city:
             raise AddressMismatch("Calendar did not confirm selected municipality")
-    fields.update({"aos[Strasse]": provider_street, "aos[Hausnummer]": address["house_number"],
+    number, suffix = house_number_parts(address["house_number"])
+    fields.pop("aos[Hausnummernwahl]", None)
+    fields.update({"aos[Strasse]": provider_street, "aos[Hausnummer]": number,
+                   "aos[Hausnummerzusatz]": suffix,
                    "submitAction": "nextPage"})
     response, _, _ = await request(fields)
     if "filedownload_ICAL" not in response.text:
@@ -405,7 +414,7 @@ async def import_zakb(conn, client, source):
             city not in source["municipalities"]
             or not street
             or not number
-            or not number.isdigit()
+            or house_number_parts(number) is None
             or not center.get("lat")
         ):
             continue
@@ -417,8 +426,8 @@ async def import_zakb(conn, client, source):
             "latitude": center["lat"],
             "longitude": center["lon"],
         }
-        candidates[key].setdefault(number, candidate)
-        if key not in addresses or int(number) < int(addresses[key]["house_number"]):
+        candidates[key].setdefault(house_number_identity(number), candidate)
+        if key not in addresses or house_number_sort(number) < house_number_sort(addresses[key]["house_number"]):
             addresses[key] = candidate
     if not addresses:
         raise ValueError("No representative addresses available")
@@ -459,7 +468,7 @@ async def import_zakb(conn, client, source):
     for key, choices in candidates.items():
         ordered_choices = sorted(choices.values(), key=lambda a: (
             address_key(source, a) in past_failures,
-            past_failures.get(address_key(source, a), now), int(a["house_number"])))
+            past_failures.get(address_key(source, a), now), house_number_sort(a["house_number"])))
         verified = sorted((a for a in ordered_choices if address_key(source, a) in saved),
                           key=lambda a: saved[address_key(source, a)], reverse=True)
         selected = ([verified[0]] + [a for a in ordered_choices if a != verified[0]]) if verified else ordered_choices
@@ -550,6 +559,7 @@ async def import_zakb(conn, client, source):
         {
             "validation_contract": VALIDATION_CONTRACT,
             "reviewed_range_contract": RANGE_VALIDATION_CONTRACT,
+            "house_suffix_contract": SUFFIX_VALIDATION_CONTRACT,
             "inputs": inputs,
             "coverage": "representative_addresses_only",
             "failed_streets": failures,

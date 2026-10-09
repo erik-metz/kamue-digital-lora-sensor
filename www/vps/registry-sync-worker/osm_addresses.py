@@ -4,8 +4,12 @@ import hashlib
 import json
 import tempfile
 from datetime import UTC, datetime
+from itertools import pairwise
 
+from house_numbers import house_number_parts
 from publications import publish
+
+ADDRESS_INVENTORY_VERSION = 2
 
 
 def extract_addresses(path, source):
@@ -107,7 +111,7 @@ def extract_addresses(path, source):
 
     def tags_for(obj):
         tags = dict(obj.tags)
-        if tags.get('addr:city') in cities and tags.get('addr:street') and tags.get('addr:housenumber', '').isdigit():
+        if tags.get('addr:city') in cities and tags.get('addr:street') and house_number_parts(tags.get('addr:housenumber')) is not None:
             return {k: tags[k] for k in ('addr:city', 'addr:street', 'addr:housenumber')}
         return None
 
@@ -149,7 +153,7 @@ def extract_addresses(path, source):
             tags = dict(obj.tags)
             if tags.get('railway') == 'rail' and not tags.get('service'):
                 refs = [node.ref for node in obj.nodes]
-                for left, right in zip(refs, refs[1:]):
+                for left, right in pairwise(refs):
                     if left in regional_nodes and right in regional_nodes:
                         rail_edges.append([left, right, regional_nodes[left], regional_nodes[right]])
             kind = map_kind(tags)
@@ -183,7 +187,7 @@ def extract_addresses(path, source):
             elements.append({'type': 'way', 'id': identity, 'center': {'lat': lat, 'lon': lon}, 'tags': tags})
     if not elements:
         raise ValueError('OSM extract contains no matching regional addresses')
-    return {'elements': elements, 'map_layers': map_layers, 'crossings': {'type': 'FeatureCollection', 'inventory_version': 3, 'features': crossings, 'rail_edges': rail_edges}, 'coverage': 'OSM address nodes and ways; not a complete address register'}
+    return {'address_inventory_version': ADDRESS_INVENTORY_VERSION, 'elements': elements, 'map_layers': map_layers, 'crossings': {'type': 'FeatureCollection', 'inventory_version': 3, 'features': crossings, 'rail_edges': rail_edges}, 'coverage': 'OSM address nodes and ways; not a complete address register'}
 
 
 async def import_addresses(conn, client, source):
@@ -191,10 +195,11 @@ async def import_addresses(conn, client, source):
         """SELECT 1 FROM collected_datasets WHERE dataset='waste/address-inventory'
         AND source_id=%s AND source_url=%s AND expires_at>NOW()
         AND fetched_at>NOW()-make_interval(secs => %s)
+        AND data->>'address_inventory_version'=%s
         AND EXISTS (SELECT 1 FROM collected_datasets c WHERE c.dataset='map/layers/crossings'
                     AND c.source_id=collected_datasets.source_id AND c.expires_at>NOW()
                     AND c.data->>'inventory_version'='3')""",
-        (source['id'], source['url'], source.get('interval_seconds', 604800)))
+        (source['id'], source['url'], source.get('interval_seconds', 604800), str(ADDRESS_INVENTORY_VERSION)))
     fresh = await cursor.fetchone()
     await conn.commit()
     if fresh:

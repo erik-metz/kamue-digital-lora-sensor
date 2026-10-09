@@ -205,3 +205,64 @@ def test_range_checkpoint_contract_is_separate_and_house_specific():
         expected = hashlib.sha256(json.dumps([contract,source['url'],'Lampertheim',street,'4'],ensure_ascii=False).encode()).hexdigest()
         assert address_key(source,address) == expected
         assert address_key(source,address) != address_key(source,{**address,'house_number':'6'})
+
+
+@pytest.mark.parametrize('confirmed', ['8A', '8 a', '8a'])
+def test_real_suffix_confirmation(confirmed):
+    address = {**ADDRESS, 'house_number': '8A'}
+    verify_address(f'<span id="Lageadresse">Domstiftstraße {confirmed}, 68647 Biblis</span>', address, 'Biblis')
+
+
+@pytest.mark.parametrize('confirmed', ['8', '8B', '9A', '8-10', '8AA'])
+def test_suffix_never_accepts_another_house(confirmed):
+    with pytest.raises(AddressMismatch):
+        verify_address(f'<span id="Lageadresse">Domstiftstraße {confirmed}, 68647 Biblis</span>', {**ADDRESS, 'house_number': '8A'}, 'Biblis')
+
+
+def test_suffix_keys_preserve_numeric_checkpoints():
+    import hashlib
+    import json
+
+    from zakb import address_key
+    source = {'url': 'https://example.org'}
+    expected = hashlib.sha256(json.dumps(['zakb-address-v2', source['url'], 'Biblis', 'Domstiftstraße', '1'], ensure_ascii=False).encode()).hexdigest()
+    assert address_key(source, ADDRESS) == expected
+    def key(number):
+        return address_key(source, {**ADDRESS, 'house_number': number})
+    assert key('8A') == key('8 a')
+    assert len({key('8'), key('8A'), key('8B')}) == 3
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('substituted', [False, True])
+async def test_suffix_request_and_download_gate(substituted):
+    conn = MagicMock()
+    cursor = MagicMock()
+    async def execute(query, params=None):
+        cursor.fetchone = AsyncMock(return_value=None if query.lstrip().startswith('SELECT') else (1,))
+        return cursor
+    conn.execute = AsyncMock(side_effect=execute)
+    conn.commit = AsyncMock()
+    downloads = []
+    def provider(request):
+        fields = parse_qs(request.content.decode(), keep_blank_values=True)
+        action = fields.get('submitAction', [''])[0]
+        if action == 'nextPage':
+            assert fields['aos[Hausnummer]'] == ['8']
+            assert fields['aos[Hausnummerzusatz]'] == ['A']
+            assert 'aos[Hausnummernwahl]' not in fields
+            number = '8' if substituted else '8 a'
+            return httpx.Response(200, text=f'<span id="Lageadresse">Domstiftstraße {number}, 68647 Biblis</span><form id="athos-os-form"><input name="pageName" value="Terminliste">filedownload_ICAL</form>')
+        if action == 'filedownload_ICAL':
+            downloads.append(True)
+            return httpx.Response(200, content=b'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR\r\n')
+        return httpx.Response(200, text='<form id="athos-os-form"><select name="aos[Ort]"><option value="Biblis" selected></option></select><select name="aos[Strasse]"><option value="Domstiftstraße"></option></select><input name="aos[Hausnummernwahl]" value="2 a"></form>')
+    async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+        call = calendar_for_address(conn, client, {'id': 'test', 'url': 'https://example.org/calendar', 'interval_seconds': 86400, 'request_spacing_seconds': 0}, {**ADDRESS, 'house_number': '8A'}, datetime.now(UTC))
+        if substituted:
+            with pytest.raises(AddressMismatch):
+                await call
+            assert not downloads
+        else:
+            await call
+            assert downloads == [True]

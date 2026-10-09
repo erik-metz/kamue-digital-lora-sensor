@@ -272,3 +272,32 @@ class ResumeTests(DatabaseCase):
             with patch('zakb.calendar_for_address', side_effect=renewal):
                 await import_zakb(self.conn, client, settings)
             self.assertEqual(renewed, ['Second','First'])
+
+    async def test_suffix_candidates_keep_geometry_and_resume_without_new_requests(self):
+        probes = []
+        def provider(request):
+            if request.url.path == '/addresses':
+                return httpx.Response(200, json={'elements': [
+                    {'lat':49.6,'lon':8.4,'tags':{'addr:city':'Biblis','addr:street':'Teststraße','addr:housenumber':'8'}},
+                    {'center':{'lat':49.61,'lon':8.41},'tags':{'addr:city':'Biblis','addr:street':'Teststraße','addr:housenumber':'8A'}},
+                    {'lat':49.62,'lon':8.42,'tags':{'addr:city':'Biblis','addr:street':'Teststraße','addr:housenumber':'9C'}},
+                ]})
+            fields = parse_qs(request.content.decode(), keep_blank_values=True)
+            if fields.get('submitAction') == ['nextPage']:
+                number = fields['aos[Hausnummer]'][0]
+                suffix = fields['aos[Hausnummerzusatz]'][0]
+                probes.append(number + suffix)
+                if not suffix:
+                    return httpx.Response(200, text='<form id="athos-os-form"><input name="error" value="no containers"></form>')
+                return httpx.Response(200, text=FORM + f'<span id="Lageadresse">Teststraße {number} {suffix.lower()}, 68647 Biblis</span>')
+            return response(request)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            await import_zakb(self.conn, client, SOURCE)
+        self.assertEqual(probes, ['8', '8A'])
+        calendar = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'")
+        self.assertEqual(calendar[0]['house_number'], '8A')
+        self.assertEqual((calendar[0]['latitude'], calendar[0]['longitude']), (49.61, 8.41))
+        self.assertEqual(await self.scalar("SELECT data->>'house_suffix_contract' FROM collected_datasets WHERE dataset='waste/coverage'"), 'zakb-house-suffix-v1')
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: self.fail('Fresh suffix checkpoint must survive restart'))) as client:
+            await import_zakb(self.conn, client, {**SOURCE, 'run_budget_seconds':0})
+        self.assertEqual(await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'"), calendar)
