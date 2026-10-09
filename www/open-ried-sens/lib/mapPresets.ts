@@ -52,6 +52,9 @@ export const LAYER_CATEGORIES: Record<
 
 export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
   // Regional (Zoom 8-11)
+  landcover: 12,
+  floodrisk: 10,
+  census: 12,
   nature: 8,
   floods: 8,
   trains: 9,
@@ -85,13 +88,16 @@ export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
   devplans: 14,
 };
 
-// Vector layers stay visible; these thresholds control their overview styling.
-// Raster overlays cannot provide an overview below their supported zoom.
+// Collected vectors retain overview styling. Raster and optional context overlays
+// load only at their supported zoom.
 export function isLayerZoomRestricted(id: MapLayerId, zoom: number): boolean {
-  return (id === "starkregen" || id === "lora") && zoom < LAYER_MIN_ZOOM[id];
+  return (["starkregen", "lora", "landcover", "floodrisk", "census"].includes(id)) && zoom < LAYER_MIN_ZOOM[id];
 }
 
 export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
+  landcover: { id: "landcover", label: "Landbedeckung 2021", icon: "🌱", category: "environment", description: "BKG-Landbedeckung im Ried · historischer Flächenkontext, Mindestkartierfläche 1 ha", minZoom: 12 },
+  floodrisk: { id: "floodrisk", label: "Hochwasserrisikoflächen", icon: "🌊", category: "environment", description: "BfG-Szenarien 2016–2021, Bearbeitung 2024 · keine aktuelle Überflutung oder Starkregenprognose", minZoom: 10 },
+  census: { id: "census", label: "Bevölkerung · Zensus 2022", icon: "👥", category: "planning", description: "Einwohner pro 1-km-Gitterzelle im Ried · Stichtag 15.05.2022", minZoom: 12 },
   fuel: { id: "fuel", label: "Tankstellen & Spritpreise", icon: "⛽", category: "mobility", description: "Super E5, E10 und Diesel · Tankerkönig / MTS-K", minZoom: LAYER_MIN_ZOOM.fuel },
   places: {
     id: "places",
@@ -381,6 +387,9 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     icon: "🎯",
     description: "Maximaler Fokus auf IoT-Messwerte ohne Geodaten-Overlays",
     layers: {
+      landcover: false,
+      floodrisk: false,
+      census: false,
       nature: false,
       crops: false,
       floods: false,
@@ -418,6 +427,9 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     description:
       "Sperrungen, Staus, Live-Busse, Haltestellen, Züge & Ladesäulen",
     layers: {
+      landcover: false,
+      floodrisk: false,
+      census: false,
       nature: false,
       crops: false,
       floods: false,
@@ -455,6 +467,9 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     description:
       "Naturschutzgebiete, Flusspegel, Starkregen-WMS & Agrarkulturen",
     layers: {
+      landcover: false,
+      floodrisk: false,
+      census: false,
       nature: true,
       crops: true,
       floods: true,
@@ -492,6 +507,9 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     description:
       "Bodenrichtwerte (BORIS), Bau-Pläne, Glasfaser, Gewerbe & ZAKB",
     layers: {
+      landcover: false,
+      floodrisk: false,
+      census: false,
       nature: false,
       crops: false,
       floods: false,

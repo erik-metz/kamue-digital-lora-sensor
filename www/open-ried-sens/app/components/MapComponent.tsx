@@ -2,6 +2,7 @@
 
 import L from "leaflet";
 import { updateMarkerDialogs } from "@/lib/mapDialogs";
+import MapContextLayer from "./MapContextLayer";
 import MapFuelLayer from "./MapFuelLayer";
 import MapSatelliteLayer from "./MapSatelliteLayer";
 import { metricLabel } from "@/lib/telemetryData";
@@ -655,6 +656,11 @@ export default function MapComponent(props: MapProps) {
     )}
     <div className="space-y-2 text-xs text-slate-400" aria-label="Kartenlegende und Hinweise">
       {props.legend}
+      {ready && mapInstance ? <>
+        {layers.landcover ? <MapContextLayer map={mapInstance} id="landcover" /> : null}
+        {layers.floodrisk ? <MapContextLayer map={mapInstance} id="floodrisk" /> : null}
+        {layers.census ? <MapContextLayer map={mapInstance} id="census" /> : null}
+      </> : null}
       {ready && layers.fuel && mapInstance ? <MapFuelLayer map={mapInstance} clustered={clusteringReady} onSelectStation={(id, fuel) => { callbacks.current.onSelectFuel?.(id, fuel); }} /> : null}
       {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} clustered={clusterVehicles} /> : null}
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>

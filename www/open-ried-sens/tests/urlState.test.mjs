@@ -44,9 +44,9 @@ vm.runInNewContext(
 );
 const urlState = urlStateContext.exports;
 
-test("MAP_LAYER_IDS contains all 27 domain layers", () => {
+test("MAP_LAYER_IDS contains all 30 domain layers", () => {
   const ids = urlState.MAP_LAYER_IDS;
-  assert.equal(ids.length, 27);
+  assert.equal(ids.length, 30);
   assert.ok(ids.includes("satellites"));
   assert.ok(ids.includes("nature"));
   assert.ok(ids.includes("crops"));
@@ -185,4 +185,14 @@ test("parseSubpageParams and serializeSubpageParams handle domain page parameter
  test("standard map selection contains exactly the requested sensor groups and overlays", () => {
   assert.deepEqual([...mapData.DEFAULT_MAP_CATEGORIES], ["water", "air", "parking", "bikes", "seismic"]);
   assert.deepEqual(Object.entries(urlState.DEFAULT_MAP_LAYERS).filter(([, enabled]) => enabled).map(([id]) => id).sort(), ["floods", "closures", "traffic", "buses", "waste", "trains", "ships", "aircraft", "crossings"].sort());
+});
+
+test("context overlays are opt-in and survive a shared map URL", () => {
+  const layers = { ...urlState.DEFAULT_MAP_LAYERS, landcover: true, floodrisk: true, census: true };
+  const encoded = urlState.serializeMapSessionState({ layers });
+  const parsed = urlState.parseMapSessionState(encoded);
+  for (const id of ["landcover", "floodrisk", "census"]) {
+    assert.equal(urlState.DEFAULT_MAP_LAYERS[id], false);
+    assert.equal(parsed.layers[id], true);
+  }
 });

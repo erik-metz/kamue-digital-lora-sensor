@@ -69,8 +69,8 @@ vm.runInNewContext(
 );
 const mapPresets = mapPresetsContext.exports;
 
-test("mapPresets covers all 27 MAP_LAYER_IDS with definitions and categories", () => {
-  assert.equal(urlState.MAP_LAYER_IDS.length, 27);
+test("mapPresets covers all 30 MAP_LAYER_IDS with definitions and categories", () => {
+  assert.equal(urlState.MAP_LAYER_IDS.length, 30);
   for (const layerId of urlState.MAP_LAYER_IDS) {
     const def = mapPresets.LAYER_DEFINITIONS[layerId];
     assert.ok(def, `Layer definition missing for ${layerId}`);
@@ -89,10 +89,10 @@ test("mapPresets covers 4 categories with valid items", () => {
   const planning = mapPresets.getLayersByCategory("planning");
 
   assert.equal(mobility.length, 11);
-  assert.equal(environment.length, 4);
+  assert.equal(environment.length, 6);
   assert.equal(infrastructure.length, 6);
-  assert.equal(planning.length, 6);
-  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 27);
+  assert.equal(planning.length, 7);
+  assert.equal(mobility.length + environment.length + infrastructure.length + planning.length, 30);
 });
 
 test("mapPresets defines all presets with full layer dictionaries", () => {
@@ -122,7 +122,7 @@ test("detectActivePreset identifies default and custom states", () => {
 
 test("countActiveLayers and countCategoryActiveLayers compute accurate numbers", () => {
   const allActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, true]));
-  assert.equal(mapPresets.countActiveLayers(allActive), 27);
+  assert.equal(mapPresets.countActiveLayers(allActive), 30);
 
   const noneActive = Object.fromEntries(urlState.MAP_LAYER_IDS.map((id) => [id, false]));
   assert.equal(mapPresets.countActiveLayers(noneActive), 0);
@@ -132,7 +132,7 @@ test("countActiveLayers and countCategoryActiveLayers compute accurate numbers",
   assert.equal(mobilityCounts.active, 11);
 });
 
-test("LAYER_MIN_ZOOM and LAYER_DEFINITIONS minZoom correctly configure all 27 layers", () => {
+test("LAYER_MIN_ZOOM and LAYER_DEFINITIONS minZoom correctly configure all 30 layers", () => {
   assert.ok(mapPresets.LAYER_MIN_ZOOM);
   for (const layerId of urlState.MAP_LAYER_IDS) {
     const minZoom = mapPresets.LAYER_MIN_ZOOM[layerId];
@@ -152,11 +152,11 @@ test("SENSOR_CATEGORY_MIN_ZOOM specifies valid zoom thresholds for all categorie
 });
 
 
-test("only raster overlays restrict their overview by zoom", () => {
+test("raster and context overlays restrict their overview by zoom", () => {
   for (const id of urlState.MAP_LAYER_IDS) {
     for (let zoom = 8; zoom <= 19; zoom++) {
       assert.equal(mapPresets.isLayerZoomRestricted(id, zoom),
-        (id === "starkregen" || id === "lora") && zoom < mapPresets.LAYER_MIN_ZOOM[id],
+        (["starkregen", "lora", "landcover", "floodrisk", "census"].includes(id)) && zoom < mapPresets.LAYER_MIN_ZOOM[id],
         `${id} at zoom ${zoom}`);
     }
   }
