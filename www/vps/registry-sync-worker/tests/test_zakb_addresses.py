@@ -118,7 +118,10 @@ async def test_missing_provider_form_is_not_a_missing_street():
     from zakb import CalendarUnavailable
     conn = MagicMock()
     cursor = MagicMock(); cursor.fetchone = AsyncMock(return_value=None)
-    conn.execute = AsyncMock(return_value=cursor); conn.commit = AsyncMock()
+    async def execute(query, params=None):
+        cursor.fetchone.return_value = None if query.lstrip().startswith('SELECT') else (1,)
+        return cursor
+    conn.execute = AsyncMock(side_effect=execute); conn.commit = AsyncMock()
     requests = []
     def provider(request):
         requests.append(request.method)
