@@ -345,8 +345,8 @@ export const POLITIK_DECK: PitchDeck = {
     },
     {
       "id": "politik-bonus",
-      "title": "Während unseres Vortrags: Daten aus dem Alltag",
-      "lead": "Bahnübergänge, Parkplätze, Leihräder, Wetter, Luftqualität und Wasserstände: Was hat sich seit Vortragsbeginn aktualisiert?",
+      "title": "Live-Daten aus dem Alltag",
+      "lead": "",
       "layout": "collected-evidence",
       "eyebrow": "Open Ried Sens",
       "bullets": [],
