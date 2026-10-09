@@ -821,6 +821,12 @@
       "max_age_seconds": 172800,
       "http_retries": 2,
       "table_kind": "kkm",
+      "verified_title_venue_suffixes": {
+        "St. Michael": {
+          "venue_name": "Pfarrkirche St. Michael, Bürstadt",
+          "evidence_url": "https://www.kkm-buerstadt.de/kalender-2/"
+        }
+      },
       "columns": [
         "Datum",
         "Termin"

@@ -67,7 +67,7 @@ def test_real_kkm_list_and_explicit_year_scoped_venue_verification():
     events = clubs.table_events(
         fixture("kkm.html"), SOURCES["kkm-buerstadt-events"], NOW
     )
-    assert len(events) == 13
+    assert len(events) == 14
     assert any("Bobstadt" in e["title"] for e in events)
     assert any("Riedrode" in e["title"] for e in events)
     assert not any("Lorsch" in e["title"] or "Zeltlager" in e["title"] for e in events)
@@ -77,6 +77,21 @@ def test_real_kkm_list_and_explicit_year_scoped_venue_verification():
         NOW,
     )
     assert not any(e["title"] == "KKM Oktoberfest" for e in future)
+
+
+def test_kkm_new_events_and_future_years_use_places_without_event_whitelist():
+    html = """<table><tr><td>Datum</td><td>Termin</td></tr>
+    <tr><td>13.12.2026</td><td>Weihnachtskonzert St. Michael</td></tr>
+    <tr><td>11.04.2027</td><td>Neues Benefizkonzert St. Michael</td></tr>
+    <tr><td>12.04.2027</td><td>Gastkonzert St. Michael Lorsch</td></tr>
+    <tr><td>13.04.2027</td><td>Konzert ohne Ortsangabe</td></tr></table>"""
+    events = clubs.table_events(html, SOURCES["kkm-buerstadt-events"], NOW)
+    assert len(events) == 2
+    assert events[1]["title"] == "Neues Benefizkonzert St. Michael"
+    assert events[1]["start_time"].startswith("2027-04-11")
+    assert all(e["venue_name"] == "Pfarrkirche St. Michael, Bürstadt" for e in events)
+    assert all("Uhrzeit nicht vollständig angegeben" in e["description"] for e in events)
+    assert not any(e["is_free"] for e in events)
 
 
 @pytest.mark.parametrize(

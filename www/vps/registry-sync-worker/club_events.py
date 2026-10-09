@@ -190,6 +190,16 @@ def table_events(html, source, now):
         if not venue and source["table_kind"] == "kkm":
             # Titles in this two-column list describe performances at named places.
             venue = title
+            # Resolve reusable place names, not individual events or calendar years.
+            # An explicit Ort column always takes precedence over these suffixes.
+            for suffix, canonical in sorted(
+                source.get("verified_title_venue_suffixes", {}).items(),
+                key=lambda item: len(item[0]),
+                reverse=True,
+            ):
+                if title == suffix or title.endswith(" " + suffix):
+                    venue = canonical["venue_name"]
+                    break
         verified = source.get("verified_event_venues", {}).get(title)
         if (
             not values.get("Ort")
