@@ -80,3 +80,36 @@ Sobald SSH wieder erreichbar ist, muss das veröffentlichte Worker-Image
 mit Parser-Hash, vier Quellkonfigurationen und vollständigem Erhalt aller
 bestehenden Quellen geprüft, gezielt aktiviert und anschließend in API
 und Kalender verifiziert werden. Erst dann ist dieser Schritt live abgeschlossen.
+
+## VPS wieder erreichbar: Veröffentlichung nachgeholt
+
+Am 09.10.2026 ist SSH wieder erreichbar. Das abgerufene Image
+`sha256:3800f3e87b024affccc2b979a0ad58569db4f87eb3627182436b9bac4bea5a89`
+wurde vor Aktivierung anhand des Parser-Hashes und aller vier
+Quellkonfigurationen geprüft; sämtliche vorherigen Quellen waren enthalten.
+Die vorherige Konfiguration wurde unter
+`/root/docker-compose.invekos.yml.before-lampertheim-festivals-9c1fde2`
+gesichert. Alle vier Originalseiten wurden um 07:12 UTC mit HTTP 200
+erfolgreich verarbeitet. Nach gezieltem Einzelabruf der Howwemer Kerb
+enthält die öffentliche API alle vier Veranstaltungen, insgesamt 334
+Ereignisse. Alle 17 regelmäßigen Angebote bleiben erhalten.
+
+Der produktive Kalender wurde im Browser geprüft: 334 Ereignisse und
+alle vier neuen Titel vorhanden. Die API-Datumsspannen stimmen nach
+Umrechnung in Europe/Berlin mit den bestätigten Tagen überein.
+
+Die dauerhafte Aktivierung bleibt wegen einer parallelen VPS-Änderung
+offen: der aktivierte Worker wurde anschließend mit Exitcode 137
+beendet (Docker meldet OOMKilled=false), während ein anderer
+Worker-Einzelauftrag mit Image
+`sha256:10863e3dbc2e8db4be7ee59a6e37a80bcb22c8ad9ce2948fa14d780f7f49684f`
+läuft. Gleichzeitig wurde die Compose-Image-Konfiguration auf dieses
+Image geändert; eine direkte Prüfung bestätigt, dass es keine der vier
+Festquellen enthält. Diese fremde laufende Änderung wurde nicht überschrieben.
+Der abschließende Howwemer-Einzelabruf verwendete deshalb ausschließlich
+eine temporäre Image-Übersteuerung mit dem geprüften Image; die temporäre
+Datei und der eigene Einzelcontainer wurden danach entfernt.
+
+Der Nutzer wurde um Abstimmung zur anschließenden Wiederaktivierung
+des geprüften regulären Workers gebeten. Veröffentlichung und Anzeige
+sind belegt; fortlaufender automatischer Abruf ist noch nicht abgesichert.
