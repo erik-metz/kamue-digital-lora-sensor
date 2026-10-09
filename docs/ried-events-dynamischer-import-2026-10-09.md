@@ -31,3 +31,23 @@ dynamische Kalender oder Veranstalterfeeds prüfen.
 und `git diff --check` erfolgreich. Ein neuer Test prüft insbesondere einen neu
 ergänzten Veranstaltungstitel im Folgejahr sowie den Ausschluss von Lorsch und
 Terminen ohne Ortsangabe.
+
+## Veröffentlichung
+
+Implementierung: `a41b59d6eda2f7b0f99cbd6b42ab3f8a27478c1d`, auf `main` gepusht.
+[FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37934210585)
+für genau diesen Commit vollständig erfolgreich, einschließlich aller 17
+Container-Builds und Veröffentlichungen auf GHCR.
+Der VPS-Importdienst wurde auf das geprüfte Image
+`sha256:88a87fe627e4e4e95021d8d9046be3982ca794faccd43a556d0c02ea3728bd36`
+aktualisiert. Alle übrigen bestehenden Quellkonfigurationen wurden vor dem
+Update auf unveränderte Übernahme geprüft.
+
+Der anschließend ausgelöste KKM-Abruf lieferte HTTP 200 und 14 übernommene Termine.
+Die öffentliche API enthält danach 349 Veranstaltungen, darunter genau einen
+KKM-Weihnachtskonzert-Eintrag am 13.12.2026 (deutsche Ortszeit), mit Pfarrkirche
+St. Michael in Bürstadt und dem ausdrücklichen Hinweis auf fehlende Uhrzeiten.
+
+Ein ergänzender Statusabruf zeigt 26 aktive Social-Quellen. Die Quelle
+`tvl-triathlon-regular-offers` meldet einen Fehler und gehört auf die Prüfliste
+für den nächsten Schritt; sie wurde in diesem Schritt nicht verändert.
