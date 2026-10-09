@@ -1,6 +1,101 @@
 {
   "sources": [
     {
+      "id": "lampertheim-wanderung-festival-notice",
+      "group": "social",
+      "adapter": "municipal-festival-notice",
+      "enabled": true,
+      "url": "https://www.lampertheim.de/de/lampertheim/rund-um-spargel/spargelwanderung.php",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_heading": "Spargelwanderung",
+      "verified_paragraph_sha256": [
+        "324d5491c76ec7abc084745d31cce62fe6e47e996649b01ac99ac482383482d7"
+      ],
+      "verified_event": {
+        "title": "Spargelwanderung",
+        "start_date": "2027-04-25",
+        "end_date": "2027-04-25",
+        "venue_name": "Gemarkungen Lampertheim und Bürstadt – genauer Verlauf noch nicht veröffentlicht",
+        "municipality": "Lampertheim",
+        "organizer": "Städte Lampertheim und Bürstadt",
+        "category": "sports"
+      }
+    },
+    {
+      "id": "lampertheim-spargelfest-festival-notice",
+      "group": "social",
+      "adapter": "municipal-festival-notice",
+      "enabled": true,
+      "url": "https://www.lampertheim.de/de/freizeit-kultur/veranstaltungen/spargelfest.php",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_heading": "Spargelfest Lampertheim",
+      "verified_paragraph_sha256": [
+        "802ea545f90db41b9af372ceb1f11c1e84f5fa2b9bd9e51ba10daf7870444187",
+        "268de91593078b9f2a451597e1896c78c6fa1abb45d6cc4af07d52e5ab3aae86"
+      ],
+      "verified_event": {
+        "title": "Spargelfest Lampertheim",
+        "start_date": "2027-06-11",
+        "end_date": "2027-06-13",
+        "venue_name": "Innenstadt Lampertheim",
+        "municipality": "Lampertheim",
+        "organizer": "Stadt Lampertheim",
+        "category": "festival"
+      }
+    },
+    {
+      "id": "lampertheim-howwemer-festival-notice",
+      "group": "social",
+      "adapter": "municipal-festival-notice",
+      "enabled": true,
+      "url": "https://www.lampertheim.de/de/freizeit-kultur/veranstaltungen/howwemer-kerb.php",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_heading": "Howwemer Kerb",
+      "verified_paragraph_sha256": [
+        "76b95ea61648d86ff355680965a580cfb1a6148bcd9e98d0019f73cc88a51054",
+        "8faade5a7d5390517d12fda9bc9925dfa7e707b432dc64c5f132eaaac9fa5d2a"
+      ],
+      "verified_event": {
+        "title": "Howwemer Kerb",
+        "start_date": "2027-09-10",
+        "end_date": "2027-09-14",
+        "venue_name": "Festmeile am Alten Rathaus bis Feuerwehrgerätehaus und Gartenstraße, Lampertheim-Hofheim",
+        "municipality": "Lampertheim",
+        "organizer": "Stadt Lampertheim",
+        "category": "festival"
+      }
+    },
+    {
+      "id": "lampertheim-kerwe-festival-notice",
+      "group": "social",
+      "adapter": "municipal-festival-notice",
+      "enabled": true,
+      "url": "https://www.lampertheim.de/de/freizeit-kultur/veranstaltungen/lambada-kerwe.php",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "verified_heading": "Lampertheimer Kerwe",
+      "verified_paragraph_sha256": [
+        "dd73538dcecf5776e19f9d524a84e7a6964ae1f7db6488b619891c5dee9e73fc",
+        "c97af0f498e7cb39f373ee0d0e6948585f7ae97f66e9bdfd01e87025b8ea1708"
+      ],
+      "verified_event": {
+        "title": "Lampertheimer Kerwe",
+        "start_date": "2027-09-11",
+        "end_date": "2027-09-13",
+        "venue_name": "Römerstraße und Kaiserstraße, Lampertheim",
+        "municipality": "Lampertheim",
+        "organizer": "Stadt Lampertheim",
+        "category": "festival"
+      }
+    },
+    {
       "id": "tvl-triathlon-regular-offers",
       "group": "social",
       "adapter": "tvl-triathlon-offers",

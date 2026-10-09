@@ -29,6 +29,7 @@ from inaturalist import import_inaturalist
 from invekos import import_invekos
 from long_term_events import import_long_term_events
 from map_tiles import import_wms
+from municipal_festival_notices import import_municipal_festival_notice
 from municipal_notice_events import import_municipal_notice_events
 from osm_addresses import import_addresses
 from prediction import predict_tick
@@ -67,6 +68,7 @@ ADAPTERS = {
     "tribe-events": import_biblis_events,
     "municipal-notice-events": import_municipal_notice_events,
     "long-term-events": import_long_term_events,
+    "municipal-festival-notice": import_municipal_festival_notice,
     "verified-club-notice": import_verified_club_notice,
     "tv-lauftreff": import_tv_lauftreff,
     "tv-gymnastik": import_tv_gymnastik,
