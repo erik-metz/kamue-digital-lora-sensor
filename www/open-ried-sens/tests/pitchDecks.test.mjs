@@ -150,12 +150,13 @@ test("Pitch visual photo and diagram assets physically exist in public/pitch", (
   }
 });
 
-test("All decks tell the origin story, include collected data, and end with a raw-data bonus", async () => {
+test("All decks tell the origin story, include collected data, and close with a raw-data bonus before any backup", async () => {
   const { PITCH_DECKS } = await import("../lib/pitchData.ts");
   for (const deck of PITCH_DECKS) {
     assert.deepEqual(deck.slides.slice(0, 4).map(slide => slide.id), ["team", "hackathon", "origin", "collected"].map(id => `${deck.slug}-${id}`));
-    assert.equal(deck.slides.at(-2).layout, "the-ask-commitment");
-    assert.equal(deck.slides.at(-1).layout, "collected-evidence");
+    const mainSlides = deck.slug === "politik" ? deck.slides.slice(0, -1) : deck.slides;
+    assert.equal(mainSlides.at(-2).layout, "the-ask-commitment");
+    assert.equal(mainSlides.at(-1).layout, "collected-evidence");
     assert.equal(deck.slides.filter(slide => slide.layout === "collected-evidence").length, 1);
     assert.equal(new Set(deck.slides.map(slide => slide.id)).size, deck.slides.length);
     assert.deepEqual(deck.slides.map(slide => slide.stepNumber), deck.slides.map((_, index) => index + 1));
@@ -187,7 +188,12 @@ test("Bonus counts only actual raw rows inside the presentation window", async (
 
 test("The political ask stays together and handouts belong to the hub", async () => {
   const { POLITIK_DECK } = await import("../lib/pitchData.ts");
-  assert.equal(POLITIK_DECK.slides.length, 8);
+  assert.equal(POLITIK_DECK.slides.length, 9);
+  assert.equal(POLITIK_DECK.slides[5].id, "politik-placeholder");
+  assert.equal(POLITIK_DECK.slides[5].title, "");
+  assert.equal(POLITIK_DECK.slides[5].lead, "");
+  assert.equal(POLITIK_DECK.slides.at(-1).id, "politik-school-bridge");
+  assert.match(POLITIK_DECK.slides.at(-1).stepLabel, /Backup/);
   assert.equal(POLITIK_DECK.slides.filter(slide => slide.specificAsks).length, 1);
   assert.match(POLITIK_DECK.slides[6].specificAsks[0].description, /Smart-City-Dashboard/);
   assert.ok(POLITIK_DECK.slides[2].website.src.endsWith("dashboard_uebersicht"));

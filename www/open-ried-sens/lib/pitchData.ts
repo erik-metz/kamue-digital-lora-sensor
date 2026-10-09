@@ -291,26 +291,11 @@ export const POLITIK_DECK: PitchDeck = {
       "stepLabel": "05"
     },
     {
-      "id": "politik-school-bridge",
-      "title": "So könnte ein erster Projekttag aussehen",
-      "lead": "Mit einer Partnerschule beginnen und später weitere Schulen im Ried einbeziehen.",
+      "id": "politik-placeholder",
+      "title": "",
+      "lead": "",
       "layout": "story",
-      "eyebrow": "Open Ried Sens",
-      "bullets": [
-        {
-          "title": "Gemeinsam bauen und verstehen",
-          "description": "Interessierte Jugendliche über Lehrkräfte, MINT-AGs oder Jugend forscht ansprechen. Betreuung, Material und Finanzierung vorab gemeinsam planen."
-        },
-        {
-          "title": "Zu Hause weiterforschen",
-          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Jugendliche zeigen ihre Ergebnisse und laden Familie und Nachbarn zum Hackathon ein."
-        }
-      ],
-      "imageVisual": {
-        "src": "/pitch/schul-stem-workshop.jpg",
-        "alt": "Illustration eines möglichen Schulprojekttags",
-        "caption": "Interesse genügt. Vorkenntnisse sind keine Voraussetzung."
-      },
+      "eyebrow": "",
       "stepNumber": 6,
       "stepLabel": "06"
     },
@@ -367,6 +352,30 @@ export const POLITIK_DECK: PitchDeck = {
       "bullets": [],
       "stepNumber": 8,
       "stepLabel": "08"
+    },
+    {
+      "id": "politik-school-bridge",
+      "title": "So könnte ein erster Projekttag aussehen",
+      "lead": "Mit einer Partnerschule beginnen und später weitere Schulen im Ried einbeziehen.",
+      "layout": "story",
+      "eyebrow": "Open Ried Sens",
+      "bullets": [
+        {
+          "title": "Gemeinsam bauen und verstehen",
+          "description": "Interessierte Jugendliche über Lehrkräfte, MINT-AGs oder Jugend forscht ansprechen. Betreuung, Material und Finanzierung vorab gemeinsam planen."
+        },
+        {
+          "title": "Zu Hause weiterforschen",
+          "description": "Bei geeignetem Standort und mit Zustimmung der Familie kann der Sensor zu Hause stehen. Jugendliche zeigen ihre Ergebnisse und laden Familie und Nachbarn zum Hackathon ein."
+        }
+      ],
+      "imageVisual": {
+        "src": "/pitch/schul-stem-workshop.jpg",
+        "alt": "Illustration eines möglichen Schulprojekttags",
+        "caption": "Interesse genügt. Vorkenntnisse sind keine Voraussetzung."
+      },
+      "stepNumber": 9,
+      "stepLabel": "09 / Backup"
     }
   ]
 };
