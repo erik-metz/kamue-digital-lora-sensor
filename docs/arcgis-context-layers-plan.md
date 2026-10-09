@@ -39,3 +39,47 @@ Die erste Recherche nannte beim Hochwasser den Katalogstand 2025. Für die Anzei
 - Produktionsserver: alle drei API-Antworten HTTP 200; Landbedeckung 8306 Features / 3.38 MB, Hochwasser 93 / 2.01 MB, Zensus 436 / 0.13 MB.
 - Browser: drei Canvas-Ebenen, korrekte geladene Flächenzahlen, Quellen-/Lizenzhinweise sowie Zoomschwellen kontrolliert. Screenshot außerhalb des Repositorys: `/tmp/ried-context-map.jpg`.
 - Veröffentlichung und CI-Ergebnis werden im abschließenden Chatbericht mit Commit und Workflow-Link dokumentiert.
+
+## Schritt 2: Datenzugang für die vier übrigen Quellen
+
+Dieser Schritt ergänzt ausschließlich den geprüften Datenzugang. Die Kartenanzeige ist Schritt 3 und wartet auf gesonderte Freigabe.
+
+### Bestandsaufnahme
+
+- **Schutzgebiete:** Die UI kennt `nature`; im Registry-Worker ist der allgemeine Import `environment-published-source` jedoch deaktiviert und ohne Quellen-URL. Die Esri-BfN-Quelle ergänzt verifizierte Polygone aller sieben Schutzgebietskategorien.
+- **Messstellen:** Das BfG-Verzeichnis fehlte als eigener Datenzugang. Es enthält Standorte/Metadaten, keine Messzeitreihen. Für das Ried werden Grundwasser und Oberflächenwasser abgefragt, keine Meeresstationen.
+- **Wetterwarnungen:** DWD-Modell-, Radar- und MOSMIX-Daten sind vorhanden, aber keine entsprechende Warnpolygonintegration. Im Esri-Dienst ist nur Sublayer 1 die Warnung; Sublayer 0 enthält Kreisgrenzen und wird nicht als Warnung übernommen.
+- **Ladesäulen:** `chargers.py` importiert bereits direkt das BNetzA-Register. Der Esri-Stand wird separat als Vergleichsquelle bereitgestellt; der direkte Import bleibt die primäre Quelle. Eine spätere Anzeige muss über die Ladeeinrichtungs-ID zusammenführen, statt Marker zu duplizieren.
+
+### Vertrag und regionale Abdeckung
+
+Neuer Endpunkt: `GET /api/supplementary-layers?layer=protected|monitoring|warnings|chargers`.
+
+| Quelle | Item | Sublayer und lokale Treffer | Datenstand / Lizenz |
+| --- | --- | --- | --- |
+| Schutzgebiete | `2beeb8ed32d94730b5b70750ba434a4d` | LSG 0: 9; NSG 1: 16; Naturparke 2: 1; Nationalparke 3: 0; FFH 4: 13; Biosphärenreservate 5: 0; Vogelschutz 6: 7; insgesamt 46 | LSG/NSG 2023, FFH/Vogelschutz 2019, übrige 2025; © BfN 2025, GeoNutzV |
+| Messstellen | `7df2fba125e3409680b653d81fde39b5` | Grundwasser 1: 24; Oberflächenwasser 2: 39; insgesamt 63 | Katalogstand 10/2022; gehostete Daten zuletzt bearbeitet 08/2023; © BfG 2023, GeoNutzV |
+| Wetterwarnungen | `e7e4164319284754a9f72f0c956efb40` | Warnungen 1: zum Prüfzeitpunkt 0; dynamischer Bestand | Aktualisierung laut Metadaten alle 30 Minuten; DWD, GeoNutzV/DWD-Nutzungsbedingungen; Geometrien © GeoBasis-DE / BKG 2021, modifiziert |
+| Ladesäulen | `bc3c97f73d6b4be4921be8560fbc325a` | 0: 158 | Juli 2026; Bundesnetzagentur / Esri Deutschland, CC BY 4.0 |
+
+Alle Zahlen beziehen sich auf denselben WGS84-Auswahlbereich wie oben. Flächen werden durch Überschneidung ausgewählt; Kategorien können sich überlagern. Die Zahlen sind keine Gemeindezählungen.
+
+### Datenzugang und Qualitätsregeln
+
+- Feste Dienste, Sublayer, Feldlisten und Region; höchstens zehn Seiten mit je 1000 Features pro Sublayer, 40 Sekunden Gesamtzeit und 4 MB Antwortlimit. Objekt-IDs werden je Sublayer auf Vollständigkeit und Duplikate geprüft. Fehlende Quellen oder Teilergebnisse ergeben HTTP 503.
+- Nur gültige Punkt- bzw. Polygongeometrien; Datenantwort enthält Quellenherkunft, Datenstand, Lizenz und Kategorie je Feature. Keine künstlichen Messwerte, Betriebszustände oder Ladeplatzbelegung.
+- Historische Bestände: Upstream-Cache 24 Stunden, HTTP-Cache 1 Stunde / CDN 24 Stunden.
+- Warnungen: keinerlei Cache; Quellmetadaten `editingInfo.dataLastEditDate` müssen vorhanden und höchstens 90 Minuten alt sein (fünf Minuten Uhrtoleranz). Aktualität wird nach der Abfrage erneut gegen die Zeit geprüft. Ein Abrufdatum ersetzt niemals den Quelldatenzeitpunkt.
+- Warnungen enthalten nur öffentliche `Actual`-Meldungen; `Cancel`, Testmeldungen und abgelaufene Intervalle werden ausgeschlossen. Zukünftiger Beginn bleibt als kommende Warnung erhalten. Ungültige/zeitzonenlose Zeitangaben führen zu HTTP 503.
+- Leerer Warnbestand ist nur bei bestätigter Quellenaktualität erfolgreich. Dies bestätigt den verfügbaren Esri-Bestand, nicht dessen Übereinstimmung mit jedem amtlichen DWD-Publikationskanal. Der Dienst kann laut Anbieter 30 Minuten verzögert sein; amtlicher Verweis bleibt `https://www.dwd.de/warnungen`.
+
+### Nächster freizugebender Schritt 3
+
+Schutzgebiete in die bestehende `nature`-Ebene einbinden; Messstellen und DWD-Warnungen mit Quellen-/Zeitstatus ergänzen; Ladesäulen anhand BNetzA-ID mit der vorhandenen Ebene abgleichen. Keine zweite, doppelte Ladesäulenebene. UI-Tests und Browserprüfung gehören zu diesem nächsten Schritt.
+
+### Abschlussnachweis für Schritt 2
+
+- 238 Frontend-Tests erfolgreich, davon zehn neue Tests für diese Quellen; gezieltes ESLint und Produktionsbuild erfolgreich.
+- Live-Abfragen über den lokalen Produktions-Endpunkt: Schutzgebiete 46 Features (159943 Bytes), Messstellen 63 (19761 Bytes), Ladesäulen 158 (68614 Bytes), Warnungen 0 (744 Bytes); alle HTTP 200.
+- Der Warnungs-Endpunkt lieferte dabei den echten Quellenzeitpunkt `2026-10-09T17:03:29.772Z` und `Cache-Control: no-store`. Historische Quellen lieferten den vorgesehenen Cache-Header.
+- Keine Kartenkomponenten oder VPS-Dateien wurden für Schritt 2 geändert. Die Freigabe für Schritt 3 wird nach Commit, Push und Frontend-CI separat eingeholt.
