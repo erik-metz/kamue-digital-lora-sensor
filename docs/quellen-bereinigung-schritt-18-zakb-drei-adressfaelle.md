@@ -55,4 +55,4 @@ Reine Diagnose und Dokumentation: keine neuen Tests oder Container-Builds erford
 
 Der abschließende Inventar-/Kalenderabgleich bestätigt weiterhin **821 von 844 Straßenproben**, **14.807 veröffentlichte Termine** und **23 unbestätigte Straßen**. Der erfolgreiche Diagnosedownload für 8A ist darin noch nicht enthalten.
 
-Wichtig für die Zählerinterpretation: Der zwischenzeitliche reguläre Lauf meldet `remaining_streets=11` sowie zwölf fehlgeschlagene Straßen. `remaining_streets` zählt dort nur die im Lauf nicht verarbeiteten Proben, nicht alle unbestätigten Straßen. Zusammen mit den zwölf Fehlversuchen ergeben sich weiterhin 23 offene Straßen; eine Verbesserung auf nur elf offene Straßen wird nicht behauptet.
+Wichtig für die Zählerinterpretation: Der zuletzt geprüfte reguläre Lauf (Snapshot `2026-10-09T12:56:21Z`) meldet `remaining_streets=13` sowie zehn fehlgeschlagene Straßen. `remaining_streets` zählt dort nur die im Lauf nicht verarbeiteten Proben, nicht alle unbestätigten Straßen. Zusammen mit den zehn Fehlversuchen ergeben sich weiterhin 23 offene Straßen; eine Verbesserung auf nur 13 offene Straßen wird nicht behauptet.
