@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ChevronLeft, ChevronRight, Maximize2, Minimize2, Copy, Check } from "lucide-react";
 import type { PitchDeck, PitchSlide } from "@/lib/pitchData";
+import DataConnectionsDiagram from "../DataConnectionsDiagram";
 import CollectedDataEvidence from "../CollectedDataEvidence";
 
 function SlideBody({ slide, startedAt }: { slide: PitchSlide; startedAt: number }) {
+  if (slide.layout === "data-connections") return <DataConnectionsDiagram />;
   if (slide.layout === "collected-evidence") return <CollectedDataEvidence startedAt={startedAt} />;
   if (slide.website) return <iframe
     src={slide.website.src} title={slide.website.title}

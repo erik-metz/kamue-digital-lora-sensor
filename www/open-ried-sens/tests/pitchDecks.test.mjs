@@ -189,9 +189,9 @@ test("Bonus counts only actual raw rows inside the presentation window", async (
 test("The political ask stays together and handouts belong to the hub", async () => {
   const { POLITIK_DECK } = await import("../lib/pitchData.ts");
   assert.equal(POLITIK_DECK.slides.length, 9);
-  assert.equal(POLITIK_DECK.slides[5].id, "politik-placeholder");
-  assert.equal(POLITIK_DECK.slides[5].title, "");
-  assert.equal(POLITIK_DECK.slides[5].lead, "");
+  assert.equal(POLITIK_DECK.slides[5].id, "politik-data-connections");
+  assert.equal(POLITIK_DECK.slides[5].layout, "data-connections");
+  assert.equal(POLITIK_DECK.slides[5].title, "Daten verbinden, Zusammenhänge erkennen");
   assert.equal(POLITIK_DECK.slides.at(-1).id, "politik-school-bridge");
   assert.match(POLITIK_DECK.slides.at(-1).stepLabel, /Backup/);
   assert.equal(POLITIK_DECK.slides.filter(slide => slide.specificAsks).length, 1);

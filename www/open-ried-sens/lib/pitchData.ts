@@ -92,6 +92,7 @@ export interface SpecificAskItem {
 }
 
 export type SlideLayout =
+  | "data-connections"
   | "story"
   | "website"
   | "one-pager-hero"
@@ -291,11 +292,11 @@ export const POLITIK_DECK: PitchDeck = {
       "stepLabel": "05"
     },
     {
-      "id": "politik-placeholder",
-      "title": "",
-      "lead": "",
-      "layout": "story",
-      "eyebrow": "",
+      "id": "politik-data-connections",
+      "title": "Daten verbinden, Zusammenhänge erkennen",
+      "lead": "Bisher getrennte Datenquellen ergeben gemeinsam ein genaueres Bild des Rieds.",
+      "layout": "data-connections",
+      "eyebrow": "Open Ried Sens",
       "stepNumber": 6,
       "stepLabel": "06"
     },
