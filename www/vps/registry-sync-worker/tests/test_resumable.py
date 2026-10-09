@@ -9,7 +9,7 @@ import httpx
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "tests"))
 from db_support import DatabaseCase
 from map_tiles import import_wms
-from zakb import calendar_for_address, import_zakb
+from zakb import address_key, calendar_for_address, import_zakb
 
 ICAL = b'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:test\r\nDTSTART;VALUE=DATE:20260925\r\nSUMMARY:Bioabfall\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n'
 FORM = '<form id="athos-os-form"><input name="pageName" value="Lageadresse">filedownload_ICAL</form>'
@@ -189,10 +189,13 @@ class ResumeTests(DatabaseCase):
             self.assertEqual(events[0]['house_number'], '2')
             self.assertEqual((events[0]['latitude'], events[0]['longitude']), (49.62, 8.42))
             await import_zakb(self.conn, client, SOURCE)
-        self.assertEqual(submitted, ['1', '2'])
+            await self.conn.execute("UPDATE collection_checkpoints SET fetched_at=NOW()-INTERVAL '25 hours' WHERE source_id=%s AND item_key=%s", (SOURCE['id'], address_key(SOURCE, {**ADDRESS, 'house_number':'2'})))
+            await self.conn.commit()
+            await import_zakb(self.conn, client, SOURCE)
+        self.assertEqual(submitted, ['1', '2', '2'])
         coverage = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/coverage'")
         self.assertEqual(coverage['municipalities']['Biblis']['successful_calendars'], 1)
-        self.assertEqual(coverage['municipalities']['Biblis']['reused_calendars'], 1)
+        self.assertEqual(coverage['municipalities']['Biblis']['reused_calendars'], 0)
 
     async def test_house_fallback_is_bounded_and_never_publishes_rejected_addresses(self):
         submitted = []
@@ -210,3 +213,51 @@ class ResumeTests(DatabaseCase):
             self.assertEqual(await import_zakb(self.conn, client, SOURCE), 'failed')
         self.assertEqual(submitted, ['1', '2', '3'])
         self.assertEqual(await self.scalar("SELECT count(*) FROM collected_datasets WHERE dataset='waste/calendar'"), 0)
+
+    async def test_early_renewal_keeps_fresh_calendar_when_provider_fails(self):
+        from zakb import address_key
+        async with httpx.AsyncClient(transport=httpx.MockTransport(response)) as client:
+            await import_zakb(self.conn, client, SOURCE)
+        key = address_key(SOURCE, ADDRESS)
+        await self.conn.execute("UPDATE collection_checkpoints SET fetched_at=NOW()-INTERVAL '13 hours' WHERE source_id=%s AND item_key=%s", (SOURCE['id'], key))
+        await self.conn.commit()
+        before = await self.scalar("SELECT fetched_at FROM collection_checkpoints WHERE item_key=%s", (key,))
+        async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(503))) as client:
+            await import_zakb(self.conn, client, {**SOURCE, 'interval_seconds':3600, 'calendar_cache_seconds':86400, 'calendar_refresh_seconds':43200})
+        coverage = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/coverage'")
+        self.assertEqual(coverage['municipalities']['Biblis']['successful_calendars'], 1)
+        self.assertEqual(coverage['municipalities']['Biblis']['refresh_failed_calendars'], 1)
+        self.assertEqual(coverage['remaining_refresh_streets'], 1)
+        self.assertEqual(await self.scalar("SELECT jsonb_array_length(data) FROM collected_datasets WHERE dataset='waste/calendar'"), 1)
+        self.assertEqual(await self.scalar("SELECT fetched_at FROM collection_checkpoints WHERE item_key=%s", (key,)), before)
+
+    async def test_oldest_renewal_precedes_alphabetical_order_and_budget_preserves_both(self):
+        import asyncio
+        from unittest.mock import patch
+
+        from zakb import address_key
+        def provider(request):
+            if request.url.path == '/addresses':
+                return httpx.Response(200, json={'elements': [
+                    {'lat':49.6,'lon':8.4,'tags':{'addr:city':'Biblis','addr:street':street,'addr:housenumber':'1'}}
+                    for street in ['First','Second']]})
+            return response(request)
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            await import_zakb(self.conn, client, SOURCE)
+            for street,hours in [('First',13),('Second',14)]:
+                await self.conn.execute("UPDATE collection_checkpoints SET fetched_at=NOW()-(%s * INTERVAL '1 hour') WHERE source_id=%s AND item_key=%s", (hours,SOURCE['id'],address_key(SOURCE,{**ADDRESS,'street':street})))
+            await self.conn.commit()
+            renewed = []
+            async def renewal(conn, client, source, address, now, locations=None, *, refresh=False):
+                if refresh:
+                    renewed.append(address['street'])
+                    await asyncio.sleep(1)
+                return await calendar_for_address(conn,client,source,address,now,locations,refresh=refresh)
+            settings = {**SOURCE,'run_budget_seconds':0.1,'calendar_refresh_seconds':43200}
+            with patch('zakb.calendar_for_address', side_effect=renewal):
+                await import_zakb(self.conn, client, settings)
+            self.assertEqual(renewed, ['Second'])
+            self.assertEqual(await self.scalar("SELECT jsonb_array_length(data) FROM collected_datasets WHERE dataset='waste/calendar'"), 2)
+            with patch('zakb.calendar_for_address', side_effect=renewal):
+                await import_zakb(self.conn, client, settings)
+            self.assertEqual(renewed, ['Second','First'])

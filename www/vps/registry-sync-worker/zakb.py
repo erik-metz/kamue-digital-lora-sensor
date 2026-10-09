@@ -13,7 +13,6 @@ import unicodedata
 from collections import defaultdict
 from datetime import UTC, date, datetime, time, timedelta
 from html.parser import HTMLParser
-from itertools import zip_longest
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
@@ -225,17 +224,17 @@ def address_key(source, address):
     return hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
 
 
-async def calendar_for_address(conn, client, source, address, now, locations=None):
+async def calendar_for_address(conn, client, source, address, now, locations=None, *, refresh=False):
     key = address_key(source, address)
     cursor = await conn.execute(
         """SELECT p.body,c.payload_sha256,c.fetched_at FROM collection_checkpoints c
         JOIN collected_payloads p ON p.sha256=c.payload_sha256
         WHERE c.source_id=%s AND c.item_key=%s AND c.fetched_at>%s""",
-        (source["id"], key, now-timedelta(seconds=source["interval_seconds"])),
+        (source["id"], key, now-timedelta(seconds=source.get("calendar_cache_seconds", source["interval_seconds"]))),
     )
     cached = await cursor.fetchone()
     await conn.commit()
-    if cached:
+    if cached and not refresh:
         body, digest, fetched = cached
         return parse_ical(bytes(body), address), digest, fetched, True
 
@@ -326,7 +325,7 @@ async def import_zakb(conn, client, source):
             """SELECT p.body,c.payload_sha256 FROM collection_checkpoints c
             JOIN collected_payloads p ON p.sha256=c.payload_sha256
             WHERE c.source_id=%s AND c.item_key=%s AND c.fetched_at>%s""",
-            (source["id"], inventory_key, now-timedelta(seconds=source["interval_seconds"])),
+            (source["id"], inventory_key, now-timedelta(seconds=source.get("calendar_cache_seconds", source["interval_seconds"]))),
         )
         cached_inventory = await cursor.fetchone()
         await conn.commit()
@@ -399,52 +398,70 @@ async def import_zakb(conn, client, source):
                        "attempted_calendars": 0, "successful_calendars": 0,
                        "failed_calendars": 0, "reused_calendars": 0, "deferred_calendars": 0} for city in source["municipalities"]}
     cursor = await conn.execute(
-        "SELECT item_key FROM collection_checkpoints WHERE source_id=%s AND fetched_at>%s",
-        (source["id"], now-timedelta(seconds=source["interval_seconds"])),
+        "SELECT item_key,fetched_at FROM collection_checkpoints WHERE source_id=%s",
+        (source["id"],),
     )
-    fresh_keys = {row[0] for row in await cursor.fetchall()}
+    saved = dict(await cursor.fetchall())
+    cache_seconds = source.get("calendar_cache_seconds", source["interval_seconds"])
+    fresh_keys = {key for key, fetched in saved.items() if fetched > now-timedelta(seconds=cache_seconds)}
+    refresh_before = now-timedelta(seconds=source.get("calendar_refresh_seconds", cache_seconds))
     await conn.commit()
-    # Prefer a previously verified actual house; otherwise probe at most three
-    # real inventory addresses. A different house never inherits the first house's coordinates.
+    # A previously validated house remains the first renewal candidate after expiry.
     probes = {}
+    saved_at = {}
     for key, choices in candidates.items():
         ordered_choices = sorted(choices.values(), key=lambda a: int(a["house_number"]))
-        verified = [a for a in ordered_choices if address_key(source, a) in fresh_keys]
-        selected = verified[:1] or ordered_choices[:3]
+        verified = sorted((a for a in ordered_choices if address_key(source, a) in saved),
+                          key=lambda a: saved[address_key(source, a)], reverse=True)
+        selected = ([verified[0]] + [a for a in ordered_choices if a != verified[0]])[:3] if verified else ordered_choices[:3]
+        saved_at[key] = saved.get(address_key(source, selected[0]))
         eligible = [a for a in selected if address_key(source, a) not in deferred]
         probes[key] = eligible or selected[:1]
-        addresses[key] = probes[key][0]
-    # Include every valid saved calendar before spending the network budget.
-    # Then alternate municipalities so a slow city cannot starve the others.
-    groups = [sorted((a for a in addresses.values() if a["municipality"] == city),
-                     key=lambda a: a["street"]) for city in source["municipalities"]]
-    ordered = [a for batch in zip_longest(*groups) for a in batch if a is not None]
-    ordered.sort(key=lambda a: address_key(source, a) not in fresh_keys)
-    for address in ordered:
-        if address_key(source, address) not in fresh_keys and loop.time() >= deadline:
-            break
-        counts = coverage[address["municipality"]]
-        if address_key(source, address) in deferred:
-            counts["deferred_calendars"] += 1
+        addresses[key] = selected[0] if address_key(source, selected[0]) in fresh_keys else probes[key][0]
+    calendars = {}
+    refresh_failures = []
+    # Publish every still-fresh proof even when its renewal fails or the budget ends.
+    for key, address in addresses.items():
+        if address_key(source, address) not in fresh_keys:
             continue
-        counts["attempted_calendars"] += 1
+        counts = coverage[address["municipality"]]
         try:
-            street_probes = probes[(address["municipality"], address["street"])]
-            timeout = 10 if address_key(source, address) in fresh_keys else min(120, deadline-loop.time())
+            async with asyncio.timeout(10):
+                calendars[key] = await calendar_for_address(conn, client, source, address, now, locations)
+            counts["attempted_calendars"] += 1
+            counts["successful_calendars"] += 1
+            counts["reused_calendars"] += 1
+        except (httpx.HTTPError, ValueError, TypeError, KeyError, TimeoutError):
+            await conn.rollback()
+    due = [key for key in addresses if key not in calendars or saved_at[key] <= refresh_before]
+    # Expired known proofs precede early renewals; unknown streets follow them.
+    # Successful renewals acquire a new timestamp, so the next run advances.
+    due.sort(key=lambda key: (saved_at[key] is None, saved_at[key] or now, key))
+    for key in due:
+        address = probes[key][0]
+        counts = coverage[address["municipality"]]
+        cached = key in calendars
+        if address_key(source, address) in deferred:
+            counts["deferred_calendars"] += int(not cached)
+            continue
+        if loop.time() >= deadline:
+            break
+        counts["attempted_calendars"] += int(not cached)
+        counts["refresh_attempted_calendars"] = counts.get("refresh_attempted_calendars", 0) + int(cached)
+        try:
+            timeout = min(120, deadline-loop.time())
             async with asyncio.timeout(timeout):
-                for index, candidate in enumerate(street_probes):
+                for index, candidate in enumerate(probes[key]):
                     try:
-                        calendar_events, digest, fetched, reused = await calendar_for_address(conn, client, source, candidate, now, locations)
-                        address = candidate
+                        result = await calendar_for_address(conn, client, source, candidate, now, locations, refresh=True)
                         break
                     except (AddressNotAccepted, AddressMismatch):
-                        if index + 1 == len(street_probes):
+                        if index + 1 == len(probes[key]):
                             raise
-            events.extend(calendar_events)
-            inputs.append(digest)
-            sampled_at.append(fetched)
-            counts["successful_calendars"] += 1
-            counts["reused_calendars"] += int(reused)
+            calendars[key] = result
+            counts["successful_calendars"] += int(not cached)
+            counts["reused_calendars"] -= int(cached)
+            counts["refreshed_calendars"] = counts.get("refreshed_calendars", 0) + 1
         except (httpx.HTTPError, ValueError, TypeError, KeyError, TimeoutError) as exc:
             await conn.rollback()
             await conn.execute(
@@ -454,10 +471,20 @@ async def import_zakb(conn, client, source):
                 (source["id"],address_key(source,address),type(exc).__name__),
             )
             await conn.commit()
-            counts["failed_calendars"] += 1
-            failures.append({"municipality": address["municipality"], "street": address["street"], "error": type(exc).__name__})
+            failure = {"municipality": address["municipality"], "street": address["street"], "error": type(exc).__name__}
+            if cached:
+                counts["refresh_failed_calendars"] = counts.get("refresh_failed_calendars", 0) + 1
+                refresh_failures.append(failure)
+            else:
+                counts["failed_calendars"] += 1
+                failures.append(failure)
+    for calendar_events, digest, fetched, _ in calendars.values():
+        events.extend(calendar_events)
+        inputs.append(digest)
+        sampled_at.append(fetched)
+    pending_refresh = sum(saved_at[key] is not None and (key not in calendars or calendars[key][2] <= refresh_before) for key in due)
     remaining = sum(c["sampled_streets"]-c["attempted_calendars"] for c in coverage.values())
-    incomplete = bool(failures) or remaining > 0 or any(c["sampled_streets"] == 0 for c in coverage.values())
+    incomplete = bool(failures or refresh_failures) or pending_refresh > 0 or remaining > 0 or any(c["sampled_streets"] == 0 for c in coverage.values())
     # Commit a reproducibility manifest linking every calendar and geometry input.
     manifest = json.dumps(
         {
@@ -465,6 +492,10 @@ async def import_zakb(conn, client, source):
             "inputs": inputs,
             "coverage": "representative_addresses_only",
             "failed_streets": failures,
+            "refresh_failed_streets": refresh_failures,
+            "remaining_refresh_streets": pending_refresh,
+            "calendar_cache_seconds": cache_seconds,
+            "calendar_refresh_seconds": source.get("calendar_refresh_seconds", cache_seconds),
             "municipalities": coverage,
             "complete_address_coverage": False,
             "remaining_streets": remaining,

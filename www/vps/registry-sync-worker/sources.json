@@ -490,7 +490,9 @@
         49.8,
         8.65
       ],
-      "interval_seconds": 86400,
+      "interval_seconds": 3600,
+      "calendar_cache_seconds": 86400,
+      "calendar_refresh_seconds": 43200,
       "max_age_seconds": 172800,
       "request_spacing_seconds": 1,
       "coverage": "One actual OSM address per street; no claim of complete address coverage.",
