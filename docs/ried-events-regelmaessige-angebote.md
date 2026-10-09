@@ -401,3 +401,64 @@ Datenbankintegration. Zwölf neue Tests decken die verifizierten Zeiten,
 Saison, Mitgliedschaft, unbekannte Endzeit, geänderte Belege, Dubletten,
 Archivierung und Erhalt unabhängiger Vereinsangebote ab. Ruff und
 Diff-Prüfung bestehen.
+
+### CI, Serverübernahme und externe Abrufblockade
+
+Implementierung `5bd54f5a78e5dd5646aa10fd5b91669f6c7fd93b` auf `main` gepusht.
+[FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37851586493)
+ist für genau diesen Commit vollständig erfolgreich, einschließlich aller
+17 vorgesehenen Container-Builds und GHCR-Veröffentlichungen. Keine
+Frontenddatei geändert, daher kein Frontend-CI-Lauf vorgesehen.
+
+Der Server erhielt das veröffentlichte Image mit Digest
+`sha256:11e8a9e509435d623ab6c119214804ead9e70f626b78ebceb3347dc253a3c550`.
+Vor Wechsel wurden der Hash des eigenen Parsermoduls und die neue
+Quellenkonfiguration gegen den geprüften Repository-Stand abgeglichen;
+alle Quellen-IDs des bisherigen regulären Workers sind enthalten.
+Vorherige Serverkonfiguration gesichert unter
+`/root/docker-compose.invekos.yml.before-tvl-5bd54f5`. Ausschließlich der
+reguläre Registry-Worker wurde mit den vorhandenen drei Compose-Dateien
+und `--no-deps --no-build` neu erstellt. Andere laufende Container wurden
+nicht gezielt verändert.
+
+**Produktive Veröffentlichung noch blockiert:** Während der lokale
+Collector-Liveabruf HTTP 200 liefert, begrenzt die TVL-Website den Abruf
+vom VPS mit HTTP 429. Eine einzelne Diagnoseanfrage mit kompatiblem
+Browser-User-Agent liefert ebenfalls 429, `Retry-After: 60`, Server
+`cloudflare`, Antworttext `local_rate_limited`. Die regulären zwei
+Wiederholungen respektierten die verlangte Wartezeit und scheiterten
+weiterhin. Abschließender Quellenstatus am **09.10.2026 00:19:47 MESZ**
+(08.10.2026 22:19:47 UTC): `failed`,
+`HTTPStatusError host=www.tv-lampertheim.de status=429`.
+
+Die öffentliche Angebots-API liefert weiterhin **14 eindeutige bisherige
+Angebote**; die drei TVL-Angebote sind noch nicht veröffentlicht. Keine
+produktive Sichtbarkeit behauptet. Der Dienst führt weitere Abrufe mit
+seinem regulären Fehler-Backoff aus. Für den Abschluss sind nach erfolgreichem
+Abruf Quellenstatus, kombinierte API und öffentliche Terminseite erneut
+zu prüfen. Die eigene temporäre Testdatenbank wurde entfernt.
+Dieser abschließende Dokumentationscommit löst gemäß Pfadfiltern keine
+weitere CI aus.
+
+### Erfolgreicher Folgeabruf und öffentliche Freischaltung
+
+Beim erneuten Weiterauftrag am 09.10.2026 wurde der produktive Status
+nochmals geprüft. Der reguläre Wiederholungsabruf der TVL-Quelle ist
+inzwischen erfolgreich: **09.10.2026 01:36:11 UTC / 03:36:11 MESZ**,
+HTTP 200, Verarbeitung `success`. Die zuvor dokumentierte Abrufbegrenzung
+blockiert die Veröffentlichung nicht mehr; keine zusätzliche Codeänderung
+oder erneuter Container-Build war erforderlich.
+
+Die gewöhnliche öffentliche API-Adresse und die
+[Terminseite](https://open-ried-sens.vercel.app/termine) wurden geprüft:
+**17 eindeutige Angebote**, davon drei TVL-Angebote; alle bisherigen 14
+Angebote erhalten. Alle drei TVL-Titel, Treffpunkte, Teilnahmehinweise und
+Anfangszeiten sind im ausgelieferten HTML sichtbar. Beide Freitags-Endzeiten
+und die Winterhinweise sind vorhanden. Das Lauf-ABC bleibt ohne angenommene
+feste Endzeit und weist ausdrücklich die Dauer 60–90 Minuten aus.
+Keine erfundenen datierten Kalenderereignisse.
+
+Die früher unterbrochene Dokumentationsveröffentlichung wird damit samt
+abschließendem produktiven Nachweis abgeschlossen. Die erfolgreichen
+357 Tests und der exakte CI-/GHCR-Lauf für `5bd54f5` bleiben gültig;
+für diesen reinen Dokumentationscommit ist kein weiterer CI-Lauf vorgesehen.
