@@ -7,6 +7,7 @@ from endpoints import (
     environment_measurements,
     fuel,
     map_sensors,
+    pitch,
     satellite,
     satellite_tracking,
     sensors,
@@ -28,6 +29,7 @@ api_router.include_router(telemetry.router, tags=["Telemetry Data"])
 api_router.include_router(archives.router)
 api_router.include_router(data_exports.router)
 api_router.include_router(map_sensors.router)
+api_router.include_router(pitch.router)
 api_router.include_router(waste_trucks.router)
 api_router.include_router(buses.router)
 api_router.include_router(bikes.router)

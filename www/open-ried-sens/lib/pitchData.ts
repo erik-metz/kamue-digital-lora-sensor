@@ -345,7 +345,7 @@ export const POLITIK_DECK: PitchDeck = {
     },
     {
       "id": "politik-bonus",
-      "title": "Live-Daten aus dem Alltag",
+      "title": "Bewegung im Ried",
       "lead": "",
       "layout": "collected-evidence",
       "eyebrow": "Open Ried Sens",
@@ -568,8 +568,8 @@ export const SCHULEN_DECK: PitchDeck = {
     },
     {
       "id": "schulen-bonus",
-      "title": "Während unseres Vortrags: neue Messwerte",
-      "lead": "Zum Abschluss sehen wir, welche echten Rohmesswerte seit Beginn dieses Vortrags abrufbar sind.",
+      "title": "Bewegung im Ried",
+      "lead": "",
       "layout": "collected-evidence",
       "eyebrow": "Open Ried Sens",
       "bullets": [],
@@ -747,8 +747,8 @@ export const VHS_DECK: PitchDeck = {
     },
     {
       "id": "vhs-bonus",
-      "title": "Während unseres Vortrags: neue Messwerte",
-      "lead": "Zum Abschluss sehen wir, welche echten Rohmesswerte seit Beginn dieses Vortrags abrufbar sind.",
+      "title": "Bewegung im Ried",
+      "lead": "",
       "layout": "collected-evidence",
       "eyebrow": "Open Ried Sens",
       "bullets": [],
@@ -946,8 +946,8 @@ export const WIRTSCHAFT_DECK: PitchDeck = {
     },
     {
       "id": "wirtschaft-bonus",
-      "title": "Während unseres Vortrags: neue Messwerte",
-      "lead": "Zum Abschluss sehen wir, welche echten Rohmesswerte seit Beginn dieses Vortrags abrufbar sind.",
+      "title": "Bewegung im Ried",
+      "lead": "",
       "layout": "collected-evidence",
       "eyebrow": "Open Ried Sens",
       "bullets": [],

@@ -10,81 +10,36 @@ function load(file, mocks, globals = {}) {
   vm.runInNewContext(code, context); return context.exports;
 }
 const helpers = load('lib/pitchWindow.ts', {});
-const now = Date.now();
-const start = new Date(now - 60000).toISOString();
-const nodes = ['a', 'b'].map(id => ({ id, name: `Station ${id}`, categories: ['weather'], readings: [{ timestamp: start }] }));
-function route(fetch, inventory = nodes) {
+const start = new Date(Date.now() - 60000).toISOString();
+function route(fetch) {
   return load('app/api/pitch-window/route.ts', {
     '@/env': { env: { BACKEND_API_URL: 'https://backend.example' } },
-    '@/lib/mapBackend': { fetchMapData: async () => ({ nodes: inventory }) },
     '@/lib/pitchWindow': helpers,
   }, { fetch }).GET;
 }
-function request(query = `start=${encodeURIComponent(start)}`) { return new Request(`http://localhost/api/pitch-window?${query}`); }
-test('partial failures preserve actual zero raw values and query window', async () => {
-  const urls = [];
-  const response = await route(async url => {
-    urls.push(url);
-    return url.searchParams.get('sensor_id') === 'b' ? new Response('', { status: 503 }) : Response.json([{ sensor_id: 'a', timestamp: new Date(now - 1000).toISOString(), metric: 'temperature', value: 0, unit: '°C' }]);
-  })(request());
-  const body = await response.json();
-  assert.equal(response.status, 200); assert.equal(response.headers.get('cache-control'), 'no-store');
-  assert.equal(body.count, 1); assert.equal(body.samples[0].value, 0);
-  assert.equal(body.stations.find(s => s.id === 'b').unavailable, true);
-  assert.equal(urls.find(url => url.pathname === '/api/v1/telemetry/raw').searchParams.get('start_time'), start);
+function request(value = start) { return new Request(`http://localhost/api/pitch-window?start=${encodeURIComponent(value)}`); }
+test('activity proxy preserves zero event counts and uses the exact talk window', async () => {
+  let url;
+  const payload = {startedAt: start, checkedAt: new Date().toISOString(), crossings: {opened: 0, closed: 2}, bikes: {removed: 3, returned: 1}, moving: {ship: {count: 0}}};
+  const response = await route(async input => { url = input; return Response.json(payload); })(request());
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await response.json(), payload);
+  assert.equal(url.pathname, '/api/v1/pitch/activity');
+  assert.equal(url.searchParams.get('start'), start);
 });
-test('malformed or unavailable responses produce errors, never a fake zero', async () => {
-  for (const payload of [{ error: 'unavailable' }, [{ sensor_id: 'wrong' }]]) {
+test('missing activity, invalid timestamps and mismatched windows never become fake zeros', async () => {
+  for (const payload of [null, [], {error: 'failed'}, {startedAt: start, checkedAt: 'invalid', crossings: null, bikes: null, moving: null}, {startedAt: new Date().toISOString(), checkedAt: start, crossings: null, bikes: null, moving: null}]) {
     const response = await route(async () => Response.json(payload))(request());
-    assert.equal(response.status, 503); assert.equal((await response.json()).count, undefined);
+    assert.equal(response.status, 503);
   }
+  assert.equal((await route(async () => new Response('', {status: 502}))(request())).status, 503);
 });
-test('empty successes and truncated responses are distinguished', async () => {
-  assert.equal((await (await route(async () => Response.json([]))(request())).json()).count, 0);
-  const row = { sensor_id: 'a', timestamp: new Date(now - 1000).toISOString(), metric: 'temperature', value: 12, unit: '°C' };
-  const body = await (await route(async () => Response.json(Array(1000).fill(row)), [nodes[0]])(request())).json();
-  assert.equal(body.count, 1); assert.equal(body.stations[0].truncated, true);
-});
-test('invalid start and oversized selection never request raw data', async () => {
+test('invalid or future start never requests the backend', async () => {
   let calls = 0;
-  const GET = route(async () => { calls++; return Response.json([]); });
-  assert.equal((await GET(request('start=invalid'))).status, 400);
-  assert.equal((await GET(request(`start=${encodeURIComponent(start)}&stations=a,b,c,d,e,f,g,h,i`))).status, 400);
-  assert.equal(calls, 0);
-});
-
-
-test('everyday categories get their own station despite faster seismic readings', () => {
-  const station = (id, category, timestamp = start) => ({ id, name: id, categories: [category], readings: [{ timestamp }] });
-  const inventory = [station('shake-fast', 'seismic', new Date(now).toISOString()),
-    ...Array.from({length: 12}, (_, i) => station(`weather-${i}`, 'weather')),
-    station('parking', 'parking'), station('bikes', 'bikes'), station('air', 'air'), station('water', 'water'),
-    station('forecast-weather', 'weather'), station('bu-test', 'traffic')];
-  const selected = helpers.selectPitchStations(inventory);
-  assert.equal(selected.length, 8);
-  assert.deepEqual(new Set(selected.map(helpers.pitchStationCategory)), new Set(['weather', 'parking', 'bikes', 'air', 'water']));
-  assert.ok(selected.every(s => !/shake|forecast|bu-test/.test(s.id)));
-});
-
-test('six categories remain visible even without new raw rows', async () => {
-  const body = await (await route(async () => Response.json([]))(request())).json();
-  assert.deepEqual(body.categories.map(c => c.id), ['crossings', 'parking', 'bikes', 'weather', 'air', 'water']);
-  assert.equal(body.categories.find(c => c.id === 'weather').count, 0);
-  assert.equal(body.categories.find(c => c.id === 'weather').unavailable, false);
-  assert.equal(body.categories.find(c => c.id === 'parking').unavailable, true);
-});
-
-test('crossing estimates are labelled and excluded from raw totals', async () => {
-  const crossing = { entity_id: 'crossing:test', name: 'Mainstraße', basis: 'model', status: 'closed',
-    timestamp: new Date(now - 1000).toISOString(), valid_until: new Date(now + 60000).toISOString() };
-  const GET = route(async url => url.pathname === '/api/v1/movements/latest'
-    ? Response.json({crossings_available: true, crossings: [crossing]}) : Response.json([]));
-  const body = await (await GET(request())).json();
-  const category = body.categories[0];
-  assert.equal(category.model, true); assert.equal(category.count, null);
-  assert.equal(category.sample.value, 2); assert.equal(category.sample.station, 'Mainstraße');
-  assert.equal(body.count, 0); assert.equal(body.samples.length, 0);
-  for (const change of [{basis: 'observed'}, {status: 'unknown'}, {valid_until: start}, {timestamp: start}]) {
-    assert.equal(helpers.pitchCrossingCategory({crossings_available: true, crossings: [{...crossing, ...change}]}, Date.parse(start), now).sample, undefined);
+  const GET = route(async () => { calls++; return Response.json({}); });
+  for (const value of ['invalid', new Date(Date.now()+60000).toISOString(), new Date(Date.now()-3*3600000).toISOString()]) {
+    assert.equal((await GET(request(value))).status, 400);
   }
+  assert.equal(calls, 0);
 });
