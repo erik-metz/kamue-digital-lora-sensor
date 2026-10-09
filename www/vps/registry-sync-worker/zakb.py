@@ -65,6 +65,7 @@ class CalendarForm(HTMLParser):
 VALIDATION_CONTRACT = "zakb-address-v2"
 RANGE_VALIDATION_CONTRACT = "zakb-reviewed-ranges-v1"
 SUFFIX_VALIDATION_CONTRACT = "zakb-house-suffix-v1"
+LOCATION_VALIDATION_CONTRACT = "zakb-reviewed-locations-v1"
 # Actual provider confirmations, not a general interpretation of house-number ranges.
 # Each calendar remains bound to the single real address submitted in that request.
 REVIEWED_HOUSE_RANGES = {
@@ -78,6 +79,10 @@ STREET_ALIASES = {
     ("Biblis", "Neuländer Pfad"): "Neuländerpfad",
     ("Bürstadt", "Sofienstraße"): "Sophienstraße",
     ("Bürstadt", "Vinzenzstraße"): "Vincenzstraße",
+    # Primary evidence and live confirmations: step 20 investigation.
+    ("Bürstadt", "Kirchgasse"): "Kirchgäßchen",
+    ("Lampertheim", "Ausserhalb Brunnengewännchen"): "Am Brunnengewännchen",
+    ("Lampertheim", "Außerhalb-Brunnengewännchen"): "Am Brunnengewännchen",
     ("Lampertheim", "Wilhelm-von-Ketteler-Straße"): "Wilhelm-v.-Ketteler-Straße",
     # Reviewed exterior addresses; see docs/quellen-bereinigung-schritt-16-zakb-aussenbereiche.md.
     ("Lampertheim", "Wildbahn"): "Außerhalb Wildbahn",
@@ -86,6 +91,22 @@ STREET_ALIASES = {
 }
 # Biblis municipal street lists, annexes 1 and 2, resolve these duplicate provider options.
 PROVIDER_CITIES = {("Biblis", "Bachgasse"): "Biblis", ("Biblis", "Enggasse"): "Biblis-Nordheim"}
+
+
+# Site-specific exterior addresses, never a mapping of every house on "Außerhalb".
+# Evidence: docs/quellen-bereinigung-schritt-20-zakb-restliche-strassen.md.
+REVIEWED_PROVIDER_LOCATIONS = {
+    ("Biblis", "Außerhalb", "6"): ("Biblis-Nordheim", "Außerhalb - Zur Rheinfähre"),
+    ("Biblis", "Außerhalb (Wattenheim)", "3"): ("Biblis-Wattenheim", "Außerhalb - Birkenhof"),
+    ("Biblis", "Außerhalb (Nordheim)", "10"): ("Biblis-Nordheim", "Außerhalb - Luisenhof"),
+}
+
+
+def reviewed_provider_location(address):
+    return REVIEWED_PROVIDER_LOCATIONS.get((
+        address["municipality"], address["street"],
+        house_number_identity(address["house_number"]),
+    ))
 
 
 class AddressNotAccepted(ValueError):
@@ -265,6 +286,9 @@ def address_key(source, address):
         contract = SUFFIX_VALIDATION_CONTRACT
     identity = [contract, source["url"], address["municipality"],
                 address["street"], number]
+    location = reviewed_provider_location(address)
+    if location:
+        identity = [LOCATION_VALIDATION_CONTRACT, *identity[1:], *location]
     return hashlib.sha256(json.dumps(identity, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -313,6 +337,10 @@ async def calendar_for_address(conn, client, source, address, now, locations=Non
     expected_city = PROVIDER_CITIES.get((city, address["street"]))
     matches = [(candidate, value) for candidate in cities for value in locations[candidate]
                if street_identity(value) == street_identity(address["street"])]
+    location = reviewed_provider_location(address)
+    if not matches and location:
+        matches = [(candidate, value) for candidate in cities for value in locations[candidate]
+                   if candidate == location[0] and street_identity(value) == street_identity(location[1])]
     if not matches and (city, address["street"]) in STREET_ALIASES:
         matches = [(candidate, value) for candidate in cities for value in locations[candidate]
                    if street_identity(value) == street_identity(STREET_ALIASES[(city, address["street"])])]
@@ -467,6 +495,7 @@ async def import_zakb(conn, client, source):
     saved_at = {}
     for key, choices in candidates.items():
         ordered_choices = sorted(choices.values(), key=lambda a: (
+            reviewed_provider_location(a) is None,
             address_key(source, a) in past_failures,
             past_failures.get(address_key(source, a), now), house_number_sort(a["house_number"])))
         verified = sorted((a for a in ordered_choices if address_key(source, a) in saved),
@@ -560,6 +589,7 @@ async def import_zakb(conn, client, source):
             "validation_contract": VALIDATION_CONTRACT,
             "reviewed_range_contract": RANGE_VALIDATION_CONTRACT,
             "house_suffix_contract": SUFFIX_VALIDATION_CONTRACT,
+            "reviewed_location_contract": LOCATION_VALIDATION_CONTRACT,
             "inputs": inputs,
             "coverage": "representative_addresses_only",
             "failed_streets": failures,

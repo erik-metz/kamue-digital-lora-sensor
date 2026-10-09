@@ -197,6 +197,32 @@ class ResumeTests(DatabaseCase):
         self.assertEqual(coverage['municipalities']['Biblis']['successful_calendars'], 1)
         self.assertEqual(coverage['municipalities']['Biblis']['reused_calendars'], 0)
 
+    async def test_reviewed_site_is_selected_before_unmapped_houses_and_resumes(self):
+        submitted = []
+        def provider(request):
+            if request.url.path == '/addresses':
+                return httpx.Response(200, json={'elements': [
+                    {'lat': lat, 'lon': lon, 'tags': {'addr:city': 'Biblis', 'addr:street': 'Außerhalb', 'addr:housenumber': number}}
+                    for number, lat, lon in [('1', 49.6, 8.4), ('6', 49.6963697, 8.3647607)]]})
+            fields = parse_qs(request.content.decode())
+            if fields.get('submitAction') == ['nextPage']:
+                submitted.append(fields['aos[Hausnummer]'][0])
+                self.assertEqual(fields['aos[Strasse]'], ['Außerhalb - Zur Rheinfähre'])
+                return httpx.Response(200, text=FORM + '<span id="Lageadresse">Außerhalb - Zur Rheinfähre 6, 68647 Biblis-Nordheim</span>')
+            if fields.get('submitAction') == ['filedownload_ICAL']:
+                return httpx.Response(200, content=ICAL)
+            city = fields.get('aos[Ort]', ['Biblis'])[0]
+            options = ''.join(f'<option value="{c}" {"selected" if c == city else ""}></option>' for c in ['Biblis', 'Biblis-Nordheim'])
+            street = 'Außerhalb - Zur Rheinfähre' if city == 'Biblis-Nordheim' else 'Andere Straße'
+            return httpx.Response(200, text=f'<form id="athos-os-form"><input name="pageName" value="Lageadresse"><select name="aos[Ort]">{options}</select><select name="aos[Strasse]"><option value="{street}"></option></select></form>')
+        async with httpx.AsyncClient(transport=httpx.MockTransport(provider)) as client:
+            await import_zakb(self.conn, client, SOURCE)
+            await import_zakb(self.conn, client, SOURCE)
+        self.assertEqual(submitted, ['6'])
+        events = await self.scalar("SELECT data FROM collected_datasets WHERE dataset='waste/calendar'")
+        self.assertEqual(events[0]['house_number'], '6')
+        self.assertEqual((events[0]['latitude'], events[0]['longitude']), (49.6963697, 8.3647607))
+
     async def test_house_fallback_is_bounded_and_never_publishes_rejected_addresses(self):
         submitted = []
         def provider(request):
