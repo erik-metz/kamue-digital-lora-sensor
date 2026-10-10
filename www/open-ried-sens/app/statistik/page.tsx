@@ -1,3 +1,5 @@
+import { readCollected } from "@/lib/collectedBackend";
+import OfficialStatisticsClient, { type StatisticsData } from "../components/OfficialStatisticsClient";
 import {
   fetchCulturalEvents,
   fetchRegionalFacilities,
@@ -5,17 +7,13 @@ import {
   fetchWasteStatistics,
 } from "@/lib/regionalStats";
 import {
-  ArrowLeft,
   Briefcase,
   Code2,
-  Database,
   ExternalLink,
   HeartHandshake,
   HeartPulse,
-  MapPin,
   Recycle,
   Sparkles,
-  Trophy,
 } from "lucide-react";
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
@@ -26,9 +24,10 @@ import StatistikClient from "./StatistikClient";
 export const dynamic = "force-dynamic";
 
 export default async function RegionalStatistikPage() {
-  const [summaryResult, wasteResult, facilityResult, eventResult] = await Promise.allSettled([
+  const [summaryResult, wasteResult, facilityResult, eventResult, officialResult] = await Promise.allSettled([
     fetchSocialSummary(), fetchWasteStatistics(), fetchRegionalFacilities(),
     fetchCulturalEvents({ includePast: true }),
+    readCollected<StatisticsData>("statistics/social"),
   ]);
   const summaries = summaryResult.status === "fulfilled" ? summaryResult.value : [];
   const wasteStats = wasteResult.status === "fulfilled" ? wasteResult.value : [];
@@ -99,6 +98,19 @@ export default async function RegionalStatistikPage() {
           now={now}
           eventsUnavailable={eventResult.status === "rejected"}
         />
+
+        <section className="space-y-4" aria-label="Amtliche Gemeindestatistik">
+          <p className="text-sm text-slate-400">
+            Die HSL-Gemeindestatistik ergänzt diese Ansicht um Straßenverkehrsunfälle
+            und kommunales Personal. Sie enthält keine Kennzahlen zur ärztlichen
+            Versorgung, zu Recyclingquoten oder zur sozialen Bedürftigkeit.
+          </p>
+          <OfficialStatisticsClient
+            domain="social"
+            title="Straßenverkehrsunfälle & kommunales Personal"
+            data={officialResult.status === "fulfilled" ? officialResult.value : null}
+          />
+        </section>
 
         {/* Developer / Hackathon Callout */}
         <section className="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 to-slate-950 p-6 sm:p-8 space-y-4">

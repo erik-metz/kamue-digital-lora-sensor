@@ -3,12 +3,7 @@
 import {
   Activity,
   ArrowRight,
-  ArrowUpDown,
-  BarChart3,
   Building2,
-  Calendar,
-  CheckCircle2,
-  ChevronDown,
   Coins,
   Download,
   ExternalLink,
@@ -19,7 +14,6 @@ import {
   MapPin,
   Search,
   Sparkles,
-  TrendingDown,
   TrendingUp,
   Users,
   Vote,
@@ -146,101 +140,6 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
       .filter((table) => table.records.length > 0);
   }, [data, selectedMuni, searchQuery, selectedTableId]);
 
-  // Compute key headline metrics across available tables
-  const kpis = useMemo(() => {
-    if (!data?.tables?.length) return [];
-    const items: { label: string; value: string; hint: string; icon: React.ReactNode }[] = [];
-
-    if (domain === "demographics") {
-      const table1 = data.tables.find((t) => t.title.includes("Bevölkerung"));
-      if (table1) {
-        let totalPop = 0;
-        let totalArea = 0;
-        for (const rec of table1.records) {
-          const popVal = rec.values.find((v) => v.label.toLowerCase() === "insgesamt")?.value;
-          const areaVal = rec.values.find((v) => v.label.toLowerCase().includes("fläche"))?.value;
-          if (typeof popVal === "number") totalPop += popVal;
-          if (typeof areaVal === "number") totalArea += areaVal;
-        }
-        if (totalPop > 0) {
-          items.push({
-            label: "Einwohner im Ried (Gesamt)",
-            value: totalPop.toLocaleString("de-DE"),
-            hint: "Amtliche Einwohnerzahl (4 Kommunen)",
-            icon: <Users className="w-5 h-5 text-teal-400" />,
-          });
-        }
-        if (totalArea > 0) {
-          items.push({
-            label: "Fläche Gesamt",
-            value: `${totalArea.toLocaleString("de-DE", { maximumFractionDigits: 1 })} km²`,
-            hint: `Dichte: ~${Math.round(totalPop / totalArea)} Einw./km²`,
-            icon: <MapPin className="w-5 h-5 text-emerald-400" />,
-          });
-        }
-      }
-      const tableBewegung = data.tables.find((t) => t.title.includes("bewegung"));
-      if (tableBewegung) {
-        items.push({
-          label: "Erhebungsstichtag",
-          value: "31. Dez. 2024",
-          hint: "Gemeindestatistik Ausgabe 2025",
-          icon: <Calendar className="w-5 h-5 text-blue-400" />,
-        });
-      }
-    } else if (domain === "finance") {
-      const realsteuer = data.tables.find((t) => t.title.includes("Realsteuern"));
-      if (realsteuer) {
-        items.push({
-          label: "Realsteuer-Erfassung",
-          value: "2024",
-          hint: "Grundsteuer A/B & Gewerbesteuer",
-          icon: <Coins className="w-5 h-5 text-emerald-400" />,
-        });
-      }
-      const schulden = data.tables.find((t) => t.title.includes("Schulden"));
-      if (schulden) {
-        items.push({
-          label: "Schuldenstand",
-          value: "Rechnungsergebnis 2024",
-          hint: "Stand vor Revision (HSL)",
-          icon: <BarChart3 className="w-5 h-5 text-amber-400" />,
-        });
-      }
-    } else if (domain === "environment") {
-      items.push({
-        label: "Flächennutzung",
-        value: "Erhebung 2024",
-        hint: "Siedlung, Verkehr, Landwirtschaft",
-        icon: <Leaf className="w-5 h-5 text-emerald-400" />,
-      });
-      items.push({
-        label: "Agrarstrukturen",
-        value: "Zensus 2020",
-        hint: "Landwirtschaftliche Betriebe",
-        icon: <Calendar className="w-5 h-5 text-teal-400" />,
-      });
-    } else if (domain === "elections") {
-      items.push({
-        label: "Bundestagswahl",
-        value: "23. Feb. 2025",
-        hint: "Amtliche Wahlbezirksergebnisse",
-        icon: <Vote className="w-5 h-5 text-indigo-400" />,
-      });
-      const table = data.tables[0];
-      if (table) {
-        items.push({
-          label: "Erfasste Wahlbezirke",
-          value: `${table.records.length} Bezirke`,
-          hint: "Biblis, Bürstadt, Groß-Rohrheim, Lampertheim",
-          icon: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
-        });
-      }
-    }
-
-    return items;
-  }, [data, domain]);
-
   if (!data) {
     return (
       <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center space-y-4">
@@ -282,7 +181,7 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 text-xs font-semibold transition-colors"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Originaldaten (Excel/HSL)</span>
+              <span>Originalveröffentlichung</span>
               <ExternalLink className="w-3 h-3 text-slate-400" />
             </a>
             <Link
@@ -302,47 +201,10 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
         )}
       </section>
 
-      {/* KPI HERO SUMMARY CARDS */}
-      {kpis.length > 0 && (
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((kpi, idx) => (
-            <div
-              key={idx}
-              className="rounded-2xl border border-slate-800 bg-slate-900/60 p-5 flex items-start gap-4 hover:border-slate-700 transition-colors"
-            >
-              <div className="p-3 rounded-xl bg-slate-800/60 border border-slate-700/50 shrink-0">
-                {kpi.icon}
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-slate-400 font-medium">{kpi.label}</span>
-                <p className="text-xl sm:text-2xl font-extrabold text-slate-100">{kpi.value}</p>
-                <p className="text-[11px] text-emerald-400 font-medium">{kpi.hint}</p>
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
-
-      {/* HISTORICAL TRENDS & TIME-SERIES INFO CALLOUT (Answers User Question #2) */}
-      <section className="rounded-2xl border border-indigo-500/20 bg-gradient-to-r from-indigo-950/30 via-slate-900/40 to-slate-900/20 p-5 sm:p-6 space-y-3">
-        <div className="flex items-center gap-2 text-indigo-400 text-sm font-semibold">
-          <Calendar className="w-4 h-4" />
-          <span>Zeitreihen &amp; Erhebungszeitpunkte im Vergleich</span>
-        </div>
-        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          <strong>Wichtig zur Datenstruktur:</strong> Diese amtlichen Statistiken stammen aus den jährlichen Erhebungen des Statistischen Landesamtes (Stichtage wie z. B. <em>31.12.2024</em> oder Agrarzensus <em>2020</em>). Im Gegensatz zu den kontinuierlichen <strong>TimescaleDB-Echtzeitmessungen</strong> (LoRa-Sensoren, Wasserpegel, Bus- und Müllfahrzeug-GPS), die im Minutentakt fortlaufend erfasst werden, stellen Gemeindestatistiken einen jährlichen Stichtags-Schnappschuss dar.
-        </p>
-        <div className="flex flex-wrap gap-2 pt-1 text-xs">
-          <span className="px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-300">
-            Stichtag: 31.12.2024 (Ausgabe 2025)
-          </span>
-          <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
-            Vorjahr: 2023 (Referenzperiode)
-          </span>
-          <span className="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
-            Agrar- &amp; Zensusbasis: 2020 / 2022
-          </span>
-        </div>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5 text-sm text-slate-300">
+        Die Bezugszeiträume und Einheiten stehen in den jeweiligen Tabellentiteln
+        und Kennzahlen. Das Veröffentlichungsdatum ist kein gemeinsamer Stichtag.
+        Amtliche Fehlwertzeichen bleiben erhalten; fehlende Angaben sind keine Nullwerte.
       </section>
 
       {/* CONTROLS: MUNICIPALITY SELECTOR + SEARCH + VIEW TOGGLE */}
@@ -379,6 +241,7 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Kennzahl suchen"
                 placeholder="Kennzahl suchen..."
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
               />
@@ -503,11 +366,11 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
                           // Find values for each municipality
                           const valuesForLabel = table.records.map((r) => {
                             const found = r.values.find((v) => v.label === label);
-                            return found ? found.value : null;
+                            return found ?? null;
                           });
 
                           // Calculate max numeric value for proportional visual bar
-                          const numericValues = valuesForLabel.filter(
+                          const numericValues = valuesForLabel.map((entry) => entry?.value).filter(
                             (v): v is number => typeof v === "number" && !isNaN(v) && v > 0
                           );
                           const maxVal = numericValues.length ? Math.max(...numericValues) : 0;
@@ -518,14 +381,15 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
                                 {label}
                               </td>
                               {table.records.map((r, rIdx) => {
-                                const val = valuesForLabel[rIdx];
+                                const entry = valuesForLabel[rIdx];
+                                const val = entry?.value;
                                 return (
                                   <td
                                     key={r.municipality_id}
                                     className="py-3 px-4 text-right tabular-nums text-xs sm:text-sm font-semibold text-slate-200"
                                   >
                                     {val === null || val === undefined
-                                      ? "–"
+                                      ? entry?.source_marker || "–"
                                       : val.toLocaleString("de-DE", { maximumFractionDigits: 2 })}
                                   </td>
                                 );
@@ -535,7 +399,8 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
                                 {maxVal > 0 ? (
                                   <div className="flex items-center gap-1.5 h-3 w-full bg-slate-950/60 rounded-full p-0.5 border border-slate-800">
                                     {table.records.map((r, rIdx) => {
-                                      const val = valuesForLabel[rIdx];
+                                      const entry = valuesForLabel[rIdx];
+                                const val = entry?.value;
                                       const pct =
                                         typeof val === "number" && maxVal > 0
                                           ? Math.min(100, Math.round((val / maxVal) * 100))
@@ -610,7 +475,7 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
                             </dt>
                             <dd className="tabular-nums font-semibold text-slate-200 shrink-0">
                               {value.value === null || value.value === undefined
-                                ? "–"
+                                ? value.source_marker || "–"
                                 : value.value.toLocaleString("de-DE", { maximumFractionDigits: 2 })}
                             </dd>
                           </div>
