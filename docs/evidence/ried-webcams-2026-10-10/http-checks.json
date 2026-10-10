@@ -1,0 +1,225 @@
+{
+  "researchDate": "2026-10-10",
+  "method": "Public operator HTML and bounded HTTP HEAD requests; no image bodies archived or decoded; no streams opened; no credentials; TLS validation enabled. Last-Modified is server metadata, not confirmed capture time.",
+  "observations": [
+    {
+      "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_1.jpg",
+      "checkedAt": "2026-10-10T12:23:50.509583+00:00",
+      "status": 200,
+      "finalUrl": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_1.jpg",
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "152786",
+        "Last-Modified": "Sat, 10 Oct 2026 12:19:49 GMT",
+        "ETag": "\"254d2-65d7b7b37df96\"",
+        "Date": "Sat, 10 Oct 2026 12:23:50 GMT"
+      }
+    },
+    {
+      "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_2.jpg",
+      "checkedAt": "2026-10-10T12:23:50.509295+00:00",
+      "status": 200,
+      "finalUrl": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_2.jpg",
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "475579",
+        "Last-Modified": "Sat, 10 Oct 2026 12:19:23 GMT",
+        "ETag": "\"741bb-65d7b79a7c9b6\"",
+        "Date": "Sat, 10 Oct 2026 12:23:50 GMT"
+      }
+    },
+    {
+      "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_3.jpg",
+      "checkedAt": "2026-10-10T12:23:50.509462+00:00",
+      "status": 200,
+      "finalUrl": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_3.jpg",
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "748309",
+        "Last-Modified": "Sat, 10 Oct 2026 12:19:28 GMT",
+        "ETag": "\"b6b15-65d7b79f04c36\"",
+        "Date": "Sat, 10 Oct 2026 12:23:50 GMT"
+      }
+    },
+    {
+      "url": "https://www.flugplatz-worms.de/Webcam_EDFV/6J051DAPAG26DCD/Snapshot/snapshot.jpg",
+      "checkedAt": "2026-10-10T12:23:50.525268+00:00",
+      "status": 200,
+      "finalUrl": "https://www.flugplatz-worms.de/Webcam_EDFV/6J051DAPAG26DCD/Snapshot/snapshot.jpg",
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "65536",
+        "Last-Modified": "Sat, 10 Oct 2026 12:23:50 GMT",
+        "ETag": "W/\"10000-65d7b898e17f2\"",
+        "Date": "Sat, 10 Oct 2026 12:23:50 GMT"
+      }
+    },
+    {
+      "url": "https://www.flugplatz-worms.de/index.php?option=com_webcam&cam=rechts",
+      "checkedAt": "2026-10-10T12:23:50.802543+00:00",
+      "status": 200,
+      "finalUrl": "https://www.flugplatz-worms.de/index.php?option=com_webcam&cam=rechts",
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Cache-Control": "no-cache, max-age=0, must-revalidate",
+        "Date": "Sat, 10 Oct 2026 12:23:50 GMT"
+      }
+    },
+    {
+      "url": "https://webcams.golf-absolute.de/kiawah.jpg",
+      "checkedAt": "2026-10-10T12:23:50.525427+00:00",
+      "status": 200,
+      "finalUrl": "https://webcams.golf-absolute.de/kiawah.jpg",
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "70630",
+        "Last-Modified": "Sat, 10 Oct 2026 12:22:54 GMT",
+        "ETag": "\"113e6-65d7b86335b54\"",
+        "Date": "Sat, 10 Oct 2026 12:23:50 GMT"
+      }
+    },
+    {
+      "url": "https://webcams.golf-absolute.de/golfcam_gernsheim.jpg",
+      "checkedAt": "2026-10-10T12:24:16.760114+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "38615",
+        "Last-Modified": "Sat, 10 Oct 2026 12:23:34 GMT",
+        "ETag": "\"96d7-65d7b889b6279\"",
+        "Date": "Sat, 10 Oct 2026 12:24:16 GMT"
+      }
+    },
+    {
+      "url": "https://webcams.golf-absolute.de/golfcam_biblis.jpg",
+      "checkedAt": "2026-10-10T12:24:16.814877+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "59389",
+        "Last-Modified": "Sat, 10 Oct 2026 12:23:54 GMT",
+        "ETag": "\"e7fd-65d7b89cbe1a1\"",
+        "Date": "Sat, 10 Oct 2026 12:24:16 GMT"
+      }
+    },
+    {
+      "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_1.jpg",
+      "checkedAt": "2026-10-10T12:24:16.873243+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "152786",
+        "Last-Modified": "Sat, 10 Oct 2026 12:19:49 GMT",
+        "ETag": "\"254d2-65d7b7b37df96\"",
+        "Date": "Sat, 10 Oct 2026 12:24:17 GMT"
+      }
+    },
+    {
+      "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_2.jpg",
+      "checkedAt": "2026-10-10T12:24:16.928436+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "475579",
+        "Last-Modified": "Sat, 10 Oct 2026 12:19:23 GMT",
+        "ETag": "\"741bb-65d7b79a7c9b6\"",
+        "Date": "Sat, 10 Oct 2026 12:24:17 GMT"
+      }
+    },
+    {
+      "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_3.jpg",
+      "checkedAt": "2026-10-10T12:24:16.989141+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "748309",
+        "Last-Modified": "Sat, 10 Oct 2026 12:19:28 GMT",
+        "ETag": "\"b6b15-65d7b79f04c36\"",
+        "Date": "Sat, 10 Oct 2026 12:24:17 GMT"
+      }
+    },
+    {
+      "url": "https://webcams.golf-absolute.de/kiawah.jpg",
+      "checkedAt": "2026-10-10T12:24:17.043260+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "70177",
+        "Last-Modified": "Sat, 10 Oct 2026 12:23:54 GMT",
+        "ETag": "\"11221-65d7b89c6f7c9\"",
+        "Date": "Sat, 10 Oct 2026 12:24:17 GMT"
+      }
+    },
+    {
+      "url": "https://webcams.golf-absolute.de/kiawah.jpg",
+      "checkedAt": "2026-10-10T12:25:55.809356+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "62127",
+        "Last-Modified": "Sat, 10 Oct 2026 12:25:54 GMT",
+        "ETag": "\"f2af-65d7b90ed84d3\"",
+        "Date": "Sat, 10 Oct 2026 12:25:55 GMT"
+      }
+    },
+    {
+      "url": "https://webcams.golf-absolute.de/golfcam_gernsheim.jpg",
+      "checkedAt": "2026-10-10T12:25:55.860845+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "31970",
+        "Last-Modified": "Sat, 10 Oct 2026 12:25:32 GMT",
+        "ETag": "\"7ce2-65d7b8fa83d38\"",
+        "Date": "Sat, 10 Oct 2026 12:25:55 GMT"
+      }
+    },
+    {
+      "url": "https://webcams.golf-absolute.de/golfcam_biblis.jpg",
+      "checkedAt": "2026-10-10T12:25:55.920314+00:00",
+      "status": 200,
+      "headers": {
+        "Content-Type": "image/jpeg",
+        "Content-Length": "61750",
+        "Last-Modified": "Sat, 10 Oct 2026 12:25:54 GMT",
+        "ETag": "\"f136-65d7b90f57fd8\"",
+        "Date": "Sat, 10 Oct 2026 12:25:55 GMT"
+      }
+    }
+  ],
+  "pageChecks": [
+    {
+      "url": "https://aeroclub-heppenheim.de/webcam/",
+      "finalUrl": "https://aeroclub-heppenheim.de/webcam/",
+      "status": 200
+    },
+    {
+      "url": "https://www.flugplatz-worms.de/fuer-piloten/wetterinfos",
+      "finalUrl": "https://www.flugplatz-worms.de/fuer-piloten/wetterinfos",
+      "status": 200
+    },
+    {
+      "url": "https://www.melibokus.com/",
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: certificate has expired (_ssl.c:1082)>"
+    },
+    {
+      "url": "https://www.golf-absolute.de/riedstadt/",
+      "finalUrl": "https://www.golf-absolute.de/riedstadt/",
+      "status": 200
+    },
+    {
+      "url": "https://bensheimerleben.de/home/",
+      "finalUrl": "https://bensheimerleben.de/home/",
+      "status": 200
+    },
+    {
+      "url": "https://lorsch.de/",
+      "finalUrl": "https://lorsch.de/de/",
+      "status": 200
+    }
+  ],
+  "additionalOperatorPages": [
+    "https://www.golf-absolute.de/gernsheim/",
+    "https://www.golf-absolute.de/biblis-wattenheim/"
+  ]
+}
