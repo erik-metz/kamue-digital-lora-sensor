@@ -118,6 +118,51 @@ export const SOURCE_INFO: Record<
     domain: "Umwelt & Gewässer",
     provider: "Hessisches Landesamt für Naturschutz, Umwelt und Geologie (HLNUG)",
   },
+  "autobahn-inventory-a67-electric_charging_station": {
+    title: "Autobahn A67 · Ladeangebote · Anbieterinventar ohne Live-Belegung",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-inventory-a67-parking_lorry": {
+    title: "Autobahn A67 · Rastplätze · PKW-/LKW-Inventar",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-webcam-discovery-a67": {
+    title: "Autobahn A67 · Webcam-Suche (Metadaten)",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-inventory-a5-electric_charging_station": {
+    title: "Autobahn A5 · Ladeangebote · Anbieterinventar ohne Live-Belegung",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-inventory-a5-parking_lorry": {
+    title: "Autobahn A5 · Rastplätze · PKW-/LKW-Inventar",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-webcam-discovery-a5": {
+    title: "Autobahn A5 · Webcam-Suche (Metadaten)",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-inventory-a6-electric_charging_station": {
+    title: "Autobahn A6 · Ladeangebote · Anbieterinventar ohne Live-Belegung",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-inventory-a6-parking_lorry": {
+    title: "Autobahn A6 · Rastplätze · PKW-/LKW-Inventar",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
+  "autobahn-webcam-discovery-a6": {
+    title: "Autobahn A6 · Webcam-Suche (Metadaten)",
+    domain: "Mobilität & Infrastruktur",
+    provider: "Die Autobahn GmbH des Bundes",
+  },
   "traffic-corridors": {
     title: "Verkehrsfluss & Stauvolumen Ried",
     domain: "Mobilität & ÖPNV",
