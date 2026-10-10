@@ -1,0 +1,1248 @@
+{
+  "root": {
+    "url": "https://verkehr.autobahn.de/o/autobahn/",
+    "checkedAt": "2026-10-10T12:30:12.341615+00:00",
+    "status": 200,
+    "body": {
+      "roads": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "A12",
+        "A13",
+        "A14",
+        "A15",
+        "A17",
+        "A19",
+        "A20",
+        "A21",
+        "A23",
+        "A24",
+        "A26",
+        "A27",
+        "A28",
+        "A29",
+        "A30",
+        "A31",
+        "A33",
+        "A36",
+        "A37",
+        "A38",
+        "A39",
+        "A40",
+        "A42",
+        "A43",
+        "A44",
+        "A45",
+        "A46",
+        "A48",
+        "A49",
+        "A52",
+        "A57",
+        "A59",
+        "A60",
+        "A60 ",
+        "A61",
+        "A62",
+        "A63",
+        "A64",
+        "A65",
+        "A66",
+        "A67",
+        "A70",
+        "A71",
+        "A72",
+        "A73",
+        "A81",
+        "A92",
+        "A93",
+        "A94",
+        "A95",
+        "A96",
+        "A98",
+        "A99",
+        "A100",
+        "A103",
+        "A111",
+        "A113",
+        "A115",
+        "A117",
+        "A143",
+        "A210",
+        "A215",
+        "A226",
+        "A255",
+        "A261",
+        "A270",
+        "A281",
+        "A293",
+        "A320",
+        "A352",
+        "A391",
+        "A392",
+        "A445",
+        "A448",
+        "A480",
+        "A485",
+        "A516",
+        "A535",
+        "A544",
+        "A553",
+        "A555",
+        "A560",
+        "A562",
+        "A565",
+        "A571",
+        "A602",
+        "A620",
+        "A623",
+        "A640",
+        "A643",
+        "A648",
+        "A64a",
+        "A656",
+        "A659",
+        "A661",
+        "A671",
+        "A831",
+        "A861",
+        "A864",
+        "A980",
+        "A995",
+        "A99a"
+      ]
+    }
+  },
+  "roads": [
+    "A1",
+    "A10",
+    "A100",
+    "A103",
+    "A11",
+    "A111",
+    "A113",
+    "A115",
+    "A117",
+    "A12",
+    "A13",
+    "A14",
+    "A143",
+    "A15",
+    "A17",
+    "A19",
+    "A2",
+    "A20",
+    "A21",
+    "A210",
+    "A215",
+    "A226",
+    "A23",
+    "A24",
+    "A255",
+    "A26",
+    "A261",
+    "A27",
+    "A270",
+    "A28",
+    "A281",
+    "A29",
+    "A293",
+    "A3",
+    "A30",
+    "A31",
+    "A320",
+    "A33",
+    "A352",
+    "A36",
+    "A37",
+    "A38",
+    "A39",
+    "A391",
+    "A392",
+    "A4",
+    "A40",
+    "A42",
+    "A43",
+    "A44",
+    "A445",
+    "A448",
+    "A45",
+    "A46",
+    "A48",
+    "A480",
+    "A485",
+    "A49",
+    "A5",
+    "A516",
+    "A52",
+    "A535",
+    "A544",
+    "A553",
+    "A555",
+    "A560",
+    "A562",
+    "A565",
+    "A57",
+    "A571",
+    "A59",
+    "A6",
+    "A60",
+    "A602",
+    "A61",
+    "A62",
+    "A620",
+    "A623",
+    "A63",
+    "A64",
+    "A640",
+    "A643",
+    "A648",
+    "A64a",
+    "A65",
+    "A656",
+    "A659",
+    "A66",
+    "A661",
+    "A67",
+    "A671",
+    "A7",
+    "A70",
+    "A71",
+    "A72",
+    "A73",
+    "A8",
+    "A81",
+    "A831",
+    "A861",
+    "A864",
+    "A9",
+    "A92",
+    "A93",
+    "A94",
+    "A95",
+    "A96",
+    "A98",
+    "A980",
+    "A99",
+    "A995",
+    "A99a"
+  ],
+  "results": [
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A1/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.459903+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A1"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A10/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.468772+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A10"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A100/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.460125+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A100"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A103/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.445041+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A103"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A11/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.575780+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A11"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A111/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.587296+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A111"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A113/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.583766+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A113"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A115/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.589388+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A115"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A117/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.767065+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A117"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A12/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.773218+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A12"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A13/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.776520+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A13"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A14/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.771285+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A14"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A143/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.860112+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A143"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A15/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.879009+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A15"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A17/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.879162+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A17"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A19/services/webcam",
+      "checkedAt": "2026-10-10T12:30:12.878807+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A19"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A2/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.011128+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A2"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A20/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.015741+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A20"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A21/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.016693+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A21"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A210/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.016276+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A210"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A215/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.110586+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A215"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A226/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.108728+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A226"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A23/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.114157+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A23"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A24/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.116406+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A24"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A255/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.265537+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A255"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A26/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.259301+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A26"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A261/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.270953+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A261"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A27/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.294690+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A27"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A270/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.384321+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A270"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A28/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.395584+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A28"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A281/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.399543+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A281"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A29/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.413063+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A29"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A293/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.478248+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A293"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A3/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.481764+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A3"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A30/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.481946+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A30"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A31/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.494079+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A31"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A320/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.594812+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A320"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A33/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.591236+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A33"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A352/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.594402+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A352"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A36/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.596937+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A36"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A37/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.759860+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A37"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A38/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.759166+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A38"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A39/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.759466+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A39"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A391/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.760602+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A391"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A392/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.856365+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A392"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A4/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.849048+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A4"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A40/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.845336+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A40"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A42/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.846897+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A42"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A43/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.951637+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A43"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A44/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.941377+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A44"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A445/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.952012+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A445"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A448/services/webcam",
+      "checkedAt": "2026-10-10T12:30:13.956291+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A448"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A45/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.030636+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A45"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A46/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.031806+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A46"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A48/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.030055+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A48"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A480/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.030983+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A480"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A485/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.128465+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A485"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A49/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.124970+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A49"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A5/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.140853+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A5"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A516/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.120119+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A516"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A52/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.328190+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A52"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A535/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.344913+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A535"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A544/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.345403+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A544"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A553/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.358688+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A553"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A555/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.506255+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A555"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A560/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.505720+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A560"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A562/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.507057+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A562"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A565/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.517940+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A565"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A57/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.597782+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A57"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A571/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.608061+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A571"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A59/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.604027+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A59"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A6/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.619313+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A6"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A60/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.705558+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A60"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A602/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.706975+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A602"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A61/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.706240+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A61"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A62/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.705941+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A62"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A620/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.927362+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A620"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A623/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.874621+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A623"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A63/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.907786+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A63"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A64/services/webcam",
+      "checkedAt": "2026-10-10T12:30:14.911743+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A64"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A640/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.000923+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A640"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A643/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.002859+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A643"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A648/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.002446+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A648"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A64a/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.044832+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A64a"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A65/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.113207+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A65"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A656/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.088925+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A656"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A659/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.089345+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A659"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A66/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.116931+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A66"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A661/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.187711+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A661"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A67/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.188107+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A67"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A671/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.206526+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A671"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A7/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.206114+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A7"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A70/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.369631+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A70"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A71/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.393519+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A71"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A72/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.372400+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A72"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A73/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.372894+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A73"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A8/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.454838+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A8"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A81/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.454461+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A81"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A831/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.476520+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A831"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A861/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.477540+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A861"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A864/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.582027+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A864"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A9/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.537468+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A9"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A92/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.556653+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A92"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A93/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.588988+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A93"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A94/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.623157+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A94"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A95/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.642218+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A95"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A96/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.648892+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A96"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A98/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.670587+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A98"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A980/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.695734+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A980"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A99/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.716065+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A99"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A995/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.725329+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A995"
+    },
+    {
+      "url": "https://verkehr.autobahn.de/o/autobahn/A99a/services/webcam",
+      "checkedAt": "2026-10-10T12:30:15.854005+00:00",
+      "status": 200,
+      "body": {
+        "webcam": []
+      },
+      "road": "A99a"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://goldbeck1330.hi-res-cam.com/query?job=dzi&id=live&minsize=0",
+    "checkedAt": "2026-10-10T12:38:07.891032+00:00",
+    "status": 200,
+    "finalUrl": "https://goldbeck1330.hi-res-cam.com/query?job=dzi&id=live&minsize=0",
+    "error": "Expecting value: line 1 column 1 (char 0)"
+  },
+  {
+    "url": "https://webtv.feratel.com/webtv/?bgcolor=ffffff&cam=3305&color1=0070a5&color2=0070a5&design=v5&lg=en&pg=9FF84D98-58C6-49EC-9AC9-3EF6B931DA07",
+    "checkedAt": "2026-10-10T12:38:08.070241+00:00",
+    "error": "HTTP Error 404: Not Found"
+  }
+]

@@ -1,5 +1,7 @@
 # Bildquellen für das Ried: Kandidatenprüfung am 10.10.2026
 
+> Überholt durch das [vollständige regionale Inventar mit Bild- und Streamprüfungen](ried-webcam-vollinventar-2026-10-10.md). Die frühere Golfpark-Priorisierung gilt nicht mehr.
+
 ## Empfehlung
 
 **Pilotkandidat: Golfpark Biblis-Wattenheim, alternativ Kiawah Golfpark Riedstadt.** Beide Betreiberseiten verlinken öffentlich erreichbare JPEG-Endpunkte. Ein Streamdecoder ist für diese Bildadressen voraussichtlich nicht erforderlich. Gernsheim bietet einen dritten Standort über denselben Anbieter, sodass nach einem erfolgreichen Pilotprojekt eine Erweiterung naheliegt.

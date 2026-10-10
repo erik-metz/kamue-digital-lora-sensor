@@ -1,0 +1,85 @@
+[
+  {
+    "url": "https://goldbeck1330.hi-res-cam.com/",
+    "checkedAt": "2026-10-10T12:36:54.685334+00:00",
+    "status": 200,
+    "finalUrl": "https://goldbeck1330.hi-res-cam.com/",
+    "contentType": "text/html",
+    "links": [
+      "https://app.usercentrics.eu/browser-ui/latest/loader.js",
+      "/favicon.ico",
+      "/dhtmlx/skins/dhtmlxmenu_dhx_black.css",
+      "/css/ui-darkness/jquery-ui-1.8.19.custom.css",
+      "/css/rlightbox/lightbox.min.css",
+      "/css/hirescam.css",
+      "/css/goldbeck.css",
+      "https://app.usercentrics.eu/browser-ui/3.30.0/index.module.js",
+      "/js/jquery-1.7.2.min.js",
+      "/js/jquery-ui-1.8.19.custom.min.js",
+      "/js/jquery.fullscreen.js",
+      "/dhtmlx/dhtmlxcommon.js",
+      "/dhtmlx/dhtmlxmenu.js",
+      "/dhtmlx/ext/dhtmlxmenu_ext.js",
+      "/js/jquery.ui.rlightbox.min.js",
+      "/js/seadragon-min.js",
+      "/js/aws_processor.js?1791635814",
+      "https://www.googletagmanager.com/ns.html?id=GTM-KZGQNP3"
+    ]
+  },
+  {
+    "url": "https://falkengg.selfhost.eu/video2.mjpg",
+    "checkedAt": "2026-10-10T12:36:54.896816+00:00",
+    "error": "<urlopen error [Errno 61] Connection refused>"
+  },
+  {
+    "url": "https://www.worldcam.eu/liveview/28945",
+    "checkedAt": "2026-10-10T12:36:54.931752+00:00",
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.worldcam.eu'. (_ssl.c:1082)>"
+  },
+  {
+    "url": "https://www.lorsch.de/stadt/webcam-kloster.shtml",
+    "checkedAt": "2026-10-10T12:36:55.001682+00:00",
+    "error": "HTTP Error 404: Not Found"
+  },
+  {
+    "id": "tiergarten-worms-hls",
+    "page": "https://live.netcamviewer.nl/Storchennest-Tiergarten-Worms/1427",
+    "checkedAt": "2026-10-10T12:36:55.184666+00:00",
+    "status": 200,
+    "mediaStatus": 200,
+    "segmentStatus": 200,
+    "segmentBytes": 178224,
+    "ffprobe": {
+      "programs": [
+        {
+          "streams": [
+            {
+              "codec_name": "timed_id3",
+              "r_frame_rate": "0/0"
+            },
+            {
+              "codec_name": "h264",
+              "width": 640,
+              "height": 360,
+              "r_frame_rate": "25/1"
+            }
+          ]
+        }
+      ],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_name": "timed_id3",
+          "r_frame_rate": "0/0"
+        },
+        {
+          "codec_name": "h264",
+          "width": 640,
+          "height": 360,
+          "r_frame_rate": "25/1"
+        }
+      ]
+    },
+    "probeExit": 0
+  }
+]
