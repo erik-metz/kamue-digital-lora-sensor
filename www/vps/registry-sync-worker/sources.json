@@ -1438,7 +1438,8 @@
         "contactEmail": null,
         "contactSent": false
       },
-      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt."
+      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt.",
+      "stale_after_seconds": 1800
     },
     {
       "id": "ried-melibokus-panorama",
@@ -1464,7 +1465,8 @@
         "contactEmail": null,
         "contactSent": false
       },
-      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt."
+      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt.",
+      "stale_after_seconds": 1800
     },
     {
       "id": "ried-heppenheim-flugfeld",
@@ -1490,7 +1492,8 @@
         "contactEmail": "info@aeroclub-heppenheim.de",
         "contactSent": false
       },
-      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt."
+      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt.",
+      "stale_after_seconds": 1800
     },
     {
       "id": "ried-oppenheim-flugfeld",
@@ -1516,7 +1519,8 @@
         "contactEmail": "fliegen@aeroclub-oppenheim.de",
         "contactSent": false
       },
-      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt."
+      "reason": "Snapshot-Collector vorbereitet; Dauerabruf und Archivnutzung noch nicht bestätigt.",
+      "stale_after_seconds": 1800
     }
   ]
 }

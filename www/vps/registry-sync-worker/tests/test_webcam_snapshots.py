@@ -47,6 +47,7 @@ def jpeg(color="red"):
         {"max_response_bytes": 6_000_000},
         {"max_pixels": 0},
         {"http_retries": 3},
+        {"stale_after_seconds": 0},
     ],
 )
 def test_invalid_source(changes):
@@ -86,7 +87,7 @@ def test_failed_atomic_write_leaves_no_files(tmp_path):
     assert not [p for p in tmp_path.rglob("*") if p.is_file()]
 
 
-class SnapshotDatabaseTests(DatabaseCase):
+class SnapshotDatabaseHarness(DatabaseCase):
     async def asyncSetUp(self):
         await super().asyncSetUp()
         self.temporary = tempfile.TemporaryDirectory()
@@ -121,6 +122,8 @@ class SnapshotDatabaseTests(DatabaseCase):
                 self.connection, client, source or SOURCE
             )
 
+
+class SnapshotDatabaseTests(SnapshotDatabaseHarness):
     async def test_persist_duplicate_changed_and_conditional(self):
         requests = []
         body = jpeg()
@@ -294,3 +297,290 @@ class SnapshotDatabaseTests(DatabaseCase):
             )
         assert len(calls) == 2
         assert await self.scalar("SELECT count(*) FROM webcam_snapshot_images") == 1
+
+
+class MaintenanceDatabaseTests(SnapshotDatabaseHarness):
+    async def test_retention_preserves_latest_and_shared_images(self):
+        import os
+        from datetime import UTC, datetime, timedelta
+
+        from webcam_maintenance import maintain_archive
+
+        now = datetime.now(UTC)
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        await self.run_response(
+            httpx.Response(
+                200, content=jpeg("blue"), headers={"Content-Type": "image/jpeg"}
+            )
+        )
+        await self.conn.execute(
+            "UPDATE webcam_snapshot_observations SET observed_at=%s",
+            (now - timedelta(days=30),),
+        )
+        for path in self.root.rglob("*.jpg"):
+            os.utime(path, (now.timestamp() - 30 * 86400,) * 2)
+        result = await maintain_archive(self.connection, now=now)
+        assert result == {
+            "observations_deleted": 2,
+            "images_deleted": 1,
+            "files_deleted": 1,
+            "bytes_freed": len(jpeg()),
+        }
+        assert (
+            await self.scalar("SELECT count(*) FROM webcam_snapshot_observations") == 1
+        )
+        assert await self.scalar("SELECT count(*) FROM webcam_snapshot_images") == 1
+        assert next(self.root.rglob("*.jpg")).read_bytes() == jpeg("blue")
+        # Acquisition audit is deliberately retained separately.
+        assert await self.scalar("SELECT count(*) FROM collection_attempts") == 3
+        assert await maintain_archive(self.connection, now=now) == {
+            "observations_deleted": 0,
+            "images_deleted": 0,
+            "files_deleted": 0,
+            "bytes_freed": 0,
+        }
+
+    async def test_orphan_grace_foreign_files_and_symlinks(self):
+        import os
+        from datetime import UTC, datetime
+
+        from webcam_maintenance import maintain_archive
+
+        now = datetime.now(UTC)
+        directory = self.root / SOURCE["id"]
+        directory.mkdir()
+        old = directory / ("a" * 64 + ".jpg")
+        recent = directory / ("b" * 64 + ".jpg")
+        temporary = directory / ".incoming-interrupted"
+        foreign = directory / "keep.txt"
+        linked = directory / ("c" * 64 + ".jpg")
+        for path in (old, recent, temporary, foreign):
+            path.write_bytes(b"test")
+        linked.symlink_to(foreign)
+        for path in (old, temporary, foreign):
+            os.utime(path, (now.timestamp() - 90000,) * 2)
+        result = await maintain_archive(self.connection, now=now)
+        assert result["files_deleted"] == 2 and result["bytes_freed"] == 8
+        assert recent.exists() and foreign.exists() and linked.is_symlink()
+
+    async def test_cleanup_rollback_preserves_files_and_observations(self):
+        from datetime import UTC, datetime, timedelta
+
+        from webcam_maintenance import maintain_archive
+
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        await self.run_response(
+            httpx.Response(
+                200, content=jpeg("blue"), headers={"Content-Type": "image/jpeg"}
+            )
+        )
+        await self.conn.execute(
+            "UPDATE webcam_snapshot_observations SET observed_at=%s",
+            (datetime.now(UTC) - timedelta(days=30),),
+        )
+        await self.conn.execute("""CREATE FUNCTION reject_webcam_delete() RETURNS trigger AS $$
+            BEGIN RAISE EXCEPTION 'simulated deletion failure'; END; $$ LANGUAGE plpgsql;
+            CREATE TRIGGER reject_webcam_delete BEFORE DELETE ON webcam_snapshot_images
+            FOR EACH ROW EXECUTE FUNCTION reject_webcam_delete()""")
+        with self.assertRaises(psycopg.Error):
+            await maintain_archive(self.connection)
+        assert (
+            await self.scalar("SELECT count(*) FROM webcam_snapshot_observations") == 2
+        )
+        assert len(list(self.root.rglob("*.jpg"))) == 2
+
+    async def test_failed_unlink_is_recovered_next_cycle(self):
+        import os
+        from datetime import UTC, datetime, timedelta
+
+        from webcam_maintenance import maintain_archive
+
+        now = datetime.now(UTC)
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        await self.run_response(
+            httpx.Response(
+                200, content=jpeg("blue"), headers={"Content-Type": "image/jpeg"}
+            )
+        )
+        await self.conn.execute(
+            "UPDATE webcam_snapshot_observations SET observed_at=%s",
+            (now - timedelta(days=30),),
+        )
+        for path in self.root.rglob("*.jpg"):
+            os.utime(path, (now.timestamp() - 90000,) * 2)
+        with (
+            patch("pathlib.Path.unlink", side_effect=OSError("disk unavailable")),
+            self.assertRaises(OSError),
+        ):
+            await maintain_archive(self.connection, now=now)
+        assert await self.scalar("SELECT count(*) FROM webcam_snapshot_images") == 1
+        assert len(list(self.root.rglob("*.jpg"))) == 2
+        assert (await maintain_archive(self.connection, now=now))["files_deleted"] == 1
+
+    async def test_retention_keeps_images_referenced_by_recent_observations(self):
+        from datetime import UTC, datetime, timedelta
+
+        from webcam_maintenance import maintain_archive
+
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        await self.conn.execute(
+            "UPDATE webcam_snapshot_observations SET observed_at=%s WHERE id=(SELECT min(id) FROM webcam_snapshot_observations)",
+            (datetime.now(UTC) - timedelta(days=30),),
+        )
+        result = await maintain_archive(self.connection)
+        assert result["observations_deleted"] == 1
+        assert result["images_deleted"] == result["files_deleted"] == 0
+        assert len(list(self.root.rglob("*.jpg"))) == 1
+
+    async def test_maintenance_waits_for_acquisition_archive_lock(self):
+        import asyncio
+
+        from webcam_maintenance import maintain_archive
+
+        async with await psycopg.AsyncConnection.connect(**self.db) as writer:
+            await writer.execute(
+                "SELECT pg_advisory_xact_lock(hashtext('webcam-snapshot-archive'))"
+            )
+            task = asyncio.create_task(maintain_archive(self.connection))
+            try:
+                await asyncio.sleep(0.05)
+                assert not task.done()
+                await writer.commit()
+                result = await asyncio.wait_for(task, 5)
+                assert result["files_deleted"] == 0
+            finally:
+                if not task.done():
+                    task.cancel()
+                    await asyncio.gather(task, return_exceptions=True)
+
+    async def test_upgrade_migration_is_repeatable_with_existing_data(self):
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        await self.conn.execute("""ALTER TABLE webcam_snapshot_observations
+            DROP COLUMN unchanged_since, DROP COLUMN unchanged_observations, DROP COLUMN quality_status""")
+        migration = (
+            Path(__file__).resolve().parents[2]
+            / "api/v1/migrations/20261010_webcam_retention.sql"
+        ).read_text()
+        await self.conn.execute(migration)
+        await self.conn.execute(migration)
+        assert (
+            await self.scalar("SELECT count(*) FROM webcam_snapshot_observations") == 1
+        )
+        await self.run_response(
+            httpx.Response(200, content=jpeg(), headers={"Content-Type": "image/jpeg"})
+        )
+        assert (
+            await self.scalar(
+                "SELECT quality_status FROM webcam_snapshot_observations ORDER BY id DESC LIMIT 1"
+            )
+            == "unchanged"
+        )
+
+    async def test_stale_state_is_persisted_and_image_change_resets(self):
+        from datetime import UTC, datetime, timedelta
+
+        now = datetime.now(UTC)
+        await self.run_response(
+            httpx.Response(
+                200,
+                content=jpeg(),
+                headers={"Content-Type": "image/jpeg", "ETag": '"one"'},
+            )
+        )
+        await self.conn.execute(
+            """UPDATE webcam_snapshot_observations SET
+            observed_at=%s, unchanged_since=%s, unchanged_observations=30""",
+            (now - timedelta(seconds=60), now - timedelta(seconds=1800)),
+        )
+        await self.run_response(httpx.Response(304))
+        assert (
+            await self.scalar(
+                "SELECT quality_status FROM webcam_snapshot_observations ORDER BY id DESC LIMIT 1"
+            )
+            == "suspected_stale"
+        )
+        assert (
+            await self.scalar(
+                "SELECT unchanged_observations FROM webcam_snapshot_observations ORDER BY id DESC LIMIT 1"
+            )
+            == 31
+        )
+        await self.run_response(
+            httpx.Response(
+                200, content=jpeg("blue"), headers={"Content-Type": "image/jpeg"}
+            )
+        )
+        assert (
+            await self.scalar(
+                "SELECT quality_status FROM webcam_snapshot_observations ORDER BY id DESC LIMIT 1"
+            )
+            == "fresh"
+        )
+        assert (
+            await self.scalar(
+                "SELECT unchanged_observations FROM webcam_snapshot_observations ORDER BY id DESC LIMIT 1"
+            )
+            == 1
+        )
+
+
+def test_stale_evidence_requires_continuity_and_time():
+    from datetime import UTC, datetime, timedelta
+
+    from webcam_snapshots import observation_quality
+
+    now = datetime.now(UTC)
+    previous = (
+        "hash",
+        "path",
+        None,
+        None,
+        now - timedelta(seconds=60),
+        now - timedelta(seconds=1800),
+        30,
+    )
+    assert observation_quality(previous, "hash", now, SOURCE)[2] == "suspected_stale"
+    assert observation_quality(previous, "different", now, SOURCE) == (now, 1, "fresh")
+    # Long outages and clock reversal break the sequence.
+    assert (
+        observation_quality(previous, "hash", now + timedelta(hours=2), SOURCE)[2]
+        == "fresh"
+    )
+    assert (
+        observation_quality(previous, "hash", now - timedelta(minutes=2), SOURCE)[2]
+        == "fresh"
+    )
+    short = (*previous[:5], now - timedelta(seconds=120), 2)
+    assert observation_quality(short, "hash", now, SOURCE)[2] == "unchanged"
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        {"WEBCAM_RETENTION_DAYS": "0"},
+        {"WEBCAM_RETENTION_DAYS": "366"},
+        {"WEBCAM_ORPHAN_GRACE_SECONDS": "0"},
+        {"WEBCAM_ORPHAN_GRACE_SECONDS": "604801"},
+    ],
+)
+def test_invalid_retention_configuration(values):
+    from webcam_maintenance import retention_config
+
+    with patch.dict("os.environ", values), pytest.raises(ValueError):
+        retention_config()

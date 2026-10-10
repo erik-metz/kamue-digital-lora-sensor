@@ -54,6 +54,7 @@ from social_diagnostics import finish as finish_social_diagnostics
 from verified_christmas_markets import import_christmas_markets
 from verified_club_notice import import_verified_club_notice
 from verified_hcv_campaign import import_hcv_campaign
+from webcam_maintenance import maintain_archive, retention_config
 from webcam_snapshots import import_webcam_snapshot
 from webcam_snapshots import validate_source as validate_webcam_source
 from zakb import import_zakb
@@ -263,20 +264,37 @@ async def prediction_loop(settings, stop):
         await sleep_until_stop(stop, 10 - datetime.now(UTC).timestamp() % 10)
 
 
+async def webcam_maintenance_loop(settings, stop):
+    while not stop.is_set():
+        try:
+            async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+                result = await maintain_archive(conn)
+            LOG.info("Webcam archive maintenance: %s", result)
+        except Exception as exc:  # noqa: BLE001 - retry next cycle without stopping acquisition
+            LOG.error("Webcam archive maintenance failed (%s)", type(exc).__name__)
+        await sleep_until_stop(stop, 3600)
+
+
 async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--job")
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--webcam-maintenance", action="store_true")
     args = parser.parse_args()
     manifest = sources()
     settings = Settings.from_env()
+    retention_config()
     if args.dry_run:
         print(
             json.dumps(
                 {"status": "validated", "sources": len(manifest), "rows_ingested": 0}
             )
         )
+        return
+    if args.webcam_maintenance:
+        async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
+            print(json.dumps(await maintain_archive(conn)))
         return
     if args.all or args.job:
         selected = [
@@ -301,6 +319,7 @@ async def main():
         loop.add_signal_handler(sig, stop.set)
     await asyncio.gather(
         prediction_loop(settings, stop),
+        webcam_maintenance_loop(settings, stop),
         *(source_loop(s, settings, stop,
                       realtime_slot if s["adapter"] in {"gtfs-rt", "db-siri-fm", "db-fasta", "db-ris-boards"} else slots,
                       gtfs_slot) for s in manifest),

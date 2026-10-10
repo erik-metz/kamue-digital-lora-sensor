@@ -38,10 +38,12 @@ Die stabilen Quellenkennungen sind für Bildpfade und Datenbankreferenzen vorges
 
 Für den Collector sind 15 s Timeout, maximal 5 MB pro Antwort, strikte JPEG-Dekodierung und SHA-256-Deduplizierung vorgesehen. Redirects werden zunächst nicht verfolgt; veränderte Ziele bedürfen erneuter Quellenprüfung. TLS bleibt geprüft. Der spätere Collector muss die Konfiguration validieren und nur aktivierte Quellen verarbeiten. Er benötigt eigene, begrenzte Wiederholungen, Backoff bei Fehlern, Dateischreiben über temporäre Dateien und eine eindeutige Zuordnung zur Datenbank.
 
-Auf Basis dieser abendlichen Stichprobe ergeben sich bei jedem Abruf eines neuen Bildes etwa **317 MB pro Tag** für die vier Quellen vor Deduplizierung. Das ist eine Größenordnung, keine gemessene Tagesmenge oder zugesagte Obergrenze: Tagesbilder können erheblich größer sein. Schritt 2 setzt ein konfigurierbares globales Limit von zunächst 5 GB. Aufbewahrungsfristen und automatische Bereinigung folgen in Schritt 3; reale Bildgrößen dienen anschließend zur Nachjustierung.
+Auf Basis dieser abendlichen Stichprobe ergeben sich bei jedem Abruf eines neuen Bildes etwa **317 MB pro Tag** für die vier Quellen vor Deduplizierung. Das ist eine Größenordnung, keine gemessene Tagesmenge oder zugesagte Obergrenze: Tagesbilder können erheblich größer sein. Schritt 2 setzt ein konfigurierbares globales Limit von zunächst 5 GB. Schritt 3 ergänzt 14 Tage Aufbewahrung mit stündlicher Bereinigung und Erhalt des jeweils letzten Bildes; reale Bildgrößen dienen anschließend zur Nachjustierung.
 
 ## Übergabe
 
 Schritt 1 ist abgeschlossen: vier konkrete Quellen, geprüfte Direktbilder, begründete Auswahl und Intervalle sowie getrennte offene Nutzungs-/Geometrie-/Qualitätsfragen liegen vor. Die Quellen sind fachliche Kandidaten, keine freigegebenen produktiven Imports.
 
 Schritt 2 implementiert Snapshot-Collector, Dateispeicherung und Datenbank-Metadaten. Verifikation zunächst mit lokalen Testbildern: vollständiges Bild, unverändertes Bild, defektes JPEG, Antwortlimit, Timeout und fehlgeschlagenes Dateischreiben. Produktiven Dauerabruf erst gezielt pro Quelle aktivieren. Schritt 2 ist implementiert und mit synthetischen Bildern geprüft; produktiver Dauerabruf bleibt deaktiviert.
+
+Schritt 3 ist ebenfalls umgesetzt: Aufbewahrung, Bereinigung verwaister Dateien und ein persistenter Verdachtsstatus für über längere Zeit unveränderte Bilder. Details und Grenzen stehen im [Collector-Handbuch](../../www/vps/registry-sync-worker/WEBCAMS.md). Die Quellen bleiben deaktiviert.

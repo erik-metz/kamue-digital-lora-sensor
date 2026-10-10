@@ -38,6 +38,12 @@ def validate_source(source):
         ("max_response_bytes", 1024, 5_000_000, 5_000_000),
         ("max_pixels", 1, 20_000_000, 20_000_000),
         ("http_retries", 0, 2, 1),
+        (
+            "stale_after_seconds",
+            180,
+            604800,
+            max(1800, 3 * source.get("interval_seconds", 300)),
+        ),
     ]:
         value = source.get(key, default)
         if type(value) is not int or not low <= value <= high:
@@ -138,11 +144,34 @@ async def fetch(client, source, headers):
     return response, body, dimensions
 
 
+def observation_quality(previous, digest, observed, source):
+    """Byte-identical responses indicate suspected staleness, never proof."""
+    interval = source.get("interval_seconds", 300)
+    # Gaps break the evidence chain; no claim about images during failed fetches.
+    continuous = previous and 0 <= (observed - previous[4]).total_seconds() <= max(
+        900, interval * 3
+    )
+    if continuous and previous[0] == digest:
+        since = previous[5] or previous[4]
+        count = previous[6] + 1
+        threshold = max(
+            source.get("stale_after_seconds", max(1800, interval * 3)), interval * 3
+        )
+        status = (
+            "suspected_stale"
+            if count >= 3 and (observed - since).total_seconds() >= threshold
+            else "unchanged"
+        )
+        return since, count, status
+    return observed, 1, "fresh"
+
+
 async def import_webcam_snapshot(conn, client, source):
     validate_source(source)
     root, quota = archive_config()
     cursor = await conn.execute(
-        """SELECT o.sha256, i.relative_path, o.etag, o.last_modified
+        """SELECT o.sha256, i.relative_path, o.etag, o.last_modified,
+        o.observed_at, o.unchanged_since, o.unchanged_observations
         FROM webcam_snapshot_observations o JOIN webcam_snapshot_images i
         USING (source_id, sha256) WHERE o.source_id=%s ORDER BY o.id DESC LIMIT 1""",
         (source["id"],),
@@ -181,6 +210,9 @@ async def import_webcam_snapshot(conn, client, source):
     else:
         digest = hashlib.sha256(body).hexdigest()
         relative = f"{source['id']}/{digest}.jpg"
+    unchanged_since, unchanged_count, quality = observation_quality(
+        previous, digest, observed, source
+    )
     created = False
     try:
         async with conn.transaction():
@@ -212,8 +244,9 @@ async def import_webcam_snapshot(conn, client, source):
             attempt_id = (await attempt_cursor.fetchone())[0]
             await conn.execute(
                 """INSERT INTO webcam_snapshot_observations
-                (source_id,sha256,attempt_id,observed_at,http_status,etag,last_modified)
-                VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                (source_id,sha256,attempt_id,observed_at,http_status,etag,last_modified,
+                 unchanged_since,unchanged_observations,quality_status)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (
                     source["id"],
                     digest,
@@ -227,6 +260,9 @@ async def import_webcam_snapshot(conn, client, source):
                         "last-modified",
                         previous[3] if previous and body is None else None,
                     ),
+                    unchanged_since,
+                    unchanged_count,
+                    quality,
                 ),
             )
     except BaseException:
