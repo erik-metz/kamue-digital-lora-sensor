@@ -88,5 +88,5 @@ class MusikkisteDatabaseTests(DatabaseCase):
             2,
         )
         self.assertTrue(
-            all(request.url.params["end_date"] == "2027-12-31" for request in requests)
+            all(request.url.params["end_date"] == "2030-12-31" for request in requests)
         )

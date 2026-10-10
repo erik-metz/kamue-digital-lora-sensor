@@ -5,6 +5,7 @@ import hashlib
 import json
 import os
 from datetime import UTC, datetime, timedelta
+from email.utils import parsedate_to_datetime
 from urllib.parse import urlsplit, urlunsplit
 
 import httpx
@@ -48,7 +49,11 @@ async def acquire(conn, client, source, url=None, *, form=None):
                 try:
                     delay = max(delay, min(60, max(0, float(response.headers.get("retry-after", 0)))))
                 except ValueError:
-                    pass
+                    try:
+                        retry_at = parsedate_to_datetime(response.headers.get("retry-after", ""))
+                        delay = max(delay, min(60, max(0, (retry_at - datetime.now(UTC)).total_seconds())))
+                    except (TypeError, ValueError, OverflowError):
+                        pass
             await asyncio.sleep(delay)
 
 

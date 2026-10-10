@@ -9,13 +9,7 @@
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2,
-      "description": "Vier verifizierte Lampertheimer Weihnachtsmärkte 2026 mit neun täglichen Öffnungsfenstern; ersetzt drei widersprüchliche kommunale Einträge ausschließlich für 2026.",
-      "verified_section_sha256": {
-        "Lampertheimer Weihnachtsmarkt": "5eba3e1dce49f399f0f01d8ac2846f861101e494496a2f13bb7549b91dd3481a",
-        "Hofheimer Weihnachtsmarkt": "50bfc4da040e78d4008b56621692905700680a010160b6e1be2f618b732e0d33",
-        "Hüttenfelder Weihnachtsmarkt": "c4b213d8882517d6ac5d00e61fc8ab7adf35ac7d73250737ac1cec9a148a4192",
-        "Neuschlosser Weihnachtsmarkt": "eb7cbbf326e3e72b2d51fa5aa8481c617b3d210fe407e47cc24f95060cf27a84"
-      }
+      "description": "Dynamische Weihnachtsmarkt-Abschnitte mit veröffentlichten täglichen Öffnungszeiten; ersetzt die drei geprüften widersprüchlichen Einträge von 2026."
     },
     {
       "id": "hcv-buerstadt-campaign",
@@ -26,45 +20,7 @@
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2,
-      "description": "Sechs verifizierte HCV-Termine der Kampagne 2026/2027 in Bürstadt; keine Jahresfortschreibung.",
-      "verified_fragment_sha256": "b205bb425b45be1bfefa9653ec81334afecc1a87228feaa07421aee7eee1151d",
-      "verified_events": [
-        {
-          "datum": "07.11.2026",
-          "event": "HCV Schlachtfest",
-          "uhrzeit": "18:00 Uhr",
-          "ort": "Die Lächner 9"
-        },
-        {
-          "datum": "08.01.2027",
-          "event": "1. Prunksitzung",
-          "uhrzeit": "19:31 Uhr",
-          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
-        },
-        {
-          "datum": "09.01.2027",
-          "event": "2. Prunksitzung",
-          "uhrzeit": "19:11 Uhr",
-          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
-        },
-        {
-          "datum": "15.01.2027",
-          "event": "3. Prunksitzung",
-          "uhrzeit": "19:31 Uhr",
-          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
-        },
-        {
-          "datum": "16.01.2027",
-          "event": "4. Prunksitzung",
-          "uhrzeit": "19:11 Uhr",
-          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
-        },
-        {
-          "datum": "05.02.2027",
-          "event": "HCV Frauensitzung",
-          "ort": "Bürgerhaus Bürstadt, Rathausstraße 2"
-        }
-      ]
+      "description": "Dynamische öffentliche HCV-Termine aus dem veröffentlichten Kalender; keine feste Termin- oder Jahresliste."
     },
     {
       "id": "lampertheim-wanderung-festival-notice",
@@ -76,13 +32,8 @@
       "max_age_seconds": 172800,
       "http_retries": 2,
       "verified_heading": "Spargelwanderung",
-      "verified_paragraph_sha256": [
-        "324d5491c76ec7abc084745d31cce62fe6e47e996649b01ac99ac482383482d7"
-      ],
-      "verified_event": {
+      "event_metadata": {
         "title": "Spargelwanderung",
-        "start_date": "2027-04-25",
-        "end_date": "2027-04-25",
         "venue_name": "Gemarkungen Lampertheim und Bürstadt – genauer Verlauf noch nicht veröffentlicht",
         "municipality": "Lampertheim",
         "organizer": "Städte Lampertheim und Bürstadt",
@@ -99,14 +50,8 @@
       "max_age_seconds": 172800,
       "http_retries": 2,
       "verified_heading": "Spargelfest Lampertheim",
-      "verified_paragraph_sha256": [
-        "802ea545f90db41b9af372ceb1f11c1e84f5fa2b9bd9e51ba10daf7870444187",
-        "268de91593078b9f2a451597e1896c78c6fa1abb45d6cc4af07d52e5ab3aae86"
-      ],
-      "verified_event": {
+      "event_metadata": {
         "title": "Spargelfest Lampertheim",
-        "start_date": "2027-06-11",
-        "end_date": "2027-06-13",
         "venue_name": "Innenstadt Lampertheim",
         "municipality": "Lampertheim",
         "organizer": "Stadt Lampertheim",
@@ -123,14 +68,8 @@
       "max_age_seconds": 172800,
       "http_retries": 2,
       "verified_heading": "Howwemer Kerb",
-      "verified_paragraph_sha256": [
-        "76b95ea61648d86ff355680965a580cfb1a6148bcd9e98d0019f73cc88a51054",
-        "8faade5a7d5390517d12fda9bc9925dfa7e707b432dc64c5f132eaaac9fa5d2a"
-      ],
-      "verified_event": {
+      "event_metadata": {
         "title": "Howwemer Kerb",
-        "start_date": "2027-09-10",
-        "end_date": "2027-09-14",
         "venue_name": "Festmeile am Alten Rathaus bis Feuerwehrgerätehaus und Gartenstraße, Lampertheim-Hofheim",
         "municipality": "Lampertheim",
         "organizer": "Stadt Lampertheim",
@@ -147,14 +86,8 @@
       "max_age_seconds": 172800,
       "http_retries": 2,
       "verified_heading": "Lampertheimer Kerwe",
-      "verified_paragraph_sha256": [
-        "dd73538dcecf5776e19f9d524a84e7a6964ae1f7db6488b619891c5dee9e73fc",
-        "c97af0f498e7cb39f373ee0d0e6948585f7ae97f66e9bdfd01e87025b8ea1708"
-      ],
-      "verified_event": {
+      "event_metadata": {
         "title": "Lampertheimer Kerwe",
-        "start_date": "2027-09-11",
-        "end_date": "2027-09-13",
         "venue_name": "Römerstraße und Kaiserstraße, Lampertheim",
         "municipality": "Lampertheim",
         "organizer": "Stadt Lampertheim",
@@ -170,52 +103,8 @@
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2,
-      "verified_paragraph_sha256": [
-        "26d38a003d98891e8c4776e2d603b3540b22c5e589f685091b40e7dce4a77c31",
-        "8975c43982d62db21a355cb5651a46dc742240de473436ab9c3da61bff542668",
-        "2feffc9da6f81b91dd3d06ed75be24e997347f540a301be61f2433810bfd2635",
-        "fdd2af6e78a199d7b290f963789b84db21dfcd224e348e1aef677b0b8b4158d8",
-        "bae563ad0f15b438b9a181a1847ab8efb2a0dbb7141475119e29ae7e9c6149a8",
-        "957537ebf6ff6f698b52239d1d8b9773be556a20376813514161e84a412ad28f",
-        "2d5b6d08ab20e105bc9a763a7653aabf2aa10a0af3784d8509bc42ee9e948fdb",
-        "4e12c37efc86e45b8b977999b87aec028459507cfa6218c16db33e826df78413",
-        "728683b46f6ab057a4d081ede50a7fbe5da7bad0373301e0befe0dd725d30448",
-        "95a2c0498168cc7689c6d805f533f555e2d35d3abded28628c13492436c32791",
-        "8248780c75c976bddda1228781b6791b382326a0e57937cd58def7a8c90e36ad",
-        "d7387391ff3c293ff94e8480d25de236e77871df1e8c3ace0bdf49978af12d60"
-      ],
-      "verified_plan_row_sha256": "365c05998c6f7a0aed0ab079a5a1093024f65d8ff2b0c499beb8fb9206348264",
-      "verified_offers": [
-        {
-          "id": "tvl-triathlon-zirkeltraining",
-          "title": "Koordinatives Zirkeltraining",
-          "weekday": "Freitag",
-          "start_local": "18:30",
-          "end_local": "20:00",
-          "venue_name": "Gymnastikraum der Goetheschule-Sporthalle, Lampertheim",
-          "description": "Für alle Vereinsmitglieder, unabhängig vom Leistungsstand. Im Wintertrainingsplan geführt; Durchführung außerhalb des Winterplans beim Verein erfragen. Interesse an der Teilnahme bitte vorab mit triathlon@tv-lampertheim.de klären. Kosten, freie Plätze, Feiertage und Ausfälle beim Verein erfragen.",
-          "municipality": "Lampertheim"
-        },
-        {
-          "id": "tvl-triathlon-rumpfstabilisation",
-          "title": "Rumpfstabilisation (Oktober–März)",
-          "weekday": "Freitag",
-          "start_local": "20:00",
-          "end_local": "21:00",
-          "venue_name": "Gymnastikraum der Goetheschule-Sporthalle, Lampertheim",
-          "description": "Nur im Winterhalbjahr Oktober–März, für alle Vereinsmitglieder unabhängig vom Leistungsstand. Interesse an der Teilnahme bitte vorab mit triathlon@tv-lampertheim.de klären. Kosten, freie Plätze, Feiertage und Ausfälle beim Verein erfragen.",
-          "municipality": "Lampertheim"
-        },
-        {
-          "id": "tvl-triathlon-lauf-abc",
-          "title": "Laufschule mit Lauf-ABC (Oktober–März)",
-          "weekday": "Samstag",
-          "start_local": "10:45",
-          "venue_name": "Parkplatz vor dem Hallenbadeingang der Biedensand Bäder, Lampertheim",
-          "description": "Nur im Winterhalbjahr Oktober–März. Veröffentlichte Dauer: 60–90 Minuten; keine feste Enduhrzeit angegeben. Interesse an der Teilnahme bitte vorab mit triathlon@tv-lampertheim.de klären. Kosten, freie Plätze, Feiertage und Ausfälle beim Verein erfragen.",
-          "municipality": "Lampertheim"
-        }
-      ]
+      "retry_delay_seconds": 15,
+      "organizer": "TV 1883 Lampertheim – Triathlon"
     },
     {
       "id": "tv-gross-rohrheim-gymnastik",
@@ -227,56 +116,7 @@
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2,
-      "verified_courses": [
-        {
-          "section_sha256": "6c935f4b72ac1e3697d4d2c600e8996388006a1229416e163e9b40a9a741d910",
-          "id": "tv-gross-rohrheim-gymnastik-wirbelsaeule",
-          "title": "Wirbelsäulengymnastik (Frauen 60plus)",
-          "weekday": "Montag",
-          "start_local": "09:00",
-          "end_local": "10:00",
-          "municipality": "Groß-Rohrheim",
-          "venue_name": "Kleiner Hallenteil der Bürgerhalle, Jahnstraße, Groß-Rohrheim",
-          "heading": "Wirbelsäulengymnastik (Frauen 60plus)",
-          "paragraph_count": 1
-        },
-        {
-          "section_sha256": "b25b610a3ea8dc7cbde52020f953d5b78fb8b759605fdd849a85dfdf61f7173b",
-          "id": "tv-gross-rohrheim-gymnastik-frauen-55plus",
-          "title": "Frauen (55 plus)",
-          "weekday": "Dienstag",
-          "start_local": "18:30",
-          "end_local": "19:30",
-          "municipality": "Groß-Rohrheim",
-          "venue_name": "Hallenanbau, Jahnstraße, Groß-Rohrheim",
-          "heading": "Frauen (55 plus)",
-          "paragraph_count": 2
-        },
-        {
-          "section_sha256": "b4206c1617eeb692f0d9dccf82f78fb7ea4fc5d89373fe29a5de0c5d99d83c47",
-          "id": "tv-gross-rohrheim-gymnastik-stepp",
-          "title": "Stepp",
-          "weekday": "Dienstag",
-          "start_local": "19:30",
-          "end_local": "20:30",
-          "municipality": "Groß-Rohrheim",
-          "venue_name": "Hallenanbau, Jahnstraße, Groß-Rohrheim",
-          "heading": "Stepp",
-          "paragraph_count": 2
-        },
-        {
-          "section_sha256": "e79083e8e33a569e91b8c911e45eb344cb309567ae981f49bea755a7e9a74280",
-          "id": "tv-gross-rohrheim-gymnastik-fit-entspannt",
-          "title": "Fit und Entspannt (Frauen)",
-          "weekday": "Donnerstag",
-          "start_local": "20:00",
-          "end_local": "21:30",
-          "municipality": "Groß-Rohrheim",
-          "venue_name": "Hallenanbau, Jahnstraße, Groß-Rohrheim",
-          "heading": "Fit und Entspannt (Frauen)",
-          "paragraph_count": 2
-        }
-      ]
+      "organizer": "TV Groß-Rohrheim"
     },
     {
       "id": "rompin-stompin-regular-offers",
@@ -290,88 +130,7 @@
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2,
-      "verified_courses": [
-        {
-          "card_sha256": "74b179d79a506a858dc308b92ea23b95c0085e03a01b8f20af7e2cd58be1bf5f",
-          "id": "rompin-stompin-biblis-einstieg",
-          "title": "Line Dance – Einstieg (Heidi)",
-          "weekday": "Montag",
-          "start_local": "10:00",
-          "end_local": "11:00",
-          "municipality": "Biblis",
-          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
-        },
-        {
-          "card_sha256": "30680f7c0e1d4eeee22d3e67809795eb23403c0ca6367d9a55f0ab71a0d40d1e",
-          "id": "rompin-stompin-biblis-aufbau",
-          "title": "Line Dance – Aufbau (Britta)",
-          "weekday": "Montag",
-          "start_local": "18:00",
-          "end_local": "19:00",
-          "municipality": "Biblis",
-          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
-        },
-        {
-          "card_sha256": "5d38fa395eb7e0fffbb660dce1bae19a832eae813c480439e498ece80426dd5a",
-          "id": "rompin-stompin-biblis-fortgeschritten",
-          "title": "Line Dance – Fortgeschrittene (Britta)",
-          "weekday": "Montag",
-          "start_local": "19:00",
-          "end_local": "20:00",
-          "municipality": "Biblis",
-          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
-        },
-        {
-          "card_sha256": "eb93779bb854cb7316f14710b977796f35f76a72fafb7895deca3749b720ed14",
-          "id": "rompin-stompin-biblis-erfahren",
-          "title": "Line Dance – Erfahrene (Britta)",
-          "weekday": "Montag",
-          "start_local": "20:00",
-          "end_local": "21:00",
-          "municipality": "Biblis",
-          "venue_name": "Bürgerzentrum Biblis, Darmstädter Straße 4–6"
-        },
-        {
-          "card_sha256": "888564bb03683bd811efadc12b91eeed36cf814eb5f2c99f8068e0fe087e4fe5",
-          "id": "rompin-stompin-buerstadt-aufbau",
-          "title": "Line Dance – Aufbau (Yvonne)",
-          "weekday": "Montag",
-          "start_local": "18:30",
-          "end_local": "19:30",
-          "municipality": "Bürstadt",
-          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
-        },
-        {
-          "card_sha256": "ea7d9356cb0e2165da25170dae026d7c11f4f163a9c7cf6d757af6f411192be2",
-          "id": "rompin-stompin-buerstadt-fortgeschritten",
-          "title": "Line Dance – Fortgeschrittene (Yvonne)",
-          "weekday": "Montag",
-          "start_local": "19:30",
-          "end_local": "20:30",
-          "municipality": "Bürstadt",
-          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
-        },
-        {
-          "card_sha256": "9a958065b1b701439fe535f71ec996ddfa8efe151abb3f288e815a15d4dea1a3",
-          "id": "rompin-stompin-buerstadt-partnertanz",
-          "title": "Partnertanz (Heidi)",
-          "weekday": "Donnerstag",
-          "start_local": "18:00",
-          "end_local": "19:00",
-          "municipality": "Bürstadt",
-          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
-        },
-        {
-          "card_sha256": "749589b80008840b56b12168910cbe57879931b8c638137c1c5f089ae6b9a899",
-          "id": "rompin-stompin-buerstadt-erfahren",
-          "title": "Line Dance – Erfahrene (Heidi)",
-          "weekday": "Donnerstag",
-          "start_local": "19:00",
-          "end_local": "21:00",
-          "municipality": "Bürstadt",
-          "venue_name": "Tanzschule Kohler, Mainstraße 44, Bürstadt"
-        }
-      ]
+      "organizer": "Rompin Stompin Line Dancer Biblis e.V."
     },
     {
       "id": "tv-buerstadt-lauftreff",
@@ -382,10 +141,7 @@
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2,
-      "verified_paragraph_sha256": [
-        "a507c9c2c97989f9af1ee70be3a9013398b7d41d57c4893a98a1ddc3ed9c1189",
-        "8b41a6e96ca6b10e1646d433f2d7335b54ef31dc17b15d1bf95c12022c4dedcc"
-      ]
+      "organizer": "TV 1891 Bürstadt"
     },
     {
       "id": "tv-gross-rohrheim-lauftreff",
@@ -395,7 +151,8 @@
       "url": "https://tv-grossrohrheim.de/angebot/lauftreff/",
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
-      "http_retries": 2
+      "http_retries": 2,
+      "organizer": "TV Groß-Rohrheim"
     },
     {
       "id": "db-openstation-netex",
@@ -850,17 +607,7 @@
       "description": "Öffentliche Vereins-/Ortsteiltermine: SG 1946 Hüttenfeld; tatsächlicher Veranstaltungsort im Ried.",
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
-      "http_retries": 2,
-      "event_pages": [
-        "/kerwe/",
-        "/kerwelauf/",
-        "/kinderfasching/",
-        "/maifest/",
-        "/ostereierschiessen/",
-        "/nikolausschiessen/",
-        "/oktoberfest/",
-        "/events-summernight/"
-      ]
+      "http_retries": 2
     },
     {
       "id": "dlrg-lampertheim-events",
@@ -963,6 +710,10 @@
         "Bürgerhallen-Gaststätte bei „Eule Andrea“": {
           "venue_name": "Bürgerhallen-Gaststätte bei „Eule Andrea“, Groß-Rohrheim",
           "municipality": "Groß-Rohrheim"
+        },
+        "Friedhof": {
+          "venue_name": "Friedhof, Groß-Rohrheim",
+          "municipality": "Groß-Rohrheim"
         }
       },
       "description": "Zwei ausdrücklich datierte Gemeindetermine aus der offiziellen Mitteilung; einzeln belegte lokale Veranstaltungsorte.",
@@ -976,10 +727,7 @@
       "adapter": "long-term-events",
       "enabled": true,
       "url": "https://www.gross-rohrheim.de/freizeit-kultur/veranstaltungen/veranstaltungskalender/langfristige-termine",
-      "years": [
-        2027
-      ],
-      "description": "Offizielle Datumshinweise zu Maimarkt und Kirchweih 2027 in Groß-Rohrheim; genaue Veranstaltungsplätze und Uhrzeiten noch offen.",
+      "description": "Alle ausdrücklich veröffentlichten kommenden Maimarkt- und Kirchweihtermine der Gemeinde.",
       "interval_seconds": 21600,
       "max_age_seconds": 172800,
       "http_retries": 2
@@ -1431,6 +1179,28 @@
       "interval_seconds": 86400,
       "max_age_seconds": 129600,
       "reason": "Unauthenticated public observations; bounded daily privacy/license revalidation; no photos."
+    },
+    {
+      "id": "gross-rohrheim-news-events",
+      "group": "social",
+      "adapter": "municipal-news-events",
+      "enabled": true,
+      "url": "https://gross-rohrheim.orts.app/Newsfeed",
+      "interval_seconds": 21600,
+      "max_age_seconds": 172800,
+      "http_retries": 2,
+      "description": "Dynamische Entdeckung öffentlicher Gemeindemitteilungen mit expliziten Datums- und Ortsangaben.",
+      "venue_aliases": {
+        "Rathaussitzungssaal": "Rathaussitzungssaal Groß-Rohrheim",
+        "Bürgerhallen-Gaststätte bei „Eule Andrea“": "Bürgerhallen-Gaststätte bei „Eule Andrea“, Groß-Rohrheim",
+        "Bürgerhalle": "Bürgerhalle, Groß-Rohrheim",
+        "in der Allee": "Allee, Groß-Rohrheim",
+        "beim TC": "Tennisanlage TC74, An der Fohlenweide, Groß-Rohrheim"
+      },
+      "legacy_notice_urls": [
+        "https://gross-rohrheim.orts.app/-arbeitsgruppen-bei-der-gemeinde-gross-rohrheim_LN6I/nHDc",
+        "https://gross-rohrheim.orts.app/-saisonabschluss-11-10-2026-beim-tc_15XI"
+      ]
     }
   ]
 }

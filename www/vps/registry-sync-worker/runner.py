@@ -31,6 +31,7 @@ from long_term_events import import_long_term_events
 from map_tiles import import_wms
 from municipal_festival_notices import import_municipal_festival_notice
 from municipal_notice_events import import_municipal_notice_events
+from news_events import import_news_events
 from osm_addresses import import_addresses
 from prediction import predict_tick
 from publications import acquisition_error, import_json, public_url
@@ -44,6 +45,9 @@ from regular_offers import (
 )
 from ris_boards import import_ris_boards
 from satellite import import_satellite
+from social_diagnostics import CURRENT
+from social_diagnostics import begin as begin_social_diagnostics
+from social_diagnostics import finish as finish_social_diagnostics
 from verified_christmas_markets import import_christmas_markets
 from verified_club_notice import import_verified_club_notice
 from verified_hcv_campaign import import_hcv_campaign
@@ -69,6 +73,7 @@ ADAPTERS = {
     "biblis-events": import_biblis_events,
     "tribe-events": import_biblis_events,
     "municipal-notice-events": import_municipal_notice_events,
+    "municipal-news-events": import_news_events,
     "long-term-events": import_long_term_events,
     "municipal-festival-notice": import_municipal_festival_notice,
     "verified-club-notice": import_verified_club_notice,
@@ -143,6 +148,10 @@ async def collect(source, settings):
         if not (await cursor.fetchone())[0]:
             return {"source_id": source["id"], "status": "already_running"}
         await conn.commit()
+        social_token = begin_social_diagnostics() if source.get("group") == "social" else None
+        started_cursor = await conn.execute("SELECT clock_timestamp()")
+        started = (await started_cursor.fetchone())[0]
+        await conn.commit()
         try:
             async with httpx.AsyncClient(
                 timeout=120,
@@ -150,6 +159,8 @@ async def collect(source, settings):
                 headers={"User-Agent": "OpenRiedSens-Collector/2.0"},
             ) as client:
                 status = await ADAPTERS[source["adapter"]](conn, client, source)
+            if social_token is not None:
+                await finish_social_diagnostics(conn, source, started)
             return {"source_id": source["id"], "status": status or "success"}
         except Exception as exc:  # noqa: BLE001 - isolate source jobs; record failure without secret URLs
             await conn.rollback()
@@ -164,6 +175,8 @@ async def collect(source, settings):
             LOG.error("Source %s failed (%s)", source["id"], acquisition_error(exc))
             return {"source_id": source["id"], "status": "failed"}
         finally:
+            if social_token is not None:
+                CURRENT.reset(social_token)
             await conn.execute(
                 "SELECT pg_advisory_unlock(hashtext(%s))", (source["id"],)
             )

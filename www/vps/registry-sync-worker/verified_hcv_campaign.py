@@ -1,20 +1,16 @@
-"""Read the six reviewed HCV dates without executing the site's JavaScript."""
+"""Read the published HCV calendar as literal data, without JavaScript execution."""
 
 import hashlib
 import json
 import re
-from datetime import UTC, date, datetime, time
+from datetime import UTC, datetime
 from urllib.parse import urljoin, urlsplit
 
 from adapters import sync_cultural_events_to_db_and_publish
-from municipal_events import BERLIN, Document, event_period
+from club_events import dated_range
+from dynamic_calendar import clock, identity, reconcile_future
+from municipal_events import Document, event_period, municipality_for_venue
 from publications import acquire
-
-FRAGMENT = r'La="Bürgerhaus Bürstadt, Rathausstraße 2",dr=\[[^\n]{1,10000}?\],ec='
-TITLES = {
-    "HCV Schlachtfest", "1. Prunksitzung", "2. Prunksitzung",
-    "3. Prunksitzung", "4. Prunksitzung", "HCV Frauensitzung",
-}
 
 
 def campaign_asset(html, page_url):
@@ -33,72 +29,109 @@ def campaign_asset(html, page_url):
 
 
 def campaign_events(javascript, source, now):
-    fragments = re.findall(FRAGMENT, javascript)
-    if (
-        source["id"] != "hcv-buerstadt-campaign"
-        or len(fragments) != 1
-        or hashlib.sha256(fragments[0].encode()).hexdigest()
-        != source["verified_fragment_sha256"]
-    ):
-        raise ValueError("HCV campaign dates or venues changed; verification required")
-    # Only JSON-compatible literal data is read; no provider code is evaluated.
-    literal = fragments[0].split("dr=", 1)[1][:-4]
-    literal = re.sub(r'(datum|event|ort|uhrzeit):', r'"\1":', literal)
-    rows = json.loads(literal.replace(':La', ':"Bürgerhaus Bürstadt, Rathausstraße 2"'))
-    selected = [r for r in rows if r["event"] in TITLES]
-    if selected != source["verified_events"] or {r["event"] for r in selected} != TITLES:
-        raise ValueError("Reviewed HCV event set changed")
+    if source["id"] != "hcv-buerstadt-campaign":
+        raise ValueError("Unexpected HCV source")
+    # Literal arrays are parsed as data. Never eval JavaScript or fetch its imports.
+    arrays = re.findall(
+        r"\b[A-Za-z_$][\w$]*=\[(\{datum:[^\n]{1,30000}?)\](?=[,;])", javascript
+    )
+    arrays = [literal for literal in arrays if re.search(r"[,}]event:", literal)]
+    if len(arrays) != 1:
+        raise ValueError("HCV dated event array missing or ambiguous")
+    literal = "[" + arrays[0] + "]"
+    symbols = dict(
+        re.findall(r'\b([A-Za-z_$][\w$]*)=("[^"\n]{1,300}")(?=[,;])', javascript)
+    )
+    literal = re.sub(r"(datum|event|ort|uhrzeit):", r'"\1":', literal)
+    literal = re.sub(
+        r":([A-Za-z_$][\w$]*)(?=[,}])",
+        lambda m: ":" + symbols.get(m[1], "null"),
+        literal,
+    )
+    rows = json.loads(literal)
+    if not rows or len(rows) > 100:
+        raise ValueError("HCV calendar empty or unbounded")
     result = []
-    for row in selected:
-        day = date(*reversed([int(v) for v in row["datum"].split(".")]))
-        if day.year not in (2026, 2027) or row["ort"] not in {
-            "Die Lächner 9", "Bürgerhaus Bürstadt, Rathausstraße 2"
-        }:
-            raise ValueError("HCV event outside reviewed campaign or venues")
-        clock = row.get("uhrzeit", "").removesuffix(" Uhr") or None
-        if clock:
-            start = datetime.combine(day, time.fromisoformat(clock), BERLIN)
-            end = None
-        else:
-            start, end = event_period(day.isoformat())
+    for row in rows:
+        title = row.get("event", "")
+        # Public agenda also contains clearly internal gatherings.
+        if re.search(
+            r"Familienabend|Kampagnenabschluss|Versammlung|intern|Probe",
+            title,
+            re.IGNORECASE,
+        ):
+            continue
+        venue = row.get("ort") or ""
+        if venue == "Die Lächner 9":
+            venue += ", Bürstadt"
+        if not municipality_for_venue(venue):
+            continue
+        first, last = dated_range(row["datum"])
+        published_clock = row.get("uhrzeit", "").removesuffix(" Uhr").strip()
+        start, end = event_period(
+            first, clock(published_clock) if published_clock else None, last
+        )
         description = (
-            "Veröffentlichter Termin der HCV-Kampagne 2026/2027. "
+            "Veröffentlichter Termin des HCV. "
             "Endzeit und Eintrittspreise sind nicht angegeben. "
             "Teilnahmebedingungen, Anmeldung und verfügbare Karten bitte beim HCV prüfen."
         )
-        if not clock:
+        if not published_clock:
             description += " Beginn unbekannt; Tagesgrenzen dienen ausschließlich der Kalenderdarstellung."
-        result.append({
-            "id": source["id"] + "-" + day.isoformat(),
-            "title": row["event"], "municipality": "Bürstadt",
-            "organizer": "Heimat- und Carneval-Verein Bürstadt 1959 e.V.",
-            "venue_name": row["ort"] + (", Bürstadt" if row["ort"] == "Die Lächner 9" else ""),
-            "start_time": start.isoformat(), "end_time": end.isoformat() if end else None,
-            "category": "festival", "is_free": False,
-            "status": "past" if (end or start) < now else "scheduled",
-            "source": source["id"], "event_url": source["url"],
-            "description": description,
-        })
+        # Preserve existing identities for the published campaign, distinguish new same-day events.
+        event_id = source["id"] + "-" + first
+        if any(e["id"] == event_id for e in result):
+            event_id += "-" + identity(title + venue)
+        result.append(
+            {
+                "id": event_id,
+                "title": title,
+                "municipality": municipality_for_venue(venue),
+                "organizer": "Heimat- und Carneval-Verein Bürstadt 1959 e.V.",
+                "venue_name": venue,
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat()
+                if not published_clock or first != last
+                else None,
+                "category": "festival",
+                "is_free": False,
+                "status": "past"
+                if (end if not published_clock else start) < now
+                else "scheduled",
+                "source": source["id"],
+                "event_url": source["url"],
+                "description": description,
+            }
+        )
     return result
 
 
 async def import_hcv_campaign(conn, client, source):
     page, page_digest, page_attempt = await acquire(conn, client, source)
     asset_url = campaign_asset(page.text, source["url"])
-    script, script_digest, script_attempt = await acquire(conn, client, source, asset_url)
+    script, script_digest, script_attempt = await acquire(
+        conn, client, source, asset_url
+    )
     if urlsplit(str(script.url)).hostname != "hcv-buerstadt.de":
         raise ValueError("Unexpected HCV asset redirect")
     now = datetime.now(UTC)
     events = campaign_events(script.text, source, now)
-    bundle = json.dumps({"payload_sha256": [page_digest, script_digest], "events": events},
-                        sort_keys=True, separators=(",", ":")).encode()
+    bundle = json.dumps(
+        {"payload_sha256": [page_digest, script_digest], "events": events},
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode()
     digest = hashlib.sha256(bundle).hexdigest()
     async with conn.transaction():
         await conn.execute(
             "INSERT INTO collected_payloads(sha256,body,content_type) VALUES (%s,%s,'application/json') ON CONFLICT DO NOTHING",
             (digest, bundle),
         )
+        await reconcile_future(conn, source, events, now)
         await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         for attempt in (page_attempt, script_attempt):
-            await conn.execute("UPDATE collection_attempts SET status='success' WHERE id=%s", (attempt,))
+            await conn.execute(
+                "UPDATE collection_attempts SET status='success' WHERE id=%s",
+                (attempt,),
+            )
     await conn.commit()

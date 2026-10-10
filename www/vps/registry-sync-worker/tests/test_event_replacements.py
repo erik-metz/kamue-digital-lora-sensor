@@ -43,7 +43,7 @@ async def test_municipal_recrawl_cannot_reimport_superseded_occurrences(monkeypa
     async def transaction():
         yield
     conn = SimpleNamespace(execute=AsyncMock(), commit=AsyncMock(), transaction=transaction)
-    monkeypatch.setattr(adapters, 'calendar_page', lambda *args: (events+[retained], None))
+    monkeypatch.setattr(adapters, 'calendar_page', lambda *args, **kwargs: (events+[retained], None))
     acquire = AsyncMock(return_value=(SimpleNamespace(text='<p>Original</p>'), 'digest', 1))
     monkeypatch.setattr(adapters, 'acquire', acquire)
     monkeypatch.setattr(adapters, 'detail_fields', lambda html: ({}, '', False))
@@ -70,7 +70,7 @@ class ReplacementDatabaseTests(DatabaseCase):
         )
         await adapters.sync_cultural_events_to_db_and_publish(self.conn, SOURCE, obsolete+retained, digest, NOW)
         before = await self.scalar('SELECT count(*) FROM cultural_events')
-        html = HTML.replace('13-19 Uhr', '13-22 Uhr')
+        html = HTML.replace('Öffnungszeiten 2026:', 'Öffnungszeiten:')
         async with httpx.AsyncClient(transport=httpx.MockTransport(lambda request: httpx.Response(200, text=html))) as client:
             with pytest.raises(ValueError):
                 await import_christmas_markets(self.conn, client, SOURCE)

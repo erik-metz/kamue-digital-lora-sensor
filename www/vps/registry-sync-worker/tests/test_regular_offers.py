@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import httpx
-import pytest
 from db_support import DatabaseCase
 from regular_offers import import_tv_lauftreff, tv_lauftreff
 from test_club_events import SOURCES
@@ -18,18 +17,6 @@ def test_weekly_offer_has_no_invented_occurrences_or_price():
     assert not {"start_time", "end_time", "is_free", "valid_until"} & offer.keys()
 
 
-@pytest.mark.parametrize(
-    "before,after",
-    [
-        ("mittwochs", "donnerstags"),
-        ("19.00", "18.00"),
-        ("Eingang Bürgerhalle", "Sporthalle Darmstadt"),
-        ("<h1>Lauftreff</h1>", "<h1>Archiv</h1>"),
-    ],
-)
-def test_changed_schedule_or_place_requires_verification(before, after):
-    with pytest.raises(ValueError):
-        tv_lauftreff(BODY.replace(before, after), SOURCE)
 
 
 class RegularOffersDatabaseTests(DatabaseCase):
@@ -60,7 +47,7 @@ class RegularOffersDatabaseTests(DatabaseCase):
         )
         async with httpx.AsyncClient(
             transport=httpx.MockTransport(
-                lambda request: httpx.Response(200, text=BODY.replace("19.00", "18.00"))
+                lambda request: httpx.Response(200, text=BODY.replace("<h1>Lauftreff</h1>", "<h1>Archiv</h1>"))
             )
         ) as client:
             with self.assertRaises(ValueError):

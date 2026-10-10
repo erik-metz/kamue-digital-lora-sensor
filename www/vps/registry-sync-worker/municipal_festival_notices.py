@@ -1,71 +1,81 @@
-"""Individually verified municipal festival announcements, without invented hours."""
+"""Published municipal festival dates, across years, without invented programmes."""
 
-import hashlib
-from datetime import UTC, date, datetime
+from datetime import UTC, datetime
 
 from adapters import sync_cultural_events_to_db_and_publish
+from dynamic_calendar import explicit_periods, reconcile_future
 from municipal_events import Document, event_period
 from publications import acquire
 
-SOURCES = {
-    "lampertheim-wanderung-festival-notice",
-    "lampertheim-spargelfest-festival-notice",
-    "lampertheim-howwemer-festival-notice",
-    "lampertheim-kerwe-festival-notice",
-}
+
+def municipal_festival_events(html, source, now):
+    root = Document(html).root
+    if [n.text() for n in root.find(tag="h1")] != [source["verified_heading"]]:
+        raise ValueError("Expected municipal festival page missing or ambiguous")
+    paragraphs = [n.text() for n in root.find(tag="p")]
+    periods = list(
+        dict.fromkeys(
+            period
+            for text in paragraphs
+            if "findet" in text
+            for period in explicit_periods(text)
+        )
+    )
+    if not periods or len(periods) > 20:
+        raise ValueError("Festival announcement dates missing or unbounded")
+    metadata = source["event_metadata"]
+    if metadata["municipality"] != "Lampertheim":
+        raise ValueError("Festival outside source municipality")
+    venue = "Lampertheim – genauer Veranstaltungsort siehe Veranstaltungsseite"
+    text = " ".join(paragraphs)
+    for marker in ("Gemarkung", "Innenstadtfest", "Gartenstraße", "Römerstraße"):
+        if marker in text and marker in metadata["venue_name"]:
+            venue = metadata["venue_name"]
+    result = []
+    for first, last in periods:
+        start, end = event_period(first, end_date=last)
+        if (end - start).days > 4:
+            raise ValueError("Festival date range unbounded")
+        result.append(
+            {
+                "id": source["id"] + "-" + first[:4],
+                "title": metadata["title"],
+                "organizer": metadata["organizer"],
+                "venue_name": venue,
+                "municipality": metadata["municipality"],
+                "category": metadata["category"],
+                "start_time": start.isoformat(),
+                "end_time": end.isoformat(),
+                "event_url": source["url"],
+                "source": source["id"],
+                "is_free": False,
+                "status": "past" if end < now else "scheduled",
+                "description": "Offizieller aktueller Datumshinweis der Stadt Lampertheim. "
+                "Bestätigt sind die veröffentlichten Veranstaltungstage. "
+                "Uhrzeiten, konkretes Programm und Eintrittspreise sind nicht vollständig veröffentlicht. "
+                "Tagesgrenzen dienen ausschließlich der Kalenderdarstellung. "
+                "Traditionelle Eröffnungen sind kein bestätigtes aktuelles Tagesprogramm.",
+            }
+        )
+    if len({e["id"] for e in result}) != len(result):
+        raise ValueError("Conflicting festival dates in same calendar year")
+    return result
 
 
 def municipal_festival_notice(html, source, now):
-    root = Document(html).root
-    if source["id"] not in SOURCES or [n.text() for n in root.find(tag="h1")] != [
-        source["verified_heading"]
-    ]:
-        raise ValueError("Expected municipal festival page missing or ambiguous")
-    hashes = [hashlib.sha256(n.text().encode()).hexdigest() for n in root.find(tag="p")]
-    if not source["verified_paragraph_sha256"] or any(
-        hashes.count(digest) != 1 for digest in source["verified_paragraph_sha256"]
-    ):
-        raise ValueError(
-            "Festival dates, venue or programme changed; verification required"
-        )
-    verified = source["verified_event"]
-    first = date.fromisoformat(verified["start_date"])
-    last = date.fromisoformat(verified["end_date"])
-    if (
-        verified["municipality"] != "Lampertheim"
-        or first.year != 2027
-        or last.year != 2027
-        or not 0 <= (last - first).days <= 4
-    ):
-        raise ValueError("Festival outside individually verified place or date range")
-    start, end = event_period(first.isoformat(), end_date=last.isoformat())
-    return {
-        "id": source["id"] + "-2027",
-        "title": verified["title"],
-        "organizer": verified["organizer"],
-        "venue_name": verified["venue_name"],
-        "municipality": verified["municipality"],
-        "start_time": start.isoformat(),
-        "end_time": end.isoformat(),
-        "category": verified["category"],
-        "event_url": source["url"],
-        "source": source["id"],
-        "is_free": False,
-        "status": "past" if end < now else "scheduled",
-        "description": "Offizieller Datumshinweis für 2027 auf der Website der Stadt Lampertheim. "
-        "Bestätigt sind die veröffentlichten Veranstaltungstage und der genannte Veranstaltungsbereich. "
-        "Uhrzeiten, konkretes Programm und Eintrittspreise sind noch nicht für 2027 veröffentlicht. "
-        "Tagesgrenzen dienen ausschließlich der Kalenderdarstellung. "
-        "Allgemeine Angaben zu traditionellen Eröffnungen sind kein bestätigtes Tagesprogramm für 2027.",
-    }
+    events = municipal_festival_events(html, source, now)
+    if len(events) != 1:
+        raise ValueError("Use complete municipal festival event list")
+    return events[0]
 
 
 async def import_municipal_festival_notice(conn, client, source):
     response, digest, attempt = await acquire(conn, client, source)
     now = datetime.now(UTC)
-    event = municipal_festival_notice(response.text, source, now)
+    events = municipal_festival_events(response.text, source, now)
     async with conn.transaction():
-        await sync_cultural_events_to_db_and_publish(conn, source, [event], digest, now)
+        await reconcile_future(conn, source, events, now)
+        await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         await conn.execute(
             "UPDATE collection_attempts SET status='success' WHERE id=%s", (attempt,)
         )

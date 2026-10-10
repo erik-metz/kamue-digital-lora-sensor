@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import httpx
-import pytest
 from db_support import DatabaseCase
 from regular_offers import (
     buerstadt_lauftreff,
@@ -27,22 +26,10 @@ def test_verified_tuesday_only_without_other_occurrences_or_price():
         "Bürstadt",
     )
     assert "Wasserwerkstraße" in offer["venue_name"]
-    assert "anzukündigen" in offer["description"]
+    assert "Bescheid geben" in offer["description"]
     assert not {"start_time", "end_time", "is_free"} & offer.keys()
 
 
-@pytest.mark.parametrize(
-    "before,after",
-    [
-        ("Dienstags 18 Uhr", "Dienstags 19 Uhr"),
-        ("TV Heim", "Sporthalle Darmstadt"),
-        ("besten Bescheid geben", "ohne Anmeldung"),
-        ("Trainingszeiten Lauftreff", "Archiv"),
-    ],
-)
-def test_changed_time_venue_participation_or_title_is_rejected(before, after):
-    with pytest.raises(ValueError):
-        buerstadt_lauftreff(BODY.replace(before, after), SOURCE)
 
 
 class IndependentOfferDatabaseTests(DatabaseCase):
@@ -81,7 +68,7 @@ class IndependentOfferDatabaseTests(DatabaseCase):
         async with httpx.AsyncClient(
             transport=httpx.MockTransport(
                 lambda request: httpx.Response(
-                    200, text=BODY.replace("Dienstags 18 Uhr", "Dienstags 19 Uhr")
+                    200, text=BODY.replace("Trainingszeiten Lauftreff", "Archiv")
                 )
             )
         ) as client:

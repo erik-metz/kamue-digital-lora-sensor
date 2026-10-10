@@ -10,6 +10,7 @@ from urllib.parse import parse_qs, urljoin, urlsplit
 from adapters import classify_category, sync_cultural_events_to_db_and_publish
 from biblis_events import admission, plain, window
 from calendar_recurrence import expand_calendar
+from dynamic_calendar import internal_links
 from icalendar import Calendar
 from municipal_events import (
     BERLIN,
@@ -600,15 +601,13 @@ def hofheim_race(html, source, now):
         raise ValueError("Hofheim race date/title missing or ambiguous")
     start_date, end_date = dated_range(dates[0])
     verified = source["verified_race_venue"]
-    if int(start_date[:4]) != verified["year"]:
-        LOG.info("Hofheim race venue requires new year verification")
-        return []
     start, end = event_period(start_date, end_date=end_date)
     parsed = event(
         source,
         now,
         title,
-        verified["venue_name"],
+        (verified["venue_name"] if int(start_date[:4]) == verified["year"]
+         else "Lampertheim-Hofheim – genauer Startort siehe aktuelle Ausschreibung"),
         start,
         end,
         description="Volkslauf; Uhrzeiten und Teilnahmebedingungen siehe Ausschreibung. Tagesgrenzen dienen der Kalenderdarstellung.",
@@ -637,7 +636,7 @@ async def import_club_events(conn, client, source):
     if kind == "table":
         events = table_events(response.text, source, now)
     elif kind == "sgh":
-        urls = source["event_pages"]
+        urls = internal_links(response.text, source["url"], section="Events")
         if not urls or len(urls) > MAX_DETAILS:
             raise ValueError("SGH event pages unbounded")
         events = []

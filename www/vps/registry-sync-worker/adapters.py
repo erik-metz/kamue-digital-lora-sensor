@@ -7,8 +7,10 @@ from event_policy import aggregate_events, event_status
 from event_replacements import superseded_occurrence
 from municipal_events import (
     BERLIN,
+    EVENT_HORIZON_YEARS,
     calendar_page,
     calendar_url,
+    confirmed_detail_period,
     cross7_venue,
     detail_fields,
     event_period,
@@ -224,7 +226,7 @@ async def import_lampertheim_events(conn, client, source):
         visited.add(url)
         response, digest, attempt = await acquire(conn, client, source, url)
         receipts.append(attempt)
-        page_events, next_url = calendar_page(response.text, url, source["id"], now)
+        page_events, next_url = calendar_page(response.text, url, source["id"], now, recover_details=True)
         for event in page_events:
             if superseded_occurrence(event):
                 continue
@@ -243,6 +245,15 @@ async def import_lampertheim_events(conn, client, source):
                     # Keep the event but do not crawl an unrelated provider.
                     details[detail_url] = ({}, "", False)
             fields, description, free = details[detail_url]
+            if event.pop("_date_conflict", False):
+                try:
+                    start, end = confirmed_detail_period(fields)
+                except ValueError:
+                    logger.info("Municipal event deferred: conflicting listing and unusable detail dates, title=%s", event["title"])
+                    continue
+                event["start_time"], event["end_time"] = start.isoformat(), end.isoformat()
+                event["status"] = "past" if end < now else "scheduled"
+                logger.info("Municipal dates recovered from explicit detail schedule, title=%s", event["title"])
             if fields.get("Ort"):
                 postcode = re.search(r"\b\d{5}\b", fields["Ort"])
                 location = fields["Ort"]
@@ -271,7 +282,7 @@ async def import_lampertheim_events(conn, client, source):
                AND COALESCE(end_time, start_time) >= %s AND start_time < %s""",
             (source["id"], [event["id"] for event in events],
              datetime(now.astimezone(BERLIN).year, 1, 1, tzinfo=BERLIN),
-             datetime(now.astimezone(BERLIN).year + 2, 1, 1, tzinfo=BERLIN)),
+             datetime(now.astimezone(BERLIN).year + EVENT_HORIZON_YEARS, 1, 1, tzinfo=BERLIN)),
         )
         await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         for attempt in receipts:

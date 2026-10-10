@@ -67,7 +67,7 @@ class ClubEventDatabaseTests(DatabaseCase):
         self,
     ):
         responses = {("GET", "/"): "sgh-kerwe.html"}
-        for path in SOURCES["sg-huettenfeld-events"]["event_pages"]:
+        for path in ("/kerwe/", "/kerwelauf/", "/kinderfasching/", "/maifest/", "/ostereierschiessen/", "/nikolausschiessen/", "/oktoberfest/", "/events-summernight/"):
             name = "lauf" if path == "/kerwelauf/" else path.strip("/")
             responses[("GET", path)] = f"sgh-{name}.html"
         await self.check_import("sg-huettenfeld-events", responses, 11)

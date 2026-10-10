@@ -31,7 +31,7 @@ def test_real_nested_markup_preserves_multiday_dates_and_next_page():
     assert events[0]["start_time"] == "2025-11-16T11:00:00+01:00"
     assert events[0]["end_time"] == "2026-01-25T12:30:00+01:00"
     assert events[0]["municipality"] == "Lampertheim"
-    assert "dateFrom=01.01.2026" in url and "dateTo=31.12.2027" in url
+    assert "dateFrom=01.01.2026" in url and "dateTo=31.12.2030" in url
     assert "pageId27f0831a=2" in url
 
 
@@ -277,7 +277,7 @@ def test_calendar_range_uses_local_year_at_new_year():
         "https://www.lampertheim.de/de/veranstaltungen/",
         datetime(2026, 12, 31, 23, 30, tzinfo=UTC),
     )
-    assert "dateFrom=01.01.2027" in url and "dateTo=31.12.2028" in url
+    assert "dateFrom=01.01.2027" in url and "dateTo=31.12.2031" in url
 
 
 @pytest.mark.asyncio

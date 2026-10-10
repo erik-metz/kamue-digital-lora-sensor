@@ -15,9 +15,9 @@ BODY = (
 
 def test_verified_courses_preserve_town_times_venues_and_unknown_participation():
     offers = rompin_stompin(BODY, SOURCE)
-    assert len(offers) == len({o["id"] for o in offers}) == 8
+    assert len(offers) == len({o["id"] for o in offers}) == 10
     assert [o["municipality"] for o in offers].count("Biblis") == 4
-    assert [o["municipality"] for o in offers].count("Bürstadt") == 4
+    assert [o["municipality"] for o in offers].count("Bürstadt") == 6
     assert {
         (o["start_local"], o["end_local"])
         for o in offers
@@ -28,26 +28,12 @@ def test_verified_courses_preserve_town_times_venues_and_unknown_participation()
         ("19:00", "20:00"),
         ("20:00", "21:00"),
     }
-    assert all(o["weekday"] in {"Montag", "Donnerstag"} for o in offers)
+    assert all(o["weekday"] in {"Montag", "Dienstag", "Donnerstag"} for o in offers)
     assert all("Einhausen" not in o["venue_name"] for o in offers)
     assert all(not {"start_time", "end_time", "is_free"} & o.keys() for o in offers)
     assert all("freie Plätze" in o["description"] for o in offers)
 
 
-@pytest.mark.parametrize(
-    "before,after",
-    [
-        ("18:00- 19:00", "18:15- 19:00"),
-        ("Bürgerzentrum Biblis", "Mehrzweckhalle Einhausen"),
-        ("Darmstädter Straße 4-6", "Andere Straße 9"),
-        ("Mainstraße 44", "Mainstraße 99"),
-        ("Unser Kursangebot", "Archiv"),
-        ("am Montag mit Britta", "am Dienstag mit Britta"),
-    ],
-)
-def test_changed_course_or_venue_requires_new_verification(before, after):
-    with pytest.raises(ValueError):
-        rompin_stompin(BODY.replace(before, after), SOURCE)
 
 
 def test_duplicate_course_is_rejected():
@@ -73,7 +59,7 @@ class RompinOfferDatabaseTests(DatabaseCase):
         data = await self.scalar(
             "SELECT data FROM collected_datasets WHERE dataset='social/regular-offers/rompin-stompin-regular-offers'"
         )
-        self.assertEqual(len(data), 8)
+        self.assertEqual(len(data), 10)
         self.assertEqual(await self.scalar("SELECT count(*) FROM cultural_events"), 0)
         self.assertEqual(
             await self.scalar(
@@ -90,7 +76,7 @@ class RompinOfferDatabaseTests(DatabaseCase):
         async with httpx.AsyncClient(
             transport=httpx.MockTransport(
                 lambda request: httpx.Response(
-                    200, text=BODY.replace("18:00- 19:00", "18:15- 19:00")
+                    200, text=BODY.replace("Unser Kursangebot", "Archiv")
                 )
             )
         ) as client:

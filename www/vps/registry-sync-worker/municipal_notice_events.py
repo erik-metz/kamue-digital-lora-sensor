@@ -1,6 +1,7 @@
 """Bounded, source-specific municipal notices with explicit dates and venues."""
 
 import hashlib
+import logging
 import re
 from datetime import UTC, datetime
 
@@ -25,13 +26,15 @@ def notice_events(html, source, now):
     if len(invitations) != 1 or not source["event_titles"]:
         raise ValueError("Expected invitation or event selection missing")
     events = []
-    for label, title in source["event_titles"].items():
+    labels = {line.split(":", 1)[0]: source["event_titles"].get(line.split(":", 1)[0], line.split(":", 1)[0])
+              for line in lines if re.match(r"(?:AG |Vereinsfrühschoppen:)", line)}
+    for label, title in labels.items():
         matching = [line for line in lines if line.startswith(label + ":")]
         if len(matching) != 1:
             raise ValueError("Municipal event missing or repeated")
         match = re.fullmatch(
             re.escape(label)
-            + r":\s*(\d{2}\.\d{2}\.\d{4}),\s*um\s+(\d{1,2}(?::\d{2})?)\s*Uhr\s+(?:im|in der)\s+(.+)",
+            + r":\s*(\d{2}\.\d{2}\.\d{4}),\s*um\s+(\d{1,2}(?::\d{2})?)\s*Uhr\s+(?:im|in der|auf dem)\s+(.+)",
             matching[0],
         )
         if not match:
@@ -40,13 +43,16 @@ def notice_events(html, source, now):
         start = datetime.strptime(
             day + " " + clock, "%d.%m.%Y %H:%M" if ":" in clock else "%d.%m.%Y %H"
         ).replace(tzinfo=BERLIN)
+        if start < now:
+            continue
         verified = source["verified_venues"].get(venue)
         if (
             not verified
             or municipality_for_venue(verified["venue_name"])
             != verified["municipality"]
         ):
-            raise ValueError("Municipal event venue requires verification")
+            logging.getLogger(__name__).info("Municipal notice deferred: unconfirmed venue %s", venue)
+            continue
         identity = hashlib.sha256(
             (label + "|" + start.isoformat()).encode()
         ).hexdigest()[:20]
@@ -70,6 +76,8 @@ def notice_events(html, source, now):
                 "status": "past" if start < now else "scheduled",
             }
         )
+    if not events:
+        raise ValueError("No published local upcoming meetings")
     return events
 
 

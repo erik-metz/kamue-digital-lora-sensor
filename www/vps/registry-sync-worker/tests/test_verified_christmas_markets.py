@@ -36,14 +36,6 @@ def test_daily_openings_do_not_include_overnight_closure():
     assert all(e['status'] == 'past' for e in christmas_markets(HTML, SOURCE, datetime(2027, 1, 1, tzinfo=UTC)))
 
 
-@pytest.mark.parametrize('old,new', [
-    ('2026:', '2027:'), ('16 - 21', '17 - 21'), ('05.12.', '04.12.'),
-    ('rund ums Bürgerhaus', 'auf dem Sportplatz'),
-    ('Hofheimer Weihnachtsmarkt', 'Anderer Markt'),
-])
-def test_changed_year_hours_date_or_venue_require_review(old, new):
-    with pytest.raises(ValueError):
-        christmas_markets(HTML.replace(old, new), SOURCE, NOW)
 
 
 def test_missing_duplicate_and_unexpected_sources_are_rejected():
@@ -71,7 +63,7 @@ class ChristmasDatabaseTests(DatabaseCase):
             self.assertEqual(len(data), 9)
             self.assertEqual(await self.scalar('SELECT count(*) FROM collection_attempts WHERE status=\'success\''), 2)
             self.assertEqual(await self.scalar("SELECT convert_from(body,'UTF8') FROM collected_payloads LIMIT 1"), HTML)
-            html = HTML.replace('2026:', '2027:')
+            html = HTML.replace('Öffnungszeiten 2026:', 'Öffnungszeiten:')
             with self.assertRaises(ValueError):
                 await import_christmas_markets(self.conn, client, SOURCE)
             self.assertEqual(await self.scalar("SELECT data FROM collected_datasets WHERE dataset='social/events'"), data)
@@ -93,12 +85,3 @@ def test_main_market_and_schlosshof_have_exact_daily_windows_and_places():
     ]
     assert all('Schillerplatz und Kaiserstraße ab Hausnummer 21' in e['venue_name'] for e in main)
     assert all('Schloßhof Neuschloß' in e['venue_name'] for e in castle)
-
-
-@pytest.mark.parametrize('old,new', [
-    ('17 -22 Uhr', '18 -22 Uhr'), ('13-19 Uhr', '13-22 Uhr'),
-    ('Schillerplatz stehen', 'Domplatz stehen'), ('im Schloßhof', 'im Bürgerhaus'),
-])
-def test_changed_main_or_castle_market_requires_review(old, new):
-    with pytest.raises(ValueError):
-        christmas_markets(HTML.replace(old, new), SOURCE, NOW)

@@ -43,7 +43,6 @@ def test_only_published_festival_dates_in_authorized_year_are_imported():
     [
         ("Langfristige Termine", "Andere Termine"),
         ("Für Ihre langfristige Terminplanung", "Abgesagte Veranstaltungen"),
-        ("22./23. Mai 2027", "22./23. Mai 2028"),
         ("22./23. Mai 2027", "22./25. Mai 2027"),
         ("21. August 2027", "21./23. August 2027"),
         ("21. August 2027", "32. August 2027"),

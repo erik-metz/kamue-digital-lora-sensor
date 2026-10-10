@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 logger = logging.getLogger(__name__)
 
 BERLIN = ZoneInfo("Europe/Berlin")
+EVENT_HORIZON_YEARS = 5
 PLACES = {
     "Bürstadt": ("bürstadt", "buerstadt", "bobstadt", "riedrode"),
     "Lampertheim": (
@@ -176,11 +177,11 @@ def calendar_url(url, now):
     now = now.astimezone(BERLIN)
     parts = urlsplit(url)
     params = dict(parse_qsl(parts.query))
-    params.update(dateFrom=f"01.01.{now.year}", dateTo=f"31.12.{now.year + 1}")
+    params.update(dateFrom=f"01.01.{now.year}", dateTo=f"31.12.{now.year + EVENT_HORIZON_YEARS - 1}")
     return urlunsplit(parts._replace(query=urlencode(params), fragment=""))
 
 
-def calendar_page(html, url, source_id, now):
+def calendar_page(html, url, source_id, now, *, recover_details=False):
     root = Document(html).root
     events = []
     blocks = list(root.find(tag="li", cls="listEntryObject-eventMulti"))
@@ -196,6 +197,7 @@ def calendar_page(html, url, source_id, now):
         ]
         start_time = re.search(r"\d{1,2}:\d{2}", first(block, "timeFrom").text())
         end_time = re.search(r"\d{1,2}:\d{2}", first(block, "timeTo").text())
+        date_conflict = False
         try:
             start, end = event_period(
                 date_iso[0],
@@ -209,7 +211,10 @@ def calendar_page(html, url, source_id, now):
                 title,
                 dates,
             )
-            continue
+            if not recover_details:
+                continue
+            date_conflict = True
+            start, end = event_period(date_iso[0])
         venue = first(block, "listEntryLocation").text()
         # The municipal dropdown labels Kernstadt as Lampertheim. The venue
         # portion is still checked for an explicit external postal address.
@@ -241,6 +246,7 @@ def calendar_page(html, url, source_id, now):
                 "organizer": organizer,
                 "venue_name": venue,
                 "municipality": municipality,
+                "_date_conflict": date_conflict,
                 "start_time": start.isoformat(),
                 "end_time": end.isoformat(),
                 "event_url": detail,
@@ -297,3 +303,14 @@ def detail_fields(html):
         )
     )
     return fields, description, free
+
+
+
+def confirmed_detail_period(fields):
+    text = fields.get("Termine", "")
+    dates = re.findall(r"\b\d{2}\.\d{2}\.\d{4}\b", text)
+    times = re.findall(r"\b\d{1,2}:\d{2}\b", text)
+    if not 1 <= len(dates) <= 2 or len(times) > 2:
+        raise ValueError("Detail schedule missing or ambiguous")
+    days = [datetime.strptime(day, "%d.%m.%Y").replace(tzinfo=BERLIN).date().isoformat() for day in dates]
+    return event_period(days[0], times[0] if times else None, days[-1], times[1] if len(times) == 2 else None)

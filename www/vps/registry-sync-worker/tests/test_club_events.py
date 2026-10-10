@@ -233,12 +233,10 @@ def test_hofheim_race_never_guesses_next_year_venue():
     source = SOURCES["hofheimer-volkslauf"]
     events = clubs.hofheim_race(fixture("hofheim-race.html"), source, NOW)
     assert len(events) == 1 and events[0]["municipality"] == "Lampertheim"
-    assert (
-        clubs.hofheim_race(
-            fixture("hofheim-race.html").replace("2026", "2027"), source, NOW
-        )
-        == []
-    )
+    future = clubs.hofheim_race(fixture("hofheim-race.html").replace("2026", "2027"), source, NOW)
+    assert len(future) == 1
+    assert "genauer Startort" in future[0]["venue_name"]
+
 
 
 def test_neuschloss_reuses_complete_tribe_feed_without_biblis_ids():
@@ -277,7 +275,7 @@ class Connection:
 async def test_acquisition_failure_after_first_page_never_reconciles(monkeypatch):
     acquire = AsyncMock(
         side_effect=[
-            (SimpleNamespace(text="<html></html>"), "digest", 1),
+            (SimpleNamespace(text='<li><a href="/verein/">Events</a><ul><li><a href="/maifest/">Maifest</a></li></ul></li>'), "digest", 1),
             RuntimeError("offline"),
         ]
     )

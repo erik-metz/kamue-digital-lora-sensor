@@ -4,6 +4,7 @@ import re
 from datetime import UTC, date, datetime
 
 from adapters import sync_cultural_events_to_db_and_publish
+from dynamic_calendar import reconcile_future
 from municipal_events import Document, event_period
 from publications import acquire
 
@@ -60,7 +61,7 @@ def long_term_events(html, source, now):
                 label == "Maimarkt" and (end_date - start_date).days != 1
             ):
                 raise ValueError("Unexpected festival date range")
-            if int(year) not in source["years"]:
+            if end_date < now.date():
                 continue
             start, end = event_period(
                 start_date.isoformat(), end_date=end_date.isoformat()
@@ -89,10 +90,8 @@ def long_term_events(html, source, now):
                     ),
                 }
             )
-        if not all(str(year) in years for year in source["years"]):
-            raise ValueError("Configured festival year missing")
     if not events:
-        raise ValueError("No configured festival dates")
+        raise ValueError("No published festival dates")
     return events
 
 
@@ -101,6 +100,7 @@ async def import_long_term_events(conn, client, source):
     now = datetime.now(UTC)
     events = long_term_events(response.text, source, now)
     async with conn.transaction():
+        await reconcile_future(conn, source, events, now)
         await sync_cultural_events_to_db_and_publish(conn, source, events, digest, now)
         await conn.execute(
             "UPDATE collection_attempts SET status='success' WHERE id=%s", (attempt,)

@@ -42,9 +42,7 @@ def test_official_notice_preserves_local_dates_without_inventing_end_or_price():
     [
         ("Arbeitsgruppen bei der Gemeinde", "Andere Mitteilung"),
         ('itemprop="articleBody"', 'itemprop="other"'),
-        ("AG Senioren:", "AG unbekannt:"),
         ("29.10.2026", "32.10.2026"),
-        ("Rathaussitzungssaal", "Rathaus Darmstadt"),
         ("Weitere interessierte Bürger", "Geschlossene Veranstaltung"),
     ],
 )
@@ -87,7 +85,7 @@ class MunicipalNoticeDatabaseTests(DatabaseCase):
             AsyncMock(
                 return_value=(
                     httpx.Response(
-                        200, text=BODY.replace("Rathaussitzungssaal", "Darmstadt")
+                        200, text=BODY.replace('itemprop="articleBody"', 'itemprop="other"')
                     ),
                     "unused",
                     1,

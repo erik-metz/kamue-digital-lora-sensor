@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from adapters import classify_category, sync_cultural_events_to_db_and_publish
 from municipal_events import (
     BERLIN,
+    EVENT_HORIZON_YEARS,
     PLACES,
     Document,
     event_period,
@@ -34,7 +35,7 @@ def plain(value):
 
 def window(now):
     year = now.astimezone(BERLIN).year
-    return datetime(year, 1, 1, tzinfo=BERLIN), datetime(year + 2, 1, 1, tzinfo=BERLIN)
+    return datetime(year, 1, 1, tzinfo=BERLIN), datetime(year + EVENT_HORIZON_YEARS, 1, 1, tzinfo=BERLIN)
 
 
 def page_url(source, now, page):
