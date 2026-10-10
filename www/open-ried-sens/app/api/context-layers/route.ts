@@ -8,13 +8,19 @@ export async function GET(request: Request) {
   try {
     const collections = await Promise.all(config.sublayers.map(async sublayer => {
       const features: ContextFeature[] = [];
+      const seen = new Set<string | number>();
       // Bounded regional query; stable object-ID ordering and explicit overflow failure.
       for (let offset = 0; offset < 10_000; offset += 1000) {
         const response = await fetch(contextQuery(id, sublayer, offset), { signal, next: { revalidate: 86400 } });
         if (!response.ok) throw new Error("Source unavailable");
         const raw = await response.json();
         const page = decodeContextPage(raw);
-        features.push(...page.features.map(feature => ({ ...feature, properties: { ...feature.properties, scenario: sublayer } })));
+        for (const feature of page.features) {
+          const objectId = feature.properties?.[config.objectId];
+          if ((typeof objectId !== "number" && typeof objectId !== "string") || seen.has(objectId)) throw new Error("Missing or duplicate object ID");
+          seen.add(objectId);
+          features.push({ ...feature, properties: { ...feature.properties, scenario: sublayer } });
+        }
         if (!raw.exceededTransferLimit && !raw.properties?.exceededTransferLimit && page.features.length < 1000) return features;
       }
       throw new Error("Regional data exceeds limit");

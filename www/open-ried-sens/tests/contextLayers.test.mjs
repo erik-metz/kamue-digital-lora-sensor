@@ -43,21 +43,21 @@ test("paginates transfer-limited results and retains complete features", async (
   const result = await route(async url => {
     assert.equal(new URL(url).searchParams.get("resultOffset"), String(calls * 1000));
     calls++;
-    return Response.json({ type: "FeatureCollection", features: [polygon()], exceededTransferLimit: calls === 1 });
+    return Response.json({ type: "FeatureCollection", features: [polygon({OBJECTID_1:calls})], exceededTransferLimit: calls === 1 });
   })(request("landcover"));
   assert.equal(result.status, 200);
   assert.equal((await result.json()).features.length, 2);
   assert.equal(calls, 2);
 });
 test("one failed flood scenario prevents partial publication", async () => {
-  const result = await route(async url => url.includes("/1/query") ? Response.json({error:{message:"Unavailable"}}) : Response.json({type:"FeatureCollection",features:[polygon()]}))(request("floodrisk"));
+  const result = await route(async url => url.includes("/1/query") ? Response.json({error:{message:"Unavailable"}}) : Response.json({type:"FeatureCollection",features:[polygon({OBJECTID:1})]}))(request("floodrisk"));
   assert.equal(result.status, 503);
   assert.equal(result.headers.get("cache-control"), "no-store");
   assert.equal((await result.json()).features, undefined);
 });
 test("hard cap fails visibly instead of truncating", async () => {
   let calls = 0;
-  const result = await route(async () => { calls++; return Response.json({type:"FeatureCollection",features:[polygon()], exceededTransferLimit:true}); })(request("census"));
+  const result = await route(async () => { calls++; return Response.json({type:"FeatureCollection",features:[polygon({OBJECTID:calls})], exceededTransferLimit:true}); })(request("census"));
   assert.equal(calls, 10);
   assert.equal(result.status, 503);
 });
@@ -65,4 +65,23 @@ test("complete empty region is a successful empty layer", async () => {
   const result = await route(async () => Response.json({type:"FeatureCollection",features:[]}))(request("census"));
   assert.equal(result.status, 200);
   assert.equal((await result.json()).features.length, 0);
+});
+
+test("duplicate or missing context IDs prevent publishing an incomplete inventory", async () => {
+  for (const properties of [{OBJECTID_1:1}, {}]) {
+    let calls = 0;
+    const result = await route(async () => {
+      calls++;
+      return Response.json({type:"FeatureCollection",features:[polygon(properties)],exceededTransferLimit:true});
+    })(request("landcover"));
+    assert.equal(result.status, 503);
+    assert.equal(result.headers.get("cache-control"), "no-store");
+    assert.equal((await result.json()).features, undefined);
+    assert.equal(calls, properties.OBJECTID_1 ? 2 : 1);
+  }
+});
+test("context IDs are scoped to each flood scenario", async () => {
+  const result = await route(async () => Response.json({type:"FeatureCollection",features:[polygon({OBJECTID:1})]}))(request("floodrisk"));
+  assert.equal(result.status, 200);
+  assert.deepEqual((await result.json()).features.map(f => f.properties.scenario), [0,1,2]);
 });

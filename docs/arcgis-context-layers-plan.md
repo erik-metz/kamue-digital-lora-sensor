@@ -94,4 +94,26 @@ Schutzgebiete in die bestehende `nature`-Ebene einbinden; Messstellen und DWD-Wa
 - Browserprüfung: 46 Schutzgebietsflächen, 63 Messstellen, 158 Ladestandorte; derzeit keine gültigen Warnpolygone im bestätigten frischen Esri-Bestand. Quellenaktualisierung am 10.10.2026 um 08:03:09 Europe/Berlin. Ebenenschalter und Quellenlegenden geprüft.
 - Prüfung: Frontend-Tests, gezieltes ESLint und Produktionsbuild. Commit, Push und exakter Frontend-CI-Lauf werden im Chatabschluss nachgewiesen. Keine VPS-Änderungen für diesen Schritt.
 
-Schritt 4 (abschließende Gesamtprüfung aller sieben Quellen) beginnt erst nach erneuter Nutzerfreigabe.
+## Schritt 4: Abschließende Gesamtprüfung (10. Oktober 2026)
+
+Die Gesamtprüfung wurde freigegeben und abgeschlossen. Alle sieben Quellen wurden gemeinsam im lokalen Produktionsbuild geprüft.
+
+| API-Quelle | HTTP | Vollständiger regionaler Bestand |
+| --- | --- | --- |
+| Landbedeckung | 200 | 8306 Flächen |
+| Hochwasserrisiko | 200 | 93 Flächen über drei Szenarien |
+| Zensus | 200 | 436 Gitterzellen |
+| Schutzgebiete | 200 | 46 Flächen |
+| Messstellen | 200 | 63 Standorte |
+| Wetterwarnungen | 200 | 0 gültige Polygone im frisch geprüften Esri-Bestand |
+| Esri-Ladesäulen | 200 | 158 Standorte |
+
+- Warnungsquelle: `2026-10-10T06:03:09.129Z`, API-Prüfung `2026-10-10T06:29:00.653Z`; Antwort explizit `no-store`. Historische Quellen liefern `public, max-age=3600, s-maxage=86400`.
+- Direkter BNetzA-Import zum Prüfzeitpunkt: 411 Standorte im bestehenden, größeren Registerausschnitt. Alle 158 regionalen Esri-IDs sind darin enthalten. Die Karte zeigt deshalb genau 411 eindeutige Marker mit Vorrang des direkten Imports, statt 569 Marker zu erzeugen. Dieser Bestand kann sich mit dem Import ändern.
+- Browser: alle sieben Ebenen gemeinsam geladen; vier Polygon-Canvas-Ebenen und 63 Messstellenmarker. Legenden, historische Datenstände, Lizenzen und Warnungszeitpunkt sichtbar. Beim Herauszoomen werden Ladesäulen, Messstellen, Landbedeckung, Zensus und Hochwasser jeweils unterhalb ihrer Zoomgrenzen entfernt; Quellenhinweise bleiben sichtbar. Keine Browser-Konsolenfehler beobachtet.
+- Bei der Prüfung behoben: doppelte oder fehlende Objekt-IDs innerhalb eines Sublayers der ersten drei Quellen führen jetzt zu HTTP 503 ohne Teilveröffentlichung und ohne Cache. Gleiche IDs in verschiedenen Hochwasserszenarien bleiben zulässig. Zwei neue Regressionstests sichern dies ab.
+- 248 Frontend-Tests erfolgreich; gezieltes ESLint für beide API-Routen, Kartenkomponenten und Quellen-/Darstellungshelfer sowie Produktionsbuild erfolgreich. Bestehende Tests decken außerdem Pagination, Teilausfälle, veraltete Warnungsquellen, abgelaufene Meldungen, unbekannte Werte, Ladesäulenabgleich und geteilte Karten-URLs ab. Fehlerszenarien wurden mit kontrollierten Testantworten geprüft, nicht durch Veränderungen an öffentlichen Diensten.
+- Keine VPS-Änderungen. Veröffentlichung und der Frontend-CI-Lauf für diesen Abschlusscommit werden im Chat nachgewiesen.
+
+Damit sind die sieben Datenquellen implementiert und gemeinsam geprüft. Weitere Datenquellen oder Analysen sind zusätzliche Aufgaben.
+
