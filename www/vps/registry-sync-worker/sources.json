@@ -1201,6 +1201,120 @@
         "https://gross-rohrheim.orts.app/-arbeitsgruppen-bei-der-gemeinde-gross-rohrheim_LN6I/nHDc",
         "https://gross-rohrheim.orts.app/-saisonabschluss-11-10-2026-beim-tc_15XI"
       ]
+    },
+    {
+      "id": "autobahn-inventory-a67-electric_charging_station",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A67/services/electric_charging_station",
+      "road": "A67",
+      "kind": "electric_charging_station",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Regionales Anbieterinventar mit Rohdaten und Historie; Abrufzeit, keine belegte Anbieteraktualisierung oder Live-Belegung."
+    },
+    {
+      "id": "autobahn-inventory-a67-parking_lorry",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A67/services/parking_lorry",
+      "road": "A67",
+      "kind": "parking_lorry",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Regionales Anbieterinventar mit Rohdaten und Historie; Abrufzeit, keine belegte Anbieteraktualisierung oder Live-Belegung."
+    },
+    {
+      "id": "autobahn-inventory-a5-electric_charging_station",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A5/services/electric_charging_station",
+      "road": "A5",
+      "kind": "electric_charging_station",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Regionales Anbieterinventar mit Rohdaten und Historie; Abrufzeit, keine belegte Anbieteraktualisierung oder Live-Belegung."
+    },
+    {
+      "id": "autobahn-inventory-a5-parking_lorry",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A5/services/parking_lorry",
+      "road": "A5",
+      "kind": "parking_lorry",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Regionales Anbieterinventar mit Rohdaten und Historie; Abrufzeit, keine belegte Anbieteraktualisierung oder Live-Belegung."
+    },
+    {
+      "id": "autobahn-inventory-a6-electric_charging_station",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A6/services/electric_charging_station",
+      "road": "A6",
+      "kind": "electric_charging_station",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Regionales Anbieterinventar mit Rohdaten und Historie; Abrufzeit, keine belegte Anbieteraktualisierung oder Live-Belegung."
+    },
+    {
+      "id": "autobahn-inventory-a6-parking_lorry",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A6/services/parking_lorry",
+      "road": "A6",
+      "kind": "parking_lorry",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Regionales Anbieterinventar mit Rohdaten und Historie; Abrufzeit, keine belegte Anbieteraktualisierung oder Live-Belegung."
     }
   ]
 }

@@ -13,6 +13,7 @@ from pathlib import Path
 import httpx
 import psycopg
 from adapters import import_cross7, import_lampertheim_events, import_tiles
+from autobahn_inventory import import_autobahn_inventory
 from bahn import import_fasta, import_netex, import_ris_stations, import_siri
 from biblis_events import import_biblis_events
 from budgets import import_biblis_budget
@@ -55,6 +56,7 @@ from zakb import import_zakb
 
 LOG = logging.getLogger(__name__)
 ADAPTERS = {
+    "autobahn-inventory": import_autobahn_inventory,
     "db-netex": import_netex,
     "db-siri-fm": import_siri,
     "db-fasta": import_fasta,

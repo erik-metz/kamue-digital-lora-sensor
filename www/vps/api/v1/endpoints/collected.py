@@ -166,7 +166,7 @@ async def dataset_publication(
             "Stored source data expired",
             headers={
                 "Cache-Control": "no-store",
-                "X-Source-Updated-At": row["source_updated_at"].isoformat(),
+                ("X-Inventory-Observed-At" if dataset.startswith("infrastructure/autobahn/") else "X-Source-Updated-At"): row["source_updated_at"].isoformat(),
             },
         )
     params = dict(request.query_params)
@@ -190,7 +190,7 @@ async def dataset_publication(
         request,
         ttl,
         {
-            "X-Source-Updated-At": row["source_updated_at"].isoformat(),
+            ("X-Inventory-Observed-At" if dataset.startswith("infrastructure/autobahn/") else "X-Source-Updated-At"): row["source_updated_at"].isoformat(),
             "X-Collected-At": row["fetched_at"].isoformat(),
             "X-Data-Expires-At": row["expires_at"].isoformat(),
             "X-Data-Source": row["source_id"],
