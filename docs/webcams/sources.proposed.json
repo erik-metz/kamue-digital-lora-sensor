@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "purpose": "proposed_snapshot_sources_for_step_2",
+  "runtimeIntegrated": false,
+  "defaults": {
+    "enabled": false,
+    "timeoutSeconds": 15,
+    "maxResponseBytes": 5000000,
+    "acceptedFormats": [
+      "JPEG"
+    ],
+    "deduplication": "sha256_of_original_bytes",
+    "captureTimePolicy": "null_unless_independently_verified",
+    "maxRedirects": 0,
+    "verifyTls": true
+  },
+  "sources": [
+    {
+      "id": "ried-griesheim-flugfeld",
+      "inventoryId": "Tower",
+      "name": "TU Darmstadt – August-Euler-Flugplatz Griesheim",
+      "operator": "Technische Universität Darmstadt / HRZ",
+      "sourcePage": "https://www.hrz.tu-darmstadt.de/hrz_aktuelles/webcam/alle_webcams_auf_einen_blick/index.de.jsp",
+      "imageUrl": "https://webcam.hrz.tu-darmstadt.de/Tower/current-web.jpg",
+      "mediaType": "jpeg_snapshot",
+      "intervalSeconds": 60,
+      "intervalBasis": "provider_page_refresh",
+      "operatorMaximumRateSeconds": null,
+      "enabled": false,
+      "selection": "candidate_primary",
+      "uses": [
+        "weather_visibility_comparison"
+      ],
+      "view": {
+        "description": "Flugfeld mit Horizont und Bergsilhouette; bei Dunkelheit brauchbare grobe Horizontkonturen.",
+        "reviewLighting": "night",
+        "daylightSuitability": "pending",
+        "coordinates": null,
+        "coordinateBasis": "camera_position_not_verified",
+        "compassBearingDegrees": null
+      },
+      "technical": {
+        "httpStatus": 200,
+        "decodeVerified": true,
+        "width": 480,
+        "height": 360,
+        "lastProbeAt": "2026-10-10T17:54:38.658761+00:00",
+        "changeEvidence": "../evidence/ried-webcams-vollinventar-2026-10-10/",
+        "transport": "https",
+        "tlsVerificationRequired": true
+      },
+      "usage": {
+        "termsUrl": "https://www.tu-darmstadt.de/impressum/index.de.jsp",
+        "providerConditions": "publication_requires_consent",
+        "automatedFetchPermission": "not_confirmed",
+        "archivePermission": "not_confirmed",
+        "analysisPermission": "not_confirmed",
+        "redistributionPermission": "not_confirmed",
+        "contactEmail": null,
+        "contactSent": false
+      },
+      "captureTime": null
+    },
+    {
+      "id": "ried-melibokus-panorama",
+      "inventoryId": "melibokus",
+      "name": "Melibokus – Blick ins Ried",
+      "operator": "melibokus.com; Ansprechpartner noch zu ermitteln",
+      "sourcePage": "http://www.melibokus.com/",
+      "imageUrl": "http://www.melibokus.com/cam/rechts_g.jpg",
+      "mediaType": "jpeg_snapshot",
+      "intervalSeconds": 300,
+      "intervalBasis": "embedding_page_statement",
+      "operatorMaximumRateSeconds": null,
+      "enabled": false,
+      "selection": "candidate_primary",
+      "uses": [
+        "weather_visibility_comparison"
+      ],
+      "view": {
+        "description": "Weiter Blick auf beleuchtete Siedlungen und Horizont; für großräumige Sichtentwicklung vorgesehen.",
+        "reviewLighting": "night",
+        "daylightSuitability": "pending",
+        "coordinates": null,
+        "coordinateBasis": "camera_position_not_verified",
+        "compassBearingDegrees": null
+      },
+      "technical": {
+        "httpStatus": 200,
+        "decodeVerified": true,
+        "width": 2048,
+        "height": 1536,
+        "lastProbeAt": "2026-10-10T17:54:39.029661+00:00",
+        "changeEvidence": "../evidence/ried-webcams-vollinventar-2026-10-10/",
+        "transport": "http",
+        "tlsVerificationRequired": true
+      },
+      "usage": {
+        "termsUrl": "http://www.melibokus.com/",
+        "providerConditions": "not_confirmed",
+        "automatedFetchPermission": "not_confirmed",
+        "archivePermission": "not_confirmed",
+        "analysisPermission": "not_confirmed",
+        "redistributionPermission": "not_confirmed",
+        "contactEmail": null,
+        "contactSent": false
+      },
+      "captureTime": null
+    },
+    {
+      "id": "ried-heppenheim-flugfeld",
+      "inventoryId": "heppenheim-2",
+      "name": "Flugplatz Heppenheim – Ansicht 2",
+      "operator": "Aero-Club Heppenheim Kreis Bergstraße e.V.",
+      "sourcePage": "https://aeroclub-heppenheim.de/webcam/",
+      "imageUrl": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_2.jpg",
+      "mediaType": "jpeg_snapshot",
+      "intervalSeconds": 300,
+      "intervalBasis": "observed_file_timestamp_spacing",
+      "operatorMaximumRateSeconds": null,
+      "enabled": false,
+      "selection": "candidate_primary",
+      "uses": [
+        "weather_visibility_comparison"
+      ],
+      "view": {
+        "description": "Freies Flugfeld mit Horizont; lokaler Vordergrund rechts. Im Bild als RWY 15L bezeichnet; keine exakte Kompassrichtung abgeleitet.",
+        "reviewLighting": "night",
+        "daylightSuitability": "pending",
+        "coordinates": null,
+        "coordinateBasis": "camera_position_not_verified",
+        "compassBearingDegrees": null
+      },
+      "technical": {
+        "httpStatus": 200,
+        "decodeVerified": true,
+        "width": 2560,
+        "height": 1920,
+        "lastProbeAt": "2026-10-10T17:54:39.476911+00:00",
+        "changeEvidence": "../evidence/ried-webcams-vollinventar-2026-10-10/",
+        "transport": "https",
+        "tlsVerificationRequired": true
+      },
+      "usage": {
+        "termsUrl": "https://aeroclub-heppenheim.de/impressum/",
+        "providerConditions": "written_consent_for_uses_outside_stated_private_scope",
+        "automatedFetchPermission": "not_confirmed",
+        "archivePermission": "not_confirmed",
+        "analysisPermission": "not_confirmed",
+        "redistributionPermission": "not_confirmed",
+        "contactEmail": "info@aeroclub-heppenheim.de",
+        "contactSent": false
+      },
+      "captureTime": null
+    },
+    {
+      "id": "ried-oppenheim-flugfeld",
+      "inventoryId": "oppenheim",
+      "name": "Flugplatz Oppenheim",
+      "operator": "Aero-Club Oppenheim-Guntersblum am Rhein e.V.",
+      "sourcePage": "https://aeroclub-oppenheim.de/webcam/",
+      "imageUrl": "https://cam.aeroclub-oppenheim.de/image.jpg",
+      "mediaType": "jpeg_snapshot",
+      "intervalSeconds": 60,
+      "intervalBasis": "provider_statement",
+      "operatorMaximumRateSeconds": null,
+      "enabled": false,
+      "selection": "candidate_comparison",
+      "uses": [
+        "weather_visibility_comparison"
+      ],
+      "view": {
+        "description": "Flugplatzvorfeld, Horizont und Himmel; lokaler Vordergrund nimmt viel Raum ein. Westlicher Vergleichsstandort außerhalb des Hessischen Rieds.",
+        "reviewLighting": "night",
+        "daylightSuitability": "pending",
+        "coordinates": null,
+        "coordinateBasis": "camera_position_not_verified",
+        "compassBearingDegrees": null
+      },
+      "technical": {
+        "httpStatus": 200,
+        "decodeVerified": true,
+        "width": 1280,
+        "height": 720,
+        "lastProbeAt": "2026-10-10T17:54:39.779669+00:00",
+        "changeEvidence": "../evidence/ried-webcams-vollinventar-2026-10-10/",
+        "transport": "https",
+        "tlsVerificationRequired": true
+      },
+      "usage": {
+        "termsUrl": "https://aeroclub-oppenheim.de/kontakt/",
+        "providerConditions": "provider_requests_contact_for_reuse",
+        "automatedFetchPermission": "not_confirmed",
+        "archivePermission": "not_confirmed",
+        "analysisPermission": "not_confirmed",
+        "redistributionPermission": "not_confirmed",
+        "contactEmail": "fliegen@aeroclub-oppenheim.de",
+        "contactSent": false
+      },
+      "captureTime": null
+    }
+  ]
+}

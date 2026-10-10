@@ -1,0 +1,68 @@
+[
+  {
+    "id": "Tower",
+    "url": "https://webcam.hrz.tu-darmstadt.de/Tower/current-web.jpg",
+    "checkedAt": "2026-10-10T17:54:38.658761+00:00",
+    "status": 200,
+    "bytes": 10213,
+    "width": 480,
+    "height": 360,
+    "sha256": "89f0ebfbcf08fa6201b7a8336e8a8cf3ae8bd611a40598814b890c1431b90524",
+    "lastModified": "Sat, 10 Oct 2026 17:54:06 GMT"
+  },
+  {
+    "id": "melibokus",
+    "url": "http://www.melibokus.com/cam/rechts_g.jpg",
+    "checkedAt": "2026-10-10T17:54:39.029661+00:00",
+    "status": 200,
+    "bytes": 255434,
+    "width": 2048,
+    "height": 1536,
+    "sha256": "b450dbfbee63ed9e3b4a9d4456d389709e13a1722cb19b4970fce97aa651d962",
+    "lastModified": "Sat, 10 Oct 2026 17:50:04 GMT"
+  },
+  {
+    "id": "heppenheim-1",
+    "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_1.jpg",
+    "checkedAt": "2026-10-10T17:54:39.205431+00:00",
+    "status": 200,
+    "bytes": 102973,
+    "width": 2560,
+    "height": 1920,
+    "sha256": "cec3411c4ec78f2e5c498a9693077f06abec876cb409cf9436268d6579b10fd1",
+    "lastModified": "Sat, 10 Oct 2026 17:50:09 GMT"
+  },
+  {
+    "id": "heppenheim-2",
+    "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_2.jpg",
+    "checkedAt": "2026-10-10T17:54:39.476911+00:00",
+    "status": 200,
+    "bytes": 312789,
+    "width": 2560,
+    "height": 1920,
+    "sha256": "37a6e247441c4142c77283da0c196ca41054e571ed4226262181cb64776dd245",
+    "lastModified": "Sat, 10 Oct 2026 17:49:42 GMT"
+  },
+  {
+    "id": "heppenheim-3",
+    "url": "https://aeroclub-heppenheim.de/wp-content/uploads/webcam/webcam_latest_3.jpg",
+    "checkedAt": "2026-10-10T17:54:39.633308+00:00",
+    "status": 200,
+    "bytes": 359237,
+    "width": 2560,
+    "height": 1920,
+    "sha256": "1775dcfa72d0f29c0266246fd6b779280bb139f40f3b213f39bdd1c2a61125ab",
+    "lastModified": "Sat, 10 Oct 2026 17:49:46 GMT"
+  },
+  {
+    "id": "oppenheim",
+    "url": "https://cam.aeroclub-oppenheim.de/image.jpg",
+    "checkedAt": "2026-10-10T17:54:39.779669+00:00",
+    "status": 200,
+    "bytes": 96426,
+    "width": 1280,
+    "height": 720,
+    "sha256": "e961c7f3a8499628808d27fccfe681634ac05b2279c1b7e0f0bb7fc9e0dbb4a3",
+    "lastModified": "Sat, 10 Oct 2026 17:54:13 GMT"
+  }
+]
