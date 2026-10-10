@@ -26,6 +26,7 @@ from firms import import_firms
 from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
+from broadband import import_broadband
 from inaturalist import import_inaturalist
 from invekos import import_invekos
 from long_term_events import import_long_term_events
@@ -67,6 +68,7 @@ ADAPTERS = {
     "json": import_json,
     "wms": import_wms,
     "hessen": import_hessen,
+    "bba-households": import_broadband,
     "election-precincts": import_elections,
     "bnetza": import_chargers,
     "gtfs": import_gtfs,

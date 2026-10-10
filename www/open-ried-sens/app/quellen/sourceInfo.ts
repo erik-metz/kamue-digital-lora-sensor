@@ -63,6 +63,11 @@ export const SOURCE_INFO: Record<
     domain: "Kultur & Termine",
     provider: "Stadt Bürstadt / Cross-7",
   },
+  "bnetza-broadband-households": {
+    title: "Breitbandverfügbarkeit für Privathaushalte",
+    domain: "Infrastruktur & Konnektivität",
+    provider: "Bundesnetzagentur · Breitbandatlas",
+  },
   "hessen-municipal-statistics": {
     title: "Hessische Gemeindestatistik",
     domain: "Statistik & Finanzen",

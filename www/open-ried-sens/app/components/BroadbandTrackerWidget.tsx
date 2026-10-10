@@ -6,22 +6,24 @@ import {
   Wifi,
   BatteryCharging,
   Route,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  ArrowUpRight,
 } from "lucide-react";
 import {
-  getRoadConditionColor,
-  getRoadConditionLabel,
-  type BroadbandArea,
   type EvChargingStation,
   type RoadSegment,
   type WifiHotspot,
 } from "@/lib/infrastructureData";
 
+interface HouseholdCoverage {
+  id: string;
+  municipality: string;
+  referenceMonth: string;
+  fttbHPct: number | null;
+  gigabitPct: number | null;
+}
+const percentage = (value: number | null) => value === null ? "Nicht ausgewiesen" : `${value.toLocaleString("de-DE", { maximumFractionDigits: 2 })}%`;
+
 export default function BroadbandTrackerWidget() {
-  const [broadbandAreas, setBroadbandAreas] = useState<BroadbandArea[]>([]);
+  const [broadbandAreas, setBroadbandAreas] = useState<HouseholdCoverage[]>([]);
   const [evChargers, setEvChargers] = useState<EvChargingStation[]>([]);
   const [roadSegments, setRoadSegments] = useState<RoadSegment[]>([]);
   const [wifiHotspots, setWifiHotspots] = useState<WifiHotspot[]>([]);
@@ -42,7 +44,7 @@ export default function BroadbandTrackerWidget() {
         if (!cancelled) {
           if (bbRes.ok) {
             const d = await bbRes.json();
-            setBroadbandAreas(Array.isArray(d.areas) ? d.areas : []);
+            setBroadbandAreas(d.contract_version === "bba-households-v1" && Array.isArray(d.areas) ? d.areas : []);
           } else { setBroadbandAreas([]); }
           if (evRes.ok) {
             const d = await evRes.json();
@@ -94,7 +96,7 @@ export default function BroadbandTrackerWidget() {
           Breitband, E-Mobilität & Straßenzustand
         </h3>
         <p className="text-xs sm:text-sm text-slate-400 mt-1">
-          Transparente Einblicke in digitale Lebensadern: Glasfaser-Ausbauquote, Ladesäulen-Verfügbarkeit und KI-Straßenzustand.
+          Transparente Einblicke in digitale Lebensadern: Glasfaserverfügbarkeit, Ladesäulen und Straßenzustand.
         </p>
       </div>
 
@@ -105,46 +107,36 @@ export default function BroadbandTrackerWidget() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm font-bold text-slate-200">
                 <Globe className="size-4 text-purple-400" />
-                <span>Glasfaserausbau (FTTH)</span>
+                <span>Glasfaserverfügbarkeit (FTTB/H)</span>
               </div>
               <span className="text-[10px] uppercase font-bold text-purple-400 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
                 Gigabit-Status
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Fortschritt der Gigabit-Infrastruktur von Deutscher Glasfaser, Deutscher GigaNetz und Telekom.
+              Anteil der Privathaushalte mit technisch verfügbarem Gebäude- oder Wohnungsanschluss. Keine Vertragsquote oder gemessene Geschwindigkeit.
             </p>
 
             <div className="space-y-2.5 pt-1">
-              {broadbandAreas.slice(0, 4).map((area) => {
-                const isComplete = area.rolloutStatus === "active_available";
-                const isBuilding = area.rolloutStatus === "under_construction";
-                const pct = area.contractQuotaPct || (isComplete ? 100 : 40);
-
-                return (
-                  <div key={area.id} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-300 font-medium truncate max-w-[170px]">
-                        {area.municipality} – {area.areaName}
-                      </span>
-                      <span className={isComplete ? "text-emerald-400 font-bold" : isBuilding ? "text-amber-400" : "text-slate-400"}>
-                        {isComplete ? "Aktiv (1 Gbit/s)" : isBuilding ? `${pct}% Quote (Im Bau)` : "In Planung"}
-                      </span>
-                    </div>
-                    <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${isComplete ? "bg-emerald-400" : isBuilding ? "bg-amber-400" : "bg-purple-500"}`}
-                        style={{ width: `${Math.min(100, Math.max(10, pct))}%` }}
-                      />
-                    </div>
+              {broadbandAreas.map((area) => (
+                <div key={area.id} className="space-y-1">
+                  <div className="flex justify-between text-xs gap-2">
+                    <span className="text-slate-300 font-medium">{area.municipality}</span>
+                    <span className="text-purple-300">{percentage(area.fttbHPct)}</span>
                   </div>
-                );
-              })}
+                  {area.fttbHPct !== null ? (
+                    <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden" aria-hidden="true">
+                      <div className="h-full rounded-full bg-purple-500" style={{ width: `${area.fttbHPct}%` }} />
+                    </div>
+                  ) : null}
+                  <p className="text-[11px] text-slate-400">Gigabit, alle Technologien: {percentage(area.gigabitPct)} · Stand {area.referenceMonth}</p>
+                </div>
+              ))}
             </div>
           </div>
           <div className="text-[11px] text-slate-500 border-t border-slate-800/80 pt-2 flex items-center justify-between">
-            <span>Quelle: BMDV & Netzbetreiber</span>
-            <span className="text-purple-400">Auf Karte einblendbar</span>
+            <a href="https://gigabitgrundbuch.bund.de" target="_blank" rel="noopener noreferrer">Quelle: Breitbandatlas | Gigabit-Grundbuch</a>
+            <span className="text-purple-400">Gemeindestatistik</span>
           </div>
         </div>
 

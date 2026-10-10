@@ -1372,6 +1372,23 @@
       "max_age_seconds": 259200,
       "http_retries": 2,
       "reason": "Tägliche regionale Webcam-Metadatenprüfung; keine Bild-/Streamabrufe ohne belegte geeignete Quelle."
+    },
+    {
+      "id": "bnetza-broadband-households",
+      "group": "infrastructure",
+      "adapter": "bba-households",
+      "enabled": true,
+      "url": "https://data.bundesnetzagentur.de/Bundesnetzagentur/GIGA/DE/Breitbandatlas/Downloads/bba_12_2025.xlsx",
+      "interval_seconds": 86400,
+      "max_age_seconds": 63072000,
+      "http_retries": 2,
+      "municipalities": {
+        "06431003": "Biblis",
+        "06431005": "Bürstadt",
+        "06431010": "Groß-Rohrheim",
+        "06431013": "Lampertheim"
+      },
+      "reason": "Amtliche Festnetzverfügbarkeit in Prozent der Privathaushalte; Stand Dezember 2025, keine Live-Geschwindigkeit oder Vertragsquote."
     }
   ]
 }
