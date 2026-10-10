@@ -1,12 +1,13 @@
 "use client";
 
+import { demographicView, statNumber, signedStat } from "@/lib/topicAggregates";
+
 import {
   ArrowDownRight,
   ArrowRightLeft,
   ArrowUpRight,
   Baby,
   Building2,
-  CheckCircle2,
   ExternalLink,
   GraduationCap,
   MapPin,
@@ -47,6 +48,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
       q: "",
       type: "all",
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore browser URL after hydration.
     if (p.muni) setSelectedMuni(p.muni);
     if (p.q) setFacilitySearch(p.q);
     if (p.type) setFacilityTypeFilter(p.type);
@@ -83,93 +85,19 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
     updateUrlDebounced(query);
   }, [mounted, selectedMuni, facilitySearch, facilityTypeFilter]);
 
-  const activeSummary = useMemo(() => {
-    if (selectedMuni === "all") {
-      // Sum aggregates
-      const totalPop = summaries.reduce((acc, s) => acc + s.total_population, 0);
-      const totalBirths = summaries.reduce((acc, s) => acc + (s.births ?? 0), 0);
-      const totalDeaths = summaries.reduce((acc, s) => acc + (s.deaths ?? 0), 0);
-      const totalInflow = summaries.reduce((acc, s) => acc + (s.inflow ?? 0), 0);
-      const totalOutflow = summaries.reduce((acc, s) => acc + (s.outflow ?? 0), 0);
-      const totalNet = summaries.reduce((acc, s) => acc + (s.net_migration ?? 0), 0);
-      const totalSchools = summaries.reduce((acc, s) => acc + s.schools_count, 0);
-      const totalKitas = summaries.reduce((acc, s) => acc + s.kitas_count, 0);
-      const avgDensity = Math.round(
-        summaries.reduce((acc, s) => acc + s.population_density, 0) / (summaries.length || 1)
-      );
-      const avgForeign = Number(
-        (
-          summaries.reduce((acc, s) => acc + s.foreign_share_pct, 0) / (summaries.length || 1)
-        ).toFixed(1)
-      );
-      const avgHousehold = Number(
-        (
-          summaries.reduce((acc, s) => acc + s.avg_household_size, 0) / (summaries.length || 1)
-        ).toFixed(2)
-      );
+  const activeSummary = useMemo(() => demographicView(summaries, municipalities, selectedMuni),
+    [summaries, municipalities, selectedMuni]);
 
-      return {
-        municipality_id: "all",
-        name: "Hessisches Ried (Gesamtraum)",
-        total_population: totalPop,
-        population_density: avgDensity,
-        foreign_share_pct: avgForeign,
-        births: totalBirths,
-        deaths: totalDeaths,
-        inflow: totalInflow,
-        outflow: totalOutflow,
-        net_migration: totalNet,
-        avg_household_size: avgHousehold,
-        schools_count: totalSchools,
-        kitas_count: totalKitas,
-        year: 2024,
-      };
-    }
-    return (
-      summaries.find((s) => s.municipality_id === selectedMuni) ?? summaries[0]
-    );
-  }, [selectedMuni, summaries]);
-
-  const activeAgeCohorts = useMemo(() => {
-    if (selectedMuni !== "all" && ageStructure[selectedMuni]) {
-      return ageStructure[selectedMuni];
-    }
-    // Aggregate age structure across all
-    const keys = ["under_6", "6_to_18", "19_to_29", "30_to_49", "50_to_64", "65_plus"];
-    const labels: Record<string, { label: string; desc: string }> = {
-      under_6: { label: "< 6 Jahre", desc: "Krippe & Kindertagesstätte" },
-      "6_to_18": { label: "6–18 Jahre", desc: "Schulpflicht & Jugendliche" },
-      "19_to_29": { label: "19–29 Jahre", desc: "Ausbildung, Studium & Berufseinstieg" },
-      "30_to_49": { label: "30–49 Jahre", desc: "Familien- & Haupterwerbsphase" },
-      "50_to_64": { label: "50–64 Jahre", desc: "Späte Erwerbsphase / Babyboomer" },
-      "65_plus": { label: "65+ Jahre", desc: "Ruhestand & Senioren" },
-    };
-    const totals: Record<string, number> = {};
-    let grandTotal = 0;
-    for (const key of keys) totals[key] = 0;
-
-    for (const muniKey in ageStructure) {
-      for (const item of ageStructure[muniKey]) {
-        totals[item.cohort] = (totals[item.cohort] || 0) + item.count;
-        grandTotal += item.count;
-      }
-    }
-
-    return keys.map((k) => ({
-      cohort: k,
-      label: labels[k].label,
-      count: totals[k],
-      percentage: Number(((totals[k] / (grandTotal || 1)) * 100).toFixed(1)),
-      description: labels[k].desc,
-    }));
-  }, [selectedMuni, ageStructure, commuters]);
+  // AgeStructure has no reference year; cross-municipality comparability is unknown.
+  const activeAgeCohorts = useMemo(() => selectedMuni === "all" ? [] : ageStructure[selectedMuni] ?? [],
+    [selectedMuni, ageStructure]);
 
   const activeCommuters = useMemo(() => {
     if (selectedMuni === "all") {
       return commuters;
     }
     return commuters.filter((c) => c.home_municipality_id === selectedMuni);
-  }, [selectedMuni, ageStructure, commuters]);
+  }, [selectedMuni, commuters]);
 
   const outboundCommuters = useMemo(
     () => activeCommuters.filter((c) => c.direction === "outbound"),
@@ -249,7 +177,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
             <span>Region / Kommune auswählen:</span>
           </div>
           <span className="text-xs text-slate-400 font-mono">
-            Datenstand: Jahresbericht 2024/2025 (HSL & BA)
+            Bezugsjahr: {activeSummary.year ?? "nicht verfügbar"}
           </span>
         </div>
 
@@ -282,6 +210,10 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
         </div>
       </div>
 
+      {selectedMuni === "all" && <p className="text-sm text-slate-400">
+        Gesamtwerte setzen vollständige Angaben für Bürstadt, Lampertheim, Biblis und Groß-Rohrheim
+        im selben Jahr voraus. Der regionale Ausländeranteil ist aus kommunalen Anteilen näherungsweise gewichtet. Fehlende Angaben bleiben offen. Die Haushaltsgröße wird ohne Haushaltszahlen nicht zusammengefasst.
+      </p>}
       {/* KPI SCORECARD GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Einwohner */}
@@ -291,11 +223,11 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
             <Users className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-100">
-            {activeSummary.total_population.toLocaleString("de-DE")}
+            {statNumber(activeSummary.total_population, 0)}
           </div>
           <p className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
             <span>Siedlungsdichte:</span>
-            <span className="font-semibold text-slate-300">{activeSummary.population_density} Einw./km²</span>
+            <span className="font-semibold text-slate-300">{statNumber(activeSummary.population_density)} Einw./km²</span>
           </p>
         </div>
 
@@ -306,11 +238,11 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
             <Building2 className="w-4 h-4 text-sky-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-100">
-            {activeSummary.foreign_share_pct.toFixed(1)}%
+            {selectedMuni === "all" && activeSummary.foreign_share_pct != null ? "≈ " : ""}{statNumber(activeSummary.foreign_share_pct)}%
           </div>
           <p className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
             <span>Haushaltsgröße:</span>
-            <span className="font-semibold text-slate-300">Ø {activeSummary.avg_household_size} Pers./HH</span>
+            <span className="font-semibold text-slate-300">Ø {statNumber(activeSummary.avg_household_size)} Pers./HH</span>
           </p>
         </div>
 
@@ -321,12 +253,12 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
             <ArrowRightLeft className="w-4 h-4 text-teal-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400">
-            +{activeSummary.net_migration.toLocaleString("de-DE")}
+            {signedStat(activeSummary.net_migration)}
           </div>
           <p className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
             <span>Zuzüge / Fortzüge:</span>
             <span className="font-semibold text-slate-300">
-              {activeSummary.inflow} / {activeSummary.outflow}
+              {statNumber(activeSummary.inflow)} / {statNumber(activeSummary.outflow)}
             </span>
           </p>
         </div>
@@ -338,12 +270,12 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
             <GraduationCap className="w-4 h-4 text-amber-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-100">
-            {activeSummary.schools_count + activeSummary.kitas_count}
+            {activeSummary.schools_count != null && activeSummary.kitas_count != null ? statNumber(activeSummary.schools_count + activeSummary.kitas_count, 0) : "–"}
           </div>
           <p className="text-xs text-slate-400 flex items-center justify-between pt-1 border-t border-slate-800/60">
             <span>Einrichtungen:</span>
             <span className="font-semibold text-slate-300">
-              {activeSummary.schools_count} Schulen · {activeSummary.kitas_count} Kitas
+              {statNumber(activeSummary.schools_count)} Schulen · {statNumber(activeSummary.kitas_count)} Kitas
             </span>
           </p>
         </div>
@@ -366,6 +298,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
         </div>
 
         <div className="space-y-4">
+          {activeAgeCohorts.length === 0 && <p role="status" className="text-sm text-slate-400">Keine vergleichbare Altersstruktur verfügbar. Bitte eine Kommune auswählen; ohne Bezugsjahre wird kein Gesamtwert berechnet.</p>}
           {activeAgeCohorts.map((item) => (
             <div key={item.cohort} className="space-y-1.5">
               <div className="flex items-center justify-between text-sm">
@@ -374,34 +307,24 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
                   <span className="text-xs text-slate-400 hidden sm:inline">({item.description})</span>
                 </div>
                 <div className="text-right">
-                  <span className="font-mono font-bold text-emerald-400">{item.count.toLocaleString("de-DE")}</span>
-                  <span className="text-xs text-slate-400 ml-1.5 font-mono">({item.percentage}%)</span>
+                  <span className="font-mono font-bold text-emerald-400">{statNumber(item.count, 0)}</span>
+                  <span className="text-xs text-slate-400 ml-1.5 font-mono">({statNumber(item.percentage)}%)</span>
                 </div>
               </div>
               <div className="w-full bg-slate-950 rounded-full h-3.5 border border-slate-800 overflow-hidden shadow-inner flex">
                 <div
                   className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-500 rounded-full"
-                  style={{ width: `${Math.min(item.percentage * 3.5, 100)}%` }}
+                  style={{ width: `${Number.isFinite(item.percentage) ? Math.min(Math.max(item.percentage, 0), 100) : 0}%` }}
                 />
               </div>
             </div>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-800/80 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Kinder & Jugend (0–18 Jahre): <strong>~17,8%</strong> der Bevölkerung</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Erwerbsfähige (19–64 Jahre): <strong>~60,2%</strong> der Bevölkerung</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>Seniorinnen & Senioren (65+): <strong>~22,0%</strong> der Bevölkerung</span>
-          </div>
-        </div>
+        <p className="text-xs text-slate-400">
+          Altersdaten haben in diesem Datensatz kein Bezugsjahr. Einzelkommunen werden
+          mit ihren veröffentlichten Angaben angezeigt; eine regionale Summe wird nicht gebildet.
+        </p>
       </section>
 
       {/* SECTION 2: PENDLERATLAS & MOBILITÄT */}
@@ -416,7 +339,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
               Sozialversicherungspflichtige Pendlerverflechtungen (Bundesagentur für Arbeit)
             </p>
           </div>
-          <span className="text-xs text-slate-500 font-mono">Tägliche Pendlerbewegungen</span>
+          <span className="text-xs text-slate-500 font-mono">Berichtsjahr je Pendlerbeziehung</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -429,11 +352,11 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-200">Auspendler (Wohnort Ried → Arbeitsort)</h3>
-                  <p className="text-xs text-slate-400">Ried-Bürger, die außerhalb arbeiten</p>
+                  <p className="text-xs text-slate-400">Erfasste Beziehungen zu anderen Arbeitsorten</p>
                 </div>
               </div>
               <span className="text-xs font-mono font-bold text-orange-400">
-                {outboundCommuters.reduce((a, c) => a + c.commuter_count, 0).toLocaleString("de-DE")} Pers.
+                {outboundCommuters.length} erfasste Beziehungen
               </span>
             </div>
 
@@ -453,7 +376,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
                     )}
                   </div>
                   <span className="font-mono font-bold text-slate-100">
-                    {c.commuter_count.toLocaleString("de-DE")} Pendler
+                    {statNumber(c.commuter_count, 0)} Pendler · {c.year}
                   </span>
                 </div>
               ))}
@@ -473,7 +396,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
                 </div>
               </div>
               <span className="text-xs font-mono font-bold text-teal-400">
-                {inboundCommuters.reduce((a, c) => a + c.commuter_count, 0).toLocaleString("de-DE")} Pers.
+                {inboundCommuters.length} erfasste Beziehungen
               </span>
             </div>
 
@@ -493,7 +416,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
                     )}
                   </div>
                   <span className="font-mono font-bold text-slate-100">
-                    {c.commuter_count.toLocaleString("de-DE")} Pendler
+                    {statNumber(c.commuter_count, 0)} Pendler · {c.year}
                   </span>
                 </div>
               ))}
@@ -639,7 +562,7 @@ export default function DemographicsClient({ summaries, facilities, ageStructure
                         Webseite <ExternalLink className="w-2.5 h-2.5" />
                       </a>
                     ) : (
-                      <span>Stand 2025</span>
+                      <span>Stand {f.reporting_year}</span>
                     )}
                   </div>
                 </div>

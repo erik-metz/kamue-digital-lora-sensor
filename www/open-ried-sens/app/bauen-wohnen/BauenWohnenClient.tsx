@@ -1,5 +1,7 @@
 "use client";
 
+import { estateView, stockView, statNumber } from "@/lib/topicAggregates";
+
 import {
   AGE_BRACKET_LABELS,
   HEATING_LABELS,
@@ -73,7 +75,8 @@ export default function BauenWohnenClient({
       boris_type: "all",
     });
     if (["stock", "energy", "prices", "construction"].includes(p.tab)) {
-      setActiveTab(p.tab as any);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore browser URL after hydration.
+      setActiveTab(p.tab as "stock" | "energy" | "prices" | "construction");
     }
     if (p.muni) setSelectedMuni(p.muni);
     if (p.q) setBorisSearch(p.q);
@@ -91,7 +94,7 @@ export default function BauenWohnenClient({
         boris_type: "all",
       });
       if (["stock", "energy", "prices", "construction"].includes(p.tab)) {
-        setActiveTab(p.tab as any);
+        setActiveTab(p.tab as "stock" | "energy" | "prices" | "construction");
       }
       setSelectedMuni(p.muni || "all");
       setBorisSearch(p.q || "");
@@ -120,130 +123,8 @@ export default function BauenWohnenClient({
     return summaries.map((s) => s.municipality);
   }, [summaries]);
 
-  const activeSummary = useMemo(() => {
-    if (selectedMuni === "all") {
-      const totalDwellings = summaries.reduce(
-        (acc, s) => acc + s.total_dwellings,
-        0
-      );
-      const avgVacancy = Number(
-        (
-          summaries.reduce((acc, s) => acc + s.vacancy_rate_pct, 0) /
-          (summaries.length || 1)
-        ).toFixed(1)
-      );
-      const avgLiving = Number(
-        (
-          summaries.reduce((acc, s) => acc + s.avg_living_space_sqm, 0) /
-          (summaries.length || 1)
-        ).toFixed(1)
-      );
-      const avgLandVal = Math.round(
-        summaries.reduce((acc, s) => acc + s.avg_land_value_residential, 0) /
-          (summaries.length || 1)
-      );
-      const avgRent = Number(
-        (
-          summaries.reduce((acc, s) => acc + s.avg_rent_cold_sqm, 0) /
-          (summaries.length || 1)
-        ).toFixed(2)
-      );
-      const totalPermits = summaries.reduce(
-        (acc, s) => acc + s.recent_permits_dwellings,
-        0
-      );
-      const totalCompletions = summaries.reduce(
-        (acc, s) => acc + s.recent_completions_dwellings,
-        0
-      );
-      const totalPlans = summaries.reduce(
-        (acc, s) => acc + s.active_bplaene_count,
-        0
-      );
-
-      return {
-        municipality: "Hessisches Ried (Gesamtraum)",
-        total_dwellings: totalDwellings,
-        vacancy_rate_pct: avgVacancy,
-        avg_living_space_sqm: avgLiving,
-        avg_land_value_residential: avgLandVal,
-        avg_rent_cold_sqm: avgRent,
-        avg_apartment_buy_sqm: 3100.0,
-        recent_permits_dwellings: totalPermits,
-        recent_completions_dwellings: totalCompletions,
-        active_bplaene_count: totalPlans,
-      };
-    }
-    return (
-      summaries.find(
-        (s) => s.municipality.toLowerCase() === selectedMuni.toLowerCase()
-      ) ?? summaries[0]
-    );
-  }, [selectedMuni, summaries]);
-
-  const activeStock = useMemo(() => {
-    if (selectedMuni !== "all") {
-      const found = housingStock.find(
-        (h) => h.municipality.toLowerCase() === selectedMuni.toLowerCase()
-      );
-      if (found) return found;
-    }
-    // Aggregate across all stock
-    const ageKeys = Object.keys(AGE_BRACKET_LABELS);
-    const aggAge: Record<string, number> = {};
-    for (const k of ageKeys) aggAge[k] = 0;
-
-    const bTypeKeys = ["single_family", "semi_detached_duplex", "multi_family"];
-    const aggBTypes: Record<string, number> = {};
-    for (const k of bTypeKeys) aggBTypes[k] = 0;
-
-    let totalB = 0;
-    let totalRes = 0;
-    let totalD = 0;
-    let totalVac = 0;
-
-    for (const item of housingStock) {
-      totalB += item.total_buildings;
-      totalRes += item.residential_buildings;
-      totalD += item.total_dwellings;
-      totalVac += item.vacant_dwellings;
-      for (const k of ageKeys) {
-        aggAge[k] = (aggAge[k] || 0) + (item.age_distribution[k] || 0);
-      }
-      for (const k of bTypeKeys) {
-        aggBTypes[k] = (aggBTypes[k] || 0) + (item.building_types[k] || 0);
-      }
-    }
-
-    // Weighted average heating
-    const heatingKeys = Object.keys(HEATING_LABELS);
-    const aggHeating: Record<string, number> = {};
-    for (const h of heatingKeys) {
-      const sumWeighted = housingStock.reduce(
-        (acc, curr) =>
-          acc + (curr.heating_energy[h] || 0) * curr.total_dwellings,
-        0
-      );
-      aggHeating[h] = Number((sumWeighted / (totalD || 1)).toFixed(1));
-    }
-
-    return {
-      id: "agg-ried",
-      municipality: "Hessisches Ried",
-      district: "Gesamtraum",
-      reference_year: 2022,
-      total_buildings: totalB,
-      residential_buildings: totalRes,
-      total_dwellings: totalD,
-      avg_living_space_sqm: 100.8,
-      vacant_dwellings: totalVac,
-      vacancy_rate_pct: Number(((totalVac / (totalD || 1)) * 100).toFixed(1)),
-      age_distribution: aggAge,
-      building_types: aggBTypes,
-      heating_energy: aggHeating,
-      source: "Zensus 2022 (Statistik Hessen)",
-    };
-  }, [selectedMuni, housingStock]);
+  const activeSummary = useMemo(() => estateView(summaries, selectedMuni), [summaries, selectedMuni]);
+  const activeStock = useMemo(() => stockView(housingStock, selectedMuni), [housingStock, selectedMuni]);
 
   const filteredBoris = useMemo(() => {
     return borisZones.filter((b) => {
@@ -340,18 +221,18 @@ export default function BauenWohnenClient({
           </div>
           <div className="space-y-1">
             <div className="text-2xl sm:text-3xl font-extrabold text-slate-100">
-              {activeSummary.total_dwellings.toLocaleString("de-DE")}
+              {statNumber(activeSummary.total_dwellings, 0)}
             </div>
             <p className="text-xs text-slate-400">
               Wohnungen in{" "}
-              {activeStock.residential_buildings.toLocaleString("de-DE")}{" "}
+              {statNumber(activeStock.residential_buildings, 0)}{" "}
               Wohngebäuden
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
             <span>Ø Wohnfläche</span>
             <span className="font-mono text-slate-300 font-medium">
-              {activeSummary.avg_living_space_sqm} m² / Wg.
+              {statNumber(activeSummary.avg_living_space_sqm)} m² / Wg.
             </span>
           </div>
         </div>
@@ -369,23 +250,21 @@ export default function BauenWohnenClient({
           <div className="space-y-1">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-extrabold text-teal-300">
-                {activeSummary.vacancy_rate_pct} %
+                {statNumber(activeSummary.vacancy_rate_pct)} %
               </span>
               <span className="text-xs text-slate-400">
-                ({activeStock.vacant_dwellings.toLocaleString("de-DE")}{" "}
+                ({statNumber(activeStock.vacant_dwellings, 0)}{" "}
                 Einheiten)
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Hessen-Vergleich:{" "}
-              <strong className="text-slate-300">3,4 %</strong> (Angespannter
-              Wohnungsmarkt)
+              Fehlende Leerstandsangaben werden nicht durch einen Landesvergleich ersetzt.
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
             <span>Marktlage</span>
             <span className="text-emerald-400 font-medium flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> Hohe Auslastung
+              <CheckCircle2 className="w-3 h-3" /> Laut Veröffentlichung
             </span>
           </div>
         </div>
@@ -402,16 +281,16 @@ export default function BauenWohnenClient({
           </div>
           <div className="space-y-1">
             <div className="text-2xl sm:text-3xl font-extrabold text-amber-300">
-              {formatEuro(activeSummary.avg_land_value_residential, true)}
+              {formatEuro(activeSummary.avg_land_value_residential ?? NaN, true)}
             </div>
             <p className="text-xs text-slate-400">
-              Amtlicher BORIS Hessen Stichtag 01.01.2024 für baureifes Wohnland
+              Bodenrichtwerte beziehen sich auf die Stichtage der einzelnen BORIS-Zonen
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
             <span>Kaltmiete Ø</span>
             <span className="font-mono text-slate-300 font-medium">
-              {formatEuro(activeSummary.avg_rent_cold_sqm, true)}
+              {formatEuro(activeSummary.avg_rent_cold_sqm ?? NaN, true)}
             </span>
           </div>
         </div>
@@ -428,17 +307,17 @@ export default function BauenWohnenClient({
           </div>
           <div className="space-y-1">
             <div className="text-2xl sm:text-3xl font-extrabold text-blue-300">
-              +{activeSummary.recent_permits_dwellings}
+              {statNumber(activeSummary.recent_permits_dwellings)}
             </div>
             <p className="text-xs text-slate-400">
               Neu genehmigte Wohnungen (zuletzt) ·{" "}
-              {activeSummary.recent_completions_dwellings} fertiggestellt
+              {statNumber(activeSummary.recent_completions_dwellings)} fertiggestellt
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
             <span>Aktive Bau-Pläne</span>
             <span className="text-blue-400 font-medium font-mono">
-              {activeSummary.active_bplaene_count} Neubaugebiete
+              {statNumber(activeSummary.active_bplaene_count)} Neubaugebiete
             </span>
           </div>
         </div>
@@ -512,13 +391,13 @@ export default function BauenWohnenClient({
                     Gebäudealter-Struktur ({activeStock.municipality})
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
-                    Baujahresklassen aller Wohngebäude nach Zensus 2022
+                    Baujahresklassen aller Wohngebäude nach Bezugsjahr {activeStock.reference_year ?? "nicht verfügbar"}
                     (Statistik Hessen)
                   </p>
                 </div>
                 <span className="px-2.5 py-1 rounded-full text-xs font-mono bg-slate-950 border border-slate-800 text-slate-400">
                   Basis:{" "}
-                  {activeStock.residential_buildings.toLocaleString("de-DE")}{" "}
+                  {statNumber(activeStock.residential_buildings, 0)}{" "}
                   Gebäude
                 </span>
               </div>
@@ -526,13 +405,9 @@ export default function BauenWohnenClient({
               {/* Age Class Bars */}
               <div className="space-y-4">
                 {Object.entries(AGE_BRACKET_LABELS).map(([key, meta]) => {
-                  const count = activeStock.age_distribution[key] || 0;
-                  const pct = Number(
-                    (
-                      (count / (activeStock.residential_buildings || 1)) *
-                      100
-                    ).toFixed(1)
-                  );
+                  const count = activeStock.age_distribution[key];
+                  const pct = count != null && activeStock.residential_buildings != null && activeStock.residential_buildings > 0
+                    ? count / activeStock.residential_buildings * 100 : null;
                   return (
                     <div key={key} className="space-y-1.5">
                       <div className="flex justify-between text-xs">
@@ -546,10 +421,10 @@ export default function BauenWohnenClient({
                         </div>
                         <div className="flex items-center gap-3 font-mono text-xs">
                           <span className="text-slate-400">
-                            {count.toLocaleString("de-DE")} Gebäude
+                            {statNumber(count, 0)} Gebäude
                           </span>
                           <span className="font-bold text-emerald-400 w-12 text-right">
-                            {pct} %
+                            {statNumber(pct)} %
                           </span>
                         </div>
                       </div>
@@ -557,7 +432,7 @@ export default function BauenWohnenClient({
                         <div
                           className="h-full rounded-full transition-all duration-700"
                           style={{
-                            width: `${Math.max(pct, 2)}%`,
+                            width: `${Math.min(100, Math.max(pct ?? 0, 0))}%`,
                             backgroundColor: meta.color,
                           }}
                         />
@@ -574,11 +449,8 @@ export default function BauenWohnenClient({
                   Modernisierungsfokus im Ried:
                 </span>
                 <p>
-                  Rund <strong>42–44 %</strong> der Wohngebäude im Ried stammen
-                  aus den Baujahren 1949–1978. Dieser Nachkriegsbestand bildet
-                  den zentralen Hebel für energetische Gebäudesanierung, Dämmung
-                  und den Umstieg von fossilen Heizkesseln auf moderne
-                  Wärmepumpen.
+                  Die Baujahresklassen zeigen den gespeicherten Gebäudebestand.
+                  Fehlende Klassen bleiben offen und werden nicht als Nullwerte ergänzt.
                 </p>
               </div>
             </div>
@@ -599,13 +471,11 @@ export default function BauenWohnenClient({
                         Freistehende Einfamilienhäuser
                       </span>
                       <span className="font-mono text-emerald-400 font-bold">
-                        {activeStock.building_types.single_family?.toLocaleString(
-                          "de-DE"
-                        )}
+                        {statNumber(activeStock.building_types.single_family, 0)}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500">
-                      Dominierender Bautyp in den Wohnquartieren des Rieds
+                      Bestand laut Veröffentlichung
                     </div>
                   </div>
 
@@ -615,9 +485,7 @@ export default function BauenWohnenClient({
                         Doppel- & Reihenhäuser
                       </span>
                       <span className="font-mono text-teal-400 font-bold">
-                        {activeStock.building_types.semi_detached_duplex?.toLocaleString(
-                          "de-DE"
-                        )}
+                        {statNumber(activeStock.building_types.semi_detached_duplex, 0)}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500">
@@ -631,9 +499,7 @@ export default function BauenWohnenClient({
                         Mehrfamilienhäuser (3+ Wg.)
                       </span>
                       <span className="font-mono text-blue-400 font-bold">
-                        {activeStock.building_types.multi_family?.toLocaleString(
-                          "de-DE"
-                        )}
+                        {statNumber(activeStock.building_types.multi_family, 0)}
                       </span>
                     </div>
                     <div className="text-[11px] text-slate-500">
@@ -658,7 +524,7 @@ export default function BauenWohnenClient({
                 <div className="pt-2 text-xs text-slate-300 font-mono flex items-center justify-between border-t border-slate-800">
                   <span>Leerstandsquote {activeStock.municipality}:</span>
                   <span className="text-teal-400 font-bold">
-                    {activeStock.vacancy_rate_pct} %
+                    {statNumber(activeStock.vacancy_rate_pct)} %
                   </span>
                 </div>
               </div>
@@ -679,7 +545,7 @@ export default function BauenWohnenClient({
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
                   Verteilung der vorwiegend verwendeten Heizenergie nach Zensus
-                  2022
+                  {activeStock.reference_year ?? "Bezugsjahr offen"}
                 </p>
               </div>
               <span className="px-3 py-1 rounded-full text-xs font-mono bg-orange-500/10 text-orange-300 border border-orange-500/20">
@@ -690,7 +556,7 @@ export default function BauenWohnenClient({
             {/* Heating Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(HEATING_LABELS).map(([key, meta]) => {
-                const val = activeStock.heating_energy[key] || 0;
+                const val = activeStock.heating_energy[key];
                 return (
                   <div
                     key={key}
@@ -701,7 +567,7 @@ export default function BauenWohnenClient({
                         {meta.label}
                       </span>
                       <span className="font-mono text-sm font-extrabold text-slate-100">
-                        {val} %
+                        {statNumber(val)} %
                       </span>
                     </div>
 
@@ -709,7 +575,7 @@ export default function BauenWohnenClient({
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{
-                          width: `${Math.max(val, 3)}%`,
+                          width: `${Math.min(100, Math.max(val ?? 0, 0))}%`,
                           backgroundColor: meta.color,
                         }}
                       />
@@ -749,9 +615,9 @@ export default function BauenWohnenClient({
                       {h.municipality}
                     </div>
                     <div className="text-base font-extrabold text-emerald-400 font-mono">
-                      {h.heating_energy.heat_pump}%
+                      {statNumber(h.heating_energy?.heat_pump)}%
                     </div>
-                    <div className="text-[10px] text-slate-500">Wärmepumpe</div>
+                    <div className="text-[10px] text-slate-500">Wärmepumpe · {h.reference_year}</div>
                   </div>
                 ))}
               </div>
@@ -769,7 +635,7 @@ export default function BauenWohnenClient({
               <div>
                 <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-amber-400" />
-                  Immobilien- & Mietpreisniveau im Ried (2025/2026)
+                  Immobilien- & Mietpreisniveau der gespeicherten Veröffentlichung
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
                   Transaktionsdaten des Gutachterausschusses Kreis Bergstraße &
@@ -790,8 +656,7 @@ export default function BauenWohnenClient({
                   {formatEuro(activeSummary.avg_apartment_buy_sqm ?? NaN, true)}
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Bestand: ca. 2.450 – 3.350 €/m² · Neubau Erstbezug bis 4.450
-                  €/m²
+                  Ohne vergleichbare Stichprobe und Bezugsjahr wird kein regionaler Preis berechnet.
                 </p>
               </div>
 
@@ -802,14 +667,13 @@ export default function BauenWohnenClient({
                 </div>
                 <div className="text-2xl font-extrabold text-slate-100 font-mono">
                   {formatEuro(
-                    filteredBenchmarks.find(
-                      (b) => b.metric_type === "house_buy_avg"
-                    )?.avg_val ?? NaN
+                    selectedMuni !== "all" && filteredBenchmarks.filter(b => b.metric_type === "house_buy_avg").length === 1
+                      ? filteredBenchmarks.find(b => b.metric_type === "house_buy_avg")!.avg_val
+                      : NaN
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Freistehend & Doppelhäuser im Ried (Spanne: 310.000 – 740.000
-                  €)
+                  Ohne vergleichbare Stichprobe und Bezugsjahr wird kein regionaler Preis berechnet.
                 </p>
               </div>
 
@@ -819,11 +683,10 @@ export default function BauenWohnenClient({
                   <span className="text-amber-400 font-mono">Ø m² Kalt</span>
                 </div>
                 <div className="text-2xl font-extrabold text-amber-300 font-mono">
-                  {formatEuro(activeSummary.avg_rent_cold_sqm, true)}
+                  {formatEuro(activeSummary.avg_rent_cold_sqm ?? NaN, true)}
                 </div>
                 <p className="text-[11px] text-slate-500">
-                  Bestandsmieten Ø 8,50 – 9,80 €/m² · Wiedervermietung 11,50 –
-                  13,50 €/m²
+                  Ohne vergleichbare Stichprobe und Bezugsjahr wird kein regionaler Preis berechnet.
                 </p>
               </div>
             </div>
@@ -838,7 +701,7 @@ export default function BauenWohnenClient({
                   Amtliche Bodenrichtwerte (BORIS Hessen)
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Stichtag 01.01.2024 (dl-zero-de/2.0) · Auf der Karte als
+                  Stichtage und Quellen laut den einzelnen Zonen · Auf der Karte als
                   interaktive Polygone sichtbar
                 </p>
               </div>
@@ -942,7 +805,7 @@ export default function BauenWohnenClient({
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
                   Baugenehmigungen vs. Baufertigstellungen (Wohnungen) 2020 –
-                  2025 (Statistik Hessen F II 1)
+                  Berichtsjahre laut den einzelnen Bautätigkeitsdatensätzen
                 </p>
               </div>
             </div>
@@ -1085,7 +948,7 @@ export default function BauenWohnenClient({
           </h4>
           <p className="text-xs text-slate-400 max-w-2xl">
             Alle Bodenrichtwert-Polygone (BORIS),
-            Zensus-2022-Wohnungsstatistiken und Bautätigkeits-Zeitreihen stehen
+            Verfügbare Wohnungsstatistiken und Bautätigkeitsdaten stehen
             als maschinenlesbare GeoJSON- und CSV-Dateien für die Community zur
             Verfügung.
           </p>
