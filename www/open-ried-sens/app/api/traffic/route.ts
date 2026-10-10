@@ -14,8 +14,8 @@ interface DbTrafficIncident {
   end_time?: string | null;
   last_seen_at: string;
   is_active: boolean;
-  delay_seconds: number;
-  delay_minutes: number;
+  delay_seconds: number | null;
+  delay_minutes: number | null;
   length_meters: number;
   length_km: number;
   severity: "minor" | "moderate" | "major" | "standstill";
@@ -23,20 +23,29 @@ interface DbTrafficIncident {
   description?: string;
   coordinates?: [number, number][];
   source: string;
+  delay_kind: TrafficIncident["delayKind"];
+  event_status: TrafficIncident["eventStatus"];
+  provider_start_at?: string | null;
+  provider_end_at?: string | null;
+  overall_end_date?: string | null;
+  closure_kind?: string;
+  work_length_meters?: number | null;
+  is_stale?: boolean;
 }
 
 interface DbCorridorStatus {
   corridor_id: string;
   road_name: string;
   name: string;
-  status: "clear" | "sluggish" | "congestion" | "closure";
-  delay_seconds: number;
-  delay_minutes: number;
+  status: "clear" | "sluggish" | "congestion" | "closure" | "unknown";
+  delay_seconds: number | null;
+  delay_minutes: number | null;
   active_incidents_count: number;
   description: string;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const params = new URL(request.url).searchParams;
   let incidents: TrafficIncident[] = [];
   let corridors: TrafficCorridor[] = [];
   let sourceMode = "database_timescaledb";
@@ -44,6 +53,10 @@ export async function GET() {
   // Try to query VPS TimescaleDB backend API if configured
   try {
     const backendIncidentsUrl = new URL("/api/v1/traffic/incidents", env.BACKEND_API_URL);
+    for (const key of ["event_status", "category", "planned_days"]) {
+      const value = params.get(key);
+      if (value !== null) backendIncidentsUrl.searchParams.set(key, value);
+    }
     const backendCorridorsUrl = new URL("/api/v1/traffic/corridors", env.BACKEND_API_URL);
 
     const [incidentsRes, corridorsRes] = await Promise.all([
@@ -74,7 +87,10 @@ export async function GET() {
           causeType: i.cause_type,
           description: i.description,
           coordinates: i.coordinates,
-          source: i.source,
+          source: i.source, delayKind: i.delay_kind, eventStatus: i.event_status,
+          providerStartAt: i.provider_start_at, providerEndAt: i.provider_end_at,
+          overallEndDate: i.overall_end_date, closureKind: i.closure_kind,
+          workLengthMeters: i.work_length_meters, isStale: i.is_stale,
         }));
 
         // Corridor geometry is collected separately; never merge bundled routes.

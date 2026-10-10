@@ -3,7 +3,10 @@
 import math
 import re
 from dataclasses import dataclass
+from datetime import UTC, date, datetime
+from itertools import pairwise
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from config import Settings
 
@@ -24,6 +27,81 @@ class ParsedIncident:
     source: str
     delay_kind: str = "unknown"
     category: str = "warning"
+    provider_id: str | None = None
+    provider_start_at: datetime | None = None
+    provider_end_at: datetime | None = None
+    overall_end_date: date | None = None
+    provider_future: bool = False
+    closure_kind: str = "none"
+    work_length_meters: int | None = None
+    display_type: str | None = None
+    title: str | None = None
+
+    def event_status(self, now: datetime) -> str:
+        if self.provider_end_at and self.provider_end_at <= now:
+            return "ended"
+        if self.provider_start_at and self.provider_start_at > now:
+            return "planned"
+        if self.provider_future and self.provider_start_at is None:
+            return "planned"
+        return "active"
+
+
+def _provider_bool(value: Any) -> bool:
+    if value in (True, "true"):
+        return True
+    if value in (False, "false", None):
+        return False
+    raise ValueError("Invalid provider boolean")
+
+
+def _timestamp(value: Any) -> datetime | None:
+    if value is None or value == "":
+        return None
+    result = datetime.fromisoformat(str(value))
+    if result.tzinfo is None:
+        raise ValueError("Provider timestamp requires timezone")
+    return result.astimezone(UTC)
+
+
+def _description_time(lines: list[str], label: str) -> datetime | None:
+    for line in lines:
+        match = re.match(
+            rf"^{label}:\s*(\d{{2}}\.\d{{2}}\.\d{{2}}(?:\d{{2}})?)\s+(?:um\s+)?(\d{{2}}:\d{{2}})",
+            line.strip(),
+        )
+        if match:
+            value = match[1] + " " + match[2]
+            fmt = "%d.%m.%Y %H:%M" if len(match[1]) == 10 else "%d.%m.%y %H:%M"
+            return (
+                datetime.strptime(value, fmt)
+                .replace(tzinfo=ZoneInfo("Europe/Berlin"))
+                .astimezone(UTC)
+            )
+    return None
+
+
+def _segment_in_bounds(a, b, settings: Settings) -> bool:
+    # Liang-Barsky clipping, including segments whose endpoints are both outside.
+    low, high = 0.0, 1.0
+    lat, lon = a
+    dlat, dlon = b[0] - lat, b[1] - lon
+    for p, q in (
+        (-dlat, lat - settings.min_lat),
+        (dlat, settings.max_lat - lat),
+        (-dlon, lon - settings.min_lon),
+        (dlon, settings.max_lon - lon),
+    ):
+        if p == 0:
+            if q < 0:
+                return False
+        elif p < 0:
+            low = max(low, q / p)
+        else:
+            high = min(high, q / p)
+        if low > high:
+            return False
+    return True
 
 
 def _extract_number(pattern: str, text: str) -> float | None:
@@ -91,35 +169,14 @@ def parse_autobahn_item(
                 raise ValueError("Traffic geometry outside valid range")
             coords_poly.append([point_lat, point_lon])
 
-    # Geofilter: must have at least one point in Ried bounding box
-    has_coord_in_ried = False
-    if lat and lon and _is_in_bounds(lat, lon, settings):
-        has_coord_in_ried = True
-    elif coords_poly:
-        for pt in coords_poly:
-            if _is_in_bounds(pt[0], pt[1], settings):
-                has_coord_in_ried = True
-                break
-
-    # Text-based keyword filter if coordinates are missing/rough
-    ried_keywords = [
-        "lorsch",
-        "bensheim",
-        "viernheim",
-        "heppenheim",
-        "darmstadt",
-        "pfungstadt",
-        "gernsheim",
-        "sandhofen",
-        "mannheim",
-        "worms",
-        "bürstadt",
-        "lampertheim",
-        "biblis",
-    ]
-    has_keyword = any(kw in full_text.lower() for kw in ried_keywords)
-
-    if not has_coord_in_ried and not has_keyword:
+    # Explicit coordinates/geometry are authoritative; destinations in text
+    # must not pull distant events into the Ried.
+    in_region = bool(lat and lon and _is_in_bounds(lat, lon, settings))
+    in_region = in_region or any(_is_in_bounds(*pt, settings) for pt in coords_poly)
+    in_region = in_region or any(
+        _segment_in_bounds(a, b, settings) for a, b in pairwise(coords_poly)
+    )
+    if not in_region:
         return None
 
     # Determine location from -> to from subtitle / title
@@ -139,7 +196,7 @@ def parse_autobahn_item(
             location_to = parts[1].strip()
 
     # Direction
-    direction = (
+    direction = subtitle.strip() or (
         f"{location_from} ➔ {location_to}" if location_from and location_to else ""
     )
 
@@ -157,14 +214,43 @@ def parse_autobahn_item(
         delay_min = round(length_km * 3)
     delay_sec = int((delay_min or 0) * 60)
 
-    # Cause type & Severity
+    lines = (
+        [str(x) for x in desc_list]
+        if isinstance(desc_list, list)
+        else str(desc_list).splitlines()
+    )
+    provider_start = _timestamp(item.get("startTimestamp")) or _description_time(
+        lines, "Beginn"
+    )
+    provider_end = _description_time(lines, "Ende")
+    overall_end = None
+    for line in lines:
+        match = re.search(
+            r"Ende der Gesamtmaßnahme:\s*(\d{2}\.\d{2}\.\d{2}(?:\d{2})?)", line
+        )
+        if match:
+            overall_end = (
+                datetime.strptime(
+                    match[1], "%d.%m.%Y" if len(match[1]) == 10 else "%d.%m.%y"
+                )
+                .replace(tzinfo=ZoneInfo("Europe/Berlin"))
+                .date()
+            )
+    future = _provider_bool(item.get("future"))
+    display_type = item.get("display_type")
     lower_text = full_text.lower()
-    if (
-        category == "closure"
-        or "gesperrt" in lower_text
-        or "vollsperrung" in lower_text
-    ):
-        severity = "standstill"
+    closure_kind = "none"
+    if display_type == "CLOSURE_ENTRY_EXIT":
+        closure_kind = "entry_exit"
+    elif display_type == "WEIGHT_LIMIT_35" or "gesperrt für" in lower_text:
+        closure_kind = "restriction"
+    elif display_type == "CLOSURE" or "vollsperrung" in lower_text:
+        closure_kind = "full"
+    elif category == "closure" or "gesperrt" in lower_text:
+        closure_kind = "unknown"
+
+    if closure_kind != "none":
+        severity = "standstill" if closure_kind == "full" else "moderate"
         cause_type = "closure"
     elif "unfall" in lower_text:
         severity = "major" if (delay_min or 0) >= 15 else "moderate"
@@ -178,6 +264,7 @@ def parse_autobahn_item(
     else:
         severity = "minor"
         cause_type = "congestion"
+    work_km = _extract_number(r"Länge:\s*(\d+(?:[.,]\d+)?)\s*km", desc_text)
 
     final_coords = (
         coords_poly if coords_poly else ([[lat, lon]] if lat and lon else None)
@@ -198,6 +285,15 @@ def parse_autobahn_item(
         source="autobahn_api",
         delay_kind=delay_kind,
         category=category,
+        provider_id=str(ident),
+        provider_start_at=provider_start,
+        provider_end_at=provider_end,
+        overall_end_date=overall_end,
+        provider_future=future,
+        closure_kind=closure_kind,
+        work_length_meters=round(work_km * 1000) if work_km is not None else None,
+        display_type=display_type,
+        title=title or None,
     )
 
 

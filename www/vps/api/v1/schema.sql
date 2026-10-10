@@ -473,10 +473,17 @@ CREATE TABLE IF NOT EXISTS traffic_incidents (
 
 CREATE INDEX IF NOT EXISTS idx_traffic_active ON traffic_incidents (is_active, road_name);
 -- Provider direction/location labels exceed 128 characters; preserve them intact.
-ALTER TABLE traffic_incidents
-    ALTER COLUMN direction TYPE TEXT,
-    ALTER COLUMN location_from TYPE TEXT,
-    ALTER COLUMN location_to TYPE TEXT;
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns
+        WHERE table_schema=current_schema() AND table_name='traffic_incidents'
+          AND column_name IN ('direction','location_from','location_to') AND data_type != 'text') THEN
+        ALTER TABLE traffic_incidents
+            ALTER COLUMN direction TYPE TEXT,
+            ALTER COLUMN location_from TYPE TEXT,
+            ALTER COLUMN location_to TYPE TEXT;
+    END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_traffic_time_window ON traffic_incidents (start_time, end_time);
 CREATE INDEX IF NOT EXISTS idx_traffic_road_active ON traffic_incidents (road_name, is_active);
 
@@ -1705,3 +1712,32 @@ CREATE TABLE IF NOT EXISTS fuel_snapshot (
     fetched_at timestamptz NOT NULL,
     data jsonb NOT NULL
 );
+
+-- Additive traffic event semantics; start_time remains first observation.
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS provider_id TEXT;
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS provider_start_at TIMESTAMPTZ;
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS provider_end_at TIMESTAMPTZ;
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS overall_end_date DATE;
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS provider_future BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS closure_kind TEXT NOT NULL DEFAULT 'unknown';
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS work_length_meters INTEGER;
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS display_type TEXT;
+ALTER TABLE traffic_incidents ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE traffic_corridor_snapshots ADD COLUMN IF NOT EXISTS delay_kind TEXT NOT NULL DEFAULT 'unknown';
+CREATE TABLE IF NOT EXISTS traffic_source_checks (
+    road_name TEXT NOT NULL,
+    source TEXT NOT NULL,
+    last_success_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (road_name, source)
+);
+CREATE OR REPLACE VIEW traffic_events AS
+SELECT t.*,
+    CASE WHEN NOT is_active THEN 'resolved'
+         WHEN provider_end_at <= NOW() THEN 'ended'
+         WHEN provider_start_at > NOW()
+              OR (provider_future AND provider_start_at IS NULL) THEN 'planned'
+         ELSE 'active' END AS event_status,
+    last_seen_at < NOW() - CASE WHEN source='hessen_verkehrsservice'
+        THEN INTERVAL '20 minutes' ELSE INTERVAL '10 minutes' END AS is_stale
+FROM traffic_incidents t;
+INSERT INTO collector_schema_versions(version) VALUES (20261009) ON CONFLICT DO NOTHING;

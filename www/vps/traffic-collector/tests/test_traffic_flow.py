@@ -40,10 +40,11 @@ def sample_incident(
         location_from="Start",
         location_to="End",
         cause_type=cause_type,
+        closure_kind="full" if cause_type == "closure" else "none",
         severity="slight",
         delay_seconds=delay_seconds,
         length_meters=500,
-        coordinates=coordinates or [[8.4800, 49.6150]],
+        coordinates=coordinates or [[49.6150, 8.4800]],
         source="autobahn_api",
         delay_kind="measured" if delay_seconds > 0 else "unknown",
         category="warning",
@@ -79,7 +80,7 @@ class TrafficFlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(incident_affects_corridor(inc_b44, b44))
 
         inc_other = sample_incident(
-            road="A8", coordinates=[[10.0, 52.0]]
+            road="A8", coordinates=[[52.0, 10.0]]
         )  # far away
         self.assertFalse(incident_affects_corridor(inc_other, b44))
 

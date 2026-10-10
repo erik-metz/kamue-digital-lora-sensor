@@ -14,6 +14,7 @@ from fastapi.encoders import jsonable_encoder
 from measurement_reads import core_reads, read_sql
 from ship_motion import display_position
 from starlette.responses import StreamingResponse
+from traffic_semantics import summarize_corridor
 
 router = APIRouter(tags=["Collected data"])
 
@@ -533,9 +534,16 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         gateways = await gateway_cursor.fetchall()
         traffic_cursor = await conn.execute(
             """SELECT id,road_name,direction,location_from,location_to,description,cause_type,
-                      delay_seconds,length_meters,severity,coordinates,last_seen_at FROM traffic_incidents
-               WHERE is_active=TRUE AND last_seen_at>NOW()-INTERVAL '2 hours'""")
+                      delay_seconds,length_meters,severity,coordinates,last_seen_at,
+                      delay_kind,source_category,source,provider_id,provider_start_at,provider_end_at,
+                      overall_end_date,provider_future,closure_kind,work_length_meters,display_type,title,
+                      event_status,is_stale FROM traffic_events
+               WHERE event_status IN ('active','planned') AND last_seen_at>NOW()-INTERVAL '2 hours'
+                 AND (event_status != 'planned' OR provider_start_at IS NULL
+                      OR provider_start_at<=NOW()+INTERVAL '7 days')""")
         incidents = await traffic_cursor.fetchall()
+        checks_cursor = await conn.execute("SELECT road_name,MAX(last_success_at) AS last_success_at FROM traffic_source_checks GROUP BY road_name")
+        traffic_checks = {r["road_name"]: r["last_success_at"] for r in await checks_cursor.fetchall()}
         try:
             closures_cursor = await conn.execute(
                 """SELECT id,municipality,district,street_name,location_from,location_to,
@@ -599,7 +607,10 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
         if not points:
             continue
         properties = {k: v for k, v in incident.items() if k != "coordinates"}
-        properties["name"] = incident["road_name"]
+        properties["name"] = incident.get("title") or incident["road_name"]
+        properties["delay_minutes"] = round(incident["delay_seconds"] / 60) if incident.get("delay_kind") in ("reported", "estimated") else None
+        if properties["delay_minutes"] is None:
+            properties["delay_seconds"] = None
         incident_features.append({"type": "Feature", "geometry": {
             "type": "LineString" if len(points) > 1 else "Point",
             "coordinates": points if len(points) > 1 else points[0],
@@ -608,26 +619,8 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
     corridor_features = []
     for c in RIED_CORRIDORS:
         road = c["road_name"].upper()
-        road_incidents = [i for i in incidents if str(i.get("road_name", "")).upper() == road]
-        count = len(road_incidents)
-        max_delay = max((i.get("delay_seconds") or 0 for i in road_incidents), default=0)
-        has_closure = any(i.get("cause_type") == "closure" for i in road_incidents)
-        has_standstill = any(i.get("severity") == "standstill" for i in road_incidents)
-        if count == 0:
-            status = "clear"
-            desc = "Freie Fahrt ohne gemeldete Behinderungen"
-        elif has_closure:
-            status = "closure"
-            desc = f"Vollsperrung / erhebliche Störung ({count} Meldung(en))"
-        elif has_standstill or max_delay >= 900:
-            status = "congestion"
-            desc = f"{count} Störung(en), bis zu +{round(max_delay / 60)} Min. Zeitverlust"
-        elif max_delay >= 300:
-            status = "sluggish"
-            desc = f"Zähflüssiger Verkehr, ca. +{round(max_delay / 60)} Min. Verzögerung"
-        else:
-            status = "clear"
-            desc = f"{count} Meldung(en), geringer Zeitverlust"
+        road_incidents = [i for i in incidents if str(i.get("road_name", "")).upper() == road and i.get("event_status", "active") == "active"]
+        summary = summarize_corridor(road_incidents, traffic_checks.get(road))
         corridor_features.append({
             "type": "Feature",
             "geometry": {
@@ -638,10 +631,7 @@ async def map_layers(request: Request, pool=Depends(get_db_pool)):
                 "id": c["id"],
                 "name": c["name"],
                 "road_name": c["road_name"],
-                "status": status,
-                "delay_minutes": round(max_delay / 60),
-                "active_incidents_count": count,
-                "description": desc,
+                **summary,
                 "kind": "corridor",
             },
         })

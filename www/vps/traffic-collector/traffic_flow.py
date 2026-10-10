@@ -147,7 +147,7 @@ def incident_affects_corridor(incident: ParsedIncident, corridor: RoadCorridor) 
         coords = incident.coordinates
         point = coords[0] if isinstance(coords[0], (list, tuple)) else coords
         if len(point) >= 2 and isinstance(point[0], (int, float)):
-            lat, lon = point[1], point[0]
+            lat, lon = point[0], point[1]
             if haversine_distance_km(lat, lon, corridor.lat, corridor.lon) <= 6.0:
                 return True
     return False
@@ -174,7 +174,7 @@ def estimate_corridor_flow(
         )
 
     # Check for road closures
-    has_closure = any(inc.cause_type == "closure" for inc in matching)
+    has_closure = any(inc.closure_kind == "full" for inc in matching)
     if has_closure:
         return FlowObservation(
             corridor=corridor,

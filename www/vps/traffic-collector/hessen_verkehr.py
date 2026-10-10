@@ -38,10 +38,17 @@ def parse_hessen_diva_feature(
     except (ValueError, TypeError):
         return None
 
-    if not (settings.min_lat <= lat <= settings.max_lat and settings.min_lon <= lon <= settings.max_lon):
+    if not (
+        settings.min_lat <= lat <= settings.max_lat
+        and settings.min_lon <= lon <= settings.max_lon
+    ):
         return None
 
-    street = str(props.get("street") or props.get("strassennummer") or "Hessen").strip().upper()
+    street = (
+        str(props.get("street") or props.get("strassennummer") or "Hessen")
+        .strip()
+        .upper()
+    )
     title = str(props.get("title") or "Stau").strip()
     von = str(props.get("von") or "").strip()
     bis = str(props.get("bis") or "").strip()
@@ -51,10 +58,16 @@ def parse_hessen_diva_feature(
     desc = _clean_text(raw_desc)
 
     delay_min = props.get("reisezeitverlust")
-    delay_sec = int(delay_min * 60) if isinstance(delay_min, (int, float)) and delay_min > 0 else 0
+    delay_sec = (
+        int(delay_min * 60)
+        if isinstance(delay_min, (int, float)) and delay_min > 0
+        else 0
+    )
 
     stau_km = props.get("staulaenge")
-    length_m = int(stau_km * 1000) if isinstance(stau_km, (int, float)) and stau_km > 0 else 0
+    length_m = (
+        int(stau_km * 1000) if isinstance(stau_km, (int, float)) and stau_km > 0 else 0
+    )
 
     is_sperrung = bool(props.get("sperrung")) or "gesperrt" in desc.lower()
     if is_sperrung:
@@ -85,6 +98,11 @@ def parse_hessen_diva_feature(
         source="hessen_verkehrsservice",
         delay_kind="reported" if delay_sec > 0 else "unknown",
         category="warning",
+        closure_kind="full"
+        if "vollsperrung" in desc.lower()
+        else "unknown"
+        if is_sperrung
+        else "none",
     )
 
 
@@ -107,10 +125,17 @@ def parse_hessen_roadworks_feature(
     except (ValueError, TypeError):
         return None
 
-    if not (settings.min_lat <= lat <= settings.max_lat and settings.min_lon <= lon <= settings.max_lon):
+    if not (
+        settings.min_lat <= lat <= settings.max_lat
+        and settings.min_lon <= lon <= settings.max_lon
+    ):
         return None
 
-    street = str(props.get("street") or props.get("strassennummer") or "Hessen").strip().upper()
+    street = (
+        str(props.get("street") or props.get("strassennummer") or "Hessen")
+        .strip()
+        .upper()
+    )
     title = str(props.get("title") or "Baustelle").strip()
     von = str(props.get("von") or "").strip()
     bis = str(props.get("bis") or "").strip()
@@ -147,12 +172,19 @@ def parse_hessen_roadworks_feature(
         source="hessen_verkehrsservice",
         delay_kind="unknown",
         category="roadworks",
+        closure_kind="full"
+        if "vollsperrung" in desc.lower()
+        else "unknown"
+        if is_sperrung
+        else "none",
     )
 
 
 async def collect_hessen_traffic(
-    client, settings: Settings
+    client, settings: Settings, *, coverage: dict | None = None
 ) -> list[ParsedIncident]:
+    if coverage is not None:
+        coverage["complete"] = False
     if not getattr(settings, "hessen_verkehr_enabled", True):
         return []
 
@@ -175,6 +207,12 @@ async def collect_hessen_traffic(
             fetch_file(diva_url), fetch_file(works_url), return_exceptions=True
         )
 
+        complete = all(
+            isinstance(data, dict) and isinstance(data.get("features"), list)
+            for data in (diva_data, works_data)
+        )
+        if coverage is not None:
+            coverage["complete"] = complete
         if isinstance(diva_data, dict):
             for f in diva_data.get("features", []):
                 inc = parse_hessen_diva_feature(f, settings)
@@ -192,6 +230,8 @@ async def collect_hessen_traffic(
             LOG.warning("Verkehrsservice Hessen roadworks fetch failed: %s", works_data)
 
     except (TimeoutError, OSError, ValueError, TypeError, KeyError) as e:
+        if coverage is not None:
+            coverage["complete"] = False
         LOG.warning("Could not collect Verkehrsservice Hessen: %s", e)
 
     return incidents

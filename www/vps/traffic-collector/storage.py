@@ -18,6 +18,7 @@ async def persist_traffic_incidents(
     settings: Settings,
     now: datetime | None = None,
     flows: list[FlowObservation] | None = None,
+    reconcile_hessen: bool = False,
 ) -> dict:
     now = now or datetime.now(UTC)
     incoming_ids = [inc.id for inc in incidents]
@@ -26,11 +27,11 @@ async def persist_traffic_incidents(
         await cur.execute("SET LOCAL statement_timeout = '30s'")
         await cur.execute("SET LOCAL lock_timeout = '10s'")
         await cur.execute(
-            "SELECT version FROM collector_schema_versions WHERE version=20260916"
+            "SELECT version FROM collector_schema_versions WHERE version=20261009"
         )
         if await cur.fetchone() is None:
             raise RuntimeError(
-                "Apply API schema migration 20260916 before starting collectors"
+                "Apply API schema migration 20261009 before starting collectors"
             )
         await cur.execute("SELECT pg_advisory_xact_lock(734221, 1)")
         # 1. Upsert active incidents
@@ -44,12 +45,15 @@ async def persist_traffic_incidents(
                     id, road_name, direction, location_from, location_to,
                     start_time, end_time, last_seen_at, is_active,
                     delay_seconds, length_meters, severity, cause_type,
-                    description, coordinates, source, updated_at, delay_kind, source_category
+                    description, coordinates, source, updated_at, delay_kind, source_category,
+                    provider_id, provider_start_at, provider_end_at, overall_end_date,
+                    provider_future, closure_kind, work_length_meters, display_type, title
                 ) VALUES (
                     %s, %s, %s, %s, %s,
                     %s, NULL, %s, TRUE,
                     %s, %s, %s, %s,
-                    %s, %s, %s, %s, %s, %s
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s, %s, %s, %s, %s
                 )
                 ON CONFLICT (id) DO UPDATE SET
                     direction = EXCLUDED.direction,
@@ -66,7 +70,16 @@ async def persist_traffic_incidents(
                     coordinates = COALESCE(EXCLUDED.coordinates, traffic_incidents.coordinates),
                     updated_at = EXCLUDED.updated_at,
                     delay_kind = EXCLUDED.delay_kind,
-                    source_category = EXCLUDED.source_category
+                    source_category = EXCLUDED.source_category,
+                    provider_id = EXCLUDED.provider_id,
+                    provider_start_at = EXCLUDED.provider_start_at,
+                    provider_end_at = EXCLUDED.provider_end_at,
+                    overall_end_date = EXCLUDED.overall_end_date,
+                    provider_future = EXCLUDED.provider_future,
+                    closure_kind = EXCLUDED.closure_kind,
+                    work_length_meters = EXCLUDED.work_length_meters,
+                    display_type = EXCLUDED.display_type,
+                    title = EXCLUDED.title
                 """,
                 (
                     inc.id,
@@ -86,6 +99,15 @@ async def persist_traffic_incidents(
                     now,
                     inc.delay_kind,
                     inc.category,
+                    inc.provider_id,
+                    inc.provider_start_at,
+                    inc.provider_end_at,
+                    inc.overall_end_date,
+                    inc.provider_future,
+                    inc.closure_kind,
+                    inc.work_length_meters,
+                    inc.display_type,
+                    inc.title,
                 ),
             )
 
@@ -96,12 +118,30 @@ async def persist_traffic_incidents(
                  AND id != ALL(%s::varchar[]) AND last_seen_at < %s - INTERVAL '6 minutes'""",
             (now, now, list(settings.roads), incoming_ids, now),
         )
-        await cur.execute(
-            """UPDATE traffic_incidents SET is_active=FALSE, end_time=%s, updated_at=%s
-               WHERE is_active=TRUE AND source='hessen_verkehrsservice'
-                 AND id != ALL(%s::varchar[]) AND last_seen_at < %s - INTERVAL '15 minutes'""",
-            (now, now, incoming_ids, now),
-        )
+        if reconcile_hessen:
+            await cur.execute(
+                """UPDATE traffic_incidents SET is_active=FALSE, end_time=%s, updated_at=%s
+                   WHERE is_active=TRUE AND source='hessen_verkehrsservice'
+                     AND id != ALL(%s::varchar[]) AND last_seen_at < %s - INTERVAL '15 minutes'""",
+                (now, now, incoming_ids, now),
+            )
+
+            for road in set(settings.roads) | {"B44", "B47"}:
+                await cur.execute(
+                    """INSERT INTO traffic_source_checks (road_name,source,last_success_at)
+                       VALUES (%s,'hessen_verkehrsservice',%s) ON CONFLICT (road_name,source)
+                       DO UPDATE SET last_success_at=EXCLUDED.last_success_at""",
+                    (road, now),
+                )
+
+        for road in settings.roads:
+            await cur.execute(
+                """INSERT INTO traffic_source_checks (road_name,source,last_success_at)
+                   VALUES (%s,'autobahn_api',%s) ON CONFLICT (road_name,source)
+                   DO UPDATE SET last_success_at=EXCLUDED.last_success_at""",
+                (road, now),
+            )
+        incidents = [inc for inc in incidents if inc.event_status(now) == "active"]
 
         # 3. Record periodic snapshot for environmental correlation in hypertable
         for road in settings.roads:
@@ -115,21 +155,29 @@ async def persist_traffic_incidents(
             status_val = "clear"
             if count > 0:
                 if (
-                    any(inc.cause_type == "closure" for inc in active_on_road)
+                    any(inc.closure_kind == "full" for inc in active_on_road)
                     or max_delay >= 900
                 ):
-                    status_val = "congestion"
+                    status_val = (
+                        "closure"
+                        if any(inc.closure_kind == "full" for inc in active_on_road)
+                        else "congestion"
+                    )
                 elif max_delay >= 300:
                     status_val = "sluggish"
                 else:
-                    status_val = "clear"
+                    status_val = (
+                        "unknown"
+                        if any(inc.delay_kind == "unknown" for inc in active_on_road)
+                        else "clear"
+                    )
 
             await cur.execute(
                 """
                 INSERT INTO traffic_corridor_snapshots (
                     timestamp, corridor_id, road_name, status,
-                    delay_seconds, active_incidents_count, max_length_meters
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    delay_seconds, active_incidents_count, max_length_meters, delay_kind
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     now,
@@ -139,12 +187,18 @@ async def persist_traffic_incidents(
                     max_delay,
                     count,
                     max_len,
+                    "unknown"
+                    if any(inc.delay_kind == "unknown" for inc in active_on_road)
+                    or not active_on_road
+                    else "estimated"
+                    if any(inc.delay_kind == "estimated" for inc in active_on_road)
+                    else "reported",
                 ),
             )
 
         # 4. Canonical Core Schema: entities, measurement_definitions, readings
         await cur.execute(
-            "SELECT 1 FROM information_schema.routines WHERE routine_name = 'write_measurement'"
+            "SELECT 1 WHERE to_regprocedure('write_measurement(text,text,text,text,text,jsonb,timestamptz,numeric,timestamptz,jsonb,text,timestamptz,timestamptz,text,boolean)') IS NOT NULL"
         )
         has_measurement_core = (await cur.fetchone()) is not None
 
@@ -174,22 +228,30 @@ async def persist_traffic_incidents(
                         json.dumps({"road": road.upper()}),
                     ),
                 )
-                await cur.execute(
-                    """
-                    SELECT write_measurement(
-                        %s::text, 'delay'::text, 's'::text, 'autobahn_api'::text, 'observed'::text,
-                        '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
-                        'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
+                if active_on_road and all(
+                    inc.delay_kind != "unknown" for inc in active_on_road
+                ):
+                    await cur.execute(
+                        """
+                        SELECT write_measurement(
+                            %s::text, 'delay'::text, 's'::text, 'autobahn_api'::text, %s::text,
+                            '{}'::jsonb, %s::timestamptz, %s::numeric, %s::timestamptz, %s::jsonb,
+                            'valid'::text, NULL::timestamptz, NULL::timestamptz, 'instantaneous'::text
+                        )
+                        """,
+                        (
+                            corridor_id,
+                            "model"
+                            if any(
+                                inc.delay_kind == "estimated" for inc in active_on_road
+                            )
+                            else "reported",
+                            now,
+                            max_delay,
+                            now,
+                            json.dumps({"road": road.upper()}),
+                        ),
                     )
-                    """,
-                    (
-                        corridor_id,
-                        now,
-                        max_delay,
-                        now,
-                        json.dumps({"road": road.upper()}),
-                    ),
-                )
                 await cur.execute(
                     """
                     SELECT write_measurement(

@@ -9,6 +9,7 @@ if "psycopg" not in sys.modules:
     sys.modules["psycopg"] = MagicMock()
 
 from endpoints.traffic import (
+    CompletedTrafficScope,
     IngestIncidentPayload,
     SyncTrafficPayload,
     get_corridor_statuses,
@@ -43,6 +44,7 @@ class TrafficTests(unittest.IsolatedAsyncioTestCase):
                 "last_seen_at": now,
                 "is_active": True,
                 "delay_seconds": 900,
+                "delay_kind": "reported",
                 "length_meters": 4500,
                 "severity": "major",
                 "cause_type": "congestion",
@@ -86,20 +88,11 @@ class TrafficTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result[0].location_to, "AS Lorsch")
 
     async def test_get_corridor_statuses(self):
-        self.cursor.fetchall.return_value = [
-            {
-                "road_name": "A67",
-                "active_count": 2,
-                "max_delay": 1080,
-                "max_severity_rank": 3,
-            },
-            {
-                "road_name": "B47",
-                "active_count": 1,
-                "max_delay": 420,
-                "max_severity_rank": 2,
-            },
-        ]
+        now = datetime.now(UTC)
+        self.cursor.fetchall.side_effect = [[
+            {"road_name": "A67", "delay_seconds": 1080, "delay_kind": "reported", "severity": "major"},
+            {"road_name": "B47", "delay_seconds": 420, "delay_kind": "reported", "severity": "moderate"},
+        ], [{"road_name": road, "last_success_at": now} for road in ("A67", "B47", "B44")]]
 
         result = await get_corridor_statuses(self.pool)
         self.assertTrue(len(result) >= 4)
@@ -142,6 +135,14 @@ class TrafficTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(resp["status"], "synced")
         self.assertEqual(resp["count"], 1)
         self.assertTrue(self.cursor.execute.called)
+
+    async def test_empty_sync_only_reconciles_explicit_completed_scope(self):
+        await sync_traffic_incidents(SyncTrafficPayload(incidents=[]), self.pool)
+        self.cursor.execute.assert_not_called()
+        await sync_traffic_incidents(SyncTrafficPayload(incidents=[], completed_scopes=[CompletedTrafficScope(source="probe", roads=["b47"])]), self.pool)
+        query, params = self.cursor.execute.call_args.args
+        self.assertIn("source=%s", query)
+        self.assertEqual(params[2:5], ("probe", ["B47"], []))
 
 
 if __name__ == "__main__":

@@ -16,6 +16,9 @@ export const MAP_SYMBOLS: Record<string, { label: string; symbol: string; color:
   fuel: { label: "Tankstelle", symbol: "⛽", color: "#fbbf24" },
   charging: { label: "Ladestation", symbol: "⚡", color: "#34d399" },
   energy: { label: "Ökostrom / Solaranlage", symbol: "☀", color: "#fbbf24" },
+  planned_traffic: { label: "Geplante Verkehrsmaßnahme", symbol: "◷", color: "#a78bfa" },
+  entry_exit: { label: "Anschlussstelle gesperrt", symbol: "↗", color: "#f59e0b" },
+  vehicle_restriction: { label: "Fahrzeugbeschränkung", symbol: "⚠", color: "#f59e0b" },
   traffic: { label: "Verkehrsmeldung", symbol: "⚠", color: "#fb923c" },
   corridor: { label: "Verkehrsachse", symbol: "🚗", color: "#10b981" },
   closures: { label: "Sperrung", symbol: "⛔", color: "#ef4444" },
@@ -102,7 +105,11 @@ const FIELD_LABELS: Record<string, string> = {
   current_power_kw: "Aktuelle Leistung (kW)", connector_type: "Anschluss", industry: "Branche",
   ssid: "Netzwerk", description: "Beschreibung", road_name: "Straße", road: "Straße",
   direction: "Richtung", location_from: "Von", location_to: "Bis", title: "Meldung",
-  start_time: "Beginn", end_time: "Ende", valid_from: "Gültig ab", valid_until: "Gültig bis",
+  start_time: "Beginn / erstmals erfasst", end_time: "Ende / nicht mehr gemeldet",
+  provider_start_at: "Beginn der Bauphase", provider_end_at: "Voraussichtliches Ende der Bauphase",
+  overall_end_date: "Ende der Gesamtmaßnahme (Anbieterangabe)",
+  last_seen_at: "Zuletzt abgerufen", event_status: "Zeitlicher Status", closure_kind: "Art der Sperrung",
+  work_length_meters: "Länge der Maßnahme (m)", delay_kind: "Grundlage der Verzögerung", valid_from: "Gültig ab", valid_until: "Gültig bis",
   delay_minutes: "Verzögerung (Min.)", length_km: "Länge (km)", name: "Name",
   reason: "Grund", detour: "Umleitung", closure_type: "Sperrungsart", status: "Verkehrsstatus",
   active_incidents_count: "Aktive Meldungen",
@@ -115,6 +122,12 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 export function featureKind(kind: string, values: Record<string, unknown>): string {
+  if (["traffic", "closures"].includes(kind) && values.kind !== "corridor") {
+    if (values.event_status === "planned") return "planned_traffic";
+    if (values.closure_kind === "entry_exit") return "entry_exit";
+    if (values.closure_kind === "restriction") return "vehicle_restriction";
+    if (values.closure_kind === "full") return "closures";
+  }
   if (kind === "closures") {
     const isRoadwork = values.cause_type === "roadwork"
       || values.closure_type === "partial"
@@ -135,21 +148,25 @@ export function featureKind(kind: string, values: Record<string, unknown>): stri
 function formatFieldValue(key: string, value: string | number): string {
   if (key === "status") {
     const s = String(value).toLowerCase();
-    if (s === "clear") return "🟢 Freie Fahrt";
+    if (s === "unknown") return "⚪ Verkehrslage unbekannt";
+    if (s === "clear") return "🟢 Keine Störung gemeldet";
     if (s === "sluggish") return "🟡 Zähflüssig";
     if (s === "congestion") return "🔴 Stau";
     if (s === "closure") return "⛔ Gesperrt";
   }
+  if (key === "event_status") return ({ active: "Aktuell gemeldet", planned: "Geplant", ended: "Angekündigter Zeitraum abgelaufen", resolved: "Nicht mehr gemeldet" } as Record<string, string>)[String(value)] ?? String(value);
+  if (key === "delay_kind") return ({ unknown: "Keine Angabe", reported: "Vom Anbieter gemeldet", estimated: "Geschätzt" } as Record<string, string>)[String(value)] ?? String(value);
+  if (key === "closure_kind") return ({ none: "Keine Sperrung", full: "Vollsperrung", entry_exit: "Anschlussstelle / Auf- oder Abfahrt", restriction: "Beschränkung für bestimmte Fahrzeuge", unknown: "Sperrungsumfang unbekannt" } as Record<string, string>)[String(value)] ?? String(value);
   if (key === "closure_type") {
     const ct = String(value).toLowerCase();
     if (ct === "full") return "⛔ Vollsperrung";
     if (ct === "partial") return "🚧 Halbseitige Sperrung / Baustelle";
     if (ct === "lane_restriction") return "⚠️ Fahrbahnverengung";
   }
-  if ((key === "start_time" || key === "end_time") && typeof value === "string" && value.includes("T")) {
+  if ((["start_time", "end_time", "provider_start_at", "provider_end_at", "last_seen_at"].includes(key)) && typeof value === "string" && value.includes("T")) {
     const d = new Date(value);
     if (!Number.isNaN(d.getTime())) {
-      return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) + " Uhr";
+      return d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Berlin" }) + " Uhr";
     }
   }
   return String(value);
@@ -178,6 +195,9 @@ export function featureCard(kind: string, values: Record<string, unknown>): HTML
     if ((typeof raw !== "string" && typeof raw !== "number") || raw === title) return [];
     return [`${label}: ${formatFieldValue(key, raw)}`];
   });
+  if (values.event_status && values.delay_kind === "unknown") rows.push("Zeitverlust nicht gemeldet.");
+  if (values.is_stale === true) rows.push("Quellenstand veraltet; aktuelle Verkehrslage nicht bestätigt.");
+  if (values.event_status === "planned") rows.push("Geplante Maßnahme; zählt nicht zur aktuellen Verkehrslage.");
   if (kind === "places") rows.push("Öffnungs- und Notdienststatus nicht verfügbar.");
   if (kind === "crossings") rows.push("Schrankenstatus unbekannt – keine Live-Meldung verfügbar.");
   if (kind === "charging" && values.available_points == null && values.availablePoints == null) rows.push("Live-Belegung nicht verfügbar.");

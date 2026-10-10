@@ -82,14 +82,14 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
         closures.fetchall = AsyncMock(return_value=[])
         gateways = MagicMock()
         gateways.fetchall = AsyncMock(return_value=[])
-        conn.execute.side_effect = [publications, gateways, traffic, closures]
+        conn.execute.side_effect = [publications, gateways, traffic, closures, closures]
         response = await map_layers(request(), pool)
         data = json.loads(response.body)
         feature = data['layers']['traffic']['features'][0]
         self.assertEqual(feature['geometry']['coordinates'], [[8.4, 49.6], [8.41, 49.61]])
         self.assertEqual(data['layers']['closures']['features'], [feature])
         executed_queries = [call.args[0] for call in conn.execute.call_args_list]
-        self.assertTrue(any("last_seen_at>NOW()-INTERVAL '2 hours'" in q for q in executed_queries))
+        self.assertTrue(any("FROM traffic_events" in q for q in executed_queries))
         self.assertIn('crossings', data['unavailable'])
 
     async def test_gateway_in_lorsch_is_published_independently_of_heatmap(self):
@@ -109,7 +109,7 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
             {'id': 'lora:gateway:invalid', 'name': 'Invalid', 'metadata': {},
              'latitude': float('nan'), 'longitude': 8.568, 'online_status': 1},
         ])
-        conn.execute.side_effect = [publications, gateways, traffic, closures]
+        conn.execute.side_effect = [publications, gateways, traffic, closures, closures]
         body = json.loads((await map_layers(request(), pool)).body)
         features = body['layers']['lora']['features']
         self.assertEqual(len(features), 1)
@@ -132,7 +132,7 @@ class CollectedEndpointTests(unittest.IsolatedAsyncioTestCase):
         }])
         for cursor in [traffic, closures]:
             cursor.fetchall = AsyncMock(return_value=[])
-        conn.execute.side_effect = [publications, gateways, traffic, closures]
+        conn.execute.side_effect = [publications, gateways, traffic, closures, closures]
         body = json.loads((await map_layers(request(), pool)).body)
         self.assertNotIn('lora', body['layers'])
         self.assertIn('lora', body['unavailable'])

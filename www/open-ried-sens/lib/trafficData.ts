@@ -13,8 +13,8 @@ export interface TrafficIncident {
   endTime?: string | null;
   lastSeenAt: string;
   isActive: boolean;
-  delaySeconds: number;
-  delayMinutes: number;
+  delaySeconds: number | null;
+  delayMinutes: number | null;
   lengthMeters: number;
   lengthKm: float;
   severity: "minor" | "moderate" | "major" | "standstill";
@@ -22,6 +22,14 @@ export interface TrafficIncident {
   description?: string;
   coordinates?: [number, number][]; // [[lat, lon], ...]
   source: string;
+  delayKind?: "unknown" | "reported" | "estimated";
+  eventStatus?: "active" | "planned" | "ended" | "resolved";
+  providerStartAt?: string | null;
+  providerEndAt?: string | null;
+  overallEndDate?: string | null;
+  closureKind?: string;
+  workLengthMeters?: number | null;
+  isStale?: boolean;
 }
 
 export type float = number;
@@ -30,8 +38,8 @@ export interface TrafficCorridor {
   id: string;
   roadName: string;
   name: string;
-  status: "clear" | "sluggish" | "congestion" | "closure";
-  delayMinutes: number;
+  status: "clear" | "sluggish" | "congestion" | "closure" | "unknown";
+  delayMinutes: number | null;
   activeIncidentsCount: number;
   description: string;
   track: [number, number][];
@@ -264,7 +272,7 @@ export function calculateLocalTraffic(nowTimestamp = Date.now()): {
   const corridors: TrafficCorridor[] = RIED_CORRIDOR_METADATA.map((meta) => {
     const active = incidents.filter((i) => i.roadName.toUpperCase() === meta.roadName.toUpperCase());
     const count = active.length;
-    const maxDelaySec = Math.max(0, ...active.map((i) => i.delaySeconds));
+    const maxDelaySec = Math.max(0, ...active.map((i) => i.delaySeconds ?? 0));
     const delayMin = Math.round(maxDelaySec / 60);
 
     let status: TrafficCorridor["status"] = "clear";

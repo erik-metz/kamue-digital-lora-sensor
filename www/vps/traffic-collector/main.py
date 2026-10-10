@@ -22,13 +22,22 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
     fetched = monotonic()
     incidents, skipped = normalize(payload, settings)
     normalized = monotonic()
-    hessen_incidents = await collect_hessen_traffic(client, settings) if raw is None else []
+    hessen_coverage = {}
+    hessen_incidents = (
+        await collect_hessen_traffic(client, settings, coverage=hessen_coverage)
+        if raw is None
+        else []
+    )
     hessen_done = monotonic()
     all_incidents = incidents + hessen_incidents
-    flows = await collect_traffic_flows(client, settings, all_incidents)
+    flows = await collect_traffic_flows(
+        client,
+        settings,
+        [inc for inc in all_incidents if inc.event_status(fetched_at) == "active"],
+    )
     flow_done = monotonic()
     coverage = list(settings.roads)
-    if getattr(settings, "hessen_verkehr_enabled", True):
+    if hessen_coverage.get("complete"):
         coverage.append("hessen_verkehrsservice")
     summary = {
         "fetched_at": fetched_at.isoformat(),
@@ -48,7 +57,12 @@ async def poll_cycle(client, settings, *, raw=None, dry_run=False):
         }
     async with await psycopg.AsyncConnection.connect(**settings.db) as conn:
         summary["ingestion"] = await persist_traffic_incidents(
-            conn, all_incidents, settings, fetched_at, flows=flows
+            conn,
+            all_incidents,
+            settings,
+            fetched_at,
+            flows=flows,
+            reconcile_hessen=hessen_coverage.get("complete", False),
         )
     summary["durations_seconds"] = {
         "fetch": fetched - started,

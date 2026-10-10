@@ -77,6 +77,7 @@ class CollectedDatabaseTests(DatabaseCase):
         self.assertEqual((await cursor.fetchone())['count'], 0)
 
     async def test_map_reads_real_traffic_rows_and_excludes_stale_incidents(self):
+        await self.conn.execute((Path(__file__).resolve().parents[1] / "migrations/20260930_measurements.sql").read_text())
         from endpoints.collected import map_layers
         for identity, age in [('current', 0), ('stale', 3)]:
             await self.conn.execute("""INSERT INTO traffic_incidents
@@ -92,8 +93,8 @@ class CollectedDatabaseTests(DatabaseCase):
 
         request = Request({'type':'http','method':'GET','path':'/', 'headers':[], 'query_string':b''})
         body = json.loads((await map_layers(request, Pool())).body)
-        self.assertEqual([f['properties']['id'] for f in body['layers']['traffic']['features']], ['current'])
-        self.assertEqual(len(body['layers']['closures']['features']), 1)
+        self.assertEqual([f['properties']['id'] for f in body['layers']['traffic']['features'] if f['properties'].get('kind') != 'corridor'], ['current'])
+        self.assertEqual([f['properties']['id'] for f in body['layers']['closures']['features'] if f['properties']['id'] in ('current', 'stale')], ['current'])
 
     async def test_download_is_not_processing_and_history_is_not_rewritten(self):
         await self.conn.execute("""INSERT INTO collection_attempts(source_id,status,http_status)
