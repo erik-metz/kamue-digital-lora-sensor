@@ -56,4 +56,31 @@ Jahre ab Bezugsmonat, nicht ab erneutem Download.
 - Frontend-Produktionsbuild einschließlich TypeScript erfolgreich.
 - Vier Originalzeilen mit Parser abgeglichen.
 
-CI-Veröffentlichung und VPS-Nachweis werden nach Abschluss ergänzt.
+## Veröffentlichung und Live-Nachweis
+
+Codecommit `e69703e95f06ceb8ce16be13d0e1c31bf1f70036` auf `main` gepusht.
+[Frontend CI](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/38032701731)
+erfolgreich.
+[FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/38032701710)
+erfolgreich: alle 15 Prüfjobs und alle 17 vorgesehenen Container-Builds samt
+GHCR-Veröffentlichungen. Die Datenbankprüfungen mit TimescaleDB sind erfolgreich.
+
+Registry auf der VPS nach Compose-Sicherung auf diesen geprüften Digest gesetzt:
+`sha256:80d73057db827e11fb465f48633c3754a557ff9f7c80290110f984c3d519b6e8`.
+Image-Dateien für neuen Adapter, Manifest, Runner, Autobahn und Grundwasser gegen
+den Codecommit geprüft. Ein anschließender echter Abruf meldet `success`.
+Originalpayload-SHA-256:
+`17dc7b0c42f43149d7e22dc0b2656966f70b5363cf089d1699ad78772792ad3b`.
+Alle publizierten Felder mit erneut geparster archivierter Originaldatei verglichen.
+
+Öffentliche API `collected/infrastructure/broadband` erfolgreich geprüft:
+Vertrag `bba-households-v1`, Bezugsmonat `2025-12`, vier Gemeinden mit den
+oben aufgeführten Originalwerten. Quellenstatus: aktiviert, HTTP 200,
+`success`, vier Einträge und gesetzter Verarbeitungszeitpunkt.
+Während des automatischen API-Containerwechsels war vorübergehend HTTP 502
+sichtbar; nach Bereitschaft war die erneute öffentliche Prüfung erfolgreich.
+Frontend-Code und Produktionsbuild sind geprüft; eine gesonderte öffentlich
+gehostete Frontend-Instanz wurde in diesem Schritt nicht nachgewiesen.
+
+Der abschließende Nachweis ist eine reine Dokumentationsänderung; dafür sind
+nach den Workflow-Pfadfiltern keine weiteren CI- oder GHCR-Läufe vorgesehen.
