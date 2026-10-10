@@ -9,13 +9,7 @@ import {
   BarChart3,
   ArrowRight,
   Database,
-  ExternalLink,
-  Flame,
   Home,
-  GraduationCap,
-  Sparkles,
-  HeartHandshake,
-  Landmark,
   Recycle,
   CheckCircle2,
   MapPin,
@@ -35,114 +29,39 @@ export const metadata: Metadata = {
 
 const THEMEN_BEREICHE = [
   {
-    id: "bauen-wohnen",
-    title: "Bauen & Wohnen",
-    subtitle: "Immobilienatlas, Bodenrichtwerte & Gebäudezustand",
-    href: "/bauen-wohnen",
-    icon: Building2,
-    color: "amber",
-    badge: "BORIS & Zensus 2022",
-    description:
-      "Amtliche Daten zu 42.850 Wohnungen im Ried: Gebäudealter, Heizungsenergieträger, Leerstände, BORIS Hessen Bodenrichtwerte und rechtskräftige Bebauungspläne.",
-    kpis: [
-      { label: "Wohnungen", val: "42.850" },
-      { label: "Bodenrichtwert-Zonen", val: "100+ BORIS" },
-      { label: "Baujahre", val: "Vor 1919 – heute" },
-    ],
-    highlights: [
-      "Bodenrichtwertkarte mit BORIS Hessen Geometrien",
-      "Zensus 2022 Gebäudealter & Heizungsradar",
-      "Wohnungsbestand & Leerstandsquoten",
-      "Bebauungspläne & Neubaupotenziale",
-    ],
+    id: "bauen-wohnen", title: "Bauen & Wohnen", subtitle: "Wohnungsbestand & Bodenrichtwerte",
+    href: "/bauen-wohnen", icon: Building2, color: "amber", badge: "HSL & BORIS Hessen",
+    description: "Veröffentlichte Gemeindestatistik zum Wohnungsbestand und historische BORIS-Bodenrichtwertzonen mit ausgewiesenem Stichtag.",
+    kpis: [{ label: "Daten", val: "Amtliche Tabellen" }, { label: "Bodenrichtwerte", val: "Zonen & Stichtag" }],
+    highlights: ["HSL-Tabellen mit Bezugszeiträumen", "BORIS-Zonen mit Originalgeometrien", "Bodenrichtwerte sind keine Verkaufspreise"],
   },
   {
-    id: "demografie",
-    title: "Demografie & Bildung",
-    subtitle: "Bevölkerungsstruktur, Pendler & Schulentwicklung",
-    href: "/demografie",
-    icon: Users,
-    color: "teal",
-    badge: "Statistik Hessen & BA",
-    description:
-      "Soziodemografische Kennzahlen, Alterspyramiden, Wanderungssalden, Pendlerströme und Betreuungskapazitäten aller Schulen und Kitas im Hessischen Ried.",
-    kpis: [
-      { label: "Einwohner erfasst", val: "85.000+" },
-      { label: "Bildungseinrichtungen", val: "30+ Standorte" },
-      { label: "Pendleratlas", val: "Rhein-Neckar / Rhein-Main" },
-    ],
-    highlights: [
-      "Interaktive Alterspyramiden & Generationenverteilung",
-      "Pendlerbewegungen (Ein- & Auspendler im Ried)",
-      "Schulentwicklungsplan Kreis Bergstraße",
-      "Kinderbetreuung & Schulstandorte",
-    ],
+    id: "demografie", title: "Demografie & Bildung", subtitle: "Bevölkerung & Bevölkerungsbewegung",
+    href: "/demografie", icon: Users, color: "teal", badge: "HSL Gemeindestatistik",
+    description: "Amtliche Bevölkerungstabellen für die vier Ried-Kommunen. Zusätzliche Bildungs- und Pendlerdaten erscheinen nur bei vorhandener Veröffentlichung.",
+    kpis: [{ label: "Daten", val: "Amtliche Tabellen" }, { label: "Vergleich", val: "Vier Kommunen" }],
+    highlights: ["Bevölkerung nach Originalkennzahlen", "Bevölkerungsbewegung", "Bezugszeitraum je Tabelle"],
   },
   {
-    id: "statistik",
-    title: "Regionalstatistik & Soziales",
-    subtitle: "Arbeitsmarkt, Kreislaufwirtschaft, Gesundheit & Kultur",
-    href: "/statistik",
-    icon: BarChart3,
-    color: "pink",
-    badge: "ZAKB, KV & KAMÜ",
-    description:
-      "Strukturdaten und regionale Lebensqualität: Arbeitslosenquoten, Versorgungsdichte von Ärzten & Apotheken, ZAKB Recyclingbilanzen und der Kulturkalender rund um das Kulturzentrum KAMÜ.",
-    kpis: [
-      { label: "Recyclingquote", val: "> 65% ZAKB" },
-      { label: "Ärzte & Apotheken", val: "Versorgungsatlas" },
-      { label: "Events & Kultur", val: "KAMÜ Bürstadt" },
-    ],
-    highlights: [
-      "Arbeitslosen- & Beschäftigtenquoten der Ried-Städte",
-      "ZAKB Wertstoffhöfe & Abfallwirtschaftsbilanz",
-      "Gesundheits- & Nahversorgungsinfrastruktur",
-      "Kulturkalender mit regionalen Veranstaltungen",
-    ],
+    id: "statistik", title: "Regionalstatistik & Soziales", subtitle: "Gemeindestatistik & Kultur",
+    href: "/statistik", icon: BarChart3, color: "pink", badge: "HSL & Veranstalter",
+    description: "Straßenverkehrsunfälle, kommunales Personal und regionale Veranstaltungen. Weitere Sozial- und Abfalldaten werden nur bei vorhandener Veröffentlichung angezeigt.",
+    kpis: [{ label: "Statistik", val: "Unfälle & Personal" }, { label: "Kultur", val: "Veranstaltungen" }],
+    highlights: ["Amtliche Tabellen für vier Kommunen", "Regionale Veranstaltungen", "Fehlende Angaben bleiben sichtbar"],
   },
   {
-    id: "haushalt",
-    title: "Finanzen & Haushalt",
-    subtitle: "Kommunalhaushalte, Hebesätze & Bürgerentscheide",
-    href: "/haushalt",
-    icon: Coins,
-    color: "emerald",
-    badge: "Haushaltstransparenz",
-    description:
-      "Transparente Gemeindehaushalte von Bürstadt, Lampertheim, Biblis und Groß-Rohrheim: Einnahmequellen, Investitionen in Schulen und Straßen sowie historische Wahlergebnisse.",
-    kpis: [
-      { label: "Kommunen", val: "Bürstadt & Ried" },
-      { label: "Hebesätze", val: "Grund- & Gewerbesteuer" },
-      { label: "Wahlen", val: "Kommunalwahlen" },
-    ],
-    highlights: [
-      "Ertrags- & Aufwandspläne der Kernhaushalte",
-      "Realsteuerhebesätze im interkommunalen Vergleich",
-      "Investitionsschwerpunkte & Schuldenstände",
-      "Wahlergebnisse & politische Zusammensetzung",
-    ],
+    id: "haushalt", title: "Finanzen & Haushalt", subtitle: "Kommunalhaushalte & Finanzstatistik",
+    href: "/haushalt", icon: Coins, color: "emerald", badge: "Amtliche Veröffentlichungen",
+    description: "Veröffentlichte Haushaltspläne und HSL-Finanzstatistik mit getrennten Berichtszeiträumen. Ungeklärte Angaben bleiben gekennzeichnet.",
+    kpis: [{ label: "Pläne", val: "Kommunalhaushalte" }, { label: "Statistik", val: "HSL-Finanztabellen" }],
+    highlights: ["Veröffentlichte Ertrags- und Aufwandspläne", "Realsteuern und Schulden", "Planwerte und historische Statistik getrennt"],
   },
   {
-    id: "wirtschaft",
-    title: "Wirtschaft & Gewerbe",
-    subtitle: "Unternehmensstruktur, Gründungen & Hebesätze",
-    href: "/wirtschaft",
-    icon: Briefcase,
-    color: "blue",
-    badge: "Statistik Hessen & IHK",
-    description:
-      "Gewerbeanmeldungen, Unternehmensneugründungen, Branchenvielfalt, Gewerbesteuer-Hebesätze aller 22 Kommunen des Kreises Bergstraße und Profile der regionalen Arbeitgeber.",
-    kpis: [
-      { label: "Vergleichskommunen", val: "22 im Kreis" },
-      { label: "Gewerbebetriebe", val: "Handel, Bau, Logistik" },
-      { label: "Top-Arbeitgeber", val: "Metropolregion" },
-    ],
-    highlights: [
-      "Gründungsbilanzen (Anmeldungen vs. Abmeldungen)",
-      "Gewerbesteuer-Hebesatz-Benchmark aller 22 Gemeinden",
-      "Wirtschafts- & Branchenschwerpunkte",
-      "Gewerbegebiete & Wirtschaftsstandort Bürstadt/Ried",
-    ],
+    id: "wirtschaft", title: "Wirtschaft & Gewerbe", subtitle: "Wirtschaftsstruktur & Gemeindestatistik",
+    href: "/wirtschaft", icon: Briefcase, color: "blue", badge: "HSL Gemeindestatistik",
+    description: "Amtliche Wirtschaftstabellen für Bürstadt, Lampertheim, Biblis und Groß-Rohrheim. Unternehmensprofile werden dadurch nicht ersetzt.",
+    kpis: [{ label: "Vergleich", val: "Vier Kommunen" }, { label: "Daten", val: "Amtliche Tabellen" }],
+    highlights: ["Originalkennzahlen der Gemeindestatistik", "Berichtszeiträume je Tabelle", "Fehlwertzeichen bleiben erhalten"],
   },
 ];
 
@@ -151,37 +70,31 @@ const COMMUNES = [
     name: "Bürstadt",
     zip: "68642",
     tagline: "Sonnenstadt & Heimat des KAMÜ Kulturzentrums",
-    population: "ca. 16.900",
   },
   {
     name: "Lampertheim",
     zip: "68623",
     tagline: "Spargelstadt im Ried mit Hofheim & Hüttenfeld",
-    population: "ca. 33.100",
   },
   {
     name: "Biblis",
     zip: "68647",
     tagline: "Energiewende & Gurkenstadt mit Nordheim & Wattenheim",
-    population: "ca. 9.200",
   },
   {
     name: "Groß-Rohrheim",
     zip: "68649",
     tagline: "Historisches Fachwerk & Riedgemeinde an der Bergstraße",
-    population: "ca. 3.800",
   },
   {
     name: "Einhausen",
     zip: "64683",
     tagline: "Gemeinde an der Weschnitz am Rande des Rieds",
-    population: "ca. 6.500",
   },
   {
     name: "Lorsch",
     zip: "64653",
     tagline: "Karolingerstadt & UNESCO-Weltkulturerbe",
-    population: "ca. 14.000",
   },
 ];
 
@@ -219,7 +132,7 @@ export default function RegionalatlasOverviewPage() {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-              Der <strong>Regionalatlas</strong> bündelt alle amtlichen Struktur- und
+              Der <strong>Regionalatlas</strong> bündelt verfügbare amtliche Struktur- und
               Bürgerdaten unserer Region an einem zentralen Ort: von{" "}
               <strong>Bodenrichtwerten &amp; Wohnungsbeständen</strong> über{" "}
               <strong>Demografie &amp; Schulentwicklungspläne</strong>,{" "}
@@ -231,11 +144,11 @@ export default function RegionalatlasOverviewPage() {
             <div className="pt-2 flex flex-wrap gap-3 text-xs font-mono text-slate-300">
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800">
                 <Home className="w-4 h-4 text-amber-400" />
-                <span>42.850 Wohnungen (Zensus 2022)</span>
+                <span>Wohnungsstatistik & Bodenrichtwerte</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800">
                 <Users className="w-4 h-4 text-teal-400" />
-                <span>85.000+ Bürgerinnen &amp; Bürger</span>
+                <span>Bevölkerungsstatistik für vier Kommunen</span>
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800">
                 <Coins className="w-4 h-4 text-emerald-400" />
@@ -243,7 +156,7 @@ export default function RegionalatlasOverviewPage() {
               </div>
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-800">
                 <Recycle className="w-4 h-4 text-purple-400" />
-                <span>&gt;65% Recyclingquote ZAKB</span>
+                <span>Regionale Veröffentlichungen & Kultur</span>
               </div>
             </div>
           </div>
@@ -373,7 +286,7 @@ export default function RegionalatlasOverviewPage() {
               </h2>
             </div>
             <p className="text-xs text-slate-400">
-              Umfasst die südhessischen Kommunen im Dreieck Rhein, Neckar und Bergstraße.
+              Regionale Orientierung; die Datenabdeckung ist je Quelle unterschiedlich.
             </p>
           </div>
 
@@ -390,7 +303,7 @@ export default function RegionalatlasOverviewPage() {
                   </span>
                 </div>
                 <div className="text-[11px] font-mono text-slate-400">
-                  {com.zip} • {com.population}
+                  {com.zip}
                 </div>
                 <p className="text-[10px] text-slate-400 leading-tight">
                   {com.tagline}

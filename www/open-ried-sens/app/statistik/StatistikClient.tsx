@@ -1,20 +1,14 @@
 "use client";
 
 import {
-  Activity,
-  Award,
   Briefcase,
   Building2,
   Calendar,
   CheckCircle2,
   ChevronRight,
   Clock,
-  Compass,
   Download,
   ExternalLink,
-  HeartPulse,
-  History,
-  Info,
   Landmark,
   MapPin,
   Pill,
@@ -23,11 +17,9 @@ import {
   Search,
   Sparkles,
   Stethoscope,
-  Trash2,
   TrendingDown,
   TrendingUp,
   Trophy,
-  Users,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -130,8 +122,7 @@ export default function StatistikClient({
 
   const currentSummary = useMemo(() => {
     return (
-      summaries.find((s) => s.municipality === selectedMuni) ??
-      summaries[0]
+      summaries.find((s) => s.municipality === selectedMuni)
     );
   }, [summaries, selectedMuni]);
 
@@ -139,19 +130,9 @@ export default function StatistikClient({
     return summaries.find((s) => s.municipality === "Hessen");
   }, [summaries]);
 
-  const kreisBenchmark = useMemo(() => {
-    return summaries.find((s) => s.municipality === "Kreis Bergstraße");
-  }, [summaries]);
-
-  const currentWaste = useMemo(() => {
-    const list = wasteStats.filter(
-      (w) =>
-        w.municipality.toLowerCase() === selectedMuni.toLowerCase() ||
-        (selectedMuni === "Groß-Rohrheim" && w.municipality === "Kreis Bergstraße") ||
-        (selectedMuni === "Biblis" && w.municipality === "Kreis Bergstraße")
-    );
-    return list.length > 0 ? list : wasteStats.filter((w) => w.municipality === "Bürstadt");
-  }, [wasteStats, selectedMuni]);
+  const currentWaste = useMemo(() => wasteStats.filter(
+    (w) => w.municipality.toLowerCase() === selectedMuni.toLowerCase()
+  ), [wasteStats, selectedMuni]);
 
   const totalWasteFraction = useMemo(() => {
     return currentWaste.find((w) => w.fraction === "total");
@@ -273,7 +254,7 @@ export default function StatistikClient({
             </div>
             <p className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
               <TrendingDown className="w-3.5 h-3.5" />
-              Unter Hessen-Schnitt ({hessenBenchmark?.unemployment_rate ?? "–"}%)
+              Hessen-Vergleichswert ({hessenBenchmark?.unemployment_rate ?? "–"}%)
             </p>
           </div>
           <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
@@ -328,7 +309,7 @@ export default function StatistikClient({
             <div className="text-3xl font-extrabold text-slate-100">
               {totalWasteFraction?.recycling_rate_percent != null
                 ? `${totalWasteFraction.recycling_rate_percent.toFixed(1)} %`
-                : "68.4 %"}
+                : "–"}
             </div>
             <p className="text-xs text-amber-400 flex items-center gap-1 font-medium">
               <TrendingUp className="w-3.5 h-3.5" />
@@ -340,7 +321,7 @@ export default function StatistikClient({
             <span className="font-semibold text-slate-200">
               {totalWasteFraction?.kg_per_capita != null
                 ? `${totalWasteFraction.kg_per_capita.toFixed(1)} kg / Einw.`
-                : "374 kg / Einw."}
+                : "–"}
             </span>
           </div>
         </div>
@@ -388,23 +369,22 @@ export default function StatistikClient({
             </h3>
           </div>
           <span className="text-xs text-slate-400 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
-            Quelle: Bundesagentur für Arbeit (2025/2026)
+            Arbeitsmarktdaten der gespeicherten Veröffentlichung
           </span>
         </div>
 
         <p className="text-sm text-slate-300 leading-relaxed max-w-3xl">
-          Das Hessische Ried zeichnet sich durch eine traditionell überdurchschnittlich robuste
-          Beschäftigungslage aus. Durch die Lage im Wirtschaftsraum Rhein-Neckar / Rhein-Main
-          liegt die Arbeitslosenquote in Bürstadt und Biblis spürbar unter dem Landesdurchschnitt
-          von Hessen ({hessenBenchmark?.unemployment_rate ?? "–"}%).
+          Die Kennzahlen werden für die jeweils ausgewählte Kommune angezeigt.
+          Fehlende Angaben werden nicht durch Werte anderer Kommunen ersetzt.
+
         </p>
 
         {/* Comparison Bars */}
         <div className="space-y-4 pt-2">
           {summaries.map((s) => {
-            const rate = s.unemployment_rate ?? 0;
+            const rate = s.unemployment_rate;
             const maxRate = 7.0;
-            const pctWidth = Math.min(100, Math.max(10, (rate / maxRate) * 100));
+            const pctWidth = rate == null ? 0 : Math.min(100, Math.max(0, (rate / maxRate) * 100));
             const isCurrent = s.municipality === selectedMuni;
 
             return (
@@ -426,13 +406,13 @@ export default function StatistikClient({
                     )}
                   </span>
                   <span className="font-mono font-bold text-emerald-400">
-                    {rate > 0 ? `${rate.toFixed(1)} %` : "–"}
+                    {rate != null ? `${rate.toFixed(1)} %` : "–"}
                   </span>
                 </div>
                 <div className="w-full h-2.5 rounded-full bg-slate-800 overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
-                      rate > 5.0
+                      rate != null && rate > 5.0
                         ? "bg-amber-500"
                         : isCurrent
                         ? "bg-gradient-to-r from-emerald-500 to-teal-400"
@@ -478,11 +458,11 @@ export default function StatistikClient({
                 Regionale ZAKB Bilanz
               </div>
               <div className="text-4xl font-extrabold text-amber-400">
-                {totalWasteFraction?.recycling_rate_percent?.toFixed(1) ?? "68.4"} %
+                {totalWasteFraction?.recycling_rate_percent?.toFixed(1) ?? "–"} %
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Über zwei Drittel aller Abfälle im Hessischen Ried werden stofflich
-                oder energetisch wiederverwertet (Biogas, Kompost, Sekundärrohstoffe).
+                Angezeigt werden ausschließlich gespeicherte Abfallbilanzen der
+                ausgewählten Kommune. Ohne Veröffentlichung bleibt die Angabe offen.
               </p>
             </div>
 
@@ -490,13 +470,13 @@ export default function StatistikClient({
               <div className="flex justify-between text-slate-300">
                 <span className="text-slate-400">Jahrestonnage gesamt:</span>
                 <span className="font-mono font-bold">
-                  {totalWasteFraction?.weight_tons.toLocaleString("de-DE") ?? "6.365"} t
+                  {totalWasteFraction?.weight_tons.toLocaleString("de-DE") ?? "–"} t
                 </span>
               </div>
               <div className="flex justify-between text-slate-300">
                 <span className="text-slate-400">Pro-Kopf-Menge:</span>
                 <span className="font-mono font-bold">
-                  {totalWasteFraction?.kg_per_capita.toFixed(1) ?? "373.9"} kg / Einw.
+                  {totalWasteFraction?.kg_per_capita.toFixed(1) ?? "–"} kg / Einw.
                 </span>
               </div>
             </div>

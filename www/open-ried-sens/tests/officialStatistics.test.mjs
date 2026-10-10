@@ -31,3 +31,15 @@ for (const count of [1, 4]) {
     assert.doesNotMatch(html, /31\.12\.2024|Rechnungsergebnis 2024|Erhebung 2024/);
   });
 }
+
+test("missing and zero values do not receive a positive comparison bar", () => {
+  const html = renderToStaticMarkup(React.createElement(context.exports.default, {
+    domain: "social", title: "Vergleich",
+    data: { edition: "2025", publication_month: "2025", source_url: "https://example.org", tables: [{
+      id: "19", title: "Personal", records: [100, null, 0].map((value, index) => ({
+        municipality_id: String(index), name: String(index), values: [{ label: "Anzahl", value, source_marker: null, cell: String(index) }],
+      })),
+    }] },
+  }));
+  assert.equal((html.match(/style="width:0%"/g) ?? []).length, 2);
+});

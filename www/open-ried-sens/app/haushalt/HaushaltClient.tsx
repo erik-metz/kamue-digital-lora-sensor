@@ -31,6 +31,9 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+const municipalities = ["Bürstadt", "Lampertheim", "Biblis", "Groß-Rohrheim"];
+type BudgetTab = "haushalt" | "ausgaben" | "wahlen" | "bauen";
+
 interface Props {
   budgets: FinanceBudget[];
   spending: FinanceExpenditure[];
@@ -56,7 +59,7 @@ export default function HaushaltClient({
   >("haushalt");
   const [mounted, setMounted] = useState(false);
 
-  const municipalities = ["Bürstadt", "Lampertheim", "Biblis", "Groß-Rohrheim"];
+
 
   // Initial read from URL
   useEffect(() => {
@@ -67,7 +70,8 @@ export default function HaushaltClient({
       year: "2024",
     });
     if (["haushalt", "ausgaben", "wahlen", "bauen"].includes(p.tab)) {
-      setActiveTab(p.tab as any);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Restore the browser URL after hydration.
+      setActiveTab(p.tab as BudgetTab);
     }
     const matchedMuni = municipalities.find(
       (m) => m.toLowerCase() === p.muni.toLowerCase()
@@ -87,7 +91,7 @@ export default function HaushaltClient({
         year: "2024",
       });
       if (["haushalt", "ausgaben", "wahlen", "bauen"].includes(p.tab)) {
-        setActiveTab(p.tab as any);
+        setActiveTab(p.tab as BudgetTab);
       }
       const matchedMuni = municipalities.find(
         (m) => m.toLowerCase() === p.muni.toLowerCase()
@@ -122,12 +126,7 @@ export default function HaushaltClient({
           b.municipality.toLowerCase() === selectedMunicipality.toLowerCase() &&
           b.fiscal_year === selectedYear &&
           b.record_type === "plan"
-      ) ||
-      budgets.find(
-        (b) =>
-          b.municipality.toLowerCase() === selectedMunicipality.toLowerCase()
-      ) ||
-      budgets[0]
+      )
     );
   }, [budgets, selectedMunicipality, selectedYear]);
 
@@ -161,11 +160,10 @@ export default function HaushaltClient({
 
   const activeElection = useMemo(() => {
     return (
-      elections.find((e) => e.id === selectedElectionId) ||
-      currentElections[0] ||
-      elections[0]
+      currentElections.find((e) => e.id === selectedElectionId) ||
+      currentElections[0]
     );
-  }, [elections, selectedElectionId, currentElections]);
+  }, [selectedElectionId, currentElections]);
 
   // Filtered Dev Plans
   const currentDevPlans = useMemo(() => {
@@ -253,6 +251,7 @@ export default function HaushaltClient({
         </div>
       </div>
 
+      {currentBudget ? <>
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Budget */}
@@ -329,19 +328,19 @@ export default function HaushaltClient({
           <div className="mt-3 text-2xl sm:text-3xl font-extrabold text-slate-100">
             {activeElection
               ? `${activeElection.turnout_percent.toFixed(1)}%`
-              : "51.6%"}
+              : "–"}
           </div>
           <div className="mt-2 text-xs text-slate-400">
             Wähler:{" "}
             <strong className="text-slate-200">
               {activeElection
                 ? activeElection.total_voters.toLocaleString("de-DE")
-                : "6.420"}
+                : "–"}
             </strong>{" "}
             von{" "}
             {activeElection
               ? activeElection.eligible_voters.toLocaleString("de-DE")
-              : "12.450"}
+              : "–"}
           </div>
         </div>
       </div>
@@ -901,6 +900,9 @@ export default function HaushaltClient({
           Zum Open-Data-Portal <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
+      </> : <p role="status" className="text-slate-300">
+        Für {selectedMunicipality} im Haushaltsjahr {selectedYear} liegt kein gespeicherter Haushaltsplan vor.
+      </p>}
     </div>
   );
 }

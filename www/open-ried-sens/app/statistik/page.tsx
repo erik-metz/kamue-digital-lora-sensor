@@ -7,13 +7,9 @@ import {
   fetchWasteStatistics,
 } from "@/lib/regionalStats";
 import {
-  Briefcase,
   Code2,
   ExternalLink,
   HeartHandshake,
-  HeartPulse,
-  Recycle,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import SiteHeader from "../components/SiteHeader";
@@ -64,28 +60,13 @@ export default async function RegionalStatistikPage() {
             </h1>
 
             <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
-              Strukturdaten und regionale Lebensqualität für{" "}
-              <strong>Bürstadt</strong>, <strong>Lampertheim</strong>,{" "}
-              <strong>Biblis</strong> und den <strong>Kreis Bergstraße</strong>:
-              Arbeitsmarktkennzahlen, Versorgungsdichte von Ärzten & Apotheken,
-              ZAKB Abfallmengen & Recyclingquoten sowie die lebendige Vereins- und
-              Kulturlandschaft rund um das Kulturzentrum <strong>KAMÜ</strong>.
+              Veröffentlichte Gemeindestatistik und regionale Veranstaltungen für
+              Bürstadt, Lampertheim, Biblis und Groß-Rohrheim. Zusätzliche Angaben
+              zu Arbeitsmarkt, Versorgung und Abfallbilanzen erscheinen nur,
+              soweit gespeicherte Daten vorliegen.
             </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-slate-400">
-              <span className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-lg">
-                <Briefcase className="w-3.5 h-3.5 text-emerald-400" /> Bundesagentur für Arbeit
-              </span>
-              <span className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-lg">
-                <HeartPulse className="w-3.5 h-3.5 text-cyan-400" /> Kassenärztliche Vereinigung Hessen
-              </span>
-              <span className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-lg">
-                <Recycle className="w-3.5 h-3.5 text-amber-400" /> ZAKB Jahresbilanzen
-              </span>
-              <span className="flex items-center gap-1.5 bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-lg">
-                <Sparkles className="w-3.5 h-3.5 text-purple-400" /> KAMÜ Kulturzentrum Bürstadt
-              </span>
-            </div>
+
           </div>
         </section>
 
@@ -121,8 +102,8 @@ export default async function RegionalStatistikPage() {
                 Sozial- & Versorgungsdaten per API abfragen
               </h3>
               <p className="text-sm text-slate-400 max-w-2xl">
-                Alle Kennzahlen zu Arbeitsmarkt, ZAKB-Kreislaufwirtschaft und Standorten
-                stehen als offene JSON-Endpunkte für den regionalen Hackathon und
+                Verfügbare Veröffentlichungen und Veranstaltungen
+                stehen als JSON-Endpunkte für den regionalen Hackathon und
                 Forschungsprojekte bereit.
               </p>
             </div>

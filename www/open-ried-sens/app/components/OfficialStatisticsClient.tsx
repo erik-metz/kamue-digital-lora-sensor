@@ -415,7 +415,7 @@ export default function OfficialStatisticsClient({ domain, title, data }: Props)
                                         <div
                                           key={r.municipality_id}
                                           className={`h-full rounded-full ${colors[rIdx % colors.length]}`}
-                                          style={{ width: `${Math.max(4, pct / table.records.length)}%` }}
+                                          style={{ width: `${Math.max(0, pct / table.records.length)}%` }}
                                           title={`${cleanMunicipalityName(r.name)}: ${val ?? "–"}`}
                                         />
                                       );

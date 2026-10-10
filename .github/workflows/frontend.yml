@@ -36,6 +36,8 @@ jobs:
         working-directory: www/open-ried-sens
       - run: npx eslint app/quellen/page.tsx app/quellen/sourceInfo.ts app/quellen/sourceStatus.ts
         working-directory: www/open-ried-sens
+      - run: npm run test:regional
+        working-directory: www/open-ried-sens
       - run: npm run test:events
         working-directory: www/open-ried-sens
       - run: node --test tests/mapPresets.test.mjs tests/urlState.test.mjs tests/satelliteData.test.mjs
