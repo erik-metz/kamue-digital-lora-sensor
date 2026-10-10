@@ -63,6 +63,11 @@ export const SOURCE_INFO: Record<
     domain: "Kultur & Termine",
     provider: "Stadt Bürstadt / Cross-7",
   },
+  "hvbg-boris-2024": {
+    title: "Amtliche Bodenrichtwertzonen · Stichtag 01.01.2024",
+    domain: "Bauen & Wohnen",
+    provider: "HVBG · BORIS Hessen",
+  },
   "bnetza-broadband-households": {
     title: "Breitbandverfügbarkeit für Privathaushalte",
     domain: "Infrastruktur & Konnektivität",

@@ -116,3 +116,23 @@ test("Formatting and color helpers produce expected outputs", () => {
   assert.equal(realestate.getLandUseColor("industrial"), "#7c3aed");
   assert.equal(realestate.getLandUseColor("traffic"), "#64748b");
 });
+
+test("Published BORIS section renders original zero values and historical reference date", async () => {
+  const { createRequire } = await import("node:module");
+  const require = createRequire(import.meta.url);
+  const { renderToStaticMarkup } = require("react-dom/server");
+  const source = fs.readFileSync(new URL("../app/components/BorisPublishedSection.tsx", import.meta.url), "utf8");
+  const context = { exports: {}, require, Set };
+  vm.runInNewContext(ts.transpileModule(source, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, jsx: ts.JsxEmit.ReactJSX },
+  }).outputText, context);
+  const Component = context.exports.default;
+  const unavailable = renderToStaticMarkup(Component({ zones: null }));
+  assert.match(unavailable, /Noch keine gespeicherten/);
+  const rendered = renderToStaticMarkup(Component({ zones: [{ id: "official-1", municipality: "Biblis", district: null,
+    zone_code: "123", stichtag: "2024-01-01", land_value_eur_sqm: 0, zone_type: "LW", development_status: "LF" }] }));
+  assert.match(rendered, /Historischer Stichtag: 2024-01-01/);
+  assert.match(rendered, /keine aktuellen Immobilienverkaufspreise/);
+  assert.match(rendered, />0<\/td>/);
+  assert.match(rendered, /<td[^>]*>LW<\/td>/);
+});

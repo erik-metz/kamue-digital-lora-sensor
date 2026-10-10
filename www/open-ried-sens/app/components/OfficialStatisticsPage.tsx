@@ -1,3 +1,4 @@
+import BorisPublishedSection, { type PublishedBorisZone } from "./BorisPublishedSection";
 import AdoptedBudgetSection from "./AdoptedBudgetSection";
 import { readCollected } from "@/lib/collectedBackend";
 import SiteHeader from "./SiteHeader";
@@ -11,18 +12,19 @@ export default async function OfficialStatisticsPage({
   domain: string;
   title: string;
 }) {
-  let data: StatisticsData | null = null;
-  try {
-    data = await readCollected<StatisticsData>(`statistics/${domain}`);
-  } catch {
-    /* Missing publication stays unavailable. */
-  }
+  const [data, boris] = await Promise.all([
+    readCollected<StatisticsData>(`statistics/${domain}`).catch(() => null),
+    domain === "realestate"
+      ? readCollected<PublishedBorisZone[]>("realestate/boris").catch(() => null)
+      : Promise.resolve(null),
+  ]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
       <SiteHeader />
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {domain === "finance" && <AdoptedBudgetSection />}
+        {domain === "realestate" && <BorisPublishedSection zones={boris} />}
 
         {!data ? (
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center space-y-3">

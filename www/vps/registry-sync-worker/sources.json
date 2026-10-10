@@ -1389,6 +1389,30 @@
         "06431013": "Lampertheim"
       },
       "reason": "Amtliche Festnetzverfügbarkeit in Prozent der Privathaushalte; Stand Dezember 2025, keine Live-Geschwindigkeit oder Vertragsquote."
+    },
+    {
+      "id": "hvbg-boris-2024",
+      "group": "realestate",
+      "adapter": "boris-wfs",
+      "enabled": true,
+      "url": "https://www.gds.hessen.de/wfs2/boris/cgi-bin/brw/2024/wfs",
+      "reference_date": "2024-01-01",
+      "interval_seconds": 86400,
+      "max_age_seconds": 157852800,
+      "http_retries": 2,
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "municipalities": {
+        "06431003": "Biblis",
+        "06431005": "Bürstadt",
+        "06431010": "Groß-Rohrheim",
+        "06431013": "Lampertheim"
+      },
+      "reason": "Historische amtliche Bodenrichtwertzonen zum 01.01.2024; 2026 laut HVBG nicht per WFS verfügbar. Keine Immobilienmarktpreise."
     }
   ]
 }
