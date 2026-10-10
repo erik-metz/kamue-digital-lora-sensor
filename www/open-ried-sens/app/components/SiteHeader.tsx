@@ -1,5 +1,6 @@
 "use client";
 
+import { readSensorCount, subscribeSensorCount, saveSensorCount } from "@/lib/sensorCountCache";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
@@ -22,7 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import HeaderLogo from "./HeaderLogo";
 
 interface SiteHeaderProps {
@@ -193,8 +194,12 @@ export default function SiteHeader({
     };
   }, [mobileOpen]);
 
-  // Determine status badge display count
-  const displayCount = sensorCount ?? "–";
+  const cachedCount = useSyncExternalStore(subscribeSensorCount, readSensorCount, () => undefined);
+  useEffect(() => {
+    if (sensorCount !== undefined) saveSensorCount(sensorCount);
+  }, [sensorCount]);
+  const count = sensorCount ?? cachedCount;
+  const displayCount = count ?? "–";
   const hasStationFraction =
     activeStations !== undefined && totalStations !== undefined;
 
@@ -344,9 +349,9 @@ export default function SiteHeader({
               title={
                 hasStationFraction
                   ? `${activeStations} von ${totalStations} Stationen aktiv`
-                  : sensorCount === undefined
-                  ? "Sensoranzahl hier nicht geladen"
-                  : `${displayCount} gespeicherte Sensorstandorte im Ried`
+                  : count === undefined
+                  ? "Sensoranzahl noch nicht geladen – öffne die Karte"
+                  : `${displayCount} Sensorstandorte im Ried${sensorCount === undefined ? " (zuletzt geladener Kartenstand)" : ""}`
               }
             >
               <span className="relative flex h-2 w-2 shrink-0">

@@ -105,22 +105,15 @@ function SourceTable({ sources, now }: { sources: SourceItem[]; now: number }) {
 
 async function loadSourceOverview() {
   let sources: SourceItem[] | null = null;
-  let sensorCount = 0;
-  const [statusRes, sensorsRes] = await Promise.all([
-    proxyBackend("collection/status", 30).catch(() => null),
-    proxyBackend("sensors", 60).catch(() => null),
-  ]);
+  const statusRes = await proxyBackend("collection/status", 30).catch(() => null);
   if (statusRes?.ok) {
     try { sources = parseSourcesResponse(await statusRes.json()); } catch { sources = null; }
   }
-  if (sensorsRes?.ok) {
-    try { const data = await sensorsRes.json(); if (Array.isArray(data)) sensorCount = data.length; } catch { sensorCount = 0; }
-  }
-  return { sources, sensorCount, now: Date.now() };
+  return { sources, now: Date.now() };
 }
 
 export default async function SourcesPage() {
-  const { sources, sensorCount, now } = await loadSourceOverview();
+  const { sources, now } = await loadSourceOverview();
   const summary = sources ? summarizeSources(sources, now) : null;
   const groupOrder = { attention: 0, unknown: 1, success: 2, inactive: 3 };
   const connected = sources?.filter((source) => !isPlaceholderSource(source)).sort((a, b) =>
@@ -128,7 +121,7 @@ export default async function SourcesPage() {
     || (SOURCE_INFO[a.source_id]?.title ?? a.source_id).localeCompare(SOURCE_INFO[b.source_id]?.title ?? b.source_id, "de")) ?? [];
   const planned = sources?.filter(isPlaceholderSource) ?? [];
   return <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-    <SiteHeader sensorCount={sensorCount > 0 ? sensorCount : undefined} />
+    <SiteHeader />
     <main className="mx-auto max-w-7xl w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8 flex-1">
       <div className="space-y-3">
         <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider"><Database aria-hidden="true" className="w-4 h-4" /><span>Herkunft &amp; Aktualität</span></div>
