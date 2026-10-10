@@ -1,6 +1,3 @@
-import { readCollected } from "@/lib/collectedBackend";
-import type { RegularOffer } from "@/lib/regularOffers";
-import RegularOffers from "./RegularOffers";
 import { fetchCulturalEvents } from "@/lib/regionalStats";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
@@ -16,8 +13,8 @@ export const metadata = {
 };
 
 export default async function TerminePage() {
-  const result = await Promise.allSettled([fetchCulturalEvents({ includePast: true }), readCollected<RegularOffer[]>("social/regular-offers")]);
-  const initialEvents = result[0].status === "fulfilled" ? result[0].value : [];
+  const [result] = await Promise.allSettled([fetchCulturalEvents({ includePast: true })]);
+  const initialEvents = result.status === "fulfilled" ? result.value : [];
   // eslint-disable-next-line react-hooks/purity -- Request-time snapshot in a dynamic Server Component.
   const now = Date.now();
 
@@ -27,8 +24,7 @@ export default async function TerminePage() {
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 space-y-8 sm:space-y-12">
         <RegionalatlasTabs activeTab="termine" />
-        <RegularOffers offers={result[1].status === "fulfilled" ? result[1].value : []} unavailable={result[1].status === "rejected"} />
-        <TermineClient initialEvents={initialEvents} now={now} eventsUnavailable={result[0].status === "rejected"} />
+        <TermineClient initialEvents={initialEvents} now={now} eventsUnavailable={result.status === "rejected"} />
       </main>
 
       <SiteFooter />
