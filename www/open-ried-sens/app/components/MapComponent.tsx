@@ -3,6 +3,7 @@
 import L from "leaflet";
 import { updateMarkerDialogs } from "@/lib/mapDialogs";
 import MapContextLayer from "./MapContextLayer";
+import MapSupplementaryLayer from "./MapSupplementaryLayer";
 import MapFuelLayer from "./MapFuelLayer";
 import MapSatelliteLayer from "./MapSatelliteLayer";
 import { metricLabel } from "@/lib/telemetryData";
@@ -461,7 +462,7 @@ export default function MapComponent(props: MapProps) {
     const requests = new Set<AbortController>();
     for (const [id, geometry] of Object.entries(publication.layers)) {
       const layerId = id as MapLayerId;
-      if (!layers[layerId] || id === "crossings") continue;
+      if (!layers[layerId] || id === "crossings" || id === "nature" || id === "charging") continue;
       const overview = zoom < LAYER_MIN_ZOOM[layerId];
       const pointGroups = new Map<string, L.LayerGroup>();
       function pointGroupFor(kind: string) {
@@ -615,7 +616,7 @@ export default function MapComponent(props: MapProps) {
     .filter(f => f.properties?.kind === "corridor")
     .map(f => f.properties as { id: string; road_name: string; name: string; status: string; delay_minutes: number; description: string });
 
-  const missing = publication.unavailable.filter(id => layers[id as MapLayerId]);
+  const missing = publication.unavailable.filter(id => id !== "nature" && id !== "charging" && layers[id as MapLayerId]);
   return <div className="w-full space-y-3">
     <div ref={container} className="sensor-map h-[500px] w-full" aria-label="Karte mit gespeicherten Quelldaten" />
     {layers.traffic && trafficCorridors.length > 0 && (
@@ -657,6 +658,10 @@ export default function MapComponent(props: MapProps) {
     <div className="space-y-2 text-xs text-slate-400" aria-label="Kartenlegende und Hinweise">
       {props.legend}
       {ready && mapInstance ? <>
+        {layers.nature ? <MapSupplementaryLayer map={mapInstance} id="protected" /> : null}
+        {layers.monitoring ? <MapSupplementaryLayer map={mapInstance} id="monitoring" /> : null}
+        {layers.warnings ? <MapSupplementaryLayer map={mapInstance} id="warnings" /> : null}
+        {layers.charging ? <MapSupplementaryLayer map={mapInstance} id="chargers" primary={publication.layers.charging} /> : null}
         {layers.landcover ? <MapContextLayer map={mapInstance} id="landcover" /> : null}
         {layers.floodrisk ? <MapContextLayer map={mapInstance} id="floodrisk" /> : null}
         {layers.census ? <MapContextLayer map={mapInstance} id="census" /> : null}

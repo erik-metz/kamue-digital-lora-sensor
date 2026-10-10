@@ -83,3 +83,15 @@ Schutzgebiete in die bestehende `nature`-Ebene einbinden; Messstellen und DWD-Wa
 - Live-Abfragen über den lokalen Produktions-Endpunkt: Schutzgebiete 46 Features (159943 Bytes), Messstellen 63 (19761 Bytes), Ladesäulen 158 (68614 Bytes), Warnungen 0 (744 Bytes); alle HTTP 200.
 - Der Warnungs-Endpunkt lieferte dabei den echten Quellenzeitpunkt `2026-10-09T17:03:29.772Z` und `Cache-Control: no-store`. Historische Quellen lieferten den vorgesehenen Cache-Header.
 - Keine Kartenkomponenten oder VPS-Dateien wurden für Schritt 2 geändert. Die Freigabe für Schritt 3 wird nach Commit, Push und Frontend-CI separat eingeholt.
+
+
+## Schritt 3: Kartenintegration (freigegeben und implementiert)
+
+- Die bestehende Naturschutzebene verwendet die geprüften BfN-Flächen. Grundwasser- und Oberflächenwassermessstellen sowie DWD-Warnungen sind eigene, standardmäßig ausgeschaltete Ebenen; Auswahl wird in geteilten Karten-URLs erhalten.
+- Kategorien, Datenstände, Lizenzen, regionale Abdeckung und vereinfachte Geometrien sind in Legende und Popups erläutert. Messstellen bleiben ausdrücklich ein historisches Verzeichnis ohne Live-Messwerte.
+- Ladesäulen werden über normalisierte BNetzA-IDs zusammengeführt. Der direkte Import hat Vorrang; nicht identifizierbare Esri-Datensätze werden ausgeschlossen. Die alte generische Darstellung wird für Schutzgebiete und Ladesäulen deaktiviert.
+- Warnungen werden jede Minute ohne Cache abgerufen. Die Anzeige prüft alle 30 Sekunden Quellenalter, Abrufalter und Gültigkeit, entfernt abgelaufene Polygone und kennzeichnet fehlende/veraltete Warnungsdaten. Die amtliche DWD-Warnlage ist direkt verlinkt.
+- Browserprüfung: 46 Schutzgebietsflächen, 63 Messstellen, 158 Ladestandorte; derzeit keine gültigen Warnpolygone im bestätigten frischen Esri-Bestand. Quellenaktualisierung am 10.10.2026 um 08:03:09 Europe/Berlin. Ebenenschalter und Quellenlegenden geprüft.
+- Prüfung: Frontend-Tests, gezieltes ESLint und Produktionsbuild. Commit, Push und exakter Frontend-CI-Lauf werden im Chatabschluss nachgewiesen. Keine VPS-Änderungen für diesen Schritt.
+
+Schritt 4 (abschließende Gesamtprüfung aller sieben Quellen) beginnt erst nach erneuter Nutzerfreigabe.

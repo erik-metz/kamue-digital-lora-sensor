@@ -52,6 +52,8 @@ export const LAYER_CATEGORIES: Record<
 
 export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
   // Regional (Zoom 8-11)
+  monitoring: 12,
+  warnings: 8,
   landcover: 12,
   floodrisk: 10,
   census: 12,
@@ -91,10 +93,12 @@ export const LAYER_MIN_ZOOM: Record<MapLayerId, number> = {
 // Collected vectors retain overview styling. Raster and optional context overlays
 // load only at their supported zoom.
 export function isLayerZoomRestricted(id: MapLayerId, zoom: number): boolean {
-  return (["starkregen", "lora", "landcover", "floodrisk", "census"].includes(id)) && zoom < LAYER_MIN_ZOOM[id];
+  return (["starkregen", "lora", "landcover", "floodrisk", "census", "monitoring", "nature", "charging", "warnings"].includes(id)) && zoom < LAYER_MIN_ZOOM[id];
 }
 
 export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
+  monitoring: { id: "monitoring", label: "Gewässermessstellen", icon: "💧", category: "environment", description: "BfG-Verzeichnis: Grundwasser- und Oberflächenwassermessstellen · keine Live-Messwerte", minZoom: 12 },
+  warnings: { id: "warnings", label: "DWD-Wetterwarnungen", icon: "⚠️", category: "environment", description: "Warnpolygone über Esri · etwa 30 Minuten verzögert · mit Quellenaktualität", minZoom: 8 },
   landcover: { id: "landcover", label: "Landbedeckung 2021", icon: "🌱", category: "environment", description: "BKG-Landbedeckung im Ried · historischer Flächenkontext, Mindestkartierfläche 1 ha", minZoom: 12 },
   floodrisk: { id: "floodrisk", label: "Hochwasserrisikoflächen", icon: "🌊", category: "environment", description: "BfG-Szenarien 2016–2021, Bearbeitung 2024 · keine aktuelle Überflutung oder Starkregenprognose", minZoom: 10 },
   census: { id: "census", label: "Bevölkerung · Zensus 2022", icon: "👥", category: "planning", description: "Einwohner pro 1-km-Gitterzelle im Ried · Stichtag 15.05.2022", minZoom: 12 },
@@ -212,7 +216,7 @@ export const LAYER_DEFINITIONS: Record<MapLayerId, LayerMetadata> = {
     icon: "🌿",
     category: "environment",
     description:
-      "Naturschutzgebiete (Biedensand, Lampertheimer Altrhein, Weschnitzinsel)",
+      "BfN-Schutzgebiete: Naturschutz, FFH, Vogelschutz und weitere Kategorien im Ried",
     minZoom: LAYER_MIN_ZOOM.nature,
     highlightColor: "border-emerald-500 text-emerald-300",
   },
@@ -387,6 +391,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     icon: "🎯",
     description: "Maximaler Fokus auf IoT-Messwerte ohne Geodaten-Overlays",
     layers: {
+      monitoring: false,
+      warnings: false,
       landcover: false,
       floodrisk: false,
       census: false,
@@ -427,6 +433,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     description:
       "Sperrungen, Staus, Live-Busse, Haltestellen, Züge & Ladesäulen",
     layers: {
+      monitoring: false,
+      warnings: false,
       landcover: false,
       floodrisk: false,
       census: false,
@@ -467,6 +475,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     description:
       "Naturschutzgebiete, Flusspegel, Starkregen-WMS & Agrarkulturen",
     layers: {
+      monitoring: false,
+      warnings: false,
       landcover: false,
       floodrisk: false,
       census: false,
@@ -507,6 +517,8 @@ export const LAYER_PRESETS: Record<LayerPresetId, LayerPreset> = {
     description:
       "Bodenrichtwerte (BORIS), Bau-Pläne, Glasfaser, Gewerbe & ZAKB",
     layers: {
+      monitoring: false,
+      warnings: false,
       landcover: false,
       floodrisk: false,
       census: false,

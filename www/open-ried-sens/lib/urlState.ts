@@ -1,6 +1,8 @@
 import { CATEGORY_IDS, type Category, type MapMode } from "./mapData";
 
 export const MAP_LAYER_IDS = [
+  "monitoring",
+  "warnings",
   "landcover",
   "floodrisk",
   "census",
@@ -36,6 +38,8 @@ export const MAP_LAYER_IDS = [
 export type MapLayerId = (typeof MAP_LAYER_IDS)[number];
 
 export const DEFAULT_MAP_LAYERS: Record<MapLayerId, boolean> = {
+  monitoring: false,
+  warnings: false,
   landcover: false,
   floodrisk: false,
   census: false,
