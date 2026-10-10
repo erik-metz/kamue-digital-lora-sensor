@@ -10,6 +10,12 @@ from groundwater import parse_hlnug_groundwater
 
 
 class GroundwaterAdapterTests(unittest.TestCase):
+    def test_error_missing_features_and_truncation_are_not_empty_successes(self):
+        for payload in [{'error': {'code': 400}}, {}, {'features': None},
+                        {'features': [], 'exceededTransferLimit': True}]:
+            with self.subTest(payload=payload), self.assertRaises((ValueError, TypeError)):
+                parse_hlnug_groundwater(json.dumps(payload).encode())
+
     def test_parse_hlnug_groundwater_filters_and_formats(self):
         sample_payload = {
             "features": [

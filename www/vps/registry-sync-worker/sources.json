@@ -912,7 +912,7 @@
       "group": "environment",
       "adapter": "hlnug-groundwater",
       "enabled": true,
-      "url": "https://geodienste-umwelt.hessen.de/arcgis/rest/services/gruschu/gruschu_mst_ga/MapServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json",
+      "url": "https://geodienste-umwelt.hessen.de/arcgis/rest/services/gruschu/gruschu_mst_ga/MapServer/0/query?where=GEMEINDE_NAME+IN+%28%27B%C3%BCrstadt%27%2C+%27Lampertheim%27%2C+%27Biblis%27%2C+%27Gro%C3%9F-Rohrheim%27%29&outFields=%2A&outSR=4326&f=json",
       "interval_seconds": 86400,
       "max_age_seconds": 604800,
       "municipalities": [

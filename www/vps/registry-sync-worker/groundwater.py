@@ -17,7 +17,11 @@ def parse_hlnug_groundwater(
 ) -> tuple[datetime, list[dict[str, Any]], dict[str, Any]]:
     """Parse ArcGIS REST query JSON into structured groundwater stations."""
     data = json.loads(body.decode("utf-8"))
-    features = data.get("features", [])
+    if not isinstance(data, dict) or data.get("error") or data.get("exceededTransferLimit"):
+        raise ValueError("Invalid or truncated HLNUG groundwater response")
+    features = data.get("features")
+    if not isinstance(features, list):
+        raise TypeError("HLNUG groundwater response has no feature list")
 
     muni_set = {m.lower() for m in municipalities} if municipalities else set()
     south, west, north, east = bbox if bbox and len(bbox) == 4 else (-90.0, -180.0, 90.0, 180.0)
@@ -157,7 +161,7 @@ async def import_groundwater(conn, client, source):
                     """SELECT write_measurement(
                         %s, %s, 'degrees', %s, 'reported',
                         '{"crs": "EPSG:4326"}'::jsonb,
-                        %s, %s, %s,
+                        %s, %s::numeric, %s,
                         %s::jsonb, 'valid', NULL, NULL, 'reference'
                     )""",
                     (
@@ -173,10 +177,13 @@ async def import_groundwater(conn, client, source):
 
             # Compatibility table groundwater_stations
             await conn.execute(
-                """INSERT INTO groundwater_stations (id, name, latitude, longitude, description, measured_at)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                """INSERT INTO groundwater_stations (id, name, municipality, latitude, longitude, description, measured_at, hlnug_station_no)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
+                    municipality = EXCLUDED.municipality,
+                    hlnug_station_no = EXCLUDED.hlnug_station_no,
+                    updated_at = NOW(),
                     latitude = EXCLUDED.latitude,
                     longitude = EXCLUDED.longitude,
                     description = EXCLUDED.description,
@@ -184,10 +191,12 @@ async def import_groundwater(conn, client, source):
                 (
                     st["id"],
                     st["friendlyName"],
+                    st["municipality"],
                     st["lat"],
                     st["lng"],
                     st["description"],
                     source_time,
+                    st["stationNumber"],
                 ),
             )
 
