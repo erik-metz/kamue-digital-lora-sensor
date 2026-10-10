@@ -47,3 +47,5 @@ Schritt 1 ist abgeschlossen: vier konkrete Quellen, geprüfte Direktbilder, begr
 Schritt 2 implementiert Snapshot-Collector, Dateispeicherung und Datenbank-Metadaten. Verifikation zunächst mit lokalen Testbildern: vollständiges Bild, unverändertes Bild, defektes JPEG, Antwortlimit, Timeout und fehlgeschlagenes Dateischreiben. Produktiven Dauerabruf erst gezielt pro Quelle aktivieren. Schritt 2 ist implementiert und mit synthetischen Bildern geprüft; produktiver Dauerabruf bleibt deaktiviert.
 
 Schritt 3 ist ebenfalls umgesetzt: Aufbewahrung, Bereinigung verwaister Dateien und ein persistenter Verdachtsstatus für über längere Zeit unveränderte Bilder. Details und Grenzen stehen im [Collector-Handbuch](../../www/vps/registry-sync-worker/WEBCAMS.md). Die Quellen bleiben deaktiviert.
+
+Die [Bildsichtung und Auswertungskategorien](bildsichtung-und-kategorien-2026-10-10.md) erweitern den bisherigen Wetterfokus um Belegung, Aktivitätswechsel, Flächen, Vegetation, Infrastruktur und Beleuchtung. Grundlage sind sechs bereits vorhandene Nachtansichten; ein Produktionszeitreihenbestand wurde nicht nachgewiesen.
