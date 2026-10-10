@@ -1,0 +1,13 @@
+# Autobahn-Ladeangebote in der Karte
+
+Der Ladeinfrastruktur-Layer kombiniert die vorhandenen direkten BNetzA- und Esri-Registereinträge (Deduplication nach BNetzA-ID) mit den gespeicherten Autobahn-Angeboten für A67/A5/A6. `/api/autobahn-chargers` liest ausschließlich die vorhandenen VPS-Datensätze, parallel und unabhängig pro Autobahn. Eine fehlende oder abgelaufene Quelle wird als nicht verfügbar gemeldet; gültige Leerlisten bleiben ein erfolgreicher Bestand.
+
+Die Autobahn-Antworten enthalten keine belegte gemeinsame Registerkennung. Ihre Base64-Anbieterkennung wird nicht als BNetzA-ID interpretiert. Der Abgleich zeigt deshalb alle geladenen Registereinträge innerhalb 75 m als **unbestätigte räumliche Zuordnungskandidaten**. Weder Name noch Entfernung beweisen Identität; auch ein einzelner Kandidat wird nicht automatisch verschmolzen. Ein leerer Vergleich sagt nur, dass im geladenen Registerbestand kein Eintrag innerhalb dieses Radius vorhanden ist. Der Ausschnitt der Registerquellen kann kleiner als der des Autobahn-Inventars sein.
+
+Blaue Marker stehen für Autobahn-Angebote; grüne Marker weiterhin für Registereinträge. Mehrere Autobahn-Angebote mit exakt gleicher Position, Autobahn und Richtung teilen einen Marker, bleiben mit eigenen Kennungen und Angaben erhalten. Fahrtrichtungen bleiben getrennt. Die Autobahn-Marker werden zur Unterscheidung von den Registermarkern nach oben versetzt; ihre geografischen Koordinaten bleiben unverändert. Zusätzlich sind alle Angebote mit ihren Abgleichkandidaten als aufklappbare Textliste erreichbar, auch bei überlappenden Markern.
+
+Ladepunktzahlen und Leistungen werden pro Anbieterangebot angezeigt und niemals über Quellen summiert. Höchste gemeldete Ladepunktleistung ist keine Anschlussleistung. Unbekannte Werte bleiben unbekannt; Originaldaten und detaillierte Ladepunktstrukturen bleiben in der bestehenden VPS-API verfügbar. Belegungsdaten oder Betriebsbestätigungen werden nicht erzeugt. Anbieterkennzeichen „gesperrt“ bzw. „zukünftig“ erscheinen ausdrücklich.
+
+Die Darstellung zeigt die Abrufbeobachtung und weist auf das fehlende Anbieteraktualisierungsdatum hin. Bestände laufen nach 72 Stunden ab, werden auch im geöffneten Browser ausgeblendet und alle fünf Minuten neu geprüft. Die API verwendet höchstens 60 Sekunden Next-Cache und liefert selbst `no-store`. Ausfall einer Autobahn oder der Esri-Quelle entfernt keine gültigen Daten anderer Quellen. Kein neuer Collector und keine Datenbankmigration sind erforderlich.
+
+Tests prüfen fehlende/abgelaufene Bestände, Nullwerte, vollständige Leerlisten, mehrere Angebote am selben Punkt, Richtungen, mehrere räumliche Kandidaten, unveränderte Registerkapazitäten und teilweise/vollständig ausgefallene API-Zugriffe.
