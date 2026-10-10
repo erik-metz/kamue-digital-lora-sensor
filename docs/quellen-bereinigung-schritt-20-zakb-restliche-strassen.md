@@ -1,6 +1,6 @@
 # Schritt 20: alle 21 verbleibenden fehlenden ZAKB-Straßennamen
 
-Stand der Untersuchung: 9. Oktober 2026. Ausgangspunkt: 822 von 845 Straßen mit einem bestätigten repräsentativen Kalender, 14.822 Termine. 21 Straßennamen fehlen im Anbieterformular; zwei weitere Straßen haben einen angebotenen Namen, aber eine abgelehnte reale Hausnummer. Deutsche-Bahn-Quellen bleiben außerhalb dieses Schritts.
+Untersuchung am 9. Oktober, produktiver Abschluss am 10. Oktober 2026. Ausgangspunkt: 822 von 845 Straßen mit einem bestätigten repräsentativen Kalender, 14.822 Termine. 21 Straßennamen fehlen im Anbieterformular; zwei weitere Straßen haben einen angebotenen Namen, aber eine abgelehnte reale Hausnummer. Deutsche-Bahn-Quellen bleiben außerhalb dieses Schritts.
 
 Alle 21 Namen wurden mit frisch abgefragten Optionen für Biblis (137), Biblis-Nordheim (33), Biblis-Wattenheim (24), Bürstadt (262), Groß-Rohrheim (85) und Lampertheim (386) abgeglichen. Es erfolgt keine unscharfe Namenssuche im produktiven Collector. Ein Kalender belegt nur die geprüfte Einzeladresse, nicht sämtliche Häuser einer Straße.
 
@@ -49,8 +49,26 @@ Drei geprüfte Straßenaliasnamen und drei strikt adressgebundene Anbieterziele.
 
 Exakt angebotene Inventarstraßen haben Vorrang vor einem Ersatznamen. Eine Bestätigung muss weiterhin Anbieterort, Anbieterstraße und die unveränderte reale Hausnummer treffen, bevor iCalendar heruntergeladen wird. Geometrie und veröffentlichte Adresse bleiben die ursprünglichen Inventardaten. Für bisher unbestätigte Straßen wird eine belegte Einzeladresse zuerst geprüft; bestehende bestätigte Häuser behalten bei Erneuerung Vorrang.
 
-Die zwei zusätzlichen unveröffentlichten Straßen Bei den Münchäckern 60 und Am Sportplatz 11 sind keine fehlenden Namen; ihre Hausnummernablehnungen aus Schritt 18 bleiben bestehen. Keine Vertauschung mit angebotenen anderen Häusern.
+Die zwei zusätzlichen unveröffentlichten Straßen Bei den Münchäckern 60 und Am Sportplatz 11 sind keine fehlenden Namen und liegen außerhalb der 21 Fälle. Beide bleiben unbestätigt. Der aktuelle gespeicherte Fehler für Bei den Münchäckern ist AddressNotAccepted; bei Am Sportplatz ist nach einer früheren Hausnummernablehnung zuletzt RemoteProtocolError erfasst. Eine zusätzliche produktive Prüfung dieser zwei Fälle wurde von der automatischen Freigabe als außerhalb des genehmigten Schritts abgelehnt und nicht ausgeführt. Keine Vertauschung mit angebotenen anderen Häusern.
 
 ## Prüfung und Veröffentlichung
 
-Lokale Regressionen, exakter Commit/CI-Lauf und tatsächliche öffentliche Endwerte werden nach Abschluss hier ergänzt. Fünf neue Straßen sind nach den frischen Einzelproben möglich; die Live-Veröffentlichung wird separat nachgewiesen.
+- 120 relevante Regressionstests erfolgreich, einschließlich echter temporärer PostgreSQL-Schemata, Wiederaufnahme, eigener Geometrie, Aliasnamen, Hausnummernzusätzen und Schutz vor fremden Adressbestätigungen. Ruff für alle geänderten Python-Dateien erfolgreich.
+- Codecommit `529aad5accaff79883b73cd9aefec003d90fa109`, nach `main` gepusht. [FastAPI & Docker CI/CD für exakt diesen Commit](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/37966255830): vollständig erfolgreich, sämtliche 15 Prüfjobs und alle 17 Container-Builds einschließlich GHCR-Veröffentlichungen.
+- Aus genau diesem Workflow eingesetztes Registry-Image: `sha256:467205cf1ab8d3a429c019ff2250ed01bd3e4d72258bce9725dc736e3ec901b1`. Laufende Datei `/app/zakb.py`: `9bc57d62cc7c9a0c5a7a64dc262c0307e6054519628c0e74a0551dc0cb1ef000`. Compose-Pin mit vorheriger Sicherung aktualisiert; regulärer Worker wieder gestartet.
+- Separater Lauf mit ZAKB-Advisory-Lock und frischen Anbieterabfragen für alle 21 Fälle: **5 erfolgreich, 16 weiterhin nicht bestätigbar, 0 zurückgestellt**. Anschließend atomare Veröffentlichung aus den frischen Checkpoints, ohne zusätzliche Anbieterabfragen; Ergebnis `partial`, Prozess erfolgreich beendet.
+- Öffentliche API und unabhängiger Inventarabgleich am **10.10.2026, 08:16 Uhr MESZ**: **827/845 Straßen, 14.922 Termine**, vorher 822/845 und 14.822. Damit fünf weitere repräsentative Straßenkalender und 100 zusätzliche Termine. Insgesamt 18 Straßen unbestätigt: 16 aus diesem Schritt sowie die zwei bereits zuvor offenen Fälle außerhalb dieses Schritts.
+- Sämtliche fünf veröffentlichten Kalender wurden mit den archivierten iCalendar-Originalen verglichen: SHA-256 stimmt mit dem Checkpoint überein; geparste Termine stimmen vollständig mit den veröffentlichten Datensätzen überein. Hausnummern und Koordinaten stimmen jeweils mit dem ursprünglichen OSM-Inventarobjekt überein.
+- Die Quelle bleibt korrekt `partial`; OSM wird als `success` angezeigt. Ein reiner Cache-Veröffentlichungslauf zählt keine neuen fehlgeschlagenen Versuche, weshalb dessen `failed_calendars` null ist; die vollständige Restmenge wird aus Inventar minus bestätigten Straßen bestimmt, nicht aus dieser Versuchszahl.
+
+Die Tabelle oben enthält die Vorproben vom 9.10.2026. Am 10.10. liefert Brunnengewännchen 1 noch 25 statt 27 Termine; produktiv wurde in der Kirchgasse die ebenfalls separat bestätigte reale Hausnummer 2 ausgewählt. Aktuelle Originalnachweise:
+
+| Inventaradresse | Termine | iCalendar SHA-256 |
+| --- | ---: | --- |
+| Lampertheim, Ausserhalb Brunnengewännchen 1 | 25 | `a3115bb1a7d9d74ce3a99cb9ce2b0c52b0627b92e745d3206a8da5110e40b889` |
+| Bürstadt, Kirchgasse 2 | 18 | `7a39eb2b75bf9985c16575361f234f4954ceb815f9eac2be648e80595532aa18` |
+| Biblis, Außerhalb 6 | 21 | `4be8e37ca54b7c1d526c4e8daff7f5863694ee437bbfb05c4f8172417e370d3c` |
+| Biblis, Außerhalb (Wattenheim) 3 | 18 | `60fcbb5cce4798c1d47a62514445e33b2238fffe022c63bfa35a1acddc0db0e7` |
+| Biblis, Außerhalb (Nordheim) 10 | 18 | `32c0e78039f264cf87566b0545f44077ca856a4f700ab88193b683f51aa3e0c6` |
+
+Veröffentlichungsmanifest `waste/calendar`: `33dd925bc59f62a6764a1433e81dfcc5c9debeb80b7e52a9140af034e95124c6`.
