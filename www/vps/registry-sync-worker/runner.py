@@ -16,6 +16,8 @@ from adapters import import_cross7, import_lampertheim_events, import_tiles
 from autobahn_inventory import import_autobahn_inventory
 from bahn import import_fasta, import_netex, import_ris_stations, import_siri
 from biblis_events import import_biblis_events
+from boris import import_boris
+from broadband import import_broadband
 from budgets import import_biblis_budget
 from chargers import import_chargers
 from club_events import import_club_events
@@ -26,8 +28,6 @@ from firms import import_firms
 from groundwater import import_groundwater
 from gtfs import import_gtfs
 from hessen import import_hessen
-from broadband import import_broadband
-from boris import import_boris
 from inaturalist import import_inaturalist
 from invekos import import_invekos
 from long_term_events import import_long_term_events
@@ -54,10 +54,13 @@ from social_diagnostics import finish as finish_social_diagnostics
 from verified_christmas_markets import import_christmas_markets
 from verified_club_notice import import_verified_club_notice
 from verified_hcv_campaign import import_hcv_campaign
+from webcam_snapshots import import_webcam_snapshot
+from webcam_snapshots import validate_source as validate_webcam_source
 from zakb import import_zakb
 
 LOG = logging.getLogger(__name__)
 ADAPTERS = {
+    "webcam-snapshot": import_webcam_snapshot,
     "autobahn-inventory": import_autobahn_inventory,
     "db-netex": import_netex,
     "db-siri-fm": import_siri,
@@ -116,6 +119,8 @@ def sources():
             raise ValueError("Invalid adapter/cadence")
         if source.get("enabled") and not source.get("url"):
             raise ValueError("Enabled source has no URL")
+        if source["adapter"] == "webcam-snapshot":
+            validate_webcam_source(source)
     return result
 
 
@@ -174,7 +179,7 @@ async def collect(source, settings):
                 "INSERT INTO collection_attempts(source_id,status,error,error_stage) VALUES (%s,'failed',%s,%s)",
                 (source["id"], acquisition_error(exc),
                  "acquisition" if isinstance(exc, httpx.HTTPError) else
-                 "storage" if isinstance(exc, psycopg.Error) else "processing"),
+                 "storage" if isinstance(exc, (psycopg.Error, OSError)) else "processing"),
             )
             await conn.commit()
             # Do not log a credential-bearing request URL from the exception.
@@ -240,11 +245,12 @@ async def source_loop(source, settings, stop, slots, gtfs_slot):
         failures = failures + 1 if result["status"] == "failed" else 0
         interval = source["interval_seconds"]
         if failures:
-            interval = min(interval, 300) * min(2**min(failures, 4), 12)
+            backoff = min(interval, 300) * min(2**min(failures, 4), 12)
+            interval = max(interval, backoff) if source.get("adapter") == "webcam-snapshot" else backoff
         elif result["status"] == "partial":
             interval = min(interval, max(30, source.get("partial_retry_seconds", 300)))
         # Avoid synchronized provider bursts after simultaneous worker restarts.
-        await sleep_until_stop(stop, interval * random.uniform(0.9, 1.1))
+        await sleep_until_stop(stop, interval * random.uniform(1.0 if source.get("adapter") == "webcam-snapshot" else 0.9, 1.1))
 
 
 async def prediction_loop(settings, stop):

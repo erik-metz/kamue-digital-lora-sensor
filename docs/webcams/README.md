@@ -32,16 +32,16 @@ Bei einer späteren Betreiberanfrage sind konkret zu nennen: Forschungs-/Umweltv
 
 ## Konfigurationsvertrag für Schritt 2
 
-`sources.proposed.json` ist bewusst **kein** Eintrag im bestehenden `registry-sync-worker/sources.json`: Der bisherige Adapter `autobahn-inventory` speichert Metadaten und lädt keine Kamerabilder. Ein externer JPEG-Abruf benötigt einen eigenen Snapshot-Collector. `runtimeIntegrated=false` und `enabled=false` verhindern, dass der Vorschlag als laufender Import ausgegeben wird.
+`sources.proposed.json` dokumentiert unverändert den Vorschlag aus Schritt 1 (`runtimeIntegrated=false`). Seit Schritt 2 sind dieselben vier Quellen im Laufzeitmanifest `www/vps/registry-sync-worker/sources.json` mit dem eigenen Adapter `webcam-snapshot` enthalten; alle bleiben `enabled=false`. Der bestehende Adapter `autobahn-inventory` bleibt für Metadaten zuständig. Umsetzung, Datenvertrag und Betrieb stehen im [Collector-Handbuch](../../www/vps/registry-sync-worker/WEBCAMS.md).
 
 Die stabilen Quellenkennungen sind für Bildpfade und Datenbankreferenzen vorgesehen. `inventoryId` verweist auf den Rechercheeintrag. Quellaktualisierung, eigenes Intervall und bekannte maximale Betreiberrate sind getrennte Felder. `lastProbeAt` bezeichnet nur die letzte technische Prüfung. `captureTime=null` bleibt bestehen, solange kein zuverlässiger Aufnahmetimestamp aus der Quelle vorliegt; HTTP Last-Modified und Abrufzeit nicht automatisch als Aufnahmezeit übernehmen.
 
 Für den Collector sind 15 s Timeout, maximal 5 MB pro Antwort, strikte JPEG-Dekodierung und SHA-256-Deduplizierung vorgesehen. Redirects werden zunächst nicht verfolgt; veränderte Ziele bedürfen erneuter Quellenprüfung. TLS bleibt geprüft. Der spätere Collector muss die Konfiguration validieren und nur aktivierte Quellen verarbeiten. Er benötigt eigene, begrenzte Wiederholungen, Backoff bei Fehlern, Dateischreiben über temporäre Dateien und eine eindeutige Zuordnung zur Datenbank.
 
-Auf Basis dieser abendlichen Stichprobe ergeben sich bei jedem Abruf eines neuen Bildes etwa **317 MB pro Tag** für die vier Quellen vor Deduplizierung. Das ist eine Größenordnung, keine gemessene Tagesmenge oder zugesagte Obergrenze: Tagesbilder können erheblich größer sein. Speicherfrist und hartes globales Speicherlimit werden in Schritt 2 explizit konfiguriert und aus realen Größen nachjustiert.
+Auf Basis dieser abendlichen Stichprobe ergeben sich bei jedem Abruf eines neuen Bildes etwa **317 MB pro Tag** für die vier Quellen vor Deduplizierung. Das ist eine Größenordnung, keine gemessene Tagesmenge oder zugesagte Obergrenze: Tagesbilder können erheblich größer sein. Schritt 2 setzt ein konfigurierbares globales Limit von zunächst 5 GB. Aufbewahrungsfristen und automatische Bereinigung folgen in Schritt 3; reale Bildgrößen dienen anschließend zur Nachjustierung.
 
 ## Übergabe
 
 Schritt 1 ist abgeschlossen: vier konkrete Quellen, geprüfte Direktbilder, begründete Auswahl und Intervalle sowie getrennte offene Nutzungs-/Geometrie-/Qualitätsfragen liegen vor. Die Quellen sind fachliche Kandidaten, keine freigegebenen produktiven Imports.
 
-Schritt 2 implementiert Snapshot-Collector, Dateispeicherung und Datenbank-Metadaten. Verifikation zunächst mit lokalen Testbildern: vollständiges Bild, unverändertes Bild, defektes JPEG, Antwortlimit, Timeout und fehlgeschlagenes Dateischreiben. Produktiven Dauerabruf erst gezielt pro Quelle aktivieren. In diesem Schritt wurden keine Laufzeitdateien oder VPS-Container verändert.
+Schritt 2 implementiert Snapshot-Collector, Dateispeicherung und Datenbank-Metadaten. Verifikation zunächst mit lokalen Testbildern: vollständiges Bild, unverändertes Bild, defektes JPEG, Antwortlimit, Timeout und fehlgeschlagenes Dateischreiben. Produktiven Dauerabruf erst gezielt pro Quelle aktivieren. Schritt 2 ist implementiert und mit synthetischen Bildern geprüft; produktiver Dauerabruf bleibt deaktiviert.
