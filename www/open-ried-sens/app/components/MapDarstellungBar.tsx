@@ -29,8 +29,8 @@ interface MapDarstellungBarProps {
   sensorCounts: Record<Category, number>;
   mode: MapMode;
   onModeChange: (mode: MapMode) => void;
-  satelliteMode?: "none" | "rgb" | "ndvi";
-  onSatelliteModeChange?: (mode: "none" | "rgb" | "ndvi") => void;
+  satelliteMode?: "none" | "rgb" | "ndvi" | "ecostress" | "firms";
+  onSatelliteModeChange?: (mode: "none" | "rgb" | "ndvi" | "ecostress" | "firms") => void;
   layers: Record<MapLayerId, boolean>;
   onLayerToggle: (id: MapLayerId, enabled: boolean) => void;
   onSetLayers: (layers: Record<MapLayerId, boolean>) => void;
@@ -158,9 +158,9 @@ export default function MapDarstellungBar({
               <span>Satellit:</span>
             </span>
             <div
-              className="inline-flex rounded-xl bg-slate-950/70 p-1 border border-slate-800 shadow-inner"
+              className="inline-flex flex-wrap rounded-xl bg-slate-950/70 p-1 border border-slate-800 shadow-inner"
               role="group"
-              aria-label="Copernicus Sentinel-2 Satellitenebene"
+              aria-label="Umweltdaten aus Satellitenaufnahmen"
             >
               <button
                 type="button"
@@ -203,6 +203,13 @@ export default function MapDarstellungBar({
                 <span>🌱</span>
                 <span>NDVI</span>
               </button>
+              {([['ecostress', 'Oberflächentemperatur'], ['firms', 'Thermische Auffälligkeiten']] as const).map(([value, label]) => (
+                <button key={value} type="button" aria-pressed={satelliteMode === value}
+                  onClick={() => onSatelliteModeChange?.(value)}
+                  className={`rounded-lg px-2.5 py-1 text-xs ${satelliteMode === value ? 'bg-slate-800 text-emerald-300' : 'text-slate-400 hover:text-slate-200'}`}>
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 

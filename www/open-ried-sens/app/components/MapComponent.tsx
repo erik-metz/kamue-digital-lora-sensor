@@ -7,6 +7,7 @@ import MapContextLayer from "./MapContextLayer";
 import MapSupplementaryLayer from "./MapSupplementaryLayer";
 import MapRestAreaLayer from "./MapRestAreaLayer";
 import MapFuelLayer from "./MapFuelLayer";
+import MapEarthObservationLayer from "./MapEarthObservationLayer";
 import MapSatelliteLayer from "./MapSatelliteLayer";
 import { metricLabel } from "@/lib/telemetryData";
 import "leaflet/dist/leaflet.css";
@@ -45,7 +46,7 @@ interface MapProps {
   onLayerToggle?: (layerId: MapLayerId, enabled: boolean) => void;
   onOpenLayersDrawer?: () => void;
   onActiveClosuresCountChange?: (count: number) => void;
-  satelliteMode?: "none" | "rgb" | "ndvi";
+  satelliteMode?: "none" | "rgb" | "ndvi" | "ecostress" | "firms";
   satelliteSceneId?: string;
 }
 interface LayerPublication {
@@ -601,18 +602,6 @@ export default function MapComponent(props: MapProps) {
       coverage.on("tileerror", () => setLoraTilesFailed(true));
     }
 
-    // Copernicus Sentinel-2 Satellite Raster Tile Layer (RGB or NDVI)
-    if (props.satelliteMode && props.satelliteMode !== "none") {
-      const scene = props.satelliteSceneId ? encodeURIComponent(props.satelliteSceneId) : "latest";
-      L.tileLayer(`/api/satellite/tiles/${scene}/{z}/{x}/{y}.png?layer=${props.satelliteMode}`, {
-        maxZoom: 19,
-        minZoom: 8,
-        opacity: props.satelliteMode === "ndvi" ? 0.82 : 1.0,
-        className: props.satelliteMode === "ndvi" ? "satellite-ndvi-tile-layer" : "satellite-rgb-tile-layer",
-        attribution: '© <a href="https://dataspace.copernicus.eu" target="_blank" rel="noopener">Copernicus Sentinel-2</a> · ESA / EU',
-      }).addTo(group);
-    }
-
     callbacks.current.onActiveClosuresCountChange?.(closures);
     return () => { requests.forEach(controller => controller.abort()); group.remove(); };
   }, [ready, clusteringReady, publication, layers, zoom, props.satelliteMode, props.satelliteSceneId, trafficPeriod, trafficCategory]);
@@ -677,6 +666,7 @@ export default function MapComponent(props: MapProps) {
         {layers.floodrisk ? <MapContextLayer map={mapInstance} id="floodrisk" /> : null}
         {layers.census ? <MapContextLayer map={mapInstance} id="census" /> : null}
       </> : null}
+      {ready && mapInstance && props.satelliteMode && props.satelliteMode !== "none" ? <MapEarthObservationLayer map={mapInstance} mode={props.satelliteMode} /> : null}
       {ready && layers.fuel && mapInstance ? <MapFuelLayer map={mapInstance} clustered={clusteringReady} onSelectStation={(id, fuel) => { callbacks.current.onSelectFuel?.(id, fuel); }} /> : null}
       {ready && layers.satellites && mapInstance ? <MapSatelliteLayer map={mapInstance} clustered={clusterVehicles} /> : null}
       <details><summary className="cursor-pointer font-semibold">Symbole & Hinweise</summary>

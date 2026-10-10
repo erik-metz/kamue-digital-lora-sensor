@@ -40,3 +40,17 @@ test("an empty regional view is ready when the backend has valid orbital data", 
   assert.equal(empty.positions.length, 0);
   assert.equal(decodeSatellites({ ...body([]), status: "unavailable", catalog_count: 15000 }, now).available, false);
 });
+
+const observationContext = { exports: {}, Date, Number };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/currentObservation.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, observationContext);
+test("earth observations expire at UTC midnight and reject missing, invalid and future acquisitions", () => {
+  const { isCurrentObservation } = observationContext.exports;
+  const current = Date.parse("2026-10-10T12:00:00Z");
+  assert.equal(isCurrentObservation("2026-10-10", current), true);
+  assert.equal(isCurrentObservation("2026-10-10T11:00:00Z", current), true);
+  for (const stamp of [undefined, "invalid", "2026-10-09T23:59:59Z", "2026-10-10T13:00:00Z"])
+    assert.equal(isCurrentObservation(stamp, current), false);
+  assert.equal(isCurrentObservation("2026-10-10T23:59:59Z", Date.parse("2026-10-11T00:00:00Z")), false);
+});
