@@ -3,10 +3,15 @@
 import math
 import re
 from datetime import UTC, datetime
+from urllib.parse import urlsplit
 
 from publications import acquire, publish
 
-KINDS = {"electric_charging_station": "charging", "parking_lorry": "rest-areas"}
+KINDS = {
+    "electric_charging_station": "charging",
+    "parking_lorry": "rest-areas",
+    "webcam": "webcams",
+}
 
 
 def number(value):
@@ -83,6 +88,36 @@ def capacity(lines, vehicle):
     return next(iter(values), None)
 
 
+def media_reference(value):
+    """Store public HTTP references; suffixes are hints, never media verification."""
+    if value is None or value == "":
+        return None
+    if not isinstance(value, str):
+        raise TypeError("Invalid webcam reference")
+    parts = urlsplit(value)
+    if (
+        parts.scheme not in {"https", "http"}
+        or not parts.hostname
+        or parts.username
+        or parts.password
+    ):
+        return None
+    return value
+
+
+def media_hint(url):
+    if not url:
+        return "unknown"
+    path = urlsplit(url).path.lower()
+    if path.endswith((".jpg", ".jpeg", ".png", ".webp")):
+        return "snapshot_candidate"
+    if path.endswith((".m3u8", ".mpd", ".mp4")):
+        return "stream_or_video_candidate"
+    if path.endswith((".html", ".htm")):
+        return "player_page_candidate"
+    return "unknown"
+
+
 def parse_inventory(body, source):
     kind, road = source["kind"], source["road"]
     if kind not in KINDS or road not in {"A67", "A5", "A6"}:
@@ -122,7 +157,7 @@ def parse_inventory(body, source):
             "lat": lat,
             "lng": lon,
             "name": title
-            if kind == "electric_charging_station"
+            if kind in {"electric_charging_station", "webcam"}
             else item.get("subtitle"),
             "direction": parts[1]
             if len(parts) >= 3 and parts[1] != "undefined"
@@ -149,6 +184,32 @@ def parse_inventory(body, source):
                         default=None,
                     ),
                     "reconciliationBasis": "separate_provider_inventory",
+                }
+            )
+        elif kind == "webcam":
+            image_url, link_url = (
+                media_reference(item.get("imageurl")),
+                media_reference(item.get("linkurl")),
+            )
+            record.update(
+                {
+                    "operator": item.get("operator"),
+                    "viewDirection": item.get("subtitle"),
+                    "imageUrl": image_url,
+                    "linkUrl": link_url,
+                    "imageUrlHint": media_hint(image_url),
+                    "linkUrlHint": media_hint(link_url),
+                    "mediaVerified": False,
+                    "captureTime": None,
+                    "updateIntervalSeconds": None,
+                    "archiveStatus": "not_started",
+                    "storagePermission": "not_checked",
+                    "probeStatus": "blocked_or_future"
+                    if record["providerBlocked"] is True
+                    or record["providerFuture"] is True
+                    else "needs_probe"
+                    if image_url or link_url
+                    else "no_media_reference",
                 }
             )
         else:
@@ -180,6 +241,13 @@ async def import_autobahn_inventory(conn, client, source):
             "availabilityBasis": "not_provided",
             "bbox": source["bbox"],
         }
+        if source["kind"] == "webcam":
+            data["discoveryStatus"] = (
+                "candidates_found" if records else "no_regional_cameras"
+            )
+            data["probeRequiredCount"] = sum(
+                r["probeStatus"] == "needs_probe" for r in records
+            )
         async with conn.transaction():
             await publish(
                 conn,

@@ -1315,6 +1315,63 @@
       "max_age_seconds": 259200,
       "http_retries": 2,
       "reason": "Regionales Anbieterinventar mit Rohdaten und Historie; Abrufzeit, keine belegte Anbieteraktualisierung oder Live-Belegung."
+    },
+    {
+      "id": "autobahn-webcam-discovery-a67",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A67/services/webcam",
+      "road": "A67",
+      "kind": "webcam",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Tägliche regionale Webcam-Metadatenprüfung; keine Bild-/Streamabrufe ohne belegte geeignete Quelle."
+    },
+    {
+      "id": "autobahn-webcam-discovery-a5",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A5/services/webcam",
+      "road": "A5",
+      "kind": "webcam",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Tägliche regionale Webcam-Metadatenprüfung; keine Bild-/Streamabrufe ohne belegte geeignete Quelle."
+    },
+    {
+      "id": "autobahn-webcam-discovery-a6",
+      "group": "infrastructure",
+      "adapter": "autobahn-inventory",
+      "enabled": true,
+      "url": "https://verkehr.autobahn.de/o/autobahn/A6/services/webcam",
+      "road": "A6",
+      "kind": "webcam",
+      "bbox": [
+        49.45,
+        8.25,
+        49.9,
+        8.75
+      ],
+      "interval_seconds": 86400,
+      "max_age_seconds": 259200,
+      "http_retries": 2,
+      "reason": "Tägliche regionale Webcam-Metadatenprüfung; keine Bild-/Streamabrufe ohne belegte geeignete Quelle."
     }
   ]
 }

@@ -45,7 +45,11 @@ class InventoryTests(unittest.TestCase):
     def test_standard_manifest_enables_six_independent_daily_scopes(self):
         from runner import ADAPTERS, sources
 
-        scopes = [s for s in sources() if s["adapter"] == "autobahn-inventory"]
+        scopes = [
+            s
+            for s in sources()
+            if s["adapter"] == "autobahn-inventory" and s["kind"] != "webcam"
+        ]
         self.assertEqual(len(scopes), 6)
         self.assertIs(ADAPTERS["autobahn-inventory"], import_autobahn_inventory)
         self.assertEqual(

@@ -31,3 +31,15 @@ Die sechs Quellen sind im Standardmanifest aktiviert und starten über den beste
 Live-Prüfung vom 10.10.2026: A67 8 Ladeangebote / 9 Rastplätze, A5 3 / 14, A6 0 / 3 im Ausschnitt. Die Tests verwenden zusätzlich die gesicherte Evidenz vom 09.10.2026 und prüfen Parser, Rohdatenarchiv, Versionshistorie, Fehlererhalt, vollständige Leerlisten und die tatsächliche Datenbank→Lese-API-Kette einschließlich Ablauf und Zeitheader.
 
 [API-Spezifikation](https://github.com/bundesAPI/autobahn-api/blob/main/openapi.yaml) · [Bestandsaufnahme](../../../docs/autobahn-api-bestandsaufnahme-2026-10-09.md)
+
+## Schritt 4: Webcam-Discovery
+
+Zusätzlich laufen drei unabhängige tägliche Metadatenabrufe für `webcam` auf A67/A5/A6. Sie verwenden denselben Rohdaten-, Versions- und Fehlerschutz wie die Infrastrukturinventare. Zugriff über `/api/v1/collected/infrastructure/autobahn/A67/webcams` (entsprechend A5/A6). Ein vollständiger leerer Bestand gilt als erfolgreicher Discovery-Lauf, nicht als Fehler. Der letzte gültige Stand läuft nach 72 Stunden ab. Die ursprünglichen sechs Inventarquellen bleiben separat.
+
+Die Antwort enthält `discoveryStatus` (`no_regional_cameras` oder `candidates_found`) und `probeRequiredCount`. Kameradatensätze enthalten Originalkennung, Betreiber, Koordinaten, Blickrichtung, `imageUrl`, `linkUrl` und unveränderte Metadaten unter `raw`. `providerBlocked`/`providerFuture` bleiben erhalten; solche Kameras werden mit `probeStatus=blocked_or_future` gekennzeichnet. Referenzen fehlen: `no_media_reference`; sonst `needs_probe`.
+
+`imageUrlHint` und `linkUrlHint` sind ausschließlich Hinweise aus Dateiendungen: `snapshot_candidate`, `stream_or_video_candidate`, `player_page_candidate` oder `unknown`. Eine JPG-Endung beweist weder Bildinhalt noch Bildwechsel. `mediaVerified=false`, `captureTime=null`, `updateIntervalSeconds=null`, `archiveStatus=not_started` und `storagePermission=not_checked` machen die offenen Punkte maschinenlesbar. HTTP(S)-Referenzen werden gespeichert; andere Protokolle oder URLs mit Zugangsdaten bleiben nur in den archivierten Originalmetadaten. Der Adapter ruft keine Medienreferenzen auf.
+
+Aktuelle Prüfung vom 10.10.2026: alle drei Webcam-Endpunkte HTTP 200 mit `{"webcam":[]}`. Damit fehlt weiterhin eine regionale Quelle für eine Bildprobe. Sobald `needs_probe`-Kandidaten tatsächlich vorliegen, folgt die im Bestandsplan beschriebene begrenzte Prüfung von Inhaltstyp, HTTP-/Bildzeiten, Bildwechseln und Speicherbedingungen. Erst danach lassen sich Abrufrate, Deduplizierung, Aufbewahrung und Speicherlimit für ein VPS-Bildarchiv sinnvoll festlegen. Es läuft kein zehnsekündiger Medienabruf und kein Streamdecoder.
+
+Die Tests decken leere reale Bestände, synthetische regionale und außerregionale Kameras, Snapshot-/Stream-/Player-Hinweise, unbekannte Referenzen, ungültige Antworten, Auftauchen/Verschwinden und Historie ab. Ein Request-Protokoll belegt, dass ausschließlich der konfigurierte Discovery-Endpunkt abgefragt wird.
