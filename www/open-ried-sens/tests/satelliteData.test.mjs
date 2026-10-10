@@ -54,3 +54,31 @@ test("earth observations expire at UTC midnight and reject missing, invalid and 
     assert.equal(isCurrentObservation(stamp, current), false);
   assert.equal(isCurrentObservation("2026-10-10T23:59:59Z", Date.parse("2026-10-11T00:00:00Z")), false);
 });
+
+const earthContext = { exports: {}, Date, Number };
+vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/earthObservation.ts", import.meta.url), "utf8"), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText, earthContext);
+const { latestRasterScenes, inFirmsWindow } = earthContext.exports;
+const earthNow = Date.parse("2026-10-10T12:00:00Z");
+test("RGB and NDVI select available archived rasters across midnight, excluding pending and future scenes", () => {
+  const raster = { method: "sentinel-c1-scl20-v1" };
+  const scenes = [{ id: "pending", date: "2026-10-10" }, { id: "available", date: "2026-10-05", raster },
+    { id: "future", date: "2026-10-11", raster }, { id: "legacy", date: "2026-10-09", raster: { method: "heuristic" } }];
+  for (const mode of ["rgb", "ndvi"]) assert.equal(latestRasterScenes(scenes, mode, earthNow)[0].id, "available");
+});
+test("temperature skips fully masked scenes and includes matching tiles of the last usable acquisition", () => {
+  const raster = valid_pixels => ({ method: "ecostress-v003-clear-land70-v1", stats: { valid_pixels } });
+  const scenes = [{ id: "cloudy", acquired_at: "2026-10-09T12:00:00Z", raster: raster(0) },
+    { id: "a", acquired_at: "2026-10-08T12:00:00Z", raster: raster(10) },
+    { id: "b", acquired_at: "2026-10-08T12:00:00Z", raster: raster(20) },
+    { id: "old", acquired_at: "2026-10-07T12:00:00Z", raster: raster(30) }];
+  assert.equal(latestRasterScenes(scenes, "ecostress", earthNow).map(s => s.id).join(","), "a,b");
+  assert.equal(latestRasterScenes([scenes[0]], "ecostress", earthNow).length, 0);
+});
+test("FIRMS includes three UTC days and excludes future and expired detections", () => {
+  for (const stamp of ["2026-10-08T00:00:00Z", "2026-10-09T23:00:00Z", "2026-10-10T11:00:00Z"])
+    assert.equal(inFirmsWindow(stamp, earthNow), true);
+  for (const stamp of ["2026-10-07T23:59:59Z", "2026-10-10T13:00:00Z", "invalid"])
+    assert.equal(inFirmsWindow(stamp, earthNow), false);
+});

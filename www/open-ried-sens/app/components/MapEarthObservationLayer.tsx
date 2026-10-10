@@ -2,24 +2,34 @@
 
 import { useEffect } from "react";
 import L from "leaflet";
-import { isCurrentObservation } from "@/lib/currentObservation";
+import { acquisitionTime, inFirmsWindow, latestRasterScenes, type EarthScene, type EarthObservationMode } from "@/lib/earthObservation";
 
-type Mode = "rgb" | "ndvi" | "ecostress" | "firms";
-type Scene = { id: string; date?: string; acquired_at?: string; raster?: { method: string; stats?: { valid_pixels: number } } | null };
 type Detection = { latitude: number; longitude: number; acquired_at: string; confidence: "l" | "n" | "h"; frp_mw: number };
 const colors = { l: "#facc15", n: "#f97316", h: "#dc2626" };
 
-export default function MapEarthObservationLayer({ map, mode }: { map: L.Map; mode: Mode }) {
+export default function MapEarthObservationLayer({ map, mode }: { map: L.Map; mode: EarthObservationMode }) {
   useEffect(() => {
     const group = L.layerGroup().addTo(map);
     const legend = new L.Control({ position: "bottomleft" });
+    let status = "Satellitendaten werden geladen …";
+    let legendElement: HTMLDivElement | undefined;
+    const setStatus = (message: string) => {
+      status = message;
+      if (legendElement) legendElement.textContent = message;
+    };
+    const description = mode === "ecostress" ? "Oberflächentemperatur: −10 °C dunkelblau · 20 °C gelb · 60 °C dunkelrot"
+      : mode === "firms" ? "Thermische Auffälligkeiten · keine bestätigten Brände"
+      : mode === "ndvi" ? "Vegetationskontrast (NDVI): −1 niedrig · +1 hoch" : "Echtfarben · Copernicus Sentinel-2";
     legend.onAdd = () => {
       const element = L.DomUtil.create("div", "rounded bg-slate-950 p-2 text-xs text-white");
-      element.textContent = mode === "ecostress" ? "Oberflächentemperatur: −10 °C dunkelblau · 20 °C gelb · 60 °C dunkelrot"
-        : mode === "firms" ? "Thermische Auffälligkeiten: gelb niedrige · orange nominale · rot hohe Konfidenz. Keine bestätigten Brände."
-        : mode === "ndvi" ? "Vegetationskontrast (NDVI): −1 niedrig · +1 hoch" : "Echtfarben · Copernicus Sentinel-2";
+      element.setAttribute("role", "status");
+      element.style.maxWidth = "min(320px, 65vw)";
+      L.DomEvent.disableClickPropagation(element);
+      legendElement = element;
+      element.textContent = status;
       return element;
     };
+    legend.addTo(map);
     let disposed = false;
     let controller: AbortController | undefined;
     async function refresh() {
@@ -27,45 +37,52 @@ export default function MapEarthObservationLayer({ map, mode }: { map: L.Map; mo
       const request = new AbortController();
       controller = request;
       group.clearLayers();
-      legend.remove();
+      setStatus(`${description} · Daten werden geladen …`);
       try {
-        const endpoint = mode === "firms" ? "/api/firms?days=1" : mode === "ecostress" ? "/api/ecostress/scenes" : "/api/satellite/scenes";
+        const endpoint = mode === "firms" ? "/api/firms?days=3" : mode === "ecostress" ? "/api/ecostress/scenes" : "/api/satellite/scenes";
         const response = await fetch(endpoint, { signal: request.signal, cache: "no-store" });
-        if (!response.ok) return;
+        if (!response.ok) throw new Error("API unavailable");
         const data = await response.json();
         if (disposed || request.signal.aborted) return;
         const now = Date.now();
         if (mode === "firms") {
-          if (data.status !== "success" || !Array.isArray(data.detections)) return;
+          if (data.status !== "success" || !Array.isArray(data.detections)) {
+            setStatus(`${description} · Daten derzeit nicht verfügbar.`);
+            return;
+          }
           const fetched = Date.parse(data.last_successful_fetch_at ?? "");
-          if (!Number.isFinite(fetched) || fetched > now || now - fetched > 2 * 60 * 60 * 1000) return;
+          if (!Number.isFinite(fetched) || fetched > now || now - fetched > 2 * 60 * 60 * 1000) {
+            setStatus(`${description} · Abruf veraltet oder unbekannt.`);
+            return;
+          }
           for (const point of data.detections as Detection[]) {
-            if (!isCurrentObservation(point.acquired_at, now) || !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude) || !colors[point.confidence]) continue;
+            if (!inFirmsWindow(point.acquired_at, now) || !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude) || !colors[point.confidence]) continue;
             const label = document.createElement("span");
             label.textContent = `Thermische Auffälligkeit · FRP ${point.frp_mw} MW · keine bestätigte Brandmeldung`;
             L.circleMarker([point.latitude, point.longitude], { radius: 6, color: colors[point.confidence], fillOpacity: 0.8 }).bindPopup(label).addTo(group);
           }
+          setStatus(`${description} · Letzte 3 UTC-Kalendertage · ${group.getLayers().length} Meldungen · Abruf: ${new Date(fetched).toLocaleString("de-DE", { timeZone: "Europe/Berlin" })}`);
         } else {
-          if (!Array.isArray(data.scenes)) return;
-          // Select the newest current acquisition first. Never fall back to an older raster.
-          const scenes = (data.scenes as Scene[]).filter(scene => isCurrentObservation(scene.acquired_at ?? scene.date, now))
-            .sort((a, b) => Date.parse(b.acquired_at ?? b.date ?? "") - Date.parse(a.acquired_at ?? a.date ?? ""));
-          const latest = scenes[0];
-          if (!latest) return;
-          const acquisition = latest.acquired_at ?? latest.date;
-          for (const scene of scenes.filter(item => (item.acquired_at ?? item.date) === acquisition)) {
-            const valid = mode === "ecostress" ? scene.raster?.method === "ecostress-v003-clear-land70-v1" && (scene.raster.stats?.valid_pixels ?? 0) > 0 : scene.raster?.method === "sentinel-c1-scl20-v1";
-            if (!valid) continue;
+          if (!Array.isArray(data.scenes)) throw new Error("Invalid scene response");
+          const scenes = latestRasterScenes(data.scenes as EarthScene[], mode, now);
+          if (!scenes.length) {
+            setStatus(`${description} · Kein auswertbares archiviertes Raster verfügbar.`);
+            return;
+          }
+          const acquisition = acquisitionTime(scenes[0]);
+          setStatus(`${description} · Letzte auswertbare Aufnahme: ${new Date(acquisition).toLocaleDateString("de-DE", { timeZone: "Europe/Berlin" })} · keine Liveaufnahme`);
+          for (const scene of scenes) {
             const id = encodeURIComponent(scene.id);
             const url = mode === "ecostress" ? `/api/ecostress/tiles/${id}/{z}/{x}/{y}` : `/api/satellite/tiles/${id}/{z}/{x}/{y}.png?layer=${mode}`;
-            const tiles = L.tileLayer(url, { maxZoom: 19, opacity: mode === "rgb" ? 1 : 0.82, attribution: mode === "ecostress" ? "NASA ECOSTRESS" : "ESA / Copernicus Sentinel-2" });
-            tiles.on("tileerror", () => { group.removeLayer(tiles); if (!group.getLayers().length) legend.remove(); });
+            const tiles = L.tileLayer(url, { maxZoom: 19, opacity: mode === "rgb" ? 1 : 0.82, bounds: [[49.54, 8.33], [49.75, 8.58]], attribution: mode === "ecostress" ? "NASA ECOSTRESS" : "ESA / Copernicus Sentinel-2" });
+            tiles.on("tileerror", () => {
+              if (!disposed && !request.signal.aborted) setStatus(`${description} · Aufnahme: ${acquisition.slice(0, 10)} · Einzelne Bildkacheln konnten nicht geladen werden.`);
+            });
             tiles.addTo(group);
           }
         }
-        if (group.getLayers().length) legend.addTo(map);
       } catch {
-        // No current data means no overlay, including after a failed refresh.
+        if (!disposed && !request.signal.aborted) setStatus(`${description} · Daten konnten nicht geladen werden.`);
       }
     }
     void refresh();
