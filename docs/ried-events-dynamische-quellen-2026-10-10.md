@@ -63,3 +63,33 @@ Triathlonangebote erkannt, zuvor acht, vier und drei. Der neue RSS-Import erkenn
 einen zusätzlichen künftigen Nikolausmarkt; die zwei bereits separat importierten
 Gemeindetreffen werden nicht erneut aufgenommen. Der Produktionsstand wird nach
 Veröffentlichung ergänzt.
+
+## Veröffentlichung und Produktionsnachweis
+
+Implementierungscommit: `cdc760b3bee4728fb65d43bace3870c458165943`, nach `main`
+gepusht. Der [zugehörige CI-Lauf](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/38030443689)
+ist erfolgreich; alle 17 vorgesehenen Container-Builds einschließlich ihrer
+Veröffentlichung auf GHCR sind erfolgreich.
+
+Auf dem VPS wurde ausschließlich der Registry-Worker aktualisiert. Vor Aktivierung
+wurden die Inhalte aller 16 geänderten Worker-Module und sämtliche Social-Quellkonfigurationen
+mit dem getesteten Stand verglichen; vorhandene Quellen und die übrigen
+Quellkonfigurationen bleiben erhalten. Die vorherige Compose-Konfiguration liegt
+unter `/root/docker-compose.invekos.yml.before-dynamic-social-20261010`.
+Aktives Image: `sha256:2334074f0f1bd3a7c48ee6d9d7d3c4bd3ce9416e7ed9cf2f01bb584dd3129d1e`.
+
+Abschließende öffentliche Prüfung am 10.10.2026: alle 27 aktiven Social-Quellen
+haben Status `success` und eine Annahmezahl. Der Worker läuft ohne Neustarts.
+Die Veranstaltungs-API liefert 347 eindeutige IDs, ausschließlich aus Lampertheim
+(179), Biblis (73), Bürstadt (57) und Groß-Rohrheim (38). Die Angebots-API liefert
+23 regelmäßige Angebote: zehn Tanzangebote, sieben Gymnastikzeiten, vier
+Triathlonangebote und je einen Lauftreff in Bürstadt und Groß-Rohrheim.
+Der Nikolausmarkt am 05.12.2026 wurde durch den neuen Gemeindefeed zusätzlich
+veröffentlicht. Die SGH-Diagnose bestätigt elf angenommene Einträge aus neun
+HTTP-Abrufen. Die Zahlen sind eine Momentaufnahme, keine Vollständigkeitsgarantie.
+
+Der gezielte Gesamtlauf übersprang den gleichzeitig laufenden Lampertheimer Import
+mit `already_running` und meldete den bewusst deaktivierten Platzhalter als
+`not_configured`; dies wurde nicht als erfolgreicher Gesamtlauf gewertet. Der
+abschließende Nachweis oben stammt aus den danach abgeschlossenen Einzelverarbeitungen
+aller 27 aktiven Quellen. Die eigene lokale Testdatenbank wurde entfernt.
