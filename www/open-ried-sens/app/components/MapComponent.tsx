@@ -5,6 +5,7 @@ import { corridorLabel, trafficFeatureVisible, type TrafficPeriod, type TrafficC
 import { updateMarkerDialogs } from "@/lib/mapDialogs";
 import MapContextLayer from "./MapContextLayer";
 import MapSupplementaryLayer from "./MapSupplementaryLayer";
+import MapRestAreaLayer from "./MapRestAreaLayer";
 import MapFuelLayer from "./MapFuelLayer";
 import MapSatelliteLayer from "./MapSatelliteLayer";
 import { metricLabel } from "@/lib/telemetryData";
@@ -667,6 +668,7 @@ export default function MapComponent(props: MapProps) {
     <div className="space-y-2 text-xs text-slate-400" aria-label="Kartenlegende und Hinweise">
       {props.legend}
       {ready && mapInstance ? <>
+        {props.categories.includes("parking") ? <MapRestAreaLayer map={mapInstance} nodes={props.nodes} /> : null}
         {layers.nature ? <MapSupplementaryLayer map={mapInstance} id="protected" /> : null}
         {layers.monitoring ? <MapSupplementaryLayer map={mapInstance} id="monitoring" /> : null}
         {layers.warnings ? <MapSupplementaryLayer map={mapInstance} id="warnings" /> : null}

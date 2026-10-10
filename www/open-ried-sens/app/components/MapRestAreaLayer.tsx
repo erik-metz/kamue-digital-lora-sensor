@@ -1,0 +1,52 @@
+"use client";
+import L from "leaflet";
+import { useEffect, useState } from "react";
+import { restAreaFresh, restAreaRows, type AutobahnRestArea } from "@/lib/autobahnRestAreas";
+import type { SensorNode } from "@/lib/mapData";
+import { detailCard } from "@/lib/mapPresentation";
+
+export default function MapRestAreaLayer({ map, nodes }: { map: L.Map; nodes: SensorNode[] }) {
+  const [snapshot, setSnapshot] = useState<{ areas: AutobahnRestArea[]; unavailableRoads: string[] } | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function load() {
+      try {
+        const response = await fetch("/api/autobahn-rest-areas", { signal: controller.signal, cache: "no-store" });
+        if (!response.ok) throw new Error("Unavailable");
+        const data = await response.json();
+        if (!Array.isArray(data.areas) || !Array.isArray(data.unavailableRoads)) throw new Error("Invalid inventory");
+        if (!controller.signal.aborted) { setSnapshot(data); setFailed(false); }
+      } catch { if (!controller.signal.aborted) { setSnapshot(null); setFailed(true); } }
+      if (!controller.signal.aborted) timer = setTimeout(load, 300_000);
+    }
+    void load();
+    const clock = setInterval(() => setNow(Date.now()), 30_000);
+    return () => { controller.abort(); clearTimeout(timer); clearInterval(clock); };
+  }, []);
+  useEffect(() => {
+    const group = L.layerGroup().addTo(map);
+    for (const area of snapshot?.areas ?? []) {
+      if (!restAreaFresh(area, now)) continue;
+      const icon = document.createElement("span");
+      icon.textContent = "P";
+      icon.style.cssText = "display:block;background:#60a5fa;color:#0f172a;border:2px solid white;border-radius:4px;text-align:center;font-weight:bold;line-height:22px";
+      L.marker([area.lat, area.lng], { title: `Autobahn-Inventar · ${area.name}`, alt: `Autobahn-Inventar · ${area.name}`, keyboard: true, icon: L.divIcon({ html:icon,className:"",iconSize:[26,26],iconAnchor:[13,42] }) })
+        .bindPopup(detailCard(area.name, `${area.road} · Rastplatzinventar und Belegung`, restAreaRows(area,nodes,now)), { maxWidth:360,maxHeight:320 }).addTo(group);
+    }
+    const attribution = '<a href="https://verkehr.autobahn.de/">Autobahn GmbH · Rastplatzinventar</a>';
+    map.attributionControl?.addAttribution(attribution);
+    return () => { group.remove(); map.attributionControl?.removeAttribution(attribution); };
+  }, [map, nodes, snapshot, now]);
+  const areas = snapshot?.areas.filter(a => restAreaFresh(a,now)) ?? [];
+  return <details className="rounded border border-slate-700 p-2">
+    <summary>Autobahn-Rastplätze · {areas.length} Inventareinträge</summary>
+    <p>Blaues P: Inventar. LKW-Belegung aus rast-monitor nur bei eindeutiger Kennung; spätestens nach 30 Minuten als veraltet behandelt.</p>
+    {failed ? <p role="status">Rastplatzinventar derzeit nicht verfügbar.</p> : null}
+    {snapshot?.unavailableRoads.length ? <p role="status">Inventar fehlt: {snapshot.unavailableRoads.join(", ")}</p> : null}
+    {snapshot && !areas.length && !failed ? <p>Keine aktuellen Inventareinträge verfügbar.</p> : null}
+    <ul>{areas.map(area => <li key={area.id} className="mt-2"><button className="underline" onClick={() => map.setView([area.lat,area.lng],16)}>{area.road} · {area.name}</button><ul>{restAreaRows(area,nodes,now).map((row,i) => <li key={i}>{row}</li>)}</ul></li>)}</ul>
+  </details>;
+}
