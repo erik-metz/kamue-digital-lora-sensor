@@ -1,0 +1,410 @@
+[
+  {
+    "road": "A67",
+    "regional_count": 9,
+    "matches": [
+      {
+        "id": "DE-HE-670009",
+        "name": "Lorsch W",
+        "inventory": [
+          "PKW Stellplätze: 26",
+          "LKW Stellplätze: 32"
+        ],
+        "matches": 1,
+        "total": 42,
+        "official": 32,
+        "occupancy_pct": 140,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670011",
+        "name": "Wildbahn",
+        "inventory": [
+          "PKW Stellplätze: 39",
+          "LKW Stellplätze: 22"
+        ],
+        "matches": 1,
+        "total": 37,
+        "official": 28,
+        "occupancy_pct": 50,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670010",
+        "name": "Lorsch O",
+        "inventory": [
+          "PKW Stellplätze: 88",
+          "LKW Stellplätze: 51"
+        ],
+        "matches": 1,
+        "total": 77,
+        "official": 51,
+        "occupancy_pct": 110,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670008",
+        "name": "Forsthaus",
+        "inventory": [
+          "PKW Stellplätze: 26",
+          "LKW Stellplätze: 6"
+        ],
+        "matches": 1,
+        "total": 9,
+        "official": 6,
+        "occupancy_pct": 100,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670007",
+        "name": "Jägersburger Wald",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 12"
+        ],
+        "matches": 1,
+        "total": 12,
+        "official": 12,
+        "occupancy_pct": 75,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670006",
+        "name": "Pfungstadt O",
+        "inventory": [
+          "PKW Stellplätze: 39",
+          "LKW Stellplätze: 28"
+        ],
+        "matches": 1,
+        "total": 59,
+        "official": 28,
+        "occupancy_pct": 115,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670005",
+        "name": "Pfungstadt W",
+        "inventory": [
+          "PKW Stellplätze: 38",
+          "LKW Stellplätze: 24"
+        ],
+        "matches": 1,
+        "total": 44,
+        "official": 28,
+        "occupancy_pct": 160,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670003",
+        "name": "Büttelborn W",
+        "inventory": [
+          "PKW Stellplätze: 60",
+          "LKW Stellplätze: 24"
+        ],
+        "matches": 1,
+        "total": 49,
+        "official": 38,
+        "occupancy_pct": 130,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-670004",
+        "name": "Büttelborn O",
+        "inventory": [
+          "PKW Stellplätze: 45",
+          "LKW Stellplätze: 25"
+        ],
+        "matches": 1,
+        "total": 53,
+        "official": 36,
+        "occupancy_pct": 90,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      }
+    ]
+  },
+  {
+    "road": "A5",
+    "regional_count": 14,
+    "matches": [
+      {
+        "id": "DE-BW-005015",
+        "name": "RA A5 km 569 Ri. Weil am Rhein",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 7"
+        ],
+        "matches": 1,
+        "total": 10,
+        "official": 10,
+        "occupancy_pct": 0,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-BW-005515",
+        "name": "RA A5 km 569,4 Ri. Hattenbacher Dreieck",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 9"
+        ],
+        "matches": 1,
+        "total": 9,
+        "official": 9,
+        "occupancy_pct": 35,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-BW-005010",
+        "name": "Fliegwiese",
+        "inventory": [
+          "PKW Stellplätze: 18",
+          "LKW Stellplätze: 45"
+        ],
+        "matches": 1,
+        "total": 68,
+        "official": 53,
+        "occupancy_pct": 55,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-BW-005510",
+        "name": "Wachenburg",
+        "inventory": [
+          "PKW Stellplätze: 29",
+          "LKW Stellplätze: 47"
+        ],
+        "matches": 1,
+        "total": 72,
+        "official": 58,
+        "occupancy_pct": 55,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-BW-005005",
+        "name": "RA A5 km 555,8 Ri. Weil am Rhein",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 8"
+        ],
+        "matches": 1,
+        "total": 10,
+        "official": 10,
+        "occupancy_pct": 0,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500038",
+        "name": "Fuchsbuckel",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 17"
+        ],
+        "matches": 1,
+        "total": 18,
+        "official": 17,
+        "occupancy_pct": 20,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-BW-005505",
+        "name": "RA A5 km 553 Ri. Hattenbacher Dreieck",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 8"
+        ],
+        "matches": 1,
+        "total": 10,
+        "official": 10,
+        "occupancy_pct": 0,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500037",
+        "name": "Kälberpfad",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 18"
+        ],
+        "matches": 1,
+        "total": 18,
+        "official": 18,
+        "occupancy_pct": 20,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500035",
+        "name": "Bergstraße O",
+        "inventory": [
+          "PKW Stellplätze: 88",
+          "LKW Stellplätze: 45"
+        ],
+        "matches": 1,
+        "total": 47,
+        "official": 35,
+        "occupancy_pct": 105,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500034",
+        "name": "Scheidweg",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 12"
+        ],
+        "matches": 1,
+        "total": 12,
+        "official": 12,
+        "occupancy_pct": 25,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500033",
+        "name": "Nachtweide",
+        "inventory": [
+          "PKW Stellplätze: 40",
+          "LKW Stellplätze: 6"
+        ],
+        "matches": 1,
+        "total": 18,
+        "official": 18,
+        "occupancy_pct": 25,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500032",
+        "name": "Alsbach W",
+        "inventory": [
+          "PKW Stellplätze: 56",
+          "LKW Stellplätze: 24"
+        ],
+        "matches": 1,
+        "total": 45,
+        "official": 34,
+        "occupancy_pct": 90,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500031",
+        "name": "Erlensee",
+        "inventory": [
+          "PKW Stellplätze: 12",
+          "LKW Stellplätze: 11"
+        ],
+        "matches": 1,
+        "total": 14,
+        "official": 14,
+        "occupancy_pct": 0,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-500030",
+        "name": "Rolandshöhe",
+        "inventory": [
+          "PKW Stellplätze: 25",
+          "LKW Stellplätze: 11"
+        ],
+        "matches": 1,
+        "total": 15,
+        "official": 11,
+        "occupancy_pct": 55,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      }
+    ]
+  },
+  {
+    "road": "A6",
+    "regional_count": 3,
+    "matches": [
+      {
+        "id": "DE-RP-000055",
+        "name": "Dirmsteiner Pfad",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 3"
+        ],
+        "matches": 1,
+        "total": 0,
+        "official": 0,
+        "occupancy_pct": null,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-HE-600001",
+        "name": "Rennschlag",
+        "inventory": [
+          "PKW Stellplätze: 0",
+          "LKW Stellplätze: 19"
+        ],
+        "matches": 1,
+        "total": 18,
+        "official": 18,
+        "occupancy_pct": 40,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      },
+      {
+        "id": "DE-BW-006005",
+        "name": "Linsenbühl",
+        "inventory": [
+          "PKW Stellplätze: 37",
+          "LKW Stellplätze: 27"
+        ],
+        "matches": 1,
+        "total": 38,
+        "official": 27,
+        "occupancy_pct": 115,
+        "vacant_spaces": null,
+        "fetched_at": "2026-10-10T18:15:02.511Z",
+        "geometry_consistent": true
+      }
+    ]
+  }
+]

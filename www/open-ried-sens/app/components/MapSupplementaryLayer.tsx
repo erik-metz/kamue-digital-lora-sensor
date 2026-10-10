@@ -5,7 +5,7 @@ import type { FeatureCollection, GeoJsonObject } from "geojson";
 import { SUPPLEMENTARY_SOURCES, retainedWarning, type SupplementaryId } from "@/lib/supplementaryLayers";
 import { decodeSupplementarySnapshot, mergedChargers, supplementaryColor, supplementaryRows, supplementaryTitle, warningsFresh, type SupplementarySnapshot } from "@/lib/supplementaryPresentation";
 import { autobahnChargerCollection, autobahnChargerRows, freshAutobahnOffers, type AutobahnChargerSnapshot } from "@/lib/autobahnChargers";
-import { detailCard } from "@/lib/mapPresentation";
+import { detailCard, placeMarker } from "@/lib/mapPresentation";
 
 const PRESENTATION = {
   protected: { title: "Schutzgebiete", zoom: 8, legend: "Grün: Landschafts-/Naturschutz und Naturparke · Türkis: FFH · Cyan: Vogelschutz. Kategorien überlagern sich." },
@@ -86,10 +86,11 @@ export default function MapSupplementaryLayer({ map, id, primary }: { map: L.Map
       style: feature => ({ renderer, color: supplementaryColor(id, feature?.properties ?? {}), weight: 2, fillOpacity: id === "warnings" ? .25 : .12 }),
       pointToLayer: (feature, latlng) => {
         const label = supplementaryTitle(id, feature.properties ?? {});
+        if (id === "chargers") return L.marker(latlng, { pane: paneName, keyboard: true, title: label, alt: label, icon: L.divIcon({ html: placeMarker("charging"), className: "map-place-icon", iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -20] }) });
         const icon = document.createElement("span");
-        icon.textContent = id === "chargers" ? "⚡" : feature.properties?.source_layer === 1 ? "G" : "O";
-        icon.style.cssText = `display:block;border-radius:50%;text-align:center;line-height:26px;background:${(feature.properties?.register_source === "autobahn" ? "#60a5fa" : supplementaryColor(id, feature.properties ?? {}))};color:#0f172a;border:2px solid white;font-weight:bold`;
-        return L.marker(latlng, { pane: paneName, keyboard: true, title: label, alt: label, icon: L.divIcon({ html: icon, className: "", iconSize: [30, 30], iconAnchor: feature.properties?.register_source === "autobahn" ? [15, 42] : [15, 15] }) });
+        icon.textContent = feature.properties?.source_layer === 1 ? "G" : "O";
+        icon.style.cssText = `display:block;border-radius:50%;text-align:center;line-height:26px;background:${supplementaryColor(id, feature.properties ?? {})};color:#0f172a;border:2px solid white;font-weight:bold`;
+        return L.marker(latlng, { pane: paneName, keyboard: true, title: label, alt: label, icon: L.divIcon({ html: icon, className: "", iconSize: [30, 30], iconAnchor: [15, 15] }) });
       },
       onEachFeature: (feature, shape) => shape.bindPopup(detailCard(supplementaryTitle(id, feature.properties ?? {}), id === "chargers" && feature.properties?.register_source === "autobahn" ? "Autobahn · getrenntes Anbieterinventar" : id === "chargers" && feature.properties?.register_source === "direct" ? "Direkter BNetzA-Registerimport" : config.dataStand, [
         ...(feature.properties?.register_source === "autobahn" ? autobahnChargerRows(feature.properties ?? {}) : [...supplementaryRows(id, feature.properties ?? {}, now), config.attribution]),
@@ -115,7 +116,7 @@ export default function MapSupplementaryLayer({ map, id, primary }: { map: L.Map
     <p><a className="underline" href={`https://opendata-esridech.hub.arcgis.com/maps/${config.item}`} target="_blank" rel="noreferrer">{config.attribution}</a> · <a className="underline" href={config.license} target="_blank" rel="noreferrer">Nutzungsbedingungen</a></p>
     <p role="status">{!visible ? `Anzeige ab Zoom ${presentation.zoom}.` : state.failed ? id === "chargers" ? `Esri-Vergleichsstand nicht verfügbar; ${count ?? 0} Standorte aus dem direkten Import angezeigt.` : "Quelldaten derzeit nicht verfügbar." : id === "warnings" && state.data && !fresh ? "Warnungsbestand veraltet; aktuelle Warnlage unbekannt." : state.data ? id === "warnings" && count === 0 ? "Keine gültigen Warnpolygone im zuletzt geprüften Esri-Bestand des Ausschnitts." : `${count} ${id === "monitoring" ? "Messstellen" : id === "chargers" ? "Ladestandorte" : id === "warnings" ? "Warnpolygone" : "Schutzgebietsflächen"} angezeigt.` : "Quelldaten werden geladen …"}</p>
     {id === "chargers" ? <>
-      <p>Blaue Marker: {freshAutobahnOffers(autobahn, now).length} Autobahn-Ladeangebote. Angebote an exakt derselben Position mit gleicher Richtung teilen einen Marker; alle Kennungen bleiben im Popup erhalten. Marker sind zur Unterscheidung nach oben versetzt.</p>
+      <p>Grüne Ladestationsmarker: {freshAutobahnOffers(autobahn, now).length} ergänzende Autobahn-Ladeangebote. Angebote an exakt derselben Position mit gleicher Richtung teilen einen Marker; alle Kennungen bleiben im Popup erhalten. Die Quelle steht im Popup; Nähe zu einem Registereintrag belegt keine identische Anlage.</p>
       <p>Registereinträge im Umkreis von 75 m erscheinen als unbestätigte Zuordnungskandidaten. Fahrtrichtungen bleiben getrennt; Ladepunktzahlen verschiedener Quellen werden nicht addiert.</p>
       <p role="status">{!visible ? "Autobahn-Angebote werden ab Zoom 14 geladen." : autobahnFailed ? "Autobahn-Inventar derzeit nicht verfügbar; Registerdarstellung bleibt erhalten." : !autobahn ? "Autobahn-Inventar wird geladen …" : autobahn.unavailableRoads.length ? `Autobahn-Inventar unvollständig: ${autobahn.unavailableRoads.join(", ")} nicht verfügbar.` : freshAutobahnOffers(autobahn, now).length < autobahn.offers.length ? "Autobahn-Inventar teilweise veraltet; abgelaufene Angebote ausgeblendet." : "Autobahn-Inventar für A67, A5 und A6 geladen. Keine Live-Belegung."}</p>
       {autobahnDetails.length ? <details><summary>Autobahn-Ladeangebote und mögliche Zuordnungen lesen</summary>{autobahnDetails.map((feature, index) => <article className="mt-2" key={index}><strong>{String(feature.properties?.name)}</strong>{autobahnChargerRows(feature.properties ?? {}).map((row, i) => <p key={i}>{row}</p>)}</article>)}</details> : null}

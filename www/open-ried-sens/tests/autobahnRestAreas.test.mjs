@@ -41,3 +41,26 @@ test('rest endpoint preserves partial failure and distinguishes empty success fr
  assert.equal((await route(async()=>{throw Error();})()).status,503);
  const empty=await route(async path=>({...body([]),road:path.split('/')[2]}))();assert.equal(empty.status,200);assert.deepEqual((await empty.json()).areas,[]);
 });
+
+test('map renders only inventory locations without an existing occupancy marker, with the shared parking icon',()=>{
+ const unmatched={...area,id:'other',providerId:'DE-HE-670010',observedAt};
+ const markers=[];let stateIndex=0,effectIndex=0;
+ const map={attributionControl:{addAttribution(){},removeAttribution(){}}};
+ const ctx={exports:{},require:id=>{
+  if(id==='react') return {useState:()=>[[{areas:[{...area,observedAt},unmatched],unavailableRoads:[]},false,now][stateIndex++],()=>{}],useEffect:fn=>{if(effectIndex++===1)fn();}};
+  if(id==='react/jsx-runtime') return {jsx:()=>null,jsxs:()=>null};
+  if(id==='leaflet') return {layerGroup:()=>({addTo(){return this;},remove(){}}),divIcon:options=>options,marker:(coords,options)=>{markers.push({coords,options});return {bindPopup(){return this;},addTo(){return this;}};}};
+  if(id.endsWith('autobahnRestAreas'))return lib;
+  if(id.endsWith('mapData'))return {CATEGORIES:{parking:{color:'#a78bfa'}}};
+  if(id.endsWith('mapMarker'))return {createMarkerContent:(...args)=>({sharedParkingIcon:args})};
+  if(id.endsWith('mapPresentation'))return {detailCard:()=>({})};
+  throw Error(id);
+ }};
+ vm.runInNewContext(ts.transpileModule(fs.readFileSync('app/components/MapRestAreaLayer.tsx','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText,ctx);
+ ctx.exports.default({map,nodes:[node]});
+ assert.equal(markers.length,1);
+ assert.equal(markers[0].options.title,`Autobahn-Inventar · ${unmatched.name}`);
+ assert.equal(markers[0].options.icon.className,'map-sensor-icon');
+ assert.deepEqual(Array.from(markers[0].options.icon.iconAnchor),[16,16]);
+ assert.equal(markers[0].options.icon.html.sharedParkingIcon[0],'parking');
+});
