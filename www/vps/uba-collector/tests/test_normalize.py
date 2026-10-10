@@ -1,4 +1,6 @@
 import unittest
+from datetime import UTC, datetime
+from unittest.mock import patch
 
 from config import Settings
 from normalize import normalize, parse_uba_timestamp
@@ -136,7 +138,10 @@ class NormalizeTests(unittest.TestCase):
             },
         }
 
-        stations, skipped = normalize(payload, self.settings)
+        # Keep the fixed fixture inside the freshness window regardless of CI date.
+        with patch("normalize.datetime", wraps=datetime) as clock:
+            clock.now.return_value = datetime(2026, 10, 3, 20, tzinfo=UTC)
+            stations, skipped = normalize(payload, self.settings)
         self.assertEqual(len(stations), 1)
         self.assertEqual(skipped, 2)
 
