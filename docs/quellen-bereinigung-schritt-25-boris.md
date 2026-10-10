@@ -68,4 +68,38 @@ Frontend: 6 Immobilienprüfungen einschließlich gerenderter historischer Anzeig
 echtem Nullwert, 9 Quellenprüfungen, ESLint und Produktionsbuild einschließlich
 TypeScript erfolgreich. React-Prüfung: serverseitige Tabelle, parallele unabhängige
 Datenabrufe, stabile IDs, native Details-Bedienung und beschriftete Tabellenspalten.
-CI und VPS-Nachweis werden nach Abschluss ergänzt.
+## Veröffentlichung und Live-Nachweis
+
+Codecommit `c709f05bc3526a94e7a9f4aca45bf4c41e1511f6` auf `main` gepusht.
+[Frontend CI](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/38048473009)
+erfolgreich. [FastAPI & Docker CI/CD](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/38048473059)
+erfolgreich: alle 15 Prüfjobs einschließlich TimescaleDB und alle 17 vorgesehenen
+Container-Builds mit GHCR-Veröffentlichung.
+
+Registry auf der VPS nach Compose-Sicherung auf den geprüften Digest gesetzt:
+`sha256:eaf53052901a687113b597b089e7e35c76ba0594c813cf7ae180057660446a0c`.
+Dateihashes von Adapter, Manifest, Runner, Autobahn, Grundwasser und Breitband
+gegen den Codecommit geprüft. Ein abgebrochener Image-Download konnte wiederholt
+werden; erst nach erfolgreichem Download wurde der Dienst ersetzt.
+
+Echter Abruf und Abgleich mit archivierten Originalseiten: `success`, 19 Seiten
+(einschließlich leerer Abschlussseite), 1739 regionale Originalobjekte, davon
+210 Zonen der vier Gemeinden. Seitenmanifest-SHA-256:
+`1a74e3745bd2bffdc8774a3dd7e2956f919171bc04ccd29fd6d895a8c2eaf24e`.
+Alle Datenfelder und vollständigen Geometrien mit neu geparsten Originalseiten
+verglichen, einschließlich Innenringen und Nutzungsarten.
+
+Öffentliche Prüfung erfolgreich: `collected/realestate/boris` liefert 210 Zonen,
+`collected/map/layers/boris` liefert dieselben 210 Geometrien. Der von der Karte
+verwendete Endpunkt `map/collected-layers` enthält identisch die BORIS-Ebene und
+führt sie nicht als unverfügbar. Quelle aktiviert, HTTP 200, `success`,
+210 Einträge, verarbeitet am 10.10.2026 um 13:38:11 MESZ.
+
+Bei der abschließenden Kartenprüfung fehlten im allgemeinen Popup die BORIS-
+Feldbeschriftungen. Ergänzt: Richtwert in EUR/m², historischer Stichtag,
+Zonennummer, Original-Nutzungs- und Entwicklungsart sowie Abgrenzung zu aktuellen
+Verkaufspreisen. 30 Kartentests einschließlich konkretem BORIS-Popup erfolgreich.
+Dieser Nachtrag betrifft nur Frontend und Dokumentation; dafür ausschließlich
+Frontend CI prüfen, keine erneuten VPS-/GHCR-Builds erforderlich.
+Eine öffentlich gehostete Frontend-Instanz wurde nicht gesondert nachgewiesen;
+Frontend-Code, gerenderte Komponenten und Produktionsbuild werden geprüft.

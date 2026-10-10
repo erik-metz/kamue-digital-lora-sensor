@@ -448,3 +448,19 @@ test("switching to temperature recovers a filter without temperature stations", 
   assert.equal(model.categoriesForMode(nodes, selected, "category"), selected);
   assert.equal(model.categoriesForMode([], selected, "temperature"), selected);
 });
+
+test("BORIS polygon popups expose original price units and historical reference date", () => {
+  const element = () => ({ children: [], textContent: "", style: { setProperty() {} },
+    append(...children) { this.children.push(...children); }, setAttribute() {} });
+  const context = { exports: {}, document: { createElement: element }, Date, Set, Number, JSON };
+  vm.runInNewContext(ts.transpileModule(fs.readFileSync(new URL("../lib/mapPresentation.ts", import.meta.url), "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText, context);
+  const card = context.exports.featureCard("boris", { land_value_eur_sqm: 4.7,
+    stichtag: "2024-01-01", zone_code: "30190200", zone_type: "LW", development_status: "LF" });
+  const text = node => [node.textContent, ...node.children.map(text)].join(" ");
+  assert.match(text(card), /Bodenrichtwert: 4,7 €\/m²/);
+  assert.match(text(card), /Historischer Stichtag: 2024-01-01/);
+  assert.match(text(card), /Original-Nutzungscode: LW/);
+  assert.match(text(card), /kein aktueller Immobilienverkaufspreis/);
+});

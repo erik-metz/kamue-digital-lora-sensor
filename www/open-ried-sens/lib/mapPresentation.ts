@@ -93,6 +93,8 @@ export function detailCard(title: string, subtitle: string, rows: string[]): HTM
 }
 
 const FIELD_LABELS: Record<string, string> = {
+  land_value_eur_sqm: "Bodenrichtwert", stichtag: "Historischer Stichtag",
+  zone_code: "Zonennummer", zone_type: "Original-Nutzungscode", development_status: "Original-Entwicklungszustand",
   level_m: "Wasserstand (m)", measured_at: "Messzeitpunkt", source: "Quelle", barrier: "Schrankenanlage",
   totalPoints: "Ladepunkte", maxPowerKw: "Max. Ladeleistung (kW)", availablePoints: "Freie Ladepunkte",
   installedCapacityKw: "Installierte Leistung (kW)", currentPowerKw: "Aktuelle Leistung (kW)",
@@ -146,6 +148,7 @@ export function featureKind(kind: string, values: Record<string, unknown>): stri
 }
 
 function formatFieldValue(key: string, value: string | number): string {
+  if (key === "land_value_eur_sqm" && typeof value === "number" && Number.isFinite(value)) return `${value.toLocaleString("de-DE", { maximumFractionDigits: 4 })} €/m²`;
   if (key === "status") {
     const s = String(value).toLowerCase();
     if (s === "unknown") return "⚪ Verkehrslage unbekannt";
@@ -177,6 +180,8 @@ export function featureCard(kind: string, values: Record<string, unknown>): HTML
   let title = String(values.name ?? values.title ?? style.label);
   let subtitle = style.label;
 
+  if (kind === "boris") subtitle = `Historischer Bodenrichtwert · ${String(values.stichtag ?? "Stichtag nicht gemeldet")}`;
+
   if (kind === "energy") {
     const isGeneric = !values.name || values.name === "Energieanlage" || values.name === "Ökostrom / Solaranlage";
     const facilityType = typeof values.facility_type === "string"
@@ -195,6 +200,7 @@ export function featureCard(kind: string, values: Record<string, unknown>): HTML
     if ((typeof raw !== "string" && typeof raw !== "number") || raw === title) return [];
     return [`${label}: ${formatFieldValue(key, raw)}`];
   });
+  if (kind === "boris") rows.push("Amtlicher Zonenwert zum angegebenen Stichtag, kein aktueller Immobilienverkaufspreis.");
   if (values.event_status && values.delay_kind === "unknown") rows.push("Zeitverlust nicht gemeldet.");
   if (values.is_stale === true) rows.push("Quellenstand veraltet; aktuelle Verkehrslage nicht bestätigt.");
   if (values.event_status === "planned") rows.push("Geplante Maßnahme; zählt nicht zur aktuellen Verkehrslage.");
