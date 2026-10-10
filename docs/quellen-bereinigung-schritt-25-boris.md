@@ -103,3 +103,10 @@ Dieser Nachtrag betrifft nur Frontend und Dokumentation; dafür ausschließlich
 Frontend CI prüfen, keine erneuten VPS-/GHCR-Builds erforderlich.
 Eine öffentlich gehostete Frontend-Instanz wurde nicht gesondert nachgewiesen;
 Frontend-Code, gerenderte Komponenten und Produktionsbuild werden geprüft.
+
+Abschließender Karten-Commit `6d02cab5cd5dacf692cbfd70b605323418f96537` gepusht;
+[Frontend CI](https://github.com/erik-metz/kamue-digital-lora-sensor/actions/runs/38049256523)
+erfolgreich. ESLint und erneuter Produktionsbuild ebenfalls erfolgreich.
+Alle 210 Preise sind ohne Rundungsverlust mit zwei Nachkommastellen darstellbar.
+Dieser abschließende Dokumentationsnachweis löst nach den Pfadfiltern keine
+weiteren CI- oder GHCR-Läufe aus.
