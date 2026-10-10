@@ -1,13 +1,13 @@
-/** Traffic filters apply to reported events; corridor summaries always show current conditions. */
-export type TrafficPeriod = "active" | "planned" | "all";
+/** The map shows current traffic only; historical data belongs in the telemetry view. */
 export type TrafficCategory = "all" | "warning" | "roadworks" | "closure";
 
-export function trafficFeatureVisible(values: Record<string, unknown>, period: TrafficPeriod, category: TrafficCategory): boolean {
+export function trafficFeatureVisible(values: Record<string, unknown>, category: TrafficCategory): boolean {
+  if (values.is_stale === true) return false;
+  if (values.event_status && values.event_status !== "active") return false;
   if (values.kind === "corridor") return true;
-  // Municipal closures have their own status model and remain independently visible.
+  // Municipal closures have their own status model.
   if (!values.event_status) return true;
-  return (period === "all" || values.event_status === period)
-    && (category === "all" || values.source_category === category);
+  return category === "all" || values.source_category === category;
 }
 
 export function corridorLabel(status: string, delay: number | null | undefined): string {

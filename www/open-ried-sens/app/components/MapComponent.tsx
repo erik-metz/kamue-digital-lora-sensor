@@ -1,7 +1,7 @@
 "use client";
 
 import L from "leaflet";
-import { corridorLabel, trafficFeatureVisible, type TrafficPeriod, type TrafficCategory } from "@/lib/trafficPresentation";
+import { corridorLabel, trafficFeatureVisible, type TrafficCategory } from "@/lib/trafficPresentation";
 import { updateMarkerDialogs } from "@/lib/mapDialogs";
 import MapContextLayer from "./MapContextLayer";
 import MapSupplementaryLayer from "./MapSupplementaryLayer";
@@ -71,7 +71,6 @@ export default function MapComponent(props: MapProps) {
   const vehicleMarkers = useRef(new Map<string, L.Marker>());
   const callbacks = useRef(props);
   useEffect(() => { callbacks.current = props; });
-  const [trafficPeriod, setTrafficPeriod] = useState<TrafficPeriod>("active");
   const [trafficCategory, setTrafficCategory] = useState<TrafficCategory>("all");
   const [zoom, setZoom] = useState(props.initialZoom ?? DEFAULT_MAP_ZOOM);
   const [ready, setReady] = useState(false);
@@ -481,9 +480,8 @@ export default function MapComponent(props: MapProps) {
         return target;
       }
       const vectorLayer = L.geoJSON(geometry as GeoJsonObject, {
-        filter: feature => !["traffic", "closures"].includes(id) || trafficFeatureVisible(feature.properties ?? {}, trafficPeriod, trafficCategory),
+        filter: feature => !["traffic", "closures"].includes(id) || trafficFeatureVisible(feature.properties ?? {}, trafficCategory),
         style: (feature) => {
-          if (["traffic", "closures"].includes(id) && feature?.properties?.event_status === "planned") return { color: "#a78bfa", weight: 4, opacity: 0.7, dashArray: "6, 6" };
           if (id === "traffic") {
             const status = feature?.properties?.status;
             if (status === "congestion") return { color: "#ef4444", weight: 5, opacity: 0.9, dashArray: "8, 8" };
@@ -604,26 +602,23 @@ export default function MapComponent(props: MapProps) {
 
     callbacks.current.onActiveClosuresCountChange?.(closures);
     return () => { requests.forEach(controller => controller.abort()); group.remove(); };
-  }, [ready, clusteringReady, publication, layers, zoom, props.satelliteMode, props.satelliteSceneId, trafficPeriod, trafficCategory]);
+  }, [ready, clusteringReady, publication, layers, zoom, props.satelliteMode, props.satelliteSceneId, trafficCategory]);
 
   const trafficCorridors = (publication.layers.traffic && "features" in (publication.layers.traffic as unknown as { features?: unknown[] })
     ? ((publication.layers.traffic as unknown as { features: { properties?: { id?: string; road_name?: string; name?: string; status?: string; delay_minutes?: number | null; description?: string; kind?: string }; geometry?: { type: string; coordinates: [number, number][] } }[] }).features ?? [])
     : [])
-    .filter(f => f.properties?.kind === "corridor")
+    .filter(f => f.properties?.kind === "corridor" && trafficFeatureVisible(f.properties, "all"))
     .map(f => f.properties as { id: string; road_name: string; name: string; status: string; delay_minutes: number | null; description: string });
 
   const missing = publication.unavailable.filter(id => id !== "nature" && id !== "charging" && layers[id as MapLayerId]);
   return <div className="w-full space-y-3">
     {(layers.traffic || layers.closures) && <div className="flex flex-wrap gap-3 text-sm" aria-label="Verkehrsmeldungen filtern">
-      <label>Zeitraum <select className="rounded border border-slate-600 bg-slate-900 p-1" value={trafficPeriod} onChange={event => setTrafficPeriod(event.target.value as TrafficPeriod)}>
-        <option value="active">Aktuelle Meldungen</option><option value="planned">Geplant · nächste 7 Tage / Termin offen</option><option value="all">Aktuell und geplant</option>
-      </select></label>
       <label>Meldungsart <select className="rounded border border-slate-600 bg-slate-900 p-1" value={trafficCategory} onChange={event => setTrafficCategory(event.target.value as TrafficCategory)}>
         <option value="all">Alle</option><option value="warning">Verkehrsmeldungen</option><option value="roadworks">Baustellen</option><option value="closure">Sperrungen</option>
       </select></label>
-      <span className="text-xs text-slate-400">Geplante Maßnahmen: violett gestrichelt. Verkehrsachsen zeigen weiterhin den aktuellen Stand.</span>
+      <span className="text-xs text-slate-400">Nur aktuelle Verkehrsmeldungen.</span>
     </div>}
-    <div ref={container} className="sensor-map h-[500px] w-full" aria-label="Karte mit gespeicherten Quelldaten" />
+    <div ref={container} className="sensor-map h-[500px] w-full" aria-label="Karte mit aktuellen Quelldaten" />
     {layers.traffic && trafficCorridors.length > 0 && (
       <div className="flex flex-wrap items-center gap-2" aria-label="Verkehrsauslastung">
         <div className="commuter-corridor-bar">

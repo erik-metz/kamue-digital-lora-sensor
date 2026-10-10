@@ -6,14 +6,17 @@ const source = fs.readFileSync(new URL("../lib/trafficPresentation.ts", import.m
 const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext } });
 const { trafficFeatureVisible, corridorLabel } = await import(`data:text/javascript;base64,${Buffer.from(outputText).toString("base64")}`);
 
-test("planned measures are opt-in; category and current corridor summaries stay independent", () => {
-  const planned = { event_status: "planned", source_category: "closure" };
-  assert.equal(trafficFeatureVisible(planned, "active", "all"), false);
-  assert.equal(trafficFeatureVisible(planned, "planned", "closure"), true);
-  assert.equal(trafficFeatureVisible(planned, "all", "roadworks"), false);
-  assert.equal(trafficFeatureVisible({ kind: "corridor" }, "planned", "closure"), true);
-  assert.equal(trafficFeatureVisible({ event_status: "active", source_category: "roadworks" }, "active", "roadworks"), true);
-  assert.equal(trafficFeatureVisible({ closure_type: "partial" }, "planned", "all"), true);
+test("map excludes planned, historical and stale traffic in every category", () => {
+  for (const category of ["all", "warning", "roadworks", "closure"]) {
+    for (const event_status of ["planned", "ended", "resolved"]) {
+      assert.equal(trafficFeatureVisible({ event_status, source_category: category }, category), false);
+    }
+    assert.equal(trafficFeatureVisible({ kind: "corridor", is_stale: true }, category), false);
+  }
+  assert.equal(trafficFeatureVisible({ kind: "corridor" }, "closure"), true);
+  assert.equal(trafficFeatureVisible({ event_status: "active", source_category: "roadworks" }, "roadworks"), true);
+  assert.equal(trafficFeatureVisible({ event_status: "active", source_category: "roadworks" }, "closure"), false);
+  assert.equal(trafficFeatureVisible({ closure_type: "partial" }, "all"), true);
 });
 test("unknown values do not become zero-minute delays or full closures", () => {
   assert.equal(corridorLabel("unknown", null), "⚪ Unbekannt");
